@@ -143,19 +143,19 @@ class ProductionItem(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class TimeLog(BaseModel):
+    """Time tracking per user, per stage - users typically work on one stage"""
     model_config = ConfigDict(extra="ignore")
     log_id: str = Field(default_factory=lambda: f"log_{uuid.uuid4().hex[:12]}")
     user_id: str
     user_name: str
-    order_id: Optional[str] = None
-    batch_id: Optional[str] = None
     stage_id: str
     stage_name: str
-    action: str  # started, completed, moved
+    batch_id: Optional[str] = None  # Optional - can be general stage work
+    action: str  # started, stopped, item_processed
     started_at: datetime
     completed_at: Optional[datetime] = None
     duration_minutes: Optional[float] = None
-    items_processed: int = 1
+    items_processed: int = 0
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class TimeLogCreate(BaseModel):
