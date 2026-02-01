@@ -730,7 +730,7 @@ async def mark_order_shipped(
     carrier: Optional[str] = None,
     user: User = Depends(get_current_user)
 ):
-    """Mark an order as shipped"""
+    """Mark an order as shipped and archive it"""
     order = await db.orders.find_one({"order_id": order_id})
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
@@ -745,8 +745,11 @@ async def mark_order_shipped(
     update_data = {
         "status": "shipped",
         "fulfillment_status": "shipped",
+        "fulfillment_stage_id": "archived",
+        "fulfillment_stage_name": "Archived",
         "shipped_at": now,
         "shipped_by": user.user_id,
+        "archived_at": now,
         "inventory_deducted": True
     }
     
@@ -760,7 +763,7 @@ async def mark_order_shipped(
         {"$set": update_data}
     )
     
-    result = {"message": "Order marked as shipped", "order_id": order_id}
+    result = {"message": "Order shipped and archived", "order_id": order_id}
     if deduction_result:
         result["inventory_deduction"] = deduction_result
     
