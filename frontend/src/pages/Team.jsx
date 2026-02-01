@@ -157,10 +157,16 @@ export default function Team({ user }) {
             Manage team members and view performance
           </p>
         </div>
-        <Button variant="outline" onClick={fetchData} className="gap-2" data-testid="refresh-team-btn">
-          <RefreshCw className="w-4 h-4" />
-          Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setShowTimerHistory(true)} className="gap-2" data-testid="my-timer-history-btn">
+            <History className="w-4 h-4" />
+            My Timer History
+          </Button>
+          <Button variant="outline" onClick={fetchData} className="gap-2" data-testid="refresh-team-btn">
+            <RefreshCw className="w-4 h-4" />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}
