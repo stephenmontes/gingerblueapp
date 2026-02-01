@@ -382,6 +382,19 @@ function SizeGroupRows({ group, isLast, updating, localValues, onQtyChange, onCo
                 )}
               </div>
             </TableCell>
+            <TableCell className="text-center">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onMoveToAssembly(item.size, item.color, displayQty)}
+                disabled={isDisabled || displayQty === 0}
+                className="gap-1 text-xs h-7"
+                data-testid={`move-assembly-${key}`}
+              >
+                <ArrowRight className="w-3 h-3" />
+                Assembly
+              </Button>
+            </TableCell>
           </TableRow>
         );
       })}
