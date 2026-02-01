@@ -228,6 +228,15 @@ Build a manufacturing and fulfillment app for Shopify websites with:
   - Notes section and printed timestamp footer
   - Opens in new window for clean printing
 - ✅ **Shopify Product Sync** (Feb 2026):
+  - New Products page with sync controls, stats, and product table
+  - Backend Shopify API integration (`/app/backend/services/shopify_service.py`)
+  - Product sync endpoints: `/api/products/sync/{store_id}`, `/api/products/sync/{store_id}/test`
+  - Product data model with variants, images, barcodes, SKUs
+  - Enhanced SkuLink component to show product images from synced data
+  - Filter by store, vendor, search by title/SKU/barcode
+  - Product details modal with variants table and image gallery
+  - API: `/api/products`, `/api/products/stats`, `/api/products/by-sku/{sku}`, `/api/products/image/{sku}`
+- ✅ **Shopify Product Sync** (Feb 2026):
   - Full product sync from Shopify stores via Admin REST API 2024-10
   - Syncs: products, variants, images, SKUs, barcodes, inventory quantities
   - Products page with search, filter by store/vendor/type
