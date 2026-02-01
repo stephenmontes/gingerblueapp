@@ -347,9 +347,10 @@ export function FrameList({ batch, activeTimer, currentStageId, stages }) {
           <Progress value={progressPercent} className="h-3" />
         </div>
 
-        {/* Move All Button */}
-        {nextStage && grandTotalCompleted > 0 && (
-          <div className="mt-3 flex justify-end">
+        {/* Action Buttons */}
+        <div className="mt-3 flex justify-end gap-2">
+          {/* Move All to Next Stage - for non-final stages */}
+          {nextStage && grandTotalCompleted > 0 && !isQualityCheckStage && (
             <Button
               onClick={handleMoveAllCompleted}
               disabled={!hasActiveTimer}
@@ -358,8 +359,21 @@ export function FrameList({ batch, activeTimer, currentStageId, stages }) {
               <ArrowRight className="w-4 h-4" />
               Move All Completed to {nextStage.name}
             </Button>
-          </div>
-        )}
+          )}
+          
+          {/* Move All to Inventory - for Quality Check stage */}
+          {isQualityCheckStage && grandTotalCompleted > 0 && (
+            <Button
+              onClick={handleMoveAllToInventory}
+              disabled={!hasActiveTimer}
+              className="gap-2 bg-green-600 hover:bg-green-700"
+              data-testid="move-all-to-inventory-btn"
+            >
+              <PackagePlus className="w-4 h-4" />
+              Move All to Inventory
+            </Button>
+          )}
+        </div>
       </CardHeader>
       <CardContent>
         {/* Timer warning if not active for this stage */}
