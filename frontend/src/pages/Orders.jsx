@@ -126,7 +126,7 @@ export default function Orders({ user }) {
   const handleSyncOrders = async (storeId) => {
     setSyncing(storeId);
     try {
-      const response = await fetch(`${API}/orders/sync/${storeId}?days_back=30`, {
+      const response = await fetch(`${API}/orders/sync/${storeId}?days_back=365`, {
         method: "POST",
         credentials: "include",
       });
@@ -162,7 +162,7 @@ export default function Orders({ user }) {
 
     for (const store of activeStores) {
       try {
-        const response = await fetch(`${API}/orders/sync/${store.store_id}?days_back=30`, {
+        const response = await fetch(`${API}/orders/sync/${store.store_id}?days_back=365`, {
           method: "POST",
           credentials: "include",
         });
