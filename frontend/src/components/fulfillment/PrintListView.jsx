@@ -118,7 +118,9 @@ function ItemRow({ item, isExpanded, onToggle }) {
         <TableCell>
           <Badge variant="outline" className="font-mono font-bold">{size}</Badge>
         </TableCell>
-        <TableCell className="font-mono text-sm">{item.sku}</TableCell>
+        <TableCell>
+          <SkuLink sku={item.sku} imageUrl={item.image_url || item.image} />
+        </TableCell>
         <TableCell>{item.name}</TableCell>
         <TableCell className="text-right">
           <Badge variant="secondary" className="text-base font-bold">{item.total_quantity}</Badge>
