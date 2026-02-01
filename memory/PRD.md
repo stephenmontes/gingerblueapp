@@ -263,6 +263,15 @@ Build a manufacturing and fulfillment app for Shopify websites with:
   - SkuLink component auto-fetches product images from synced data
   - API endpoints: `/api/products`, `/api/products/sync/{store_id}`, `/api/products/by-sku/{sku}`, `/api/products/image/{sku}`
   - Backend service: `shopify_service.py` with pagination support
+- ✅ **Dropship CSV Upload** (Feb 2026):
+  - Added "Dropship (CSV Upload)" platform type in Settings page
+  - Updated CSV parser to support Antique Farmhouse format columns:
+    - Order Number, Full Name, Address 1, City, State, Zip, Item Number, Price, Qty, Order Comments, Order Date
+  - Also supports generic lowercase column names (order_number, customer_name, sku, etc.)
+  - Groups multiple rows with same order number into single order with multiple items
+  - Created test store "Antique Farmhouse" with dropship platform
+  - Updated template download to use Antique Farmhouse format
+  - API: `POST /api/orders/upload-csv/{store_id}`, `GET /api/orders/csv-template`
 
 ## Prioritized Backlog
 
