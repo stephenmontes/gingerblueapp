@@ -403,9 +403,13 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
         case "created_at":
         default:
           // Use order_date if available (actual order date), fallback to created_at (import date)
-          aVal = a.order_date || a.created_at || "";
-          bVal = b.order_date || b.created_at || "";
-          break;
+          // Convert to timestamps for proper date comparison
+          const aDate = a.order_date || a.created_at || "";
+          const bDate = b.order_date || b.created_at || "";
+          aVal = aDate ? new Date(aDate).getTime() : 0;
+          bVal = bDate ? new Date(bDate).getTime() : 0;
+          // Numeric comparison for dates - newest first when desc
+          return sortDirection === "asc" ? aVal - bVal : bVal - aVal;
       }
       
       if (typeof aVal === "string") {
