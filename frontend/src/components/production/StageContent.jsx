@@ -1,14 +1,14 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Layers, ArrowRight } from "lucide-react";
+import { Layers, ArrowRight, Clock } from "lucide-react";
 import { ItemRow } from "./ItemRow";
 import { toast } from "sonner";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = BACKEND_URL + "/api";
 
-export function StageContent({ stageData, stages, onUpdateQty, onMoveStage, onRefresh }) {
+export function StageContent({ stageData, stages, onUpdateQty, onMoveStage, onRefresh, hasActiveTimer, timerVersion }) {
   if (!stageData) {
     return (
       <Card className="bg-card border-border">
@@ -41,7 +41,17 @@ export function StageContent({ stageData, stages, onUpdateQty, onMoveStage, onRe
           nextStage={nextStage}
           completedCount={completedCount}
           onRefresh={onRefresh}
+          hasActiveTimer={hasActiveTimer}
         />
+        
+        {/* Timer warning if not active */}
+        {!hasActiveTimer && items.length > 0 && (
+          <div className="flex items-center gap-2 text-orange-400 text-sm bg-orange-500/10 px-4 py-3 rounded-lg mb-4">
+            <Clock className="w-5 h-5" />
+            <span className="font-medium">Start your timer above to update item quantities</span>
+          </div>
+        )}
+        
         <StageItems
           items={items}
           stages={stages}
@@ -49,13 +59,15 @@ export function StageContent({ stageData, stages, onUpdateQty, onMoveStage, onRe
           onUpdateQty={onUpdateQty}
           onMoveStage={onMoveStage}
           onRefresh={onRefresh}
+          hasActiveTimer={hasActiveTimer}
+          timerVersion={timerVersion}
         />
       </CardContent>
     </Card>
   );
 }
 
-function StageHeader({ stageData, nextStage, completedCount, onRefresh }) {
+function StageHeader({ stageData, nextStage, completedCount, onRefresh, hasActiveTimer }) {
   const totalRequired = stageData.total_required || 1;
   const totalCompleted = stageData.total_completed || 0;
   const progress = (totalCompleted / totalRequired) * 100;
@@ -124,7 +136,7 @@ function StageHeader({ stageData, nextStage, completedCount, onRefresh }) {
   );
 }
 
-function StageItems({ items, stages, currentStageId, onUpdateQty, onMoveStage, onRefresh }) {
+function StageItems({ items, stages, currentStageId, onUpdateQty, onMoveStage, onRefresh, hasActiveTimer, timerVersion }) {
   const isEmpty = !items || items.length === 0;
 
   if (isEmpty) {
@@ -140,13 +152,14 @@ function StageItems({ items, stages, currentStageId, onUpdateQty, onMoveStage, o
     <div className="space-y-2">
       {items.map((item) => (
         <ItemRow
-          key={item.item_id}
+          key={item.item_id + "-" + timerVersion}
           item={item}
           stages={stages}
           currentStageId={currentStageId}
           onUpdateQty={onUpdateQty}
           onMoveStage={onMoveStage}
           onRefresh={onRefresh}
+          hasActiveTimer={hasActiveTimer}
         />
       ))}
     </div>
