@@ -140,7 +140,7 @@ async def get_batch(batch_id: str, user: User = Depends(get_current_user)):
 
 @router.post("")
 async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current_user)):
-    """Create a production batch from selected orders"""
+    """Create a production batch from selected orders - creates aggregated frame list by size/color"""
     if not batch_data.order_ids:
         raise HTTPException(status_code=400, detail="No orders selected")
     
@@ -163,50 +163,68 @@ async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current
     if not orders:
         raise HTTPException(status_code=404, detail="No orders found")
     
-    # Find the Cutting stage specifically - this is where cut list items start
+    # Find the Cutting stage - first production stage
     cutting_stage = await db.production_stages.find_one({"stage_id": "stage_cutting"})
     if not cutting_stage:
-        # Fallback - find by name
         cutting_stage = await db.production_stages.find_one({"name": {"$regex": "cut", "$options": "i"}})
     if not cutting_stage:
-        # Last fallback - use first stage
         stages = await db.production_stages.find({}, {"_id": 0}).sort("order", 1).to_list(100)
         cutting_stage = stages[0] if stages else {"stage_id": "stage_cutting", "name": "Cutting"}
     
     batch_id = f"batch_{uuid.uuid4().hex[:8]}"
-    total_items = 0
+    now = datetime.now(timezone.utc).isoformat()
     
-    # Items are ONLY added to the cutting stage (cut list)
-    # They will move to next stages when marked as done in the cut list
-    production_items = []
+    # Aggregate frames by size/color - THIS IS THE PRODUCTION LIST
+    # Each unique size/color combination becomes ONE production frame item
+    frame_aggregation = {}
+    total_frames = 0
+    
     for order in orders:
         for item in order.get("items", []):
             sku = item.get("sku", "UNKNOWN")
             parsed = parse_sku(sku)
-            qty = item.get("qty", 1)
-            total_items += qty
+            size = parsed["size"]
+            color = parsed["color"]
+            qty = item.get("qty", 1) or item.get("quantity", 1) or 1
             
-            prod_item = {
-                "item_id": f"item_{uuid.uuid4().hex[:8]}",
-                "batch_id": batch_id,
-                "order_id": order["order_id"],
-                "sku": sku,
-                "name": item.get("name", "Unknown Item"),
-                "color": parsed["color"],
-                "size": parsed["size"],
-                "qty_required": qty,
-                "qty_completed": 0,
-                "qty_rejected": 0,
-                "current_stage_id": cutting_stage["stage_id"],
-                "current_stage_name": cutting_stage.get("name", "Cutting"),
-                "status": "pending",
-                "added_to_inventory": False,
-                "created_at": datetime.now(timezone.utc).isoformat()
-            }
-            production_items.append(prod_item)
+            key = f"{size}-{color}"
+            if key not in frame_aggregation:
+                frame_aggregation[key] = {
+                    "size": size,
+                    "color": color,
+                    "qty_required": 0,
+                    "order_ids": [],
+                    "skus": set()
+                }
+            frame_aggregation[key]["qty_required"] += qty
+            frame_aggregation[key]["order_ids"].append(order["order_id"])
+            frame_aggregation[key]["skus"].add(sku)
+            total_frames += qty
     
-    if production_items:
-        await db.production_items.insert_many(production_items)
+    # Create aggregated frame items - these move through stages as units
+    frame_items = []
+    for key, data in frame_aggregation.items():
+        frame_item = {
+            "frame_id": f"frame_{uuid.uuid4().hex[:8]}",
+            "batch_id": batch_id,
+            "size": data["size"],
+            "color": data["color"],
+            "qty_required": data["qty_required"],
+            "qty_completed": 0,
+            "qty_rejected": 0,
+            "current_stage_id": cutting_stage["stage_id"],
+            "current_stage_name": cutting_stage.get("name", "Cutting"),
+            "status": "pending",
+            "order_ids": list(set(data["order_ids"])),
+            "skus": list(data["skus"]),
+            "created_at": now,
+            "updated_at": now
+        }
+        frame_items.append(frame_item)
+    
+    # Store in batch_frames collection (aggregated production items)
+    if frame_items:
+        await db.batch_frames.insert_many(frame_items)
     
     batch_doc = {
         "batch_id": batch_id,
@@ -218,9 +236,10 @@ async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current
         "status": "active",
         "time_started": None,
         "time_completed": None,
-        "total_items": total_items,
-        "items_completed": 0,
-        "created_at": datetime.now(timezone.utc).isoformat()
+        "total_frames": total_frames,
+        "total_frame_types": len(frame_items),
+        "frames_completed": 0,
+        "created_at": now
     }
     
     await db.production_batches.insert_one(batch_doc)
