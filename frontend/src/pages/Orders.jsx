@@ -676,14 +676,16 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-full md:w-[180px] bg-background" data-testid="status-filter">
                 <Filter className="w-4 h-4 mr-2" />
-                <SelectValue placeholder="All Status" />
+                <SelectValue placeholder="All Active Orders" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="active">All Active Orders</SelectItem>
+                <SelectItem value="all">All Orders</SelectItem>
                 <SelectItem value="awaiting_shipment">Awaiting Shipment</SelectItem>
                 <SelectItem value="pending">Pending Payment</SelectItem>
-                <SelectItem value="shipped">Shipped</SelectItem>
+                <SelectItem value="on_hold">On Hold</SelectItem>
                 <SelectItem value="in_production">In Production</SelectItem>
+                <SelectItem value="shipped">Shipped</SelectItem>
                 <SelectItem value="completed">Completed</SelectItem>
                 <SelectItem value="cancelled">Cancelled</SelectItem>
               </SelectContent>
