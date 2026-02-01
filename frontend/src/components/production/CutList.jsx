@@ -195,6 +195,9 @@ export function CutList({ batch, activeTimer }) {
   }
 
   const { size_groups, grand_total_required, grand_total_made } = cutListData;
+  const progressPercent = grand_total_required > 0 
+    ? Math.round((grand_total_made / grand_total_required) * 100) 
+    : 0;
 
   return (
     <Card className="bg-card border-border" data-testid="cut-list">
@@ -209,13 +212,24 @@ export function CutList({ batch, activeTimer }) {
               Made: {grand_total_made} / {grand_total_required}
             </Badge>
             <Badge 
-              variant={grand_total_made >= grand_total_required ? "default" : "secondary"} 
-              className="text-sm px-3 py-1"
+              variant={progressPercent >= 100 ? "default" : "secondary"} 
+              className={`text-sm px-3 py-1 ${progressPercent >= 100 ? "bg-green-600" : ""}`}
             >
-              {Math.round((grand_total_made / grand_total_required) * 100) || 0}%
+              {progressPercent}%
             </Badge>
           </div>
         </CardTitle>
+        
+        {/* Progress Bar */}
+        <div className="mt-3">
+          <Progress 
+            value={progressPercent} 
+            className="h-3"
+          />
+          <p className="text-xs text-muted-foreground mt-1 text-right">
+            {grand_total_made} of {grand_total_required} items completed
+          </p>
+        </div>
       </CardHeader>
       <CardContent>
         {/* Timer warning if not active */}
