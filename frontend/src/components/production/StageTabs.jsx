@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Clock } from "lucide-react";
 
-export function StageTabs({ stages, activeStageId, onStageSelect }) {
+export function StageTabs({ stages, activeStageId, onStageSelect, activeTimer }) {
   // Skip the first stage (usually "New" or pending)
   const visibleStages = stages.slice(1);
 
@@ -12,6 +13,7 @@ export function StageTabs({ stages, activeStageId, onStageSelect }) {
           key={stage.stage_id}
           stage={stage}
           isActive={activeStageId === stage.stage_id}
+          hasTimer={activeTimer && activeTimer.stage_id === stage.stage_id}
           onSelect={onStageSelect}
         />
       ))}
@@ -19,13 +21,13 @@ export function StageTabs({ stages, activeStageId, onStageSelect }) {
   );
 }
 
-function StageTabButton({ stage, isActive, onSelect }) {
+function StageTabButton({ stage, isActive, hasTimer, onSelect }) {
   return (
     <Button
       variant={isActive ? "default" : "outline"}
       size="sm"
       onClick={() => onSelect(stage.stage_id)}
-      className="flex items-center gap-2 whitespace-nowrap"
+      className={`flex items-center gap-2 whitespace-nowrap ${hasTimer ? "ring-2 ring-green-500" : ""}`}
       data-testid={`stage-tab-${stage.stage_id}`}
     >
       <div
@@ -34,6 +36,7 @@ function StageTabButton({ stage, isActive, onSelect }) {
       />
       {stage.stage_name}
       <Badge variant="secondary">{stage.total_items}</Badge>
+      {hasTimer && <Clock className="w-3 h-3 text-green-400 animate-pulse" />}
     </Button>
   );
 }
