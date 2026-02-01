@@ -21,8 +21,7 @@ export function ItemRow({ item, stages, onUpdateQty, onMoveStage }) {
 
   function handleQtyChange(e) {
     const val = parseInt(e.target.value, 10) || 0;
-    const clamped = Math.max(0, Math.min(qtyRequired, val));
-    setQty(clamped);
+    setQty(Math.max(0, val)); // Allow qty > required (e.g., extras in cutting)
   }
 
   function handleSave() {
@@ -66,7 +65,6 @@ export function ItemRow({ item, stages, onUpdateQty, onMoveStage }) {
         <Input
           type="number"
           min="0"
-          max={qtyRequired}
           value={qty}
           onChange={handleQtyChange}
           className="w-16 text-center"
