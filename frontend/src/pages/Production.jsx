@@ -199,7 +199,7 @@ export default function Production() {
           <BatchList
             batches={batches}
             selectedBatch={selectedBatch}
-            onSelectBatch={setSelectedBatch}
+            onSelectBatch={handleBatchSelect}
             onRefresh={loadInitialData}
           />
         </div>
