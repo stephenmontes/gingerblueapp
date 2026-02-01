@@ -334,6 +334,19 @@ export default function Team({ user }) {
           )}
         </CardContent>
       </Card>
+
+      {/* Timer History Dialog */}
+      <Dialog open={showTimerHistory} onOpenChange={setShowTimerHistory}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <History className="w-5 h-5" />
+              My Timer History & Breaks
+            </DialogTitle>
+          </DialogHeader>
+          <TimerHistory onClose={() => setShowTimerHistory(false)} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
