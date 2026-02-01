@@ -1,0 +1,146 @@
+{
+  "identity": {
+    "persona": "E1 - The Anti-AI Designer",
+    "mission": "Create a 'Tactical Industrial' manufacturing dashboard that feels like a high-end command center, not a spreadsheet.",
+    "principles": [
+      "Fusion over Imitation: Mix Industrial Aesthetics with Cyberpunk Precision.",
+      "Emotion First: The user should feel 'In Control' and 'Efficient'.",
+      "Content is King: Data is the hero. Legibility of metrics is paramount.",
+      "Contrast: High contrast for critical alerts, subtle depth for hierarchy."
+    ]
+  },
+  "typography": {
+    "fonts": {
+      "headings": {
+        "family": "Chivo",
+        "weights": ["700", "900"],
+        "usage": "Page titles, KPI values, Modal headers. Tracking-tight."
+      },
+      "body": {
+        "family": "Manrope",
+        "weights": ["400", "500", "600"],
+        "usage": "General text, labels, table data."
+      },
+      "mono": {
+        "family": "JetBrains Mono",
+        "weights": ["400", "500"],
+        "usage": "Order IDs, SKUs, Timers, Code snippets."
+      }
+    },
+    "rules": [
+      "Never use Inter for headings.",
+      "Use uppercase + wide spacing (tracking-widest) for small labels (e.g., 'STATUS', 'ORDER ID').",
+      "KPI numbers must be massive (text-4xl to text-6xl)."
+    ]
+  },
+  "colors": {
+    "theme": "dark",
+    "palette": {
+      "background": "#09090B",
+      "surface": "#18181B",
+      "surface_highlight": "#27272A",
+      "border": "#27272A",
+      "primary": "#3B82F6",
+      "primary_foreground": "#FFFFFF",
+      "secondary": "#22C55E",
+      "accent": "#F59E0B",
+      "destructive": "#EF4444",
+      "text": {
+        "primary": "#F4F4F5",
+        "secondary": "#A1A1AA",
+        "muted": "#52525B"
+      }
+    },
+    "usage": {
+      "dashboard_bg": "bg-[#09090B]",
+      "card_bg": "bg-[#18181B]",
+      "active_state": "text-[#22C55E] bg-[#22C55E]/10 border-[#22C55E]/20",
+      "pending_state": "text-[#F59E0B] bg-[#F59E0B]/10 border-[#F59E0B]/20",
+      "error_state": "text-[#EF4444] bg-[#EF4444]/10 border-[#EF4444]/20"
+    }
+  },
+  "layout": {
+    "grid_system": "Bento Grid Mode B (High Density)",
+    "spacing": {
+      "container_padding": "p-6 md:p-8",
+      "gap": "gap-4 md:gap-6",
+      "internal_padding": "p-4"
+    },
+    "rules": [
+      "Dashboard must use a dense grid. No wasted space.",
+      "Kanban board must scroll horizontally. Columns should be fixed width (min-w-[300px]).",
+      "Sidebar navigation should be collapsible or slim to maximize data view."
+    ]
+  },
+  "components": {
+    "cards": {
+      "style": "Flat, 1px border, no shadow.",
+      "classes": "bg-card border-border rounded-lg hover:border-primary/50 transition-colors duration-200"
+    },
+    "buttons": {
+      "style": "Sharp or slightly rounded (rounded-md). High contrast.",
+      "primary": "bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_0_10px_rgba(59,130,246,0.3)]",
+      "secondary": "bg-secondary/10 text-secondary hover:bg-secondary/20 border border-secondary/20"
+    },
+    "inputs": {
+      "style": "Dark background, subtle border.",
+      "classes": "bg-background border-input focus:ring-1 focus:ring-primary rounded-md"
+    },
+    "status_badges": {
+      "style": "Pill shape, transparent bg with colored border and text.",
+      "classes": "rounded-full px-2 py-0.5 text-xs font-medium border"
+    }
+  },
+  "visual_enhancers": {
+    "textures": "Subtle noise overlay on the background (opacity 0.02) to reduce digital flatness.",
+    "borders": "Use 'Tracing Beam' effect for active cards or high-priority alerts.",
+    "glassmorphism": "Use only for sticky headers or modal overlays. Backdrop-blur-xl + border-white/5."
+  },
+  "images": {
+    "login_background": {
+      "url": "https://images.unsplash.com/photo-1768661608008-74f74ad6923a?crop=entropy&cs=srgb&fm=jpg&q=85",
+      "alt": "Industrial Factory Windows Glowing",
+      "usage": "Full screen background for login page with heavy dark overlay (bg-black/70)."
+    },
+    "avatars": [
+      {
+        "url": "https://images.unsplash.com/photo-1741707038935-0bf1f8eda81c?crop=entropy&cs=srgb&fm=jpg&q=85",
+        "alt": "Female Worker",
+        "usage": "User profile placeholder"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1579355879315-46da233c9321?crop=entropy&cs=srgb&fm=jpg&q=85",
+        "alt": "Male Worker",
+        "usage": "User profile placeholder"
+      }
+    ],
+    "placeholders": {
+      "product": {
+        "url": "https://images.unsplash.com/photo-1769355104335-acef3aa4c9b6?crop=entropy&cs=srgb&fm=jpg&q=85",
+        "alt": "Cardboard Boxes",
+        "usage": "Default product image if none provided"
+      }
+    }
+  },
+  "instructions_to_main_agent": {
+    "setup": [
+      "Install fonts: Chivo, Manrope, JetBrains Mono via Google Fonts.",
+      "Install icons: lucide-react (default), but consider @phosphor-icons/react for a more technical look.",
+      "Configure Tailwind colors to match the 'Tactical Industrial' palette."
+    ],
+    "implementation": [
+      "Build the Dashboard using the Bento Grid Mode B.",
+      "Implement the Kanban board with 'react-beautiful-dnd' or similar for drag-and-drop.",
+      "Use 'recharts' for analytics, styling them with the neon accent colors.",
+      "Ensure all inputs and interactive elements have hover states defined in the design system."
+    ]
+  },
+  "universal_guidelines": [
+    "Do not use gradients for backgrounds, use solid dark colors.",
+    "Use 2-3x more spacing than typical designs.",
+    "Every interaction needs micro-animations.",
+    "All interactive elements MUST include data-testid attribute.",
+    "Use sonner for toasts.",
+    "Prioritize using pre-existing components from src/components/ui."
+  ]
+}
