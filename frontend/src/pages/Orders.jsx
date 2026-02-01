@@ -802,7 +802,7 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
                     <TableCell>
                       <div className="flex items-center gap-1 text-sm text-muted-foreground">
                         <Calendar className="w-3 h-3" />
-                        {formatDate(order.created_at)}
+                        {formatDate(order.order_date || order.created_at)}
                       </div>
                     </TableCell>
                     <TableCell>
