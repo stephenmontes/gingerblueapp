@@ -16,8 +16,10 @@ import {
   CheckCircle,
   XCircle,
   Info,
-  Layers
+  Layers,
+  ExternalLink
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export function OrderRow({ 
   order, 
@@ -32,7 +34,14 @@ export function OrderRow({
   onMarkShipped,
   onShowInventory
 }) {
+  const navigate = useNavigate();
   const invStatus = order.inventory_status;
+
+  function handleBatchClick() {
+    if (order.batch_id) {
+      navigate(`/production?batch=${order.batch_id}`);
+    }
+  }
   
   return (
     <TableRow className="border-border">
@@ -59,9 +68,15 @@ export function OrderRow({
       </TableCell>
       <TableCell>
         {order.batch_name ? (
-          <Badge variant="secondary" className="gap-1 text-xs">
+          <Badge 
+            variant="secondary" 
+            className="gap-1 text-xs cursor-pointer hover:bg-primary/20 transition-colors"
+            onClick={handleBatchClick}
+            title="View batch in Frame Production"
+          >
             <Layers className="w-3 h-3" />
             {order.batch_name}
+            <ExternalLink className="w-3 h-3 ml-1 opacity-50" />
           </Badge>
         ) : (
           <span className="text-muted-foreground text-sm">—</span>
