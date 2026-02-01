@@ -1,63 +1,35 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Package,
-  Search,
-  Filter,
-  ExternalLink,
-  Eye,
-  Store,
-  Calendar,
-} from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Package, Search, Filter, Eye, Store, Calendar, Layers, ArrowRight, CheckSquare } from "lucide-react";
 import { toast } from "sonner";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+const API = BACKEND_URL + "/api";
 
-const StatusBadge = ({ status }) => {
+function StatusBadge({ status }) {
   const styles = {
-    pending: "status-pending",
-    in_production: "status-in-production",
-    completed: "status-completed",
+    pending: "text-amber-400 bg-amber-400/10 border-amber-400/20",
+    in_production: "text-blue-400 bg-blue-400/10 border-blue-400/20",
+    completed: "text-green-400 bg-green-400/10 border-green-400/20",
     shipped: "text-purple-400 bg-purple-400/10 border-purple-400/20",
   };
 
   return (
-    <Badge
-      variant="outline"
-      className={`${styles[status] || styles.pending} capitalize`}
-    >
+    <Badge variant="outline" className={styles[status] || styles.pending}>
       {status?.replace("_", " ")}
     </Badge>
   );
-};
+}
 
-const PlatformBadge = ({ platform }) => {
+function PlatformBadge({ platform }) {
   const colors = {
     shopify: "text-green-400 bg-green-400/10 border-green-400/20",
     etsy: "text-orange-400 bg-orange-400/10 border-orange-400/20",
@@ -68,9 +40,10 @@ const PlatformBadge = ({ platform }) => {
       {platform}
     </Badge>
   );
-};
+}
 
 export default function Orders({ user }) {
+  const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [stores, setStores] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -78,14 +51,19 @@ export default function Orders({ user }) {
   const [storeFilter, setStoreFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [selectedOrders, setSelectedOrders] = useState([]);
+  const [createBatchOpen, setCreateBatchOpen] = useState(false);
+  const [batchName, setBatchName] = useState("");
+  const [showOnlyUnbatched, setShowOnlyUnbatched] = useState(true);
 
   const fetchOrders = async () => {
     try {
-      let url = `${API}/orders`;
+      let url = API + "/orders";
       const params = new URLSearchParams();
       if (storeFilter !== "all") params.append("store_id", storeFilter);
       if (statusFilter !== "all") params.append("status", statusFilter);
-      if (params.toString()) url += `?${params.toString()}`;
+      if (showOnlyUnbatched) params.append("unbatched", "true");
+      if (params.toString()) url += "?" + params.toString();
 
       const response = await fetch(url, { credentials: "include" });
       if (response.ok) {
@@ -93,7 +71,6 @@ export default function Orders({ user }) {
         setOrders(data);
       }
     } catch (error) {
-      console.error("Failed to fetch orders:", error);
       toast.error("Failed to load orders");
     } finally {
       setLoading(false);
@@ -102,7 +79,7 @@ export default function Orders({ user }) {
 
   const fetchStores = async () => {
     try {
-      const response = await fetch(`${API}/stores`, { credentials: "include" });
+      const response = await fetch(API + "/stores", { credentials: "include" });
       if (response.ok) {
         const data = await response.json();
         setStores(data);
@@ -115,7 +92,7 @@ export default function Orders({ user }) {
   useEffect(() => {
     fetchOrders();
     fetchStores();
-  }, [storeFilter, statusFilter]);
+  }, [storeFilter, statusFilter, showOnlyUnbatched]);
 
   const filteredOrders = orders.filter((order) => {
     if (!searchTerm) return true;
@@ -139,6 +116,63 @@ export default function Orders({ user }) {
     });
   };
 
+  const handleSelectOrder = (orderId, checked) => {
+    if (checked) {
+      setSelectedOrders([...selectedOrders, orderId]);
+    } else {
+      setSelectedOrders(selectedOrders.filter((id) => id !== orderId));
+    }
+  };
+
+  const handleSelectAll = (checked) => {
+    if (checked) {
+      setSelectedOrders(filteredOrders.map((o) => o.order_id));
+    } else {
+      setSelectedOrders([]);
+    }
+  };
+
+  const handleCreateBatch = async () => {
+    if (selectedOrders.length === 0) {
+      toast.error("No orders selected");
+      return;
+    }
+    if (!batchName.trim()) {
+      toast.error("Please enter a batch name");
+      return;
+    }
+
+    try {
+      const response = await fetch(API + "/batches", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          name: batchName,
+          order_ids: selectedOrders,
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        toast.success(`Batch created with ${result.items_count} items`);
+        setCreateBatchOpen(false);
+        setBatchName("");
+        setSelectedOrders([]);
+        fetchOrders();
+        // Navigate to production page
+        navigate("/production");
+      } else {
+        const error = await response.json();
+        toast.error(error.detail || "Failed to create batch");
+      }
+    } catch (error) {
+      toast.error("Failed to create batch");
+    }
+  };
+
+  const isAllSelected = filteredOrders.length > 0 && selectedOrders.length === filteredOrders.length;
+
   return (
     <div className="space-y-6" data-testid="orders-page">
       {/* Header */}
@@ -146,9 +180,15 @@ export default function Orders({ user }) {
         <div>
           <h1 className="text-3xl font-heading font-bold">Orders</h1>
           <p className="text-muted-foreground mt-1">
-            Manage orders from all connected stores
+            Select orders to send to Frame Production
           </p>
         </div>
+        {selectedOrders.length > 0 && (
+          <Button onClick={() => setCreateBatchOpen(true)} className="gap-2" data-testid="create-batch-btn">
+            <Layers className="w-4 h-4" />
+            Send {selectedOrders.length} Orders to Production
+          </Button>
+        )}
       </div>
 
       {/* Filters */}
@@ -191,9 +231,39 @@ export default function Orders({ user }) {
                 <SelectItem value="completed">Completed</SelectItem>
               </SelectContent>
             </Select>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="unbatched"
+                checked={showOnlyUnbatched}
+                onCheckedChange={setShowOnlyUnbatched}
+                data-testid="unbatched-checkbox"
+              />
+              <label htmlFor="unbatched" className="text-sm text-muted-foreground cursor-pointer">
+                Show only unbatched
+              </label>
+            </div>
           </div>
         </CardContent>
       </Card>
+
+      {/* Selection Info Bar */}
+      {selectedOrders.length > 0 && (
+        <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <CheckSquare className="w-5 h-5 text-primary" />
+            <span className="font-medium">{selectedOrders.length} orders selected</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setSelectedOrders([])}>
+              Clear Selection
+            </Button>
+            <Button size="sm" onClick={() => setCreateBatchOpen(true)} className="gap-2" data-testid="send-to-production-btn">
+              <ArrowRight className="w-4 h-4" />
+              Send to Production
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Orders Table */}
       <Card className="bg-card border-border">
@@ -210,6 +280,8 @@ export default function Orders({ user }) {
               <p className="text-muted-foreground">
                 {searchTerm || storeFilter !== "all" || statusFilter !== "all"
                   ? "Try adjusting your filters"
+                  : showOnlyUnbatched
+                  ? "All orders are already in production batches"
                   : "Orders will appear here when synced from your stores"}
               </p>
             </div>
@@ -217,6 +289,13 @@ export default function Orders({ user }) {
             <Table data-testid="orders-table">
               <TableHeader>
                 <TableRow className="border-border hover:bg-transparent">
+                  <TableHead className="w-12">
+                    <Checkbox
+                      checked={isAllSelected}
+                      onCheckedChange={handleSelectAll}
+                      data-testid="select-all-checkbox"
+                    />
+                  </TableHead>
                   <TableHead className="label-caps">Order ID</TableHead>
                   <TableHead className="label-caps">Store</TableHead>
                   <TableHead className="label-caps">Customer</TableHead>
@@ -231,9 +310,16 @@ export default function Orders({ user }) {
                 {filteredOrders.map((order) => (
                   <TableRow
                     key={order.order_id}
-                    className="border-border hover:bg-muted/30"
+                    className={`border-border hover:bg-muted/30 ${selectedOrders.includes(order.order_id) ? "bg-primary/5" : ""}`}
                     data-testid={`order-row-${order.order_id}`}
                   >
+                    <TableCell>
+                      <Checkbox
+                        checked={selectedOrders.includes(order.order_id)}
+                        onCheckedChange={(checked) => handleSelectOrder(order.order_id, checked)}
+                        data-testid={`select-order-${order.order_id}`}
+                      />
+                    </TableCell>
                     <TableCell>
                       <div>
                         <p className="font-mono text-sm">{order.order_id}</p>
@@ -277,93 +363,14 @@ export default function Orders({ user }) {
                     </TableCell>
                     <TableCell>
                       <Dialog>
-                        <DialogTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setSelectedOrder(order)}
-                            data-testid={`view-order-${order.order_id}`}
-                          >
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-lg">
-                          <DialogHeader>
-                            <DialogTitle className="flex items-center gap-2">
-                              <Package className="w-5 h-5" />
-                              Order Details
-                            </DialogTitle>
-                          </DialogHeader>
-                          {selectedOrder && (
-                            <div className="space-y-4">
-                              <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                  <p className="label-caps mb-1">Order ID</p>
-                                  <p className="font-mono">
-                                    {selectedOrder.order_id}
-                                  </p>
-                                </div>
-                                <div>
-                                  <p className="label-caps mb-1">External ID</p>
-                                  <p className="font-mono">
-                                    {selectedOrder.external_id}
-                                  </p>
-                                </div>
-                                <div>
-                                  <p className="label-caps mb-1">Store</p>
-                                  <p>{selectedOrder.store_name}</p>
-                                </div>
-                                <div>
-                                  <p className="label-caps mb-1">Platform</p>
-                                  <PlatformBadge
-                                    platform={selectedOrder.platform}
-                                  />
-                                </div>
-                              </div>
-                              <div className="border-t border-border pt-4">
-                                <p className="label-caps mb-2">Customer</p>
-                                <p className="font-medium">
-                                  {selectedOrder.customer_name}
-                                </p>
-                                <p className="text-sm text-muted-foreground">
-                                  {selectedOrder.customer_email}
-                                </p>
-                              </div>
-                              <div className="border-t border-border pt-4">
-                                <p className="label-caps mb-2">Items</p>
-                                <div className="space-y-2">
-                                  {selectedOrder.items?.map((item, idx) => (
-                                    <div
-                                      key={idx}
-                                      className="flex justify-between items-center p-2 bg-muted/30 rounded"
-                                    >
-                                      <div>
-                                        <p className="font-medium">
-                                          {item.name}
-                                        </p>
-                                        <p className="text-xs text-muted-foreground font-mono">
-                                          SKU: {item.sku}
-                                        </p>
-                                      </div>
-                                      <Badge variant="outline">
-                                        x{item.qty}
-                                      </Badge>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                              <div className="border-t border-border pt-4 flex justify-between items-center">
-                                <div>
-                                  <p className="label-caps mb-1">Total</p>
-                                  <p className="text-2xl font-heading font-bold">
-                                    ${selectedOrder.total_price?.toFixed(2)}
-                                  </p>
-                                </div>
-                                <StatusBadge status={selectedOrder.status} />
-                              </div>
-                            </div>
-                          )}
-                        </DialogContent>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setSelectedOrder(order)}
+                          data-testid={`view-order-${order.order_id}`}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
                       </Dialog>
                     </TableCell>
                   </TableRow>
@@ -373,6 +380,111 @@ export default function Orders({ user }) {
           )}
         </CardContent>
       </Card>
+
+      {/* Order Details Dialog */}
+      <Dialog open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Package className="w-5 h-5" />
+              Order Details
+            </DialogTitle>
+          </DialogHeader>
+          {selectedOrder && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="label-caps mb-1">Order ID</p>
+                  <p className="font-mono">{selectedOrder.order_id}</p>
+                </div>
+                <div>
+                  <p className="label-caps mb-1">External ID</p>
+                  <p className="font-mono">{selectedOrder.external_id}</p>
+                </div>
+                <div>
+                  <p className="label-caps mb-1">Store</p>
+                  <p>{selectedOrder.store_name}</p>
+                </div>
+                <div>
+                  <p className="label-caps mb-1">Platform</p>
+                  <PlatformBadge platform={selectedOrder.platform} />
+                </div>
+              </div>
+              <div className="border-t border-border pt-4">
+                <p className="label-caps mb-2">Customer</p>
+                <p className="font-medium">{selectedOrder.customer_name}</p>
+                <p className="text-sm text-muted-foreground">{selectedOrder.customer_email}</p>
+              </div>
+              <div className="border-t border-border pt-4">
+                <p className="label-caps mb-2">Items</p>
+                <div className="space-y-2">
+                  {selectedOrder.items?.map((item, idx) => (
+                    <div key={idx} className="flex justify-between items-center p-2 bg-muted/30 rounded">
+                      <div>
+                        <p className="font-medium">{item.name}</p>
+                        <p className="text-xs text-muted-foreground font-mono">SKU: {item.sku}</p>
+                      </div>
+                      <Badge variant="outline">x{item.qty}</Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="border-t border-border pt-4 flex justify-between items-center">
+                <div>
+                  <p className="label-caps mb-1">Total</p>
+                  <p className="text-2xl font-heading font-bold">${selectedOrder.total_price?.toFixed(2)}</p>
+                </div>
+                <StatusBadge status={selectedOrder.status} />
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Batch Dialog */}
+      <Dialog open={createBatchOpen} onOpenChange={setCreateBatchOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Layers className="w-5 h-5" />
+              Create Production Batch
+            </DialogTitle>
+            <DialogDescription>
+              Send {selectedOrders.length} orders to Frame Production
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Batch Name *</label>
+              <Input
+                placeholder="e.g., Morning Batch - Jan 15"
+                value={batchName}
+                onChange={(e) => setBatchName(e.target.value)}
+                data-testid="batch-name-input"
+              />
+            </div>
+            <div className="bg-muted/30 rounded-lg p-4">
+              <p className="text-sm text-muted-foreground mb-2">Selected Orders:</p>
+              <div className="flex flex-wrap gap-2">
+                {selectedOrders.slice(0, 5).map((id) => (
+                  <Badge key={id} variant="secondary" className="font-mono text-xs">
+                    {id}
+                  </Badge>
+                ))}
+                {selectedOrders.length > 5 && (
+                  <Badge variant="secondary">+{selectedOrders.length - 5} more</Badge>
+                )}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreateBatchOpen(false)}>Cancel</Button>
+            <Button onClick={handleCreateBatch} data-testid="confirm-create-batch-btn">
+              Create Batch
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Summary */}
       {filteredOrders.length > 0 && (
