@@ -519,16 +519,18 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
           {stores.map((store) => {
             const status = syncStatus.find(s => s.store_id === store.store_id);
             const isDropship = store.platform === "dropship";
-            const isEtsy = store.platform === "etsy";
+            const isShipstation = store.platform === "shipstation";
             const platformStyles = {
               shopify: { bg: 'rgba(34, 197, 94, 0.1)', color: '#22c55e', badgeClass: 'text-green-400 bg-green-400/10 border-green-400/20' },
               etsy: { bg: 'rgba(249, 115, 22, 0.1)', color: '#f97316', badgeClass: 'text-orange-400 bg-orange-400/10 border-orange-400/20' },
               dropship: { bg: 'rgba(168, 85, 247, 0.1)', color: '#a855f7', badgeClass: 'text-purple-400 bg-purple-400/10 border-purple-400/20' },
+              shipstation: { bg: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6', badgeClass: 'text-blue-400 bg-blue-400/10 border-blue-400/20' },
             };
             const style = platformStyles[store.platform] || platformStyles.shopify;
+            const platformLabel = isShipstation ? (store.shipstation_marketplace || 'ShipStation') : (isDropship ? 'CSV' : store.platform);
             
             return (
-              <Card key={store.store_id} className={`bg-card border-border ${isDropship ? 'border-purple-500/30' : ''}`}>
+              <Card key={store.store_id} className={`bg-card border-border ${isDropship ? 'border-purple-500/30' : ''} ${isShipstation ? 'border-blue-500/30' : ''}`}>
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-3">
@@ -536,6 +538,8 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
                            style={{ backgroundColor: style.bg }}>
                         {isDropship ? (
                           <FileSpreadsheet className="w-5 h-5" style={{ color: style.color }} />
+                        ) : isShipstation ? (
+                          <CloudDownload className="w-5 h-5" style={{ color: style.color }} />
                         ) : (
                           <ShoppingBag className="w-5 h-5" style={{ color: style.color }} />
                         )}
@@ -543,16 +547,16 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
                       <div>
                         <h3 className="font-medium">{store.name}</h3>
                         <p className="text-xs text-muted-foreground">
-                          {isDropship ? 'CSV Upload' : `${status?.order_count || 0} orders`}
+                          {isDropship ? 'CSV Upload' : isShipstation ? 'ShipStation Sync' : `${status?.order_count || 0} orders`}
                         </p>
                       </div>
                     </div>
                     <Badge variant="outline" className={`text-xs ${style.badgeClass}`}>
-                      {isDropship ? 'CSV' : store.platform}
+                      {platformLabel}
                     </Badge>
                   </div>
                   
-                  {!isDropship && status?.last_order_sync && (
+                  {!isDropship && !isShipstation && status?.last_order_sync && (
                     <p className="text-xs text-muted-foreground mb-3">
                       Last sync: {new Date(status.last_order_sync).toLocaleString()}
                     </p>
