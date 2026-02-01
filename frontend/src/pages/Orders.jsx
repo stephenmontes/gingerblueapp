@@ -869,7 +869,7 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <FileSpreadsheet className="w-5 h-5 text-primary" />
+              <FileSpreadsheet className="w-5 h-5 text-purple-400" />
               Upload Orders from CSV
             </DialogTitle>
             <DialogDescription>
@@ -880,25 +880,39 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
           <div className="space-y-4 py-4">
             {/* Store Selection */}
             <div>
-              <Label>Select Store <span className="text-destructive">*</span></Label>
+              <Label>Select Dropship Store <span className="text-destructive">*</span></Label>
               <Select value={csvStoreId} onValueChange={setCsvStoreId}>
                 <SelectTrigger data-testid="csv-store-select">
-                  <SelectValue placeholder="Select a store for these orders" />
+                  <SelectValue placeholder="Select a dropship store" />
                 </SelectTrigger>
                 <SelectContent>
-                  {stores.map((store) => (
-                    <SelectItem key={store.store_id} value={store.store_id}>
-                      <div className="flex items-center gap-2">
-                        <span>{store.name}</span>
-                        <Badge variant="outline" className="text-xs capitalize">{store.platform}</Badge>
-                      </div>
+                  {dropshipStores.length > 0 ? (
+                    dropshipStores.map((store) => (
+                      <SelectItem key={store.store_id} value={store.store_id}>
+                        <div className="flex items-center gap-2">
+                          <FileSpreadsheet className="w-4 h-4 text-purple-400" />
+                          <span className="font-medium">{store.name}</span>
+                          <Badge variant="outline" className="text-xs text-purple-400 bg-purple-400/10 border-purple-400/20">CSV</Badge>
+                        </div>
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="_none" disabled>
+                      No dropship stores found - add one in Settings
                     </SelectItem>
-                  ))}
+                  )}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground mt-1">
-                Choose the store these orders belong to (e.g., Antique Farmhouse)
-              </p>
+              {dropshipStores.length === 0 && (
+                <p className="text-xs text-amber-400 mt-1">
+                  No dropship stores configured. Go to Settings → Add Store → Select "Dropship (CSV Upload)"
+                </p>
+              )}
+              {dropshipStores.length > 0 && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Choose the store these orders belong to
+                </p>
+              )}
             </div>
 
             {/* File Upload */}
@@ -920,6 +934,14 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
                   {csvFile.name} ({(csvFile.size / 1024).toFixed(1)} KB)
                 </p>
               )}
+            </div>
+
+            {/* Expected Format */}
+            <div className="bg-purple-500/10 rounded-lg p-4 border border-purple-500/20">
+              <p className="text-sm font-medium text-purple-100 mb-2">Antique Farmhouse Format</p>
+              <p className="text-xs text-purple-300 font-mono">
+                Order Number, Full Name, Address 1, City, State, Zip, Item Number, Price, Qty, Order Comments, Order Date
+              </p>
             </div>
 
             {/* Template Download */}
