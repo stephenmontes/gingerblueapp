@@ -172,6 +172,7 @@ export function FulfillmentStageTab({ stage, stages, onRefresh, onTimerChange })
         onMarkShipped={markShipped}
         onShowInventory={setInventoryDialogOrder}
         onOpenWorksheet={setWorksheetOrder}
+        onTimerChange={onTimerChange}
       />
       <InventoryDialog order={inventoryDialogOrder} onClose={() => setInventoryDialogOrder(null)} />
       <OrderWorksheet
@@ -202,23 +203,27 @@ function OrdersView({
   onBulkMoveOrders,
   onMarkShipped,
   onShowInventory,
-  onOpenWorksheet
+  onOpenWorksheet,
+  onTimerChange
 }) {
   return (
     <Card className="bg-card border-border">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: stage.color }} />
-            {stage.name}
-            <Badge variant="secondary">{orders.length} orders</Badge>
-            {outOfStockCount > 0 && (
-              <Badge variant="outline" className="border-orange-500 text-orange-500 gap-1">
-                <AlertTriangle className="w-3 h-3" />
-                {outOfStockCount} low stock
-              </Badge>
-            )}
-          </CardTitle>
+          <div className="flex items-center gap-4">
+            <CardTitle className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: stage.color }} />
+              {stage.name}
+              <Badge variant="secondary">{orders.length} orders</Badge>
+              {outOfStockCount > 0 && (
+                <Badge variant="outline" className="border-orange-500 text-orange-500 gap-1">
+                  <AlertTriangle className="w-3 h-3" />
+                  {outOfStockCount} low stock
+                </Badge>
+              )}
+            </CardTitle>
+            <FulfillmentStageTimer stage={stage} onTimerChange={onTimerChange} />
+          </div>
           
           {selectedOrders.length > 0 && (
             <div className="flex items-center gap-2">
