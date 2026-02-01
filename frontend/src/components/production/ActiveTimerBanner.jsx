@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Clock, StopCircle, Play, Pause } from "lucide-react";
 import { toast } from "sonner";
+import { UserStageStats } from "./UserStageStats";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = BACKEND_URL + "/api";
