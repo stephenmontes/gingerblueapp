@@ -328,7 +328,7 @@ export default function Orders({ user }) {
   };
 
   const isAllSelected = sortedOrders.length > 0 && selectedOrders.length === sortedOrders.length;
-  const shopifyStores = stores.filter(s => s.platform === "shopify");
+  const syncableStores = stores.filter(s => s.platform === "shopify" || s.platform === "etsy");
 
   return (
     <div className="space-y-6" data-testid="orders-page">
