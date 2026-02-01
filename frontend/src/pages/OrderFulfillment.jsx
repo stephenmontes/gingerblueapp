@@ -11,7 +11,7 @@ import { FulfillmentKpiBanner } from "@/components/fulfillment/FulfillmentKpiBan
 import { OrderKpiReport } from "@/components/fulfillment/OrderKpiReport";
 import { TimeEntryManager } from "@/components/fulfillment/TimeEntryManager";
 import { DailyLimitWarning } from "@/components/fulfillment/DailyLimitWarning";
-import { UserDateReport } from "@/components/fulfillment/UserDateReport";
+import { UserDateReport } from "@/components/fulfillment/UserDateReport/index";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
