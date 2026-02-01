@@ -211,6 +211,18 @@ function AppRouter() {
         }
       />
       <Route
+        path="/fulfillment"
+        element={
+          <ProtectedRoute>
+            {({ user, setUser }) => (
+              <Layout user={user} setUser={setUser}>
+                <OrderFulfillment user={user} />
+              </Layout>
+            )}
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/inventory"
         element={
           <ProtectedRoute>
