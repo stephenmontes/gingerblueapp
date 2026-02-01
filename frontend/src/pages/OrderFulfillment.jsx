@@ -49,6 +49,11 @@ export default function OrderFulfillment() {
     loadData();
   }
 
+  function handleLogout() {
+    // Redirect to logout
+    window.location.href = `${API}/auth/logout`;
+  }
+
   async function loadData() {
     try {
       const [stagesRes, summaryRes] = await Promise.all([
