@@ -322,15 +322,15 @@ export default function Products() {
               </p>
             </div>
           ) : (
-            <Table>
+            <Table data-testid="products-table">
               <TableHeader>
                 <TableRow className="border-border">
                   <TableHead className="w-16">Image</TableHead>
-                  <TableHead>Product</TableHead>
+                  <SortableHeader column="title">Product</SortableHeader>
                   <TableHead>Variants</TableHead>
-                  <TableHead>Vendor</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Status</TableHead>
+                  <SortableHeader column="vendor">Vendor</SortableHeader>
+                  <SortableHeader column="product_type">Type</SortableHeader>
+                  <SortableHeader column="status">Status</SortableHeader>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
