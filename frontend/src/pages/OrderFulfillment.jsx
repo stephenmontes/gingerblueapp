@@ -85,6 +85,9 @@ export default function OrderFulfillment() {
 
   return (
     <div className="space-y-6" data-testid="order-fulfillment-page">
+      {/* Active Timer Banner */}
+      <FulfillmentTimerBanner onTimerChange={handleTimerChange} />
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
