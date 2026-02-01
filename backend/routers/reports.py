@@ -136,10 +136,47 @@ async def get_production_kpis(user: User = Depends(get_current_user)):
     }
 
 @router.get("/stats/users")
-async def get_user_stats(user: User = Depends(get_current_user)):
-    """Get user performance statistics"""
+async def get_user_stats(
+    period: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    user: User = Depends(get_current_user)
+):
+    """Get user performance statistics with optional date filtering
+    
+    period: 'day', 'week', 'month', 'all' or None (defaults to all)
+    start_date/end_date: ISO date strings for custom range (YYYY-MM-DD)
+    """
+    now = datetime.now(timezone.utc)
+    match_query = {"duration_minutes": {"$gt": 0}}
+    
+    # Calculate date range based on period
+    if period == "day":
+        start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        match_query["completed_at"] = {"$gte": start.isoformat()}
+    elif period == "week":
+        start = now - timedelta(days=now.weekday())
+        start = start.replace(hour=0, minute=0, second=0, microsecond=0)
+        match_query["completed_at"] = {"$gte": start.isoformat()}
+    elif period == "month":
+        start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        match_query["completed_at"] = {"$gte": start.isoformat()}
+    elif start_date and end_date:
+        # Custom date range
+        try:
+            start = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
+            end = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+            # Add one day to end to include the full end date
+            end = end + timedelta(days=1)
+            match_query["completed_at"] = {
+                "$gte": start.isoformat(),
+                "$lt": end.isoformat()
+            }
+        except:
+            pass  # Invalid dates, ignore filter
+    
     pipeline = [
-        {"$match": {"duration_minutes": {"$gt": 0}}},
+        {"$match": match_query},
         {"$group": {
             "_id": {"user_id": "$user_id", "user_name": "$user_name"},
             "total_items": {"$sum": "$items_processed"},
