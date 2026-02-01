@@ -13,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Scissors, Package, Check, Loader2, Clock, ArrowRight, AlertTriangle } from "lucide-react";
+import { Scissors, Package, Check, Loader2, Clock, ArrowRight, AlertTriangle, PackagePlus } from "lucide-react";
 import { toast } from "sonner";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
