@@ -289,7 +289,7 @@ async def transform_shipstation_order(
         "external_updated_at": ss_order.get("modifyDate"),
         
         # Tags and flags
-        "tags": [t.get("name") for t in ss_order.get("tagIds", []) if t.get("name")],
+        "tags": [t.get("name") for t in (ss_order.get("tagIds") or []) if t and t.get("name")],
         "is_gift": ss_order.get("gift", False),
         "hold_until_date": ss_order.get("holdUntilDate"),
         
