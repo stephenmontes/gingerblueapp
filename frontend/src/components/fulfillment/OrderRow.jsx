@@ -130,6 +130,7 @@ export function OrderRow({
           onMoveToStage={onMoveToStage}
           onMarkShipped={onMarkShipped}
           onShowInventory={onShowInventory}
+          onOpenWorksheet={onOpenWorksheet}
         />
       </TableCell>
     </TableRow>
