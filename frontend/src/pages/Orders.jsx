@@ -422,6 +422,15 @@ PO-12346,Jane Doe,jane@example.com,FRAME-5X7-BLK,3,Black Frame 5x7,19.99,456 Oak
         <div className="flex items-center gap-2">
           <Button 
             variant="outline" 
+            onClick={() => setCsvUploadOpen(true)}
+            className="gap-2"
+            data-testid="upload-csv-btn"
+          >
+            <Upload className="w-4 h-4" />
+            Upload CSV
+          </Button>
+          <Button 
+            variant="outline" 
             onClick={handleSyncAllStores}
             disabled={syncing !== null}
             className="gap-2"
