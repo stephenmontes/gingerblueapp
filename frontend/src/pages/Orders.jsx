@@ -140,9 +140,9 @@ export default function Orders({ user }) {
   };
 
   const handleSyncAllStores = async () => {
-    const shopifyStores = stores.filter(s => s.platform === "shopify" && s.is_active);
-    if (shopifyStores.length === 0) {
-      toast.error("No active Shopify stores to sync");
+    const activeStores = stores.filter(s => (s.platform === "shopify" || s.platform === "etsy") && s.is_active);
+    if (activeStores.length === 0) {
+      toast.error("No active Shopify or Etsy stores to sync");
       return;
     }
 
@@ -150,7 +150,7 @@ export default function Orders({ user }) {
     let totalSynced = 0;
     let totalCreated = 0;
 
-    for (const store of shopifyStores) {
+    for (const store of activeStores) {
       try {
         const response = await fetch(`${API}/orders/sync/${store.store_id}?days_back=30`, {
           method: "POST",
@@ -166,7 +166,7 @@ export default function Orders({ user }) {
       }
     }
 
-    toast.success(`Synced ${totalSynced} orders from ${shopifyStores.length} stores (${totalCreated} new)`);
+    toast.success(`Synced ${totalSynced} orders from ${activeStores.length} stores (${totalCreated} new)`);
     fetchOrders();
     fetchSyncStatus();
     setSyncing(null);
