@@ -1682,18 +1682,16 @@ async def add_item_to_inventory(item_id: str, user: User = Depends(get_current_u
             await db.inventory.insert_one(rej_item)
         messages.append(f"{qty_rejected} rejected")
     
-    # Mark item as added to inventory
-    await db.production_items.update_one(
-        {"item_id": item_id},
-        {"$set": {"added_to_inventory": True}}
-    )
+    # Remove item from production (Quality Check stage) after adding to inventory
+    await db.production_items.delete_one({"item_id": item_id})
     
     return {
         "message": f"Added to inventory: {', '.join(messages)}",
         "sku": sku,
         "match_key": match_key,
         "good_added": qty_good,
-        "rejected_added": qty_rejected
+        "rejected_added": qty_rejected,
+        "item_removed": True
     }
 
 @api_router.get("/batches/{batch_id}/stats")
