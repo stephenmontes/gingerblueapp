@@ -54,6 +54,10 @@ async def sync_orders_from_shipstation(
         store_name = store_info.get("storeName", f"Store {store_id}")
         marketplace = store_info.get("marketplaceName", "Unknown")
         
+        # Find the local store record to get the correct store_id
+        local_store = await db.stores.find_one({"shipstation_store_id": store_id})
+        local_store_id = local_store.get("store_id") if local_store else f"shipstation_{store_id}"
+        
         # Calculate date range
         start_date = (datetime.now(timezone.utc) - timedelta(days=days_back)).strftime("%Y-%m-%d")
         
