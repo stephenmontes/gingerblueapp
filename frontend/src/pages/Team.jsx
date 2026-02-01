@@ -82,16 +82,16 @@ export default function Team({ user }) {
     }
   };
 
-  const fetchStats = useCallback(async () => {
+  const fetchStats = async (currentPeriod, startDate, endDate) => {
     try {
       let url = `${API}/stats/users`;
       const params = new URLSearchParams();
       
-      if (period === "custom" && customStartDate && customEndDate) {
-        params.append("start_date", customStartDate);
-        params.append("end_date", customEndDate);
-      } else if (period && period !== "all") {
-        params.append("period", period);
+      if (currentPeriod === "custom" && startDate && endDate) {
+        params.append("start_date", startDate);
+        params.append("end_date", endDate);
+      } else if (currentPeriod && currentPeriod !== "all") {
+        params.append("period", currentPeriod);
       }
       
       if (params.toString()) {
@@ -106,27 +106,32 @@ export default function Team({ user }) {
     } catch (error) {
       console.error("Failed to fetch stats:", error);
     }
-  }, [period, customStartDate, customEndDate]);
+  };
 
-  const fetchData = useCallback(async () => {
+  const fetchData = async () => {
     setLoading(true);
     try {
-      await Promise.all([fetchUsers(), fetchStats()]);
+      await Promise.all([
+        fetchUsers(), 
+        fetchStats(period, customStartDate, customEndDate)
+      ]);
     } finally {
       setLoading(false);
     }
-  }, [fetchStats]);
+  };
 
   useEffect(() => {
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Re-fetch stats when period changes (but not on initial mount)
+  // Re-fetch stats when period changes
   useEffect(() => {
     if (!loading) {
-      fetchStats();
+      fetchStats(period, customStartDate, customEndDate);
     }
-  }, [period, customStartDate, customEndDate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [period]);
 
   // Handle period change
   const handlePeriodChange = (value) => {
