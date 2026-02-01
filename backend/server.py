@@ -807,13 +807,13 @@ async def update_item_progress(
     qty_completed: int,
     user: User = Depends(get_current_user)
 ):
-    """Update the completed quantity for an item"""
+    """Update the completed quantity for an item - allows qty > required (e.g., extras in cutting)"""
     item = await db.production_items.find_one({"item_id": item_id}, {"_id": 0})
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
     
-    # Don't allow more completed than required
-    qty_completed = min(qty_completed, item.get("qty_required", 1))
+    # Allow qty_completed to exceed qty_required (for extras/spares)
+    qty_completed = max(0, qty_completed)
     
     status = "completed" if qty_completed >= item.get("qty_required", 1) else "in_progress"
     
