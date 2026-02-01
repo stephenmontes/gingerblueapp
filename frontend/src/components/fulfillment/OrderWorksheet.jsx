@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { ArrowRight, Check, Printer, X, Package, User, Clock, Play, Pause, StopCircle } from "lucide-react";
 import { toast } from "sonner";
+import { SkuLink } from "./SkuLink";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
