@@ -25,6 +25,7 @@ export default function OrderFulfillment() {
   const [timerVersion, setTimerVersion] = useState(0);
   const [showReport, setShowReport] = useState(false);
   const [showTimeManager, setShowTimeManager] = useState(false);
+  const [showUserDateReport, setShowUserDateReport] = useState(false);
 
   useEffect(() => {
     loadData();
