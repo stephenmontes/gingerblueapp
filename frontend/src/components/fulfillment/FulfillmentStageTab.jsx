@@ -21,11 +21,12 @@ import { toast } from "sonner";
 import { OrderRow } from "./OrderRow";
 import { InventoryDialog } from "./InventoryDialog";
 import { OrderWorksheet } from "./OrderWorksheet";
+import { FulfillmentStageTimer } from "./FulfillmentStageTimer";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-export function FulfillmentStageTab({ stage, stages, onRefresh }) {
+export function FulfillmentStageTab({ stage, stages, onRefresh, onTimerChange }) {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrders, setSelectedOrders] = useState([]);
