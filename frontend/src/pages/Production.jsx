@@ -192,7 +192,7 @@ export default function Production() {
       </div>
 
       {/* Active Timer Banner - shows which stage user is tracking */}
-      <ActiveTimerBanner onTimerChange={handleTimerChange} />
+      <ActiveTimerBanner activeTimer={activeTimer} onTimerChange={handleTimerChange} />
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <div className="lg:col-span-1">
