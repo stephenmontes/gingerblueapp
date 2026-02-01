@@ -69,8 +69,8 @@ export default function Products() {
     try {
       const params = new URLSearchParams();
       if (searchQuery) params.append("search", searchQuery);
-      if (selectedStore) params.append("store_id", selectedStore);
-      if (selectedVendor) params.append("vendor", selectedVendor);
+      if (selectedStore && selectedStore !== "all") params.append("store_id", selectedStore);
+      if (selectedVendor && selectedVendor !== "all") params.append("vendor", selectedVendor);
       params.append("skip", pagination.skip.toString());
       params.append("limit", pagination.limit.toString());
 
