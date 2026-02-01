@@ -37,6 +37,11 @@ export function StageContent({ stageData, stages, stageWorkers, onUpdateQty, onM
   return (
     <Card className="bg-card border-border">
       <CardContent className="p-4">
+        {/* Active Workers Display - at the top */}
+        {stageWorkers && stageWorkers.length > 0 && (
+          <ActiveWorkers workers={stageWorkers} />
+        )}
+        
         <StageHeader 
           stageData={stageData} 
           nextStage={nextStage}
@@ -44,11 +49,6 @@ export function StageContent({ stageData, stages, stageWorkers, onUpdateQty, onM
           onRefresh={onRefresh}
           hasActiveTimer={hasActiveTimer}
         />
-        
-        {/* Active Workers Display */}
-        {stageWorkers && stageWorkers.length > 0 && (
-          <ActiveWorkers workers={stageWorkers} />
-        )}
         
         {/* Timer warning if not active */}
         {!hasActiveTimer && items.length > 0 && (
