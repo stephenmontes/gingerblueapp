@@ -2,19 +2,12 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  Table,
-  TableBody,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { ChevronDown, ChevronRight, Clock, Calendar, DollarSign } from "lucide-react";
-import { UserRow } from "./UserRow";
+import { UserList } from "./UserList";
 
 export function DateGroup({ dateData, dailyLimit }) {
   const [isOpen, setIsOpen] = useState(true);
@@ -54,41 +47,22 @@ export function DateGroup({ dateData, dailyLimit }) {
         </div>
       </CollapsibleTrigger>
       <CollapsibleContent>
-        <div className="mt-2 border border-border rounded-lg overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow className="border-border bg-muted/20">
-                <TableHead className="w-8"></TableHead>
-                <TableHead>User</TableHead>
-                <TableHead className="text-right">Hours</TableHead>
-                <TableHead className="text-right">Cost</TableHead>
-                <TableHead className="text-right">Orders</TableHead>
-                <TableHead className="text-right">Items</TableHead>
-                <TableHead>Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {dateData.users.map((userData) => (
-                <UserRow key={userData.user_id} userData={userData} dailyLimit={dailyLimit} />
-              ))}
-            </TableBody>
-          </Table>
-          
-          {/* Subtotal Row */}
-          <div className="flex items-center justify-between p-3 bg-primary/5 border-t border-border">
-            <span className="font-medium text-sm">Subtotal for {dateData.date}</span>
-            <div className="flex items-center gap-6 text-sm">
-              <div className="flex items-center gap-1">
-                <Clock className="w-3 h-3" />
-                <span className="font-bold">{dateData.totalHours.toFixed(1)}h</span>
-              </div>
-              <div className="flex items-center gap-1 text-green-400">
-                <DollarSign className="w-3 h-3" />
-                <span className="font-bold">{dateData.totalCost.toFixed(2)}</span>
-              </div>
-              <span>{dateData.totalOrders} orders</span>
-              <span>{dateData.totalItems} items</span>
+        <UserList users={dateData.users} dailyLimit={dailyLimit} />
+        
+        {/* Subtotal Row */}
+        <div className="flex items-center justify-between p-3 bg-primary/5 border-t border-border mt-2 rounded-b-lg">
+          <span className="font-medium text-sm">Subtotal for {dateData.date}</span>
+          <div className="flex items-center gap-6 text-sm">
+            <div className="flex items-center gap-1">
+              <Clock className="w-3 h-3" />
+              <span className="font-bold">{dateData.totalHours.toFixed(1)}h</span>
             </div>
+            <div className="flex items-center gap-1 text-green-400">
+              <DollarSign className="w-3 h-3" />
+              <span className="font-bold">{dateData.totalCost.toFixed(2)}</span>
+            </div>
+            <span>{dateData.totalOrders} orders</span>
+            <span>{dateData.totalItems} items</span>
           </div>
         </div>
       </CollapsibleContent>
