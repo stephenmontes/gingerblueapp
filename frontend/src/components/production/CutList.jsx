@@ -1,6 +1,8 @@
-import { useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -9,10 +11,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Scissors, Package } from "lucide-react";
+import { Scissors, Package, Check, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
-// Size order for sorting
-const SIZE_ORDER = ["S", "L", "XL", "HS", "HX", "XX", "XXX"];
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const API = `${BACKEND_URL}/api`;
 
 // Color code mappings for display
 const COLOR_NAMES = {
@@ -28,114 +31,130 @@ const COLOR_NAMES = {
   "O": "Orange",
   "T": "Tan",
   "C": "Cream",
+  "UNK": "Unknown",
 };
-
-// Extract size and color from SKU
-// SKU format: BWF-AD-1225-HS-W (size is second to last, color is last)
-function parseSKU(sku) {
-  if (!sku) return { size: "Unknown", color: "Unknown" };
-  
-  const parts = sku.split("-");
-  if (parts.length < 2) return { size: "Unknown", color: "Unknown" };
-  
-  const color = parts[parts.length - 1] || "Unknown";
-  const size = parts[parts.length - 2] || "Unknown";
-  
-  return { size, color };
-}
 
 // Get color display name
 function getColorName(code) {
   return COLOR_NAMES[code] || code;
 }
 
-// Get size sort index
-function getSizeIndex(size) {
-  const idx = SIZE_ORDER.indexOf(size);
-  return idx >= 0 ? idx : SIZE_ORDER.length; // Unknown sizes go last
-}
+export function CutList({ batch }) {
+  const [cutListData, setCutListData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState({});
 
-export function CutList({ batchDetails }) {
-  // Aggregate items by size and color
-  const { aggregatedItems, sizeGroups, grandTotal } = useMemo(() => {
-    if (!batchDetails || !batchDetails.orders) {
-      return { aggregatedItems: [], sizeGroups: [], grandTotal: 0 };
-    }
-
-    // Collect all items from all orders
-    const itemMap = new Map(); // key: "size-color", value: { size, color, quantity, items: [] }
+  const fetchCutList = useCallback(async () => {
+    if (!batch?.batch_id) return;
     
-    batchDetails.orders.forEach(order => {
-      const items = order.items || [];
-      items.forEach(item => {
-        const { size, color } = parseSKU(item.sku);
-        const key = `${size}-${color}`;
-        const qty = item.quantity || item.qty || 1;
-        
-        if (itemMap.has(key)) {
-          const existing = itemMap.get(key);
-          existing.quantity += qty;
-          existing.items.push({
-            sku: item.sku,
-            name: item.name || item.title,
-            quantity: qty,
-            orderId: order.order_id,
-            orderNumber: order.order_number
-          });
-        } else {
-          itemMap.set(key, {
-            size,
-            color,
-            quantity: qty,
-            items: [{
-              sku: item.sku,
-              name: item.name || item.title,
-              quantity: qty,
-              orderId: order.order_id,
-              orderNumber: order.order_number
-            }]
-          });
-        }
+    try {
+      const res = await fetch(`${API}/batches/${batch.batch_id}/cut-list`, {
+        credentials: "include"
       });
-    });
-
-    // Convert to array and sort by size order, then by color
-    const aggregated = Array.from(itemMap.values()).sort((a, b) => {
-      const sizeCompare = getSizeIndex(a.size) - getSizeIndex(b.size);
-      if (sizeCompare !== 0) return sizeCompare;
-      return a.color.localeCompare(b.color);
-    });
-
-    // Group by size for subtotals
-    const sizeMap = new Map();
-    aggregated.forEach(item => {
-      if (sizeMap.has(item.size)) {
-        sizeMap.get(item.size).push(item);
-      } else {
-        sizeMap.set(item.size, [item]);
+      if (res.ok) {
+        const data = await res.json();
+        setCutListData(data);
       }
-    });
+    } catch (err) {
+      console.error("Failed to load cut list:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [batch?.batch_id]);
 
-    // Create size groups array sorted by size order
-    const groups = Array.from(sizeMap.entries())
-      .sort((a, b) => getSizeIndex(a[0]) - getSizeIndex(b[0]))
-      .map(([size, items]) => ({
+  useEffect(() => {
+    fetchCutList();
+  }, [fetchCutList]);
+
+  const handleUpdateItem = async (size, color, qtyMade, completed) => {
+    const key = `${size}-${color}`;
+    setUpdating(prev => ({ ...prev, [key]: true }));
+    
+    try {
+      const params = new URLSearchParams({
         size,
-        items,
-        subtotal: items.reduce((sum, item) => sum + item.quantity, 0)
-      }));
+        color,
+        qty_made: qtyMade.toString(),
+        completed: completed.toString()
+      });
+      
+      const res = await fetch(
+        `${API}/batches/${batch.batch_id}/cut-list/item?${params}`,
+        {
+          method: "PUT",
+          credentials: "include"
+        }
+      );
+      
+      if (res.ok) {
+        // Update local state
+        setCutListData(prev => {
+          if (!prev) return prev;
+          
+          const newGroups = prev.size_groups.map(group => ({
+            ...group,
+            items: group.items.map(item => {
+              if (item.size === size && item.color === color) {
+                return { ...item, qty_made: qtyMade, completed };
+              }
+              return item;
+            }),
+            subtotal_made: group.items.reduce((sum, item) => {
+              if (item.size === size && item.color === color) {
+                return sum + qtyMade;
+              }
+              return sum + item.qty_made;
+            }, 0)
+          }));
+          
+          return {
+            ...prev,
+            size_groups: newGroups,
+            grand_total_made: newGroups.reduce(
+              (sum, g) => sum + g.subtotal_made,
+              0
+            )
+          };
+        });
+      } else {
+        toast.error("Failed to update item");
+      }
+    } catch (err) {
+      toast.error("Failed to update item");
+    } finally {
+      setUpdating(prev => ({ ...prev, [key]: false }));
+    }
+  };
 
-    // Calculate grand total
-    const total = aggregated.reduce((sum, item) => sum + item.quantity, 0);
+  // Debounced qty change handler
+  const handleQtyChange = (size, color, value, currentCompleted) => {
+    const qty = parseInt(value) || 0;
+    handleUpdateItem(size, color, qty, currentCompleted);
+  };
 
-    return {
-      aggregatedItems: aggregated,
-      sizeGroups: groups,
-      grandTotal: total
-    };
-  }, [batchDetails]);
+  const handleCompletedChange = (size, color, checked, currentQty) => {
+    handleUpdateItem(size, color, currentQty, checked);
+  };
 
-  if (!batchDetails || sizeGroups.length === 0) {
+  if (loading) {
+    return (
+      <Card className="bg-card border-border">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Scissors className="w-5 h-5" />
+            Cut List
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!cutListData || cutListData.size_groups.length === 0) {
     return (
       <Card className="bg-card border-border">
         <CardHeader className="pb-3">
@@ -154,6 +173,8 @@ export function CutList({ batchDetails }) {
     );
   }
 
+  const { size_groups, grand_total_required, grand_total_made } = cutListData;
+
   return (
     <Card className="bg-card border-border" data-testid="cut-list">
       <CardHeader className="pb-3">
@@ -162,37 +183,57 @@ export function CutList({ batchDetails }) {
             <Scissors className="w-5 h-5" />
             Cut List
           </div>
-          <Badge variant="secondary" className="text-base px-3 py-1">
-            Total: {grandTotal} items
-          </Badge>
+          <div className="flex items-center gap-3">
+            <Badge variant="outline" className="text-sm px-3 py-1">
+              Made: {grand_total_made} / {grand_total_required}
+            </Badge>
+            <Badge 
+              variant={grand_total_made >= grand_total_required ? "default" : "secondary"} 
+              className="text-sm px-3 py-1"
+            >
+              {Math.round((grand_total_made / grand_total_required) * 100) || 0}%
+            </Badge>
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent>
         <Table>
           <TableHeader>
             <TableRow className="border-border">
-              <TableHead className="w-24">Size</TableHead>
-              <TableHead className="w-24">Color</TableHead>
-              <TableHead className="text-right w-24">Quantity</TableHead>
+              <TableHead className="w-20">Size</TableHead>
+              <TableHead className="w-28">Color</TableHead>
+              <TableHead className="text-center w-24">Required</TableHead>
+              <TableHead className="text-center w-28">Qty Made</TableHead>
+              <TableHead className="text-center w-24">Done</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sizeGroups.map((group, groupIndex) => (
-              <SizeGroupRows 
+            {size_groups.map((group, groupIndex) => (
+              <SizeGroupRows
                 key={group.size}
                 group={group}
-                groupIndex={groupIndex}
-                isLast={groupIndex === sizeGroups.length - 1}
+                isLast={groupIndex === size_groups.length - 1}
+                updating={updating}
+                onQtyChange={handleQtyChange}
+                onCompletedChange={handleCompletedChange}
               />
             ))}
             
             {/* Grand Total row */}
             <TableRow className="bg-primary/10 border-t-2 border-primary/30 font-bold">
-              <TableCell colSpan={2} className="text-right text-lg">
+              <TableCell colSpan={2} className="text-right text-base">
                 Grand Total:
               </TableCell>
-              <TableCell className="text-right font-mono text-lg text-primary">
-                {grandTotal}
+              <TableCell className="text-center font-mono text-base">
+                {grand_total_required}
+              </TableCell>
+              <TableCell className="text-center font-mono text-base text-primary">
+                {grand_total_made}
+              </TableCell>
+              <TableCell className="text-center">
+                {grand_total_made >= grand_total_required && (
+                  <Check className="w-5 h-5 text-green-500 mx-auto" />
+                )}
               </TableCell>
             </TableRow>
           </TableBody>
@@ -203,48 +244,89 @@ export function CutList({ batchDetails }) {
 }
 
 // Component to render rows for each size group
-function SizeGroupRows({ group, groupIndex, isLast }) {
+function SizeGroupRows({ group, isLast, updating, onQtyChange, onCompletedChange }) {
   return (
     <>
       {/* Items in this size group */}
-      {group.items.map((item, itemIndex) => (
-        <TableRow 
-          key={`${item.size}-${item.color}`}
-          className="border-border hover:bg-muted/30"
-        >
-          <TableCell className="font-medium">
-            {itemIndex === 0 ? (
-              <Badge variant="outline" className="font-mono">
-                {item.size}
-              </Badge>
-            ) : null}
-          </TableCell>
-          <TableCell>
-            <span className="flex items-center gap-2">
-              <ColorDot color={item.color} />
-              {getColorName(item.color)}
-            </span>
-          </TableCell>
-          <TableCell className="text-right font-mono font-semibold">
-            {item.quantity}
-          </TableCell>
-        </TableRow>
-      ))}
-      
+      {group.items.map((item, itemIndex) => {
+        const key = `${item.size}-${item.color}`;
+        const isUpdating = updating[key];
+        const isComplete = item.completed || item.qty_made >= item.qty_required;
+        
+        return (
+          <TableRow
+            key={key}
+            className={`border-border hover:bg-muted/30 ${isComplete ? "bg-green-500/5" : ""}`}
+          >
+            <TableCell className="font-medium">
+              {itemIndex === 0 ? (
+                <Badge variant="outline" className="font-mono">
+                  {item.size}
+                </Badge>
+              ) : null}
+            </TableCell>
+            <TableCell>
+              <span className="flex items-center gap-2">
+                <ColorDot color={item.color} />
+                {getColorName(item.color)}
+              </span>
+            </TableCell>
+            <TableCell className="text-center font-mono">
+              {item.qty_required}
+            </TableCell>
+            <TableCell className="text-center">
+              <Input
+                type="number"
+                min="0"
+                value={item.qty_made}
+                onChange={(e) => onQtyChange(item.size, item.color, e.target.value, item.completed)}
+                className="w-20 mx-auto text-center font-mono h-8"
+                disabled={isUpdating}
+                data-testid={`qty-made-${key}`}
+              />
+            </TableCell>
+            <TableCell className="text-center">
+              <div className="flex items-center justify-center">
+                <Checkbox
+                  checked={item.completed}
+                  onCheckedChange={(checked) => 
+                    onCompletedChange(item.size, item.color, checked, item.qty_made)
+                  }
+                  disabled={isUpdating}
+                  data-testid={`completed-${key}`}
+                  className="h-5 w-5"
+                />
+                {isUpdating && (
+                  <Loader2 className="w-4 h-4 ml-2 animate-spin text-muted-foreground" />
+                )}
+              </div>
+            </TableCell>
+          </TableRow>
+        );
+      })}
+
       {/* Subtotal row for this size group */}
       <TableRow className="bg-muted/50 border-border font-semibold">
         <TableCell colSpan={2} className="text-right">
           {group.size} Subtotal:
         </TableCell>
-        <TableCell className="text-right font-mono text-primary">
-          {group.subtotal}
+        <TableCell className="text-center font-mono">
+          {group.subtotal_required}
+        </TableCell>
+        <TableCell className="text-center font-mono text-primary">
+          {group.subtotal_made}
+        </TableCell>
+        <TableCell className="text-center">
+          {group.subtotal_made >= group.subtotal_required && (
+            <Check className="w-4 h-4 text-green-500 mx-auto" />
+          )}
         </TableCell>
       </TableRow>
-      
+
       {/* Spacer between groups */}
       {!isLast && (
         <TableRow className="h-2 border-0">
-          <TableCell colSpan={3} className="p-0"></TableCell>
+          <TableCell colSpan={5} className="p-0"></TableCell>
         </TableRow>
       )}
     </>
@@ -266,17 +348,18 @@ function ColorDot({ color }) {
     "O": "#F97316",
     "T": "#A3826E",
     "C": "#FFFDD0",
+    "UNK": "#6B7280",
   };
-  
+
   const bgColor = colorMap[color] || "#6B7280";
-  const isWhite = color === "W" || color === "C";
-  
+  const isLight = color === "W" || color === "C" || color === "Y";
+
   return (
-    <span 
+    <span
       className="w-4 h-4 rounded-full inline-block border"
-      style={{ 
+      style={{
         backgroundColor: bgColor,
-        borderColor: isWhite ? "#d1d5db" : bgColor
+        borderColor: isLight ? "#d1d5db" : bgColor,
       }}
     />
   );
