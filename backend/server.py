@@ -21,7 +21,8 @@ from routers import (
     inventory_router,
     reports_router,
     exports_router,
-    fulfillment_router
+    fulfillment_router,
+    fulfillment_timers_router
 )
 
 # Configure logging
