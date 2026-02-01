@@ -444,18 +444,22 @@ function WorksheetTimer({ activeTimer, currentStage, timerLoading, onStart, onPa
 
   if (!hasTimerForThisStage) {
     return (
-      <div className="p-3 bg-muted/30 border border-border rounded-lg mb-4">
+      <div className="p-4 bg-primary/5 border-2 border-dashed border-primary/30 rounded-lg mb-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-muted-foreground text-sm">
-            <Clock className="w-4 h-4" />
-            <span>Track your time on this worksheet</span>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <Clock className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <p className="font-medium">Timer Required</p>
+              <p className="text-sm text-muted-foreground">Start tracking your time on this order</p>
+            </div>
           </div>
           <Button 
-            size="sm" 
-            variant="outline" 
+            size="default" 
             onClick={onStart}
             disabled={timerLoading}
-            className="gap-1"
+            className="gap-2"
             data-testid="worksheet-start-timer"
           >
             <Play className="w-4 h-4" />
