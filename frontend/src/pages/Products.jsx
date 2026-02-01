@@ -90,7 +90,7 @@ export default function Products() {
 
   const loadStats = useCallback(async () => {
     try {
-      const params = selectedStore ? `?store_id=${selectedStore}` : "";
+      const params = selectedStore && selectedStore !== "all" ? `?store_id=${selectedStore}` : "";
       const res = await fetch(`${API}/products/stats${params}`, { credentials: "include" });
       if (res.ok) {
         const data = await res.json();
