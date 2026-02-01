@@ -157,6 +157,28 @@ export default function OrderFulfillment() {
         )
       ))}
 
+      {/* Order KPI Report Toggle */}
+      <div className="pt-4 border-t border-border">
+        <Button
+          variant="outline"
+          onClick={() => setShowReport(!showReport)}
+          className="w-full justify-between"
+          data-testid="toggle-order-report"
+        >
+          <span className="flex items-center gap-2">
+            <FileText className="w-4 h-4" />
+            Order Time & Cost Report
+          </span>
+          {showReport ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+        </Button>
+        
+        {showReport && (
+          <div className="mt-4">
+            <OrderKpiReport />
+          </div>
+        )}
+      </div>
+
       {/* Stage Orders Popup */}
       <StageOrdersPopup 
         stage={popupStage} 
