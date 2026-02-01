@@ -712,9 +712,14 @@ export default function Orders({ user }) {
       </Dialog>
 
       {/* Summary */}
-      {filteredOrders.length > 0 && (
+      {sortedOrders.length > 0 && (
         <div className="text-sm text-muted-foreground text-center">
-          Showing {filteredOrders.length} of {orders.length} orders
+          Showing {sortedOrders.length} of {orders.length} orders
+          {sortColumn !== "created_at" && (
+            <span className="ml-2">
+              • Sorted by {sortColumn.replace("_", " ")} ({sortDirection === "asc" ? "ascending" : "descending"})
+            </span>
+          )}
         </div>
       )}
     </div>
