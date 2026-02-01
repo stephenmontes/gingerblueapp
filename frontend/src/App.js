@@ -45,6 +45,10 @@ const AuthCallback = () => {
           
           if (response.ok) {
             const user = await response.json();
+            // Store user in sessionStorage for persistence
+            sessionStorage.setItem("shopfactory_user", JSON.stringify(user));
+            // Clear the hash from URL
+            window.history.replaceState(null, "", "/dashboard");
             navigate("/dashboard", { state: { user }, replace: true });
           } else {
             console.error("Auth failed");
@@ -84,9 +88,14 @@ const ProtectedRoute = ({ children }) => {
     if (location.state?.user) {
       setUser(location.state.user);
       setIsAuthenticated(true);
+      // Clear location state to avoid reusing stale data
+      window.history.replaceState({}, document.title);
       return;
     }
 
+    // Check sessionStorage for cached user
+    const cachedUser = sessionStorage.getItem("shopfactory_user");
+    
     const checkAuth = async () => {
       try {
         const response = await fetch(`${API}/auth/me`, {
@@ -97,7 +106,34 @@ const ProtectedRoute = ({ children }) => {
           const userData = await response.json();
           setUser(userData);
           setIsAuthenticated(true);
+          // Update session storage
+          sessionStorage.setItem("shopfactory_user", JSON.stringify(userData));
         } else {
+          // Clear session storage on auth failure
+          sessionStorage.removeItem("shopfactory_user");
+          setIsAuthenticated(false);
+          navigate("/login", { replace: true });
+        }
+      } catch (error) {
+        console.error("Auth check error:", error);
+        // If we have cached user data, use it temporarily
+        if (cachedUser) {
+          try {
+            setUser(JSON.parse(cachedUser));
+            setIsAuthenticated(true);
+            return;
+          } catch (e) {
+            // Invalid cached data
+          }
+        }
+        sessionStorage.removeItem("shopfactory_user");
+        setIsAuthenticated(false);
+        navigate("/login", { replace: true });
+      }
+    };
+
+    checkAuth();
+  }, [location, navigate]);
           setIsAuthenticated(false);
           navigate("/login", { replace: true });
         }
