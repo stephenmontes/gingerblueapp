@@ -12,6 +12,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   BarChart,
   Bar,
   XAxis,
@@ -34,6 +40,9 @@ import {
   RefreshCw,
   BarChart3,
   Activity,
+  Download,
+  FileText,
+  FileSpreadsheet,
 } from "lucide-react";
 import { toast } from "sonner";
 
