@@ -92,11 +92,11 @@ export function FulfillmentTimerBanner({ onTimerChange }) {
             <Clock className={`w-5 h-5 ${isPaused ? "text-yellow-400" : "text-primary animate-pulse"}`} />
           </div>
           <div>
-            <p className="text-sm font-medium">
-              Fulfillment Timer {isPaused ? "paused" : "active"}: 
-              <span className={`ml-1 ${isPaused ? "text-yellow-400" : "text-primary"}`}>{activeTimer.stage_name}</span>
-              {isPaused && <Badge variant="outline" className="ml-2 text-xs border-yellow-500 text-yellow-400">PAUSED</Badge>}
-            </p>
+            <div className="text-sm font-medium flex items-center gap-1">
+              <span>Fulfillment Timer {isPaused ? "paused" : "active"}:</span>
+              <span className={`${isPaused ? "text-yellow-400" : "text-primary"}`}>{activeTimer.stage_name}</span>
+              {isPaused && <Badge variant="outline" className="ml-1 text-xs border-yellow-500 text-yellow-400">PAUSED</Badge>}
+            </div>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <LiveTimer 
                 startedAt={activeTimer.started_at} 
