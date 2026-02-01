@@ -74,7 +74,7 @@ export function UserDateReport() {
   }
 
   return (
-    <Card className="bg-card border-border">
+    <Card className="bg-card border-border" data-testid="user-date-report">
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
@@ -82,13 +82,13 @@ export function UserDateReport() {
             Hours by User & Date
           </CardTitle>
           <Select value={period} onValueChange={setPeriod}>
-            <SelectTrigger className="w-36">
+            <SelectTrigger className="w-36" data-testid="period-selector">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="day">Today</SelectItem>
-              <SelectItem value="week">This Week</SelectItem>
-              <SelectItem value="month">This Month</SelectItem>
+              <SelectItem value="day" data-testid="period-today">Today</SelectItem>
+              <SelectItem value="week" data-testid="period-week">This Week</SelectItem>
+              <SelectItem value="month" data-testid="period-month">This Month</SelectItem>
             </SelectContent>
           </Select>
         </div>
