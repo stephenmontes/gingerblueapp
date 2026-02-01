@@ -60,12 +60,16 @@ export function OrderRow({
         />
       </TableCell>
       <TableCell className="font-mono font-medium">
-        <button 
-          onClick={onOpenWorksheet}
-          className="hover:text-primary hover:underline cursor-pointer"
-        >
-          {order.order_number || order.order_id?.slice(-8)}
-        </button>
+        {stage.stage_id !== "fulfill_orders" ? (
+          <button 
+            onClick={onOpenWorksheet}
+            className="hover:text-primary hover:underline cursor-pointer"
+          >
+            {order.order_number || order.order_id?.slice(-8)}
+          </button>
+        ) : (
+          <span>{order.order_number || order.order_id?.slice(-8)}</span>
+        )}
       </TableCell>
       <TableCell>
         <div>
