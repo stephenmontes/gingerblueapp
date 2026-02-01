@@ -184,6 +184,29 @@ class ItemMove(BaseModel):
     new_stage_id: str
     qty_completed: int = 0
 
+# Inventory Models
+class InventoryItem(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    item_id: str = Field(default_factory=lambda: f"inv_{uuid.uuid4().hex[:8]}")
+    sku: str
+    name: str
+    color: Optional[str] = None
+    size: Optional[str] = None
+    quantity: int = 0
+    min_stock: int = 10
+    location: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class InventoryCreate(BaseModel):
+    sku: str
+    name: str
+    color: Optional[str] = None
+    size: Optional[str] = None
+    quantity: int = 0
+    min_stock: int = 10
+    location: Optional[str] = None
+
 # ============== Auth Helpers ==============
 
 async def get_current_user(request: Request) -> User:
