@@ -58,10 +58,10 @@ export function OrderRow({
         </Badge>
       </TableCell>
       <TableCell>
-        {order.batch_id ? (
-          <Badge variant="secondary" className="gap-1 font-mono text-xs">
+        {order.batch_name ? (
+          <Badge variant="secondary" className="gap-1 text-xs">
             <Layers className="w-3 h-3" />
-            {order.batch_name || order.batch_id.slice(-8)}
+            {order.batch_name}
           </Badge>
         ) : (
           <span className="text-muted-foreground text-sm">—</span>
