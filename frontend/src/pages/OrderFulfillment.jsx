@@ -144,6 +144,7 @@ export default function OrderFulfillment() {
               stage={stage}
               stages={stages}
               onRefresh={loadData}
+              onTimerChange={handleTimerChange}
             />
           </TabsContent>
         ))}
