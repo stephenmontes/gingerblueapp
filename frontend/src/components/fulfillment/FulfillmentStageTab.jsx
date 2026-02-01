@@ -21,6 +21,7 @@ import { toast } from "sonner";
 import { OrderRow } from "./OrderRow";
 import { InventoryDialog } from "./InventoryDialog";
 import { OrderWorksheet } from "./OrderWorksheet";
+import { ActiveWorkersBanner } from "./ActiveWorkersBanner";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
