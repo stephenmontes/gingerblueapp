@@ -139,25 +139,46 @@ export default function Settings({ user }) {
   };
 
   const handleTestConnection = async () => {
-    if (formPlatform === "shopify" && (!formUrl || !formToken)) {
-      toast.error("Please enter Shop URL and Access Token to test");
-      return;
+    // When editing, token can be empty (use existing)
+    const needsToken = !editStore; // Only require token for new stores
+    
+    if (formPlatform === "shopify") {
+      if (!formUrl) {
+        toast.error("Please enter Shop URL to test");
+        return;
+      }
+      if (needsToken && !formToken) {
+        toast.error("Please enter Access Token to test");
+        return;
+      }
     }
-    if (formPlatform === "etsy" && (!formShopId || !formApiKey || !formToken)) {
-      toast.error("Please enter Shop ID, API Key, and Access Token to test");
-      return;
+    if (formPlatform === "etsy") {
+      if (!formShopId || !formApiKey) {
+        toast.error("Please enter Shop ID and API Key to test");
+        return;
+      }
+      if (needsToken && !formToken) {
+        toast.error("Please enter Access Token to test");
+        return;
+      }
     }
 
     setTestingConnection(true);
     try {
-      // For new stores, we need to create a temporary test
       const testData = {
         platform: formPlatform,
         shop_url: formUrl,
         shop_id: formShopId,
         api_key: formApiKey,
-        access_token: formToken,
       };
+      
+      // If editing and no new token provided, tell backend to use existing
+      if (editStore && !formToken) {
+        testData.store_id = editStore.store_id;
+        testData.use_existing_token = true;
+      } else {
+        testData.access_token = formToken;
+      }
 
       const res = await fetch(API + "/stores/test-connection", {
         method: "POST",
