@@ -200,7 +200,8 @@ function OrdersView({
   onMoveOrderToStage,
   onBulkMoveOrders,
   onMarkShipped,
-  onShowInventory
+  onShowInventory,
+  onOpenWorksheet
 }) {
   return (
     <Card className="bg-card border-border">
