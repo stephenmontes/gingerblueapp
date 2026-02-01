@@ -8,15 +8,21 @@ import { UserStageStats } from "./UserStageStats";
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = BACKEND_URL + "/api";
 
-export function ActiveTimerBanner({ onTimerChange }) {
-  const [activeTimer, setActiveTimer] = useState(null);
-  const [loading, setLoading] = useState(true);
+export function ActiveTimerBanner({ activeTimer: propTimer, onTimerChange }) {
+  // Use prop timer if provided, otherwise fetch locally
+  const [localTimer, setLocalTimer] = useState(null);
+  const [loading, setLoading] = useState(!propTimer);
+  
+  const activeTimer = propTimer || localTimer;
 
   useEffect(() => {
-    checkActiveTimer();
-    const interval = setInterval(checkActiveTimer, 30000);
-    return () => clearInterval(interval);
-  }, []);
+    // Only fetch locally if no prop timer provided
+    if (!propTimer) {
+      checkActiveTimer();
+      const interval = setInterval(checkActiveTimer, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [propTimer]);
 
   async function checkActiveTimer() {
     try {
@@ -25,7 +31,7 @@ export function ActiveTimerBanner({ onTimerChange }) {
       });
       if (res.ok) {
         const timers = await res.json();
-        setActiveTimer(timers.length > 0 ? timers[0] : null);
+        setLocalTimer(timers.length > 0 ? timers[0] : null);
       }
     } catch (err) {
       console.error("Failed to check timer:", err);
@@ -43,7 +49,6 @@ export function ActiveTimerBanner({ onTimerChange }) {
       );
       if (res.ok) {
         toast.info("Timer paused");
-        checkActiveTimer();
         if (onTimerChange) onTimerChange();
       }
     } catch (err) {
@@ -60,7 +65,6 @@ export function ActiveTimerBanner({ onTimerChange }) {
       );
       if (res.ok) {
         toast.success("Timer resumed");
-        checkActiveTimer();
         if (onTimerChange) onTimerChange();
       }
     } catch (err) {
@@ -77,7 +81,7 @@ export function ActiveTimerBanner({ onTimerChange }) {
       );
       if (res.ok) {
         toast.success("Timer stopped");
-        setActiveTimer(null);
+        setLocalTimer(null);
         if (onTimerChange) onTimerChange();
       }
     } catch (err) {
