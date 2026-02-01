@@ -368,3 +368,116 @@ function WorksheetRow({ item, index, onUpdate, onMarkComplete }) {
     </TableRow>
   );
 }
+
+function WorksheetTimer({ activeTimer, currentStage, timerLoading, onStart, onPause, onResume, onStop }) {
+  const hasTimerForThisStage = activeTimer && activeTimer.stage_id === currentStage?.stage_id;
+  const hasTimerForOtherStage = activeTimer && activeTimer.stage_id !== currentStage?.stage_id;
+  const isPaused = activeTimer?.is_paused;
+
+  if (hasTimerForOtherStage) {
+    return (
+      <div className="p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg mb-4">
+        <div className="flex items-center gap-2 text-yellow-400 text-sm">
+          <Clock className="w-4 h-4" />
+          <span>Timer active for <strong>{activeTimer.stage_name}</strong> - stop it first to start here</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!hasTimerForThisStage) {
+    return (
+      <div className="p-3 bg-muted/30 border border-border rounded-lg mb-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-muted-foreground text-sm">
+            <Clock className="w-4 h-4" />
+            <span>Track your time on this worksheet</span>
+          </div>
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={onStart}
+            disabled={timerLoading}
+            className="gap-1"
+            data-testid="worksheet-start-timer"
+          >
+            <Play className="w-4 h-4" />
+            Start Timer
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`p-3 rounded-lg mb-4 ${isPaused ? "bg-yellow-500/10 border border-yellow-500/30" : "bg-primary/10 border border-primary/30"}`}>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isPaused ? "bg-yellow-500/20" : "bg-primary/20"}`}>
+            <Clock className={`w-4 h-4 ${isPaused ? "text-yellow-400" : "text-primary animate-pulse"}`} />
+          </div>
+          <div>
+            <div className="text-sm font-medium flex items-center gap-2">
+              <span>Timer {isPaused ? "paused" : "running"}</span>
+              {isPaused && <Badge variant="outline" className="text-xs border-yellow-500 text-yellow-400">PAUSED</Badge>}
+            </div>
+            <WorksheetLiveTimer 
+              startedAt={activeTimer.started_at} 
+              isPaused={isPaused}
+              accumulatedMinutes={activeTimer.accumulated_minutes || 0}
+            />
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {isPaused ? (
+            <Button size="sm" onClick={onResume} className="gap-1 bg-green-600 hover:bg-green-700">
+              <Play className="w-4 h-4" /> Resume
+            </Button>
+          ) : (
+            <Button size="sm" variant="secondary" onClick={onPause} className="gap-1">
+              <Pause className="w-4 h-4" /> Pause
+            </Button>
+          )}
+          <Button size="sm" variant="destructive" onClick={onStop} className="gap-1">
+            <StopCircle className="w-4 h-4" /> Stop
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function WorksheetLiveTimer({ startedAt, isPaused, accumulatedMinutes }) {
+  const [elapsed, setElapsed] = useState(0);
+
+  useEffect(() => {
+    if (isPaused) {
+      setElapsed(Math.floor(accumulatedMinutes * 60));
+      return;
+    }
+
+    const start = new Date(startedAt).getTime();
+    const accSec = Math.floor(accumulatedMinutes * 60);
+
+    function tick() {
+      const now = Date.now();
+      const secs = Math.floor((now - start) / 1000) + accSec;
+      setElapsed(secs);
+    }
+
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [startedAt, isPaused, accumulatedMinutes]);
+
+  const hrs = Math.floor(elapsed / 3600);
+  const mins = Math.floor((elapsed % 3600) / 60);
+  const secs = elapsed % 60;
+
+  const formatted = hrs > 0 
+    ? `${hrs}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+    : `${mins}:${String(secs).padStart(2, '0')}`;
+
+  return <span className="font-mono text-sm text-primary">{formatted}</span>;
+}
+
