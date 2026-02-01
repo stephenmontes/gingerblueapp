@@ -686,14 +686,13 @@ async def move_cut_list_item_to_assembly(
             "created_at": now
         })
     
-    # Update cut list progress - reduce qty_made for moved items
+    # Update cut list progress - track moved items
     if moved_count > 0:
         progress = await db.cut_list_progress.find_one({"batch_id": batch_id})
         if progress:
             items = progress.get("items", [])
             for item in items:
-                if item["size"] == size.upper() and item["color"] == color.upper():
-                    # Track moved quantity separately
+                if item["size"].upper() == size.upper() and item["color"].upper() == color.upper():
                     item["qty_moved_to_assembly"] = item.get("qty_moved_to_assembly", 0) + moved_count
                     break
             
@@ -702,11 +701,30 @@ async def move_cut_list_item_to_assembly(
                 {"$set": {"items": items, "updated_at": now}}
             )
     
+    # Get remaining count in cutting for this size/color
+    remaining = await db.production_items.count_documents({
+        "batch_id": batch_id,
+        "current_stage_id": "stage_cutting",
+        "size": {"$regex": f"^{size}$", "$options": "i"},
+        "color": {"$regex": f"^{color}$", "$options": "i"}
+    })
+    
+    if moved_count == 0:
+        return {
+            "message": f"No items to move - all {size}-{color} items already moved or none exist",
+            "moved_count": 0,
+            "size": size,
+            "color": color,
+            "remaining_in_cutting": remaining
+        }
+    
     return {
-        "message": f"Moved {moved_count} items to Assembly",
+        "message": f"Moved {moved_count} {size}-{color} items to Assembly",
         "moved_count": moved_count,
         "size": size,
         "color": color,
-        "to_stage": assembly_stage["name"]
+        "to_stage": assembly_stage["name"],
+        "remaining_in_cutting": remaining
+    }
     }
 
