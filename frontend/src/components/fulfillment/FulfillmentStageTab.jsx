@@ -320,7 +320,7 @@ function OrdersView({
             </CardTitle>
           </div>
           
-          {selectedOrders.length > 0 && (
+          {stage.stage_id === "fulfill_orders" && selectedOrders.length > 0 && (
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">{selectedOrders.length} selected</span>
               <DropdownMenu>
