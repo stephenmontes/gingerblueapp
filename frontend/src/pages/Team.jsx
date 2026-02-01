@@ -19,6 +19,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Users,
   Clock,
   TrendingUp,
@@ -26,8 +32,10 @@ import {
   RefreshCw,
   ShieldCheck,
   User,
+  History,
 } from "lucide-react";
 import { toast } from "sonner";
+import { TimerHistory } from "@/components/TimerHistory";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
