@@ -284,6 +284,7 @@ function OrdersView({
                   onMoveToStage={(stageId) => onMoveOrderToStage(order.order_id, stageId)}
                   onMarkShipped={() => onMarkShipped(order.order_id)}
                   onShowInventory={() => onShowInventory(order)}
+                  onOpenWorksheet={() => onOpenWorksheet(order)}
                 />
               ))}
             </TableBody>
