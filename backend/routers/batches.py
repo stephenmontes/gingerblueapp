@@ -399,3 +399,200 @@ async def get_batch_stats(batch_id: str, user: User = Depends(get_current_user))
         "quality": {"rejection_rate": round(rejection_rate, 1), "rejected_count": total_rejected},
         "user_breakdown": user_breakdown
     }
+
+
+# Cut List Progress Models
+class CutListItemUpdate(BaseModel):
+    size: str
+    color: str
+    qty_made: int
+    completed: bool = False
+
+class CutListUpdate(BaseModel):
+    items: List[CutListItemUpdate]
+
+@router.get("/{batch_id}/cut-list")
+async def get_cut_list(batch_id: str, user: User = Depends(get_current_user)):
+    """Get cut list with progress for a batch - aggregated by size and color"""
+    batch = await db.production_batches.find_one({"batch_id": batch_id}, {"_id": 0})
+    if not batch:
+        raise HTTPException(status_code=404, detail="Batch not found")
+    
+    # Get orders for this batch
+    order_ids = batch.get("order_ids", [])
+    orders = await db.fulfillment_orders.find(
+        {"order_id": {"$in": order_ids}},
+        {"_id": 0}
+    ).to_list(1000)
+    
+    # Get existing cut list progress
+    cut_list_progress = await db.cut_list_progress.find_one(
+        {"batch_id": batch_id},
+        {"_id": 0}
+    )
+    progress_map = {}
+    if cut_list_progress:
+        for item in cut_list_progress.get("items", []):
+            key = f"{item['size']}-{item['color']}"
+            progress_map[key] = item
+    
+    # Size order for sorting
+    SIZE_ORDER = ["S", "L", "XL", "HS", "HX", "XX", "XXX"]
+    
+    # Aggregate items by size and color
+    item_map = {}
+    for order in orders:
+        for item in order.get("items", []):
+            sku = item.get("sku", "")
+            parsed = parse_sku(sku)
+            size = parsed.get("size", "UNK")
+            color = parsed.get("color", "UNK")
+            key = f"{size}-{color}"
+            qty = item.get("quantity") or item.get("qty") or 1
+            
+            if key in item_map:
+                item_map[key]["qty_required"] += qty
+            else:
+                # Get progress if exists
+                progress = progress_map.get(key, {})
+                item_map[key] = {
+                    "size": size,
+                    "color": color,
+                    "qty_required": qty,
+                    "qty_made": progress.get("qty_made", 0),
+                    "completed": progress.get("completed", False)
+                }
+    
+    # Convert to list and sort
+    def get_size_index(size):
+        try:
+            return SIZE_ORDER.index(size)
+        except ValueError:
+            return len(SIZE_ORDER)
+    
+    items = list(item_map.values())
+    items.sort(key=lambda x: (get_size_index(x["size"]), x["color"]))
+    
+    # Group by size for subtotals
+    size_groups = {}
+    for item in items:
+        size = item["size"]
+        if size not in size_groups:
+            size_groups[size] = {
+                "size": size,
+                "items": [],
+                "subtotal_required": 0,
+                "subtotal_made": 0
+            }
+        size_groups[size]["items"].append(item)
+        size_groups[size]["subtotal_required"] += item["qty_required"]
+        size_groups[size]["subtotal_made"] += item["qty_made"]
+    
+    groups = list(size_groups.values())
+    groups.sort(key=lambda x: get_size_index(x["size"]))
+    
+    # Calculate totals
+    grand_total_required = sum(item["qty_required"] for item in items)
+    grand_total_made = sum(item["qty_made"] for item in items)
+    
+    return {
+        "batch_id": batch_id,
+        "size_groups": groups,
+        "grand_total_required": grand_total_required,
+        "grand_total_made": grand_total_made
+    }
+
+@router.put("/{batch_id}/cut-list")
+async def update_cut_list(
+    batch_id: str,
+    update: CutListUpdate,
+    user: User = Depends(get_current_user)
+):
+    """Update cut list progress for a batch"""
+    batch = await db.production_batches.find_one({"batch_id": batch_id})
+    if not batch:
+        raise HTTPException(status_code=404, detail="Batch not found")
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    # Upsert cut list progress
+    await db.cut_list_progress.update_one(
+        {"batch_id": batch_id},
+        {
+            "$set": {
+                "batch_id": batch_id,
+                "items": [item.dict() for item in update.items],
+                "updated_at": now,
+                "updated_by": user.user_id
+            }
+        },
+        upsert=True
+    )
+    
+    return {"message": "Cut list updated", "batch_id": batch_id}
+
+@router.put("/{batch_id}/cut-list/item")
+async def update_cut_list_item(
+    batch_id: str,
+    size: str,
+    color: str,
+    qty_made: int = 0,
+    completed: bool = False,
+    user: User = Depends(get_current_user)
+):
+    """Update a single cut list item"""
+    batch = await db.production_batches.find_one({"batch_id": batch_id})
+    if not batch:
+        raise HTTPException(status_code=404, detail="Batch not found")
+    
+    now = datetime.now(timezone.utc).isoformat()
+    key = f"{size}-{color}"
+    
+    # Get existing progress
+    progress = await db.cut_list_progress.find_one({"batch_id": batch_id})
+    
+    if progress:
+        # Update existing item or add new one
+        items = progress.get("items", [])
+        found = False
+        for item in items:
+            if item["size"] == size and item["color"] == color:
+                item["qty_made"] = qty_made
+                item["completed"] = completed
+                found = True
+                break
+        
+        if not found:
+            items.append({
+                "size": size,
+                "color": color,
+                "qty_made": qty_made,
+                "completed": completed
+            })
+        
+        await db.cut_list_progress.update_one(
+            {"batch_id": batch_id},
+            {
+                "$set": {
+                    "items": items,
+                    "updated_at": now,
+                    "updated_by": user.user_id
+                }
+            }
+        )
+    else:
+        # Create new progress document
+        await db.cut_list_progress.insert_one({
+            "batch_id": batch_id,
+            "items": [{
+                "size": size,
+                "color": color,
+                "qty_made": qty_made,
+                "completed": completed
+            }],
+            "updated_at": now,
+            "updated_by": user.user_id
+        })
+    
+    return {"message": "Item updated", "size": size, "color": color, "qty_made": qty_made, "completed": completed}
+
