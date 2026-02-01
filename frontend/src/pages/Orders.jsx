@@ -34,6 +34,8 @@ function PlatformBadge({ platform }) {
   const colors = {
     shopify: "text-green-400 bg-green-400/10 border-green-400/20",
     etsy: "text-orange-400 bg-orange-400/10 border-orange-400/20",
+    dropship: "text-cyan-400 bg-cyan-400/10 border-cyan-400/20",
+    csv: "text-purple-400 bg-purple-400/10 border-purple-400/20",
   };
 
   return (
