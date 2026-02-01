@@ -944,7 +944,7 @@ async def bulk_move_completed_items(
     user: User = Depends(get_current_user)
 ):
     """Move all completed items from one stage to the next stage.
-    Only moves items where qty_completed >= qty_required."""
+    Each stage is a new task - qty_completed resets to 0 for the next user/stage."""
     
     # Get stages info
     current_stage = await db.production_stages.find_one({"stage_id": move_data.stage_id}, {"_id": 0})
@@ -964,10 +964,17 @@ async def bulk_move_completed_items(
     
     item_ids = [item["item_id"] for item in completed_items]
     
-    # Update all items to the next stage
-    result = await db.production_items.update_many(
+    # Calculate total items processed for timer tracking
+    total_items_processed = sum(item.get("qty_completed", 0) for item in completed_items)
+    
+    # Update all items: move to next stage AND reset qty_completed to 0
+    await db.production_items.update_many(
         {"item_id": {"$in": item_ids}},
-        {"$set": {"current_stage_id": move_data.next_stage_id}}
+        {"$set": {
+            "current_stage_id": move_data.next_stage_id,
+            "qty_completed": 0,  # Reset for next stage
+            "status": "pending"
+        }}
     )
     
     # If user has an active timer for current stage, increment items processed
@@ -980,22 +987,13 @@ async def bulk_move_completed_items(
     if active_timer:
         await db.time_logs.update_one(
             {"log_id": active_timer["log_id"]},
-            {"$inc": {"items_processed": len(item_ids)}}
-        )
-    
-    # Update batch totals for affected batches
-    batch_ids = list(set(item["batch_id"] for item in completed_items))
-    for batch_id in batch_ids:
-        all_items = await db.production_items.find({"batch_id": batch_id}, {"_id": 0}).to_list(10000)
-        total_completed = sum(i.get("qty_completed", 0) for i in all_items)
-        await db.production_batches.update_one(
-            {"batch_id": batch_id},
-            {"$set": {"items_completed": total_completed}}
+            {"$inc": {"items_processed": total_items_processed}}
         )
     
     return {
-        "message": f"Moved {len(item_ids)} items to {next_stage['name']}",
+        "message": f"Moved {len(item_ids)} items to {next_stage['name']} (qty reset to 0)",
         "moved_count": len(item_ids),
+        "items_processed": total_items_processed,
         "next_stage": next_stage["name"]
     }
 
