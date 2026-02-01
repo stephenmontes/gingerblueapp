@@ -447,7 +447,7 @@ export function FrameList({ batch, activeTimer, currentStageId, stages }) {
                   <Check className="w-5 h-5 text-green-500 mx-auto" />
                 )}
               </TableCell>
-              {nextStage && <TableCell></TableCell>}
+              {(nextStage || isQualityCheckStage) && <TableCell></TableCell>}
             </TableRow>
           </TableBody>
         </Table>
