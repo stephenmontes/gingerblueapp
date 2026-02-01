@@ -32,7 +32,8 @@ export function OrderRow({
   onMoveNext,
   onMoveToStage,
   onMarkShipped,
-  onShowInventory
+  onShowInventory,
+  onOpenWorksheet
 }) {
   const navigate = useNavigate();
   const invStatus = order.inventory_status;
@@ -42,9 +43,15 @@ export function OrderRow({
       navigate(`/production?batch=${order.batch_id}`);
     }
   }
+
+  // Calculate completion status
+  const items = order.items || order.line_items || [];
+  const completedItems = items.filter(i => i.is_complete).length;
+  const totalItems = items.length;
+  const isAllComplete = totalItems > 0 && completedItems === totalItems;
   
   return (
-    <TableRow className="border-border">
+    <TableRow className={`border-border ${isAllComplete ? 'bg-green-500/5' : ''}`}>
       <TableCell>
         <Checkbox
           checked={isSelected}
