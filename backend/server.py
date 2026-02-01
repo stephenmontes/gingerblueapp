@@ -165,6 +165,16 @@ class StageTimerStop(BaseModel):
     stage_id: str
     items_processed: int = 0
 
+class StageMove(BaseModel):
+    new_stage_id: str
+    items_processed: int = 1
+
+class TimeLogCreate(BaseModel):
+    stage_id: str
+    stage_name: str
+    action: str
+    items_processed: int = 1
+
 class BatchCreate(BaseModel):
     name: str
     order_ids: List[str]
