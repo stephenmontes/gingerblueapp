@@ -55,6 +55,7 @@ api_router.include_router(exports_router)
 api_router.include_router(fulfillment_router)
 api_router.include_router(fulfillment_timers_router)
 api_router.include_router(products_router)
+api_router.include_router(shipstation_router, prefix="/shipstation", tags=["shipstation"])
 
 # Root endpoint
 @api_router.get("/")
