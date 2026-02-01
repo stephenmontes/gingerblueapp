@@ -427,13 +427,20 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
   }, [filteredOrders, sortColumn, sortDirection]);
 
   // Handle column sort
+  // Handle column sort - fetch from backend with new sort order
   const handleSort = (column) => {
+    let newDirection;
     if (sortColumn === column) {
-      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+      newDirection = sortDirection === "asc" ? "desc" : "asc";
     } else {
-      setSortColumn(column);
-      setSortDirection("asc");
+      // Default to desc (newest first) for date column, asc for others
+      newDirection = column === "created_at" ? "desc" : "asc";
     }
+    setSortColumn(column);
+    setSortDirection(newDirection);
+    setCurrentPage(1);
+    setLoading(true);
+    fetchOrders(1, column, newDirection);
   };
 
   // Sortable header component
