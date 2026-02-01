@@ -121,7 +121,9 @@ export default function Layout({ children, user, setUser }) {
 
           {/* Navigation */}
           <nav className="flex-1 p-4 space-y-1">
-            {navItems.map((item) => (
+            {navItems
+              .filter((item) => !item.roles || item.roles.includes(user?.role))
+              .map((item) => (
               <NavLink
                 key={item.path}
                 to={item.path}
