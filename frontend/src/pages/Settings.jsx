@@ -264,16 +264,23 @@ export default function Settings({ user }) {
             </div>
           ) : (
             <div className="space-y-4">
-              {stores.map((store) => (
+              {stores.map((store) => {
+                const platformStyles = {
+                  shopify: { bg: "bg-green-400/10", text: "text-green-400", border: "border-green-400/20" },
+                  etsy: { bg: "bg-orange-400/10", text: "text-orange-400", border: "border-orange-400/20" },
+                  dropship: { bg: "bg-purple-400/10", text: "text-purple-400", border: "border-purple-400/20" },
+                };
+                const style = platformStyles[store.platform] || platformStyles.dropship;
+                return (
                 <div key={store.store_id} className="flex items-center justify-between p-4 rounded-lg bg-muted/30 border border-border" data-testid={`store-item-${store.store_id}`}>
                   <div className="flex items-center gap-4">
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${store.platform === "shopify" ? "bg-green-400/10" : "bg-orange-400/10"}`}>
-                      {store.platform === "shopify" ? <ShoppingBag className="w-5 h-5 text-green-400" /> : <Store className="w-5 h-5 text-orange-400" />}
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${style.bg}`}>
+                      {store.platform === "shopify" ? <ShoppingBag className={`w-5 h-5 ${style.text}`} /> : <Store className={`w-5 h-5 ${style.text}`} />}
                     </div>
                     <div>
                       <p className="font-semibold">{store.name}</p>
-                      <Badge variant="outline" className={store.platform === "shopify" ? "text-green-400 bg-green-400/10 border-green-400/20" : "text-orange-400 bg-orange-400/10 border-orange-400/20"}>
-                        {store.platform}
+                      <Badge variant="outline" className={`${style.text} ${style.bg} ${style.border}`}>
+                        {store.platform === "dropship" ? "CSV Upload" : store.platform}
                       </Badge>
                     </div>
                   </div>
@@ -283,9 +290,11 @@ export default function Settings({ user }) {
                         <Button variant="ghost" size="sm" onClick={() => openEditStore(store)} data-testid={`edit-store-${store.store_id}`}>
                           <Edit className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleSync(store.store_id)} disabled={syncing[store.store_id]} data-testid={`sync-store-${store.store_id}`}>
-                          {syncing[store.store_id] ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-                        </Button>
+                        {store.platform !== "dropship" && (
+                          <Button variant="ghost" size="sm" onClick={() => handleSync(store.store_id)} disabled={syncing[store.store_id]} data-testid={`sync-store-${store.store_id}`}>
+                            {syncing[store.store_id] ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                          </Button>
+                        )}
                       </>
                     )}
                     {isAdmin && (
