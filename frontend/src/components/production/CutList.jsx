@@ -178,52 +178,12 @@ export function CutList({ batchDetails }) {
           </TableHeader>
           <TableBody>
             {sizeGroups.map((group, groupIndex) => (
-              <>
-                {/* Items in this size group */}
-                {group.items.map((item, itemIndex) => (
-                  <TableRow 
-                    key={`${item.size}-${item.color}`}
-                    className="border-border hover:bg-muted/30"
-                  >
-                    <TableCell className="font-medium">
-                      {itemIndex === 0 ? (
-                        <Badge variant="outline" className="font-mono">
-                          {item.size}
-                        </Badge>
-                      ) : null}
-                    </TableCell>
-                    <TableCell>
-                      <span className="flex items-center gap-2">
-                        <ColorDot color={item.color} />
-                        {getColorName(item.color)}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right font-mono font-semibold">
-                      {item.quantity}
-                    </TableCell>
-                  </TableRow>
-                ))}
-                
-                {/* Subtotal row for this size group */}
-                <TableRow 
-                  key={`subtotal-${group.size}`}
-                  className="bg-muted/50 border-border font-semibold"
-                >
-                  <TableCell colSpan={2} className="text-right">
-                    {group.size} Subtotal:
-                  </TableCell>
-                  <TableCell className="text-right font-mono text-primary">
-                    {group.subtotal}
-                  </TableCell>
-                </TableRow>
-                
-                {/* Spacer between groups */}
-                {groupIndex < sizeGroups.length - 1 && (
-                  <TableRow key={`spacer-${group.size}`} className="h-2 border-0">
-                    <TableCell colSpan={3} className="p-0"></TableCell>
-                  </TableRow>
-                )}
-              </>
+              <SizeGroupRows 
+                key={group.size}
+                group={group}
+                groupIndex={groupIndex}
+                isLast={groupIndex === sizeGroups.length - 1}
+              />
             ))}
             
             {/* Grand Total row */}
