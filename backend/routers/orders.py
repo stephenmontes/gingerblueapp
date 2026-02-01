@@ -207,20 +207,20 @@ async def upload_orders_csv(
 ):
     """Upload orders from a CSV file for dropship stores
     
-    Expected CSV columns:
-    - order_number (required): Order/PO number
-    - customer_name (required): Customer name
-    - customer_email: Customer email
-    - sku (required): Product SKU
-    - quantity: Quantity (default 1)
-    - item_name: Product name
-    - price: Item price
-    - shipping_address1: Address line 1
-    - shipping_city: City
-    - shipping_state: State/Province
-    - shipping_zip: ZIP/Postal code
-    - shipping_country: Country
-    - notes: Order notes
+    Supports Antique Farmhouse CSV format:
+    - Order Number (required)
+    - Full Name (required)
+    - Address 1
+    - City
+    - State
+    - Zip
+    - Item Number (SKU, required)
+    - Price
+    - Qty
+    - Order Comments
+    - Order Date
+    
+    Also supports generic format with lowercase column names.
     """
     if user.role not in ["admin", "manager"]:
         raise HTTPException(status_code=403, detail="Not authorized")
@@ -245,48 +245,58 @@ async def upload_orders_csv(
     if not rows:
         raise HTTPException(status_code=400, detail="CSV file is empty")
     
+    # Helper function to get value with multiple possible column names
+    def get_col(row, *names, default=""):
+        for name in names:
+            if name in row and row[name]:
+                return row[name].strip()
+        return default
+    
     # Group rows by order_number
     orders_map = {}
     for row in rows:
-        order_num = row.get("order_number", "").strip()
+        # Support both "Order Number" and "order_number" column names
+        order_num = get_col(row, "Order Number", "order_number", "OrderNumber", "order_id")
         if not order_num:
             continue
         
         if order_num not in orders_map:
+            customer_name = get_col(row, "Full Name", "customer_name", "CustomerName", "name") or "Unknown Customer"
             orders_map[order_num] = {
                 "order_number": order_num,
-                "customer_name": row.get("customer_name", "").strip() or "Unknown Customer",
-                "customer_email": row.get("customer_email", "").strip(),
+                "customer_name": customer_name,
+                "customer_email": get_col(row, "Email", "customer_email", "CustomerEmail"),
                 "shipping_address": {
-                    "name": row.get("customer_name", "").strip(),
-                    "address1": row.get("shipping_address1", "").strip(),
-                    "address2": row.get("shipping_address2", "").strip(),
-                    "city": row.get("shipping_city", "").strip(),
-                    "province": row.get("shipping_state", "").strip(),
-                    "zip": row.get("shipping_zip", "").strip(),
-                    "country": row.get("shipping_country", "").strip() or "US",
+                    "name": customer_name,
+                    "address1": get_col(row, "Address 1", "shipping_address1", "Address", "address1"),
+                    "address2": get_col(row, "Address 2", "shipping_address2", "address2"),
+                    "city": get_col(row, "City", "shipping_city"),
+                    "province": get_col(row, "State", "shipping_state", "Province"),
+                    "zip": get_col(row, "Zip", "shipping_zip", "ZIP", "Postal"),
+                    "country": get_col(row, "Country", "shipping_country") or "US",
                 },
-                "notes": row.get("notes", "").strip(),
+                "notes": get_col(row, "Order Comments", "notes", "Notes", "Comments"),
+                "order_date": get_col(row, "Order Date", "order_date", "date"),
                 "items": []
             }
         
-        # Add item to order
-        sku = row.get("sku", "").strip()
+        # Add item to order - support "Item Number" as SKU
+        sku = get_col(row, "Item Number", "sku", "SKU", "ItemNumber", "item_number")
         if sku:
             try:
-                qty = int(row.get("quantity", "1").strip() or "1")
+                qty = int(get_col(row, "Qty", "quantity", "Quantity", "QTY") or "1")
             except (ValueError, TypeError):
                 qty = 1
             try:
-                price = float(row.get("price", "0").strip() or "0")
+                price = float(get_col(row, "Price", "price", "Unit Price") or "0")
             except (ValueError, TypeError):
                 price = 0
             
             orders_map[order_num]["items"].append({
                 "line_item_id": f"csv_{uuid.uuid4().hex[:8]}",
                 "sku": sku,
-                "name": row.get("item_name", "").strip() or sku,
-                "title": row.get("item_name", "").strip() or sku,
+                "name": get_col(row, "Item Name", "item_name", "Product", "Description") or sku,
+                "title": get_col(row, "Item Name", "item_name", "Product", "Description") or sku,
                 "quantity": qty,
                 "qty": qty,
                 "qty_done": 0,
