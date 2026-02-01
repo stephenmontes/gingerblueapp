@@ -103,7 +103,7 @@ async def sync_orders_from_shipstation(
         # Process each order
         for ss_order in all_orders:
             try:
-                order_doc = await transform_shipstation_order(ss_order, store_id, store_name, marketplace)
+                order_doc = await transform_shipstation_order(ss_order, store_id, store_name, marketplace, local_store_id)
                 
                 # Check if order already exists
                 existing = await db.fulfillment_orders.find_one({
