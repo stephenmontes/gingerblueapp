@@ -223,6 +223,7 @@ async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current
     # Update orders with batch info AND assign to fulfillment workflow
     update_data = {
         "batch_id": batch_id,
+        "batch_name": batch_data.name,
         "status": "in_production",
         "current_stage_id": first_stage["stage_id"],
         "updated_at": now
