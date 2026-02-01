@@ -70,20 +70,12 @@ export function BatchDetailView({
       {/* KPIs / Stats */}
       <BatchStats batchId={batch.batch_id} />
 
-      {/* Cut List - only show in Cutting stage */}
-      {isCuttingStage && (
-        <CutList batch={batch} activeTimer={activeTimer} />
-      )}
-
-      <StageContent
-        stageData={currentStageData}
+      {/* Frame List - shows in ALL stages, filtered by current stage */}
+      <FrameList 
+        batch={batch} 
+        activeTimer={activeTimer} 
+        currentStageId={activeStageId}
         stages={stages}
-        stageWorkers={currentStageWorkers}
-        onUpdateQty={onUpdateQty}
-        onMoveStage={onMoveStage}
-        onRefresh={onRefresh}
-        hasActiveTimer={hasActiveTimerForStage}
-        timerVersion={timerVersion}
       />
     </div>
   );
