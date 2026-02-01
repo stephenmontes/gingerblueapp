@@ -15,6 +15,9 @@ export function BatchDetailView({
   onUpdateQty,
   onMoveStage,
   onRefresh,
+  onTimerChange,
+  activeTimer,
+  timerVersion,
 }) {
   const [activeStageId, setActiveStageId] = useState(null);
 
@@ -30,6 +33,9 @@ export function BatchDetailView({
 
   const orders = batchDetails ? batchDetails.orders : [];
 
+  // Check if current stage has active timer
+  const hasActiveTimerForStage = activeTimer && activeTimer.stage_id === activeStageId;
+
   return (
     <div className="space-y-4">
       <BatchHeader
@@ -38,6 +44,8 @@ export function BatchDetailView({
         activeStageId={activeStageId}
         stageName={currentStageData?.stage_name}
         stageColor={currentStageData?.color}
+        onTimerChange={onTimerChange}
+        activeTimer={activeTimer}
       />
 
       <BatchOrders orders={orders} />
@@ -48,6 +56,7 @@ export function BatchDetailView({
         stages={stageSummary || []}
         activeStageId={activeStageId}
         onStageSelect={setActiveStageId}
+        activeTimer={activeTimer}
       />
 
       <StageContent
@@ -56,6 +65,8 @@ export function BatchDetailView({
         onUpdateQty={onUpdateQty}
         onMoveStage={onMoveStage}
         onRefresh={onRefresh}
+        hasActiveTimer={hasActiveTimerForStage}
+        timerVersion={timerVersion}
       />
     </div>
   );
