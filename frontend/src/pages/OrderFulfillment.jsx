@@ -256,6 +256,9 @@ export default function OrderFulfillment() {
         onClose={() => setPopupStage(null)}
         onViewOrder={handleViewOrderFromPopup}
       />
+
+      {/* Daily Limit Warning Modal */}
+      <DailyLimitWarning onLogout={handleLogout} />
     </div>
   );
 }
