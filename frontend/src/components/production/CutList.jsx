@@ -24,7 +24,7 @@ const COLOR_NAMES = {
   "W": "White",
   "B": "Black",
   "N": "Natural",
-  "G": "Gray",
+  "G": "Gold",
   "R": "Red",
   "BL": "Blue",
   "GR": "Green",
