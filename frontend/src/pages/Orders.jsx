@@ -246,6 +246,7 @@ export default function Orders({ user }) {
   };
 
   const isAllSelected = filteredOrders.length > 0 && selectedOrders.length === filteredOrders.length;
+  const shopifyStores = stores.filter(s => s.platform === "shopify");
 
   return (
     <div className="space-y-6" data-testid="orders-page">
@@ -254,16 +255,84 @@ export default function Orders({ user }) {
         <div>
           <h1 className="text-3xl font-heading font-bold">Orders</h1>
           <p className="text-muted-foreground mt-1">
-            Select orders to send to Frame Production
+            Sync from Shopify and send orders to Frame Production
           </p>
         </div>
-        {selectedOrders.length > 0 && (
-          <Button onClick={() => setCreateBatchOpen(true)} className="gap-2" data-testid="create-batch-btn">
-            <Layers className="w-4 h-4" />
-            Send {selectedOrders.length} Orders to Production
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            onClick={handleSyncAllStores}
+            disabled={syncing !== null}
+            className="gap-2"
+            data-testid="sync-all-btn"
+          >
+            {syncing === "all" ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <CloudDownload className="w-4 h-4" />
+            )}
+            Sync All Stores
           </Button>
-        )}
+          {selectedOrders.length > 0 && (
+            <Button onClick={() => setCreateBatchOpen(true)} className="gap-2" data-testid="create-batch-btn">
+              <Layers className="w-4 h-4" />
+              Send {selectedOrders.length} to Production
+            </Button>
+          )}
+        </div>
       </div>
+
+      {/* Sync Status Cards */}
+      {shopifyStores.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {shopifyStores.map((store) => {
+            const status = syncStatus.find(s => s.store_id === store.store_id);
+            return (
+              <Card key={store.store_id} className="bg-card border-border">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
+                        <ShoppingBag className="w-5 h-5 text-green-500" />
+                      </div>
+                      <div>
+                        <h3 className="font-medium">{store.name}</h3>
+                        <p className="text-xs text-muted-foreground">
+                          {status?.order_count || 0} orders synced
+                        </p>
+                      </div>
+                    </div>
+                    <Badge variant={store.is_active ? "default" : "secondary"} className={store.is_active ? "bg-green-600" : ""}>
+                      {store.is_active ? "Active" : "Inactive"}
+                    </Badge>
+                  </div>
+                  
+                  {status?.last_order_sync && (
+                    <p className="text-xs text-muted-foreground mb-3">
+                      Last sync: {new Date(status.last_order_sync).toLocaleString()}
+                    </p>
+                  )}
+                  
+                  <Button
+                    size="sm"
+                    className="w-full gap-2"
+                    onClick={() => handleSyncOrders(store.store_id)}
+                    disabled={syncing !== null}
+                    data-testid={`sync-${store.store_id}`}
+                  >
+                    {syncing === store.store_id ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <RefreshCw className="w-4 h-4" />
+                    )}
+                    Sync Orders
+                  </Button>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
 
       {/* Filters */}
       <Card className="bg-card border-border">
