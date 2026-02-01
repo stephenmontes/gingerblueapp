@@ -191,13 +191,14 @@ function OrderActions({
   onMoveNext,
   onMoveToStage,
   onMarkShipped,
-  onShowInventory
+  onShowInventory,
+  onOpenWorksheet
 }) {
   const isOrdersStage = stage.stage_id === "fulfill_orders";
   
   return (
     <div className="flex items-center justify-end gap-1">
-      {!isLastStage && nextStage && (
+      {isOrdersStage && !isLastStage && nextStage && (
         <Button
           size="sm"
           variant="ghost"
@@ -207,6 +208,18 @@ function OrderActions({
         >
           <ArrowRight className="w-4 h-4" />
           {nextStage.name}
+        </Button>
+      )}
+      {!isOrdersStage && !isLastStage && (
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={onOpenWorksheet}
+          className="gap-1"
+          data-testid={`open-worksheet-${order.order_id}`}
+        >
+          <FileText className="w-4 h-4" />
+          Open Worksheet
         </Button>
       )}
       {isLastStage && (
