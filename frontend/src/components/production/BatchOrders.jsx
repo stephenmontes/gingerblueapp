@@ -15,32 +15,51 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ShoppingBag, User, Mail, Calendar, Package } from "lucide-react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { ShoppingBag, User, Mail, Calendar, Package, ChevronDown, ChevronRight } from "lucide-react";
 
 export function BatchOrders({ orders }) {
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [isOpen, setIsOpen] = useState(false);
 
   if (!orders || orders.length === 0) return null;
 
   return (
     <>
       <Card className="bg-card/50 border-border">
-        <CardContent className="p-3">
-          <div className="flex items-center gap-2 mb-2">
-            <ShoppingBag className="w-4 h-4 text-muted-foreground" />
-            <span className="text-sm font-medium">Orders in this Batch</span>
-            <Badge variant="secondary">{orders.length}</Badge>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {orders.map((order) => (
-              <OrderBadge
-                key={order.order_id}
-                order={order}
-                onClick={() => setSelectedOrder(order)}
-              />
-            ))}
-          </div>
-        </CardContent>
+        <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+          <CollapsibleTrigger asChild>
+            <button className="w-full p-3 flex items-center justify-between hover:bg-muted/30 transition-colors rounded-lg">
+              <div className="flex items-center gap-2">
+                <ShoppingBag className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm font-medium">Orders in this Batch</span>
+                <Badge variant="secondary">{orders.length}</Badge>
+              </div>
+              {isOpen ? (
+                <ChevronDown className="w-4 h-4 text-muted-foreground" />
+              ) : (
+                <ChevronRight className="w-4 h-4 text-muted-foreground" />
+              )}
+            </button>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent className="p-3 pt-0">
+              <div className="flex flex-wrap gap-2">
+                {orders.map((order) => (
+                  <OrderBadge
+                    key={order.order_id}
+                    order={order}
+                    onClick={() => setSelectedOrder(order)}
+                  />
+                ))}
+              </div>
+            </CardContent>
+          </CollapsibleContent>
+        </Collapsible>
       </Card>
 
       <OrderDetailDialog
