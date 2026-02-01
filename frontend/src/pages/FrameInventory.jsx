@@ -51,7 +51,9 @@ export default function FrameInventory() {
     try {
       const res = await fetch(API + "/inventory", { credentials: "include" });
       if (res.ok) {
-        setInventory(await res.json());
+        const data = await res.json();
+        // Handle paginated response
+        setInventory(data.items || data);
       }
     } catch (err) {
       toast.error("Failed to load inventory");
