@@ -68,26 +68,29 @@ Build a manufacturing and fulfillment app for Shopify websites with:
 │   │   ├── ItemRow.jsx, StageContent.jsx, BatchHeader.jsx
 │   │   ├── BatchDetailView.jsx, BatchStats.jsx, StageTimer.jsx
 │   │   └── index.js
-│   ├── reports/      # Reports page components (NEW)
-│   │   ├── KpiCards.jsx       # Summary cards
-│   │   ├── QualityTab.jsx     # Quality & Costs tab
-│   │   ├── QualityMetrics.jsx # Yield/rejection rates
-│   │   ├── CostAnalysis.jsx   # Labor cost analysis
-│   │   ├── BatchPerformance.jsx # Batch table
-│   │   ├── UsersTab.jsx       # User performance
-│   │   ├── StagesTab.jsx      # Stage analysis
-│   │   ├── OverviewTab.jsx    # Charts
+│   ├── reports/      # Reports page components
+│   │   ├── KpiCards.jsx, QualityTab.jsx, QualityMetrics.jsx
+│   │   ├── CostAnalysis.jsx, BatchPerformance.jsx
+│   │   ├── UsersTab.jsx, StagesTab.jsx, OverviewTab.jsx
+│   │   └── index.js
+│   ├── inventory/    # Inventory page components (REFACTORED Feb 2026)
+│   │   ├── InventoryStats.jsx    # Stats cards (53 lines)
+│   │   ├── InventoryForm.jsx     # Add/Edit form (92 lines)
+│   │   ├── InventoryRow.jsx      # Table row (150 lines)
+│   │   ├── InventoryTable.jsx    # Table + search (89 lines)
+│   │   ├── AdjustmentDialog.jsx  # Qty adjustment (158 lines)
+│   │   ├── RejectionDialog.jsx   # Reject dialog (147 lines)
 │   │   └── index.js
 │   └── ui/           # Shadcn UI components
-        └── pages/
-            ├── Dashboard.jsx
-            ├── Login.jsx
-            ├── Orders.jsx
-            ├── Production.jsx
-            ├── FrameInventory.jsx     # NEW
-            ├── Reports.jsx
-            ├── Settings.jsx
-            └── Team.jsx
+└── pages/
+    ├── Dashboard.jsx
+    ├── Login.jsx
+    ├── Orders.jsx
+    ├── Production.jsx
+    ├── FrameInventory.jsx  # (289 lines - refactored from 838)
+    ├── Reports.jsx
+    ├── Settings.jsx
+    └── Team.jsx
 ```
 
 ### Production Stages (in order)
