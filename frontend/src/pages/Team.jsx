@@ -154,6 +154,27 @@ export default function Team({ user }) {
     }
   };
 
+  // Export team stats
+  const handleExportStats = () => {
+    let url = `${API}/export/team-stats`;
+    const params = new URLSearchParams();
+    
+    if (period === "custom" && customStartDate && customEndDate) {
+      params.append("start_date", customStartDate);
+      params.append("end_date", customEndDate);
+    } else if (period && period !== "all") {
+      params.append("period", period);
+    }
+    
+    if (params.toString()) {
+      url += `?${params.toString()}`;
+    }
+    
+    // Trigger download
+    window.open(url, "_blank");
+    toast.success("Exporting team stats...");
+  };
+
   // Get period label for display
   const getPeriodLabel = () => {
     switch (period) {
