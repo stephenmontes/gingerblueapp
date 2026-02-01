@@ -1588,8 +1588,19 @@ async def update_item_rejected(
     return {"message": "Rejected quantity updated", "qty_rejected": qty_rejected}
 
 @api_router.post("/items/{item_id}/add-to-inventory")
+def get_sku_match_key(sku: str) -> str:
+    """Extract last two groups from SKU for matching.
+    E.g., 'FRAME-BLK-SM' -> 'BLK-SM', 'PROD-001-B-L' -> 'B-L'"""
+    parts = sku.split("-")
+    if len(parts) >= 2:
+        return f"{parts[-2]}-{parts[-1]}"
+    return sku
+
 async def add_item_to_inventory(item_id: str, user: User = Depends(get_current_user)):
-    """Add completed item to frame inventory (from Quality Check stage)"""
+    """Add completed item to frame inventory (from Quality Check stage).
+    - Good frames go to main inventory
+    - Rejected frames go to separate rejected inventory
+    - Items are matched/combined by last two SKU groups (e.g., 'BLK-SM')"""
     item = await db.production_items.find_one({"item_id": item_id}, {"_id": 0})
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
@@ -1597,37 +1608,79 @@ async def add_item_to_inventory(item_id: str, user: User = Depends(get_current_u
     if item.get("added_to_inventory"):
         raise HTTPException(status_code=400, detail="Item already added to inventory")
     
-    # Calculate quantity to add (completed minus rejected)
-    qty_to_add = max(0, item.get("qty_completed", 0) - item.get("qty_rejected", 0))
+    qty_completed = item.get("qty_completed", 0)
+    qty_rejected = item.get("qty_rejected", 0)
+    qty_good = max(0, qty_completed - qty_rejected)
     
-    if qty_to_add <= 0:
-        raise HTTPException(status_code=400, detail="No frames to add (completed - rejected = 0)")
+    if qty_completed <= 0:
+        raise HTTPException(status_code=400, detail="No frames completed")
     
-    # Check if inventory item with same SKU exists
-    existing_inv = await db.inventory.find_one({"sku": item["sku"]}, {"_id": 0})
+    sku = item.get("sku", "")
+    match_key = get_sku_match_key(sku)
+    now = datetime.now(timezone.utc).isoformat()
+    messages = []
     
-    if existing_inv:
-        # Update existing inventory
-        await db.inventory.update_one(
-            {"sku": item["sku"]},
-            {"$inc": {"quantity": qty_to_add},
-             "$set": {"updated_at": datetime.now(timezone.utc).isoformat()}}
-        )
-    else:
-        # Create new inventory item
-        inv_item = {
-            "item_id": f"inv_{uuid.uuid4().hex[:8]}",
-            "sku": item["sku"],
-            "name": item["name"],
-            "color": item.get("color", ""),
-            "size": item.get("size", ""),
-            "quantity": qty_to_add,
-            "min_stock": 10,
-            "location": "",
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "updated_at": datetime.now(timezone.utc).isoformat()
-        }
-        await db.inventory.insert_one(inv_item)
+    # Add GOOD frames to main inventory (match by last two SKU groups)
+    if qty_good > 0:
+        existing_good = await db.inventory.find_one({
+            "sku_match_key": match_key,
+            "is_rejected": {"$ne": True}
+        }, {"_id": 0})
+        
+        if existing_good:
+            await db.inventory.update_one(
+                {"item_id": existing_good["item_id"]},
+                {"$inc": {"quantity": qty_good},
+                 "$set": {"updated_at": now}}
+            )
+        else:
+            inv_item = {
+                "item_id": f"inv_{uuid.uuid4().hex[:8]}",
+                "sku": sku,
+                "sku_match_key": match_key,
+                "name": item["name"],
+                "color": item.get("color", ""),
+                "size": item.get("size", ""),
+                "quantity": qty_good,
+                "min_stock": 10,
+                "location": "",
+                "is_rejected": False,
+                "created_at": now,
+                "updated_at": now
+            }
+            await db.inventory.insert_one(inv_item)
+        messages.append(f"{qty_good} good")
+    
+    # Add REJECTED frames to separate rejected inventory
+    if qty_rejected > 0:
+        existing_rejected = await db.inventory.find_one({
+            "sku_match_key": match_key,
+            "is_rejected": True
+        }, {"_id": 0})
+        
+        if existing_rejected:
+            await db.inventory.update_one(
+                {"item_id": existing_rejected["item_id"]},
+                {"$inc": {"quantity": qty_rejected},
+                 "$set": {"updated_at": now}}
+            )
+        else:
+            rej_item = {
+                "item_id": f"inv_{uuid.uuid4().hex[:8]}",
+                "sku": f"{sku}-REJECTED",
+                "sku_match_key": match_key,
+                "name": f"{item['name']} (REJECTED)",
+                "color": item.get("color", ""),
+                "size": item.get("size", ""),
+                "quantity": qty_rejected,
+                "min_stock": 0,
+                "location": "Rejected Bin",
+                "is_rejected": True,
+                "created_at": now,
+                "updated_at": now
+            }
+            await db.inventory.insert_one(rej_item)
+        messages.append(f"{qty_rejected} rejected")
     
     # Mark item as added to inventory
     await db.production_items.update_one(
@@ -1636,8 +1689,12 @@ async def add_item_to_inventory(item_id: str, user: User = Depends(get_current_u
     )
     
     return {
-        "message": f"Added {qty_to_add} frames to inventory",
-        "sku": item["sku"],
+        "message": f"Added to inventory: {', '.join(messages)}",
+        "sku": sku,
+        "match_key": match_key,
+        "good_added": qty_good,
+        "rejected_added": qty_rejected
+    }
         "quantity_added": qty_to_add
     }
 
