@@ -455,69 +455,83 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
         </div>
       </div>
 
-      {/* Sync Status Cards */}
-      {syncableStores.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {syncableStores.map((store) => {
+      {/* Store Cards - All Stores */}
+      {stores.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {stores.map((store) => {
             const status = syncStatus.find(s => s.store_id === store.store_id);
+            const isDropship = store.platform === "dropship";
             const isEtsy = store.platform === "etsy";
-            const platformColor = isEtsy ? "orange" : "green";
+            const platformStyles = {
+              shopify: { bg: 'rgba(34, 197, 94, 0.1)', color: '#22c55e', badgeClass: 'text-green-400 bg-green-400/10 border-green-400/20' },
+              etsy: { bg: 'rgba(249, 115, 22, 0.1)', color: '#f97316', badgeClass: 'text-orange-400 bg-orange-400/10 border-orange-400/20' },
+              dropship: { bg: 'rgba(168, 85, 247, 0.1)', color: '#a855f7', badgeClass: 'text-purple-400 bg-purple-400/10 border-purple-400/20' },
+            };
+            const style = platformStyles[store.platform] || platformStyles.shopify;
+            
             return (
-              <Card key={store.store_id} className="bg-card border-border">
+              <Card key={store.store_id} className={`bg-card border-border ${isDropship ? 'border-purple-500/30' : ''}`}>
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-lg bg-${platformColor}-500/10 flex items-center justify-center`}
-                           style={{ backgroundColor: isEtsy ? 'rgba(249, 115, 22, 0.1)' : 'rgba(34, 197, 94, 0.1)' }}>
-                        <ShoppingBag className="w-5 h-5" style={{ color: isEtsy ? '#f97316' : '#22c55e' }} />
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center"
+                           style={{ backgroundColor: style.bg }}>
+                        {isDropship ? (
+                          <FileSpreadsheet className="w-5 h-5" style={{ color: style.color }} />
+                        ) : (
+                          <ShoppingBag className="w-5 h-5" style={{ color: style.color }} />
+                        )}
                       </div>
                       <div>
                         <h3 className="font-medium">{store.name}</h3>
                         <p className="text-xs text-muted-foreground">
-                          {status?.order_count || 0} orders synced
+                          {isDropship ? 'CSV Upload' : `${status?.order_count || 0} orders`}
                         </p>
                       </div>
                     </div>
-                    <div className="flex flex-col items-end gap-1">
-                      <Badge variant="outline" className="text-xs capitalize">
-                        {store.platform}
-                      </Badge>
-                      <Badge variant={store.is_active ? "default" : "secondary"} className={store.is_active ? "bg-green-600" : ""}>
-                        {store.is_active ? "Active" : "Inactive"}
-                      </Badge>
-                    </div>
+                    <Badge variant="outline" className={`text-xs ${style.badgeClass}`}>
+                      {isDropship ? 'CSV' : store.platform}
+                    </Badge>
                   </div>
                   
-                  {status?.last_order_sync && (
+                  {!isDropship && status?.last_order_sync && (
                     <p className="text-xs text-muted-foreground mb-3">
                       Last sync: {new Date(status.last_order_sync).toLocaleString()}
                     </p>
                   )}
                   
-                  <Button
-                    size="sm"
-                    className="w-full gap-2"
-                    onClick={() => handleSyncOrders(store.store_id)}
-                    disabled={syncing !== null}
-                    data-testid={`sync-${store.store_id}`}
-                  >
-                    {syncing === store.store_id ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <RefreshCw className="w-4 h-4" />
-                    )}
-                    Sync Orders
-                  </Button>
+                  {isDropship ? (
+                    <Button
+                      size="sm"
+                      className="w-full gap-2 bg-purple-600 hover:bg-purple-700"
+                      onClick={() => setCsvUploadOpen(true)}
+                      data-testid={`upload-${store.store_id}`}
+                    >
+                      <Upload className="w-4 h-4" />
+                      Upload CSV
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      className="w-full gap-2"
+                      onClick={() => handleSyncOrders(store.store_id)}
+                      disabled={syncing !== null}
+                      data-testid={`sync-${store.store_id}`}
+                    >
+                      {syncing === store.store_id ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="w-4 h-4" />
+                      )}
+                      Sync Orders
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             );
           })}
         </div>
       )}
-
-      {/* Dropship Stores Banner */}
-      {dropshipStores.length > 0 && (
-        <Card className="bg-purple-500/10 border-purple-500/30">
           <CardContent className="p-4">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div className="flex items-center gap-3">
