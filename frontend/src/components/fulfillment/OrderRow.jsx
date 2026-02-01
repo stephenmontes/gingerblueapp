@@ -15,7 +15,8 @@ import {
   AlertTriangle,
   CheckCircle,
   XCircle,
-  Info
+  Info,
+  Layers
 } from "lucide-react";
 
 export function OrderRow({ 
@@ -57,10 +58,17 @@ export function OrderRow({
         </Badge>
       </TableCell>
       <TableCell>
-        <StockStatusBadge status={invStatus} onClick={onShowInventory} />
+        {order.batch_id ? (
+          <Badge variant="secondary" className="gap-1 font-mono text-xs">
+            <Layers className="w-3 h-3" />
+            {order.batch_name || order.batch_id.slice(-8)}
+          </Badge>
+        ) : (
+          <span className="text-muted-foreground text-sm">—</span>
+        )}
       </TableCell>
-      <TableCell className="text-muted-foreground">
-        {order.store_name || "—"}
+      <TableCell>
+        <StockStatusBadge status={invStatus} onClick={onShowInventory} />
       </TableCell>
       <TableCell className="text-right">
         <OrderActions
