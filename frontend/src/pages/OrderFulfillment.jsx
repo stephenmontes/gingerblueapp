@@ -110,6 +110,9 @@ export default function OrderFulfillment() {
         </Button>
       </div>
 
+      {/* KPI Banner */}
+      <FulfillmentKpiBanner />
+
       {/* Summary Cards - Now Clickable */}
       <FulfillmentSummary summary={summary} onStageClick={handleStageCardClick} />
 
