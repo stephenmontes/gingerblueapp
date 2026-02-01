@@ -18,6 +18,7 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -30,6 +31,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Store,
   Plus,
@@ -40,6 +42,12 @@ import {
   ShoppingBag,
   RefreshCw,
   CheckCircle2,
+  Key,
+  Link2,
+  Webhook,
+  Copy,
+  Edit,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -66,9 +74,19 @@ export default function Settings({ user }) {
   const [stages, setStages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [addStoreOpen, setAddStoreOpen] = useState(false);
+  const [editStoreOpen, setEditStoreOpen] = useState(false);
+  const [webhookInfoOpen, setWebhookInfoOpen] = useState(false);
+  const [selectedStore, setSelectedStore] = useState(null);
+  const [syncing, setSyncing] = useState({});
+  const [webhookInfo, setWebhookInfo] = useState(null);
   const [newStore, setNewStore] = useState({
     name: "",
     platform: "shopify",
+    shop_url: "",
+    api_key: "",
+    access_token: "",
+  });
+  const [editStore, setEditStore] = useState({
     shop_url: "",
     api_key: "",
     access_token: "",
@@ -138,6 +156,31 @@ export default function Settings({ user }) {
     }
   };
 
+  const handleUpdateStore = async () => {
+    if (!selectedStore) return;
+
+    try {
+      const response = await fetch(`${API}/stores/${selectedStore.store_id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(editStore),
+      });
+
+      if (response.ok) {
+        toast.success("Store credentials updated");
+        setEditStoreOpen(false);
+        fetchData();
+      } else {
+        const error = await response.json();
+        toast.error(error.detail || "Failed to update store");
+      }
+    } catch (error) {
+      console.error("Failed to update store:", error);
+      toast.error("Failed to update store");
+    }
+  };
+
   const handleDeleteStore = async (storeId) => {
     try {
       const response = await fetch(`${API}/stores/${storeId}`, {
@@ -156,6 +199,101 @@ export default function Settings({ user }) {
       console.error("Failed to delete store:", error);
       toast.error("Failed to delete store");
     }
+  };
+
+  const handleSyncStore = async (storeId) => {
+    setSyncing((prev) => ({ ...prev, [storeId]: true }));
+
+    try {
+      const response = await fetch(`${API}/stores/${storeId}/sync`, {
+        method: "POST",
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        toast.success(result.message);
+        fetchData();
+      } else {
+        const error = await response.json();
+        toast.error(error.detail || "Sync failed");
+      }
+    } catch (error) {
+      console.error("Sync failed:", error);
+      toast.error("Sync failed");
+    } finally {
+      setSyncing((prev) => ({ ...prev, [storeId]: false }));
+    }
+  };
+
+  const handleSyncAll = async () => {
+    setSyncing((prev) => ({ ...prev, all: true }));
+
+    try {
+      const response = await fetch(`${API}/stores/sync-all`, {
+        method: "POST",
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        toast.success(result.message);
+        
+        // Show individual results
+        result.results?.forEach((r) => {
+          if (!r.success) {
+            toast.error(`${r.store_name}: ${r.error}`);
+          }
+        });
+        
+        fetchData();
+      } else {
+        const error = await response.json();
+        toast.error(error.detail || "Sync failed");
+      }
+    } catch (error) {
+      console.error("Sync failed:", error);
+      toast.error("Sync failed");
+    } finally {
+      setSyncing((prev) => ({ ...prev, all: false }));
+    }
+  };
+
+  const handleGetWebhookInfo = async (store) => {
+    setSelectedStore(store);
+    setWebhookInfo(null);
+    setWebhookInfoOpen(true);
+
+    try {
+      const response = await fetch(`${API}/webhooks/info/${store.store_id}`, {
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        const info = await response.json();
+        setWebhookInfo(info);
+      } else {
+        toast.error("Failed to get webhook info");
+      }
+    } catch (error) {
+      console.error("Failed to get webhook info:", error);
+      toast.error("Failed to get webhook info");
+    }
+  };
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    toast.success("Copied to clipboard");
+  };
+
+  const openEditStore = (store) => {
+    setSelectedStore(store);
+    setEditStore({
+      shop_url: store.shop_url || "",
+      api_key: "",
+      access_token: "",
+    });
+    setEditStoreOpen(true);
   };
 
   if (loading) {
@@ -179,11 +317,28 @@ export default function Settings({ user }) {
   return (
     <div className="space-y-6" data-testid="settings-page">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-heading font-bold">Settings</h1>
-        <p className="text-muted-foreground mt-1">
-          Manage store connections and production workflow
-        </p>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-heading font-bold">Settings</h1>
+          <p className="text-muted-foreground mt-1">
+            Manage store connections and production workflow
+          </p>
+        </div>
+        {isManager && (
+          <Button
+            onClick={handleSyncAll}
+            disabled={syncing.all}
+            className="gap-2"
+            data-testid="sync-all-btn"
+          >
+            {syncing.all ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <RefreshCw className="w-4 h-4" />
+            )}
+            Sync All Stores
+          </Button>
+        )}
       </div>
 
       {/* Connected Stores */}
@@ -206,80 +361,129 @@ export default function Settings({ user }) {
                   Add Store
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="max-w-lg">
                 <DialogHeader>
                   <DialogTitle>Add New Store</DialogTitle>
+                  <DialogDescription>
+                    Connect your Shopify or Etsy store to sync orders
+                  </DialogDescription>
                 </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="store-name">Store Name *</Label>
-                    <Input
-                      id="store-name"
-                      placeholder="My Shopify Store"
-                      value={newStore.name}
-                      onChange={(e) =>
-                        setNewStore({ ...newStore, name: e.target.value })
-                      }
-                      data-testid="store-name-input"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="platform">Platform</Label>
-                    <Select
-                      value={newStore.platform}
-                      onValueChange={(value) =>
-                        setNewStore({ ...newStore, platform: value })
-                      }
+                <Tabs defaultValue="shopify" className="mt-4">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger
+                      value="shopify"
+                      onClick={() => setNewStore({ ...newStore, platform: "shopify" })}
                     >
-                      <SelectTrigger data-testid="platform-select">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="shopify">Shopify</SelectItem>
-                        <SelectItem value="etsy">Etsy</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="shop-url">Shop URL</Label>
-                    <Input
-                      id="shop-url"
-                      placeholder="mystore.myshopify.com"
-                      value={newStore.shop_url}
-                      onChange={(e) =>
-                        setNewStore({ ...newStore, shop_url: e.target.value })
-                      }
-                      data-testid="shop-url-input"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="api-key">API Key</Label>
-                    <Input
-                      id="api-key"
-                      type="password"
-                      placeholder="Your API key"
-                      value={newStore.api_key}
-                      onChange={(e) =>
-                        setNewStore({ ...newStore, api_key: e.target.value })
-                      }
-                      data-testid="api-key-input"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="access-token">Access Token</Label>
-                    <Input
-                      id="access-token"
-                      type="password"
-                      placeholder="Your access token"
-                      value={newStore.access_token}
-                      onChange={(e) =>
-                        setNewStore({ ...newStore, access_token: e.target.value })
-                      }
-                      data-testid="access-token-input"
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
+                      Shopify
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="etsy"
+                      onClick={() => setNewStore({ ...newStore, platform: "etsy" })}
+                    >
+                      Etsy
+                    </TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="shopify" className="space-y-4 mt-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="store-name">Store Name *</Label>
+                      <Input
+                        id="store-name"
+                        placeholder="My Shopify Store"
+                        value={newStore.name}
+                        onChange={(e) =>
+                          setNewStore({ ...newStore, name: e.target.value })
+                        }
+                        data-testid="store-name-input"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="shop-url">Shop URL *</Label>
+                      <Input
+                        id="shop-url"
+                        placeholder="mystore.myshopify.com"
+                        value={newStore.shop_url}
+                        onChange={(e) =>
+                          setNewStore({ ...newStore, shop_url: e.target.value })
+                        }
+                        data-testid="shop-url-input"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Your Shopify store URL (without https://)
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="access-token">Admin API Access Token *</Label>
+                      <Input
+                        id="access-token"
+                        type="password"
+                        placeholder="shpat_xxxxx..."
+                        value={newStore.access_token}
+                        onChange={(e) =>
+                          setNewStore({ ...newStore, access_token: e.target.value })
+                        }
+                        data-testid="access-token-input"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Get this from Shopify Admin → Settings → Apps → Develop apps
+                      </p>
+                    </div>
+                  </TabsContent>
+                  <TabsContent value="etsy" className="space-y-4 mt-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="etsy-store-name">Store Name *</Label>
+                      <Input
+                        id="etsy-store-name"
+                        placeholder="My Etsy Shop"
+                        value={newStore.name}
+                        onChange={(e) =>
+                          setNewStore({ ...newStore, name: e.target.value })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="shop-id">Shop ID *</Label>
+                      <Input
+                        id="shop-id"
+                        placeholder="12345678"
+                        value={newStore.shop_url}
+                        onChange={(e) =>
+                          setNewStore({ ...newStore, shop_url: e.target.value })
+                        }
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Your Etsy Shop ID (numeric)
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="etsy-api-key">API Key (Keystring) *</Label>
+                      <Input
+                        id="etsy-api-key"
+                        type="password"
+                        placeholder="Your Etsy API key"
+                        value={newStore.api_key}
+                        onChange={(e) =>
+                          setNewStore({ ...newStore, api_key: e.target.value })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="etsy-access-token">OAuth Access Token</Label>
+                      <Input
+                        id="etsy-access-token"
+                        type="password"
+                        placeholder="Optional - for full API access"
+                        value={newStore.access_token}
+                        onChange={(e) =>
+                          setNewStore({ ...newStore, access_token: e.target.value })
+                        }
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Required for syncing orders. Get from Etsy OAuth flow.
+                      </p>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+                <DialogFooter className="mt-4">
                   <Button variant="outline" onClick={() => setAddStoreOpen(false)}>
                     Cancel
                   </Button>
@@ -307,7 +511,7 @@ export default function Settings({ user }) {
               )}
             </div>
           ) : (
-            <div className="grid gap-4">
+            <div className="space-y-4">
               {stores.map((store) => (
                 <div
                   key={store.store_id}
@@ -334,6 +538,11 @@ export default function Settings({ user }) {
                             {store.shop_url}
                           </span>
                         )}
+                        {store.last_sync && (
+                          <span className="text-xs text-muted-foreground">
+                            Last sync: {new Date(store.last_sync).toLocaleString()}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -348,6 +557,39 @@ export default function Settings({ user }) {
                     >
                       {store.is_active ? "Active" : "Inactive"}
                     </Badge>
+                    {isManager && (
+                      <>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleSyncStore(store.store_id)}
+                          disabled={syncing[store.store_id]}
+                          data-testid={`sync-store-${store.store_id}`}
+                        >
+                          {syncing[store.store_id] ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <RefreshCw className="w-4 h-4" />
+                          )}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openEditStore(store)}
+                          data-testid={`edit-store-${store.store_id}`}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleGetWebhookInfo(store)}
+                          data-testid={`webhook-store-${store.store_id}`}
+                        >
+                          <Webhook className="w-4 h-4" />
+                        </Button>
+                      </>
+                    )}
                     {isAdmin && (
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
@@ -387,6 +629,154 @@ export default function Settings({ user }) {
           )}
         </CardContent>
       </Card>
+
+      {/* Edit Store Dialog */}
+      <Dialog open={editStoreOpen} onOpenChange={setEditStoreOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Store Credentials</DialogTitle>
+            <DialogDescription>
+              Update API credentials for {selectedStore?.name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {selectedStore?.platform === "shopify" ? (
+              <>
+                <div className="space-y-2">
+                  <Label>Shop URL</Label>
+                  <Input
+                    placeholder="mystore.myshopify.com"
+                    value={editStore.shop_url}
+                    onChange={(e) =>
+                      setEditStore({ ...editStore, shop_url: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Admin API Access Token</Label>
+                  <Input
+                    type="password"
+                    placeholder="Enter new token to update"
+                    value={editStore.access_token}
+                    onChange={(e) =>
+                      setEditStore({ ...editStore, access_token: e.target.value })
+                    }
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Leave empty to keep existing token
+                  </p>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <Label>Shop ID</Label>
+                  <Input
+                    placeholder="12345678"
+                    value={editStore.shop_url}
+                    onChange={(e) =>
+                      setEditStore({ ...editStore, shop_url: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>API Key</Label>
+                  <Input
+                    type="password"
+                    placeholder="Enter new API key to update"
+                    value={editStore.api_key}
+                    onChange={(e) =>
+                      setEditStore({ ...editStore, api_key: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>OAuth Access Token</Label>
+                  <Input
+                    type="password"
+                    placeholder="Enter new token to update"
+                    value={editStore.access_token}
+                    onChange={(e) =>
+                      setEditStore({ ...editStore, access_token: e.target.value })
+                    }
+                  />
+                </div>
+              </>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditStoreOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateStore}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Webhook Info Dialog */}
+      <Dialog open={webhookInfoOpen} onOpenChange={setWebhookInfoOpen}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Webhook className="w-5 h-5" />
+              Webhook Setup - {selectedStore?.name}
+            </DialogTitle>
+          </DialogHeader>
+          {webhookInfo ? (
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Webhook URL</Label>
+                <div className="flex gap-2">
+                  <Input
+                    readOnly
+                    value={webhookInfo.webhook_url}
+                    className="font-mono text-sm"
+                  />
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => copyToClipboard(webhookInfo.webhook_url)}
+                  >
+                    <Copy className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+              {webhookInfo.events_to_subscribe && (
+                <div className="space-y-2">
+                  <Label>Events to Subscribe</Label>
+                  <div className="flex gap-2">
+                    {webhookInfo.events_to_subscribe.map((event) => (
+                      <Badge key={event} variant="secondary">
+                        {event}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div className="space-y-2">
+                <Label>Setup Instructions</Label>
+                <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                  {webhookInfo.setup_instructions?.map((instruction, idx) => (
+                    <p key={idx} className="text-sm text-muted-foreground">
+                      {instruction}
+                    </p>
+                  ))}
+                </div>
+              </div>
+              {webhookInfo.note && (
+                <div className="bg-amber-400/10 border border-amber-400/20 rounded-lg p-4">
+                  <p className="text-sm text-amber-400">{webhookInfo.note}</p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="py-8 text-center">
+              <Loader2 className="w-8 h-8 animate-spin mx-auto text-muted-foreground" />
+              <p className="text-muted-foreground mt-2">Loading webhook info...</p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Production Stages */}
       <Card className="bg-card border-border">
@@ -430,45 +820,58 @@ export default function Settings({ user }) {
         </CardContent>
       </Card>
 
-      {/* API Info */}
+      {/* Integration Help */}
       <Card className="bg-card border-border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Settings2 className="w-5 h-5" />
-            Integration Info
+            Integration Guide
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <div>
-              <p className="label-caps mb-2">Shopify Integration</p>
-              <p className="text-sm text-muted-foreground">
-                To connect your Shopify store, you'll need your Admin API access token.
-                Get it from your Shopify admin → Settings → Apps → Develop apps.
-              </p>
-              <Button variant="link" className="px-0 text-primary" asChild>
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <ShoppingBag className="w-5 h-5 text-green-400" />
+                <h3 className="font-semibold">Shopify Integration</h3>
+              </div>
+              <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
+                <li>Go to Shopify Admin → Settings → Apps</li>
+                <li>Click "Develop apps" → "Create an app"</li>
+                <li>Configure Admin API scopes: read_orders, write_orders</li>
+                <li>Install the app and copy the Admin API access token</li>
+                <li>Add the store here with your token</li>
+              </ol>
+              <Button variant="link" className="px-0 text-primary h-auto" asChild>
                 <a
                   href="https://help.shopify.com/en/manual/apps/app-types/custom-apps"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  Learn more about Shopify API
+                  Shopify Documentation
                   <ExternalLink className="w-3 h-3 ml-1" />
                 </a>
               </Button>
             </div>
-            <div>
-              <p className="label-caps mb-2">Etsy Integration</p>
-              <p className="text-sm text-muted-foreground">
-                To connect your Etsy store, you'll need an API key from Etsy's developer portal.
-              </p>
-              <Button variant="link" className="px-0 text-primary" asChild>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Store className="w-5 h-5 text-orange-400" />
+                <h3 className="font-semibold">Etsy Integration</h3>
+              </div>
+              <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
+                <li>Go to Etsy Developer Portal</li>
+                <li>Create a new app to get your API key</li>
+                <li>Find your Shop ID from your shop URL</li>
+                <li>Complete OAuth flow to get access token</li>
+                <li>Add the store here with your credentials</li>
+              </ol>
+              <Button variant="link" className="px-0 text-primary h-auto" asChild>
                 <a
                   href="https://developers.etsy.com/"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  Learn more about Etsy API
+                  Etsy Developer Portal
                   <ExternalLink className="w-3 h-3 ml-1" />
                 </a>
               </Button>
