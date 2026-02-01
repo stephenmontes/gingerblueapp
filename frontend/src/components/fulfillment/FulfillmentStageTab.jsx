@@ -251,6 +251,7 @@ export function FulfillmentStageTab({ stage, stages, onRefresh, onTimerChange })
         onMarkShipped={markShipped}
         onShowInventory={setInventoryDialogOrder}
         onOpenWorksheet={setWorksheetOrder}
+        onPrintOrder={setPrintOrder}
         onTimerChange={handleTimerChangeInternal}
       />
       <InventoryDialog order={inventoryDialogOrder} onClose={() => setInventoryDialogOrder(null)} />
@@ -262,6 +263,11 @@ export function FulfillmentStageTab({ stage, stages, onRefresh, onTimerChange })
         onMoveToNextStage={moveOrderToNext}
         onRefresh={() => { loadOrders(); onRefresh(); }}
         onTimerChange={handleTimerChangeInternal}
+      />
+      <PrintOrderDialog
+        order={printOrder}
+        currentStage={stage}
+        onClose={() => setPrintOrder(null)}
       />
     
     </>
