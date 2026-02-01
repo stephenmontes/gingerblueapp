@@ -12,8 +12,15 @@ from dependencies import get_current_user
 router = APIRouter(prefix="/batches", tags=["batches"])
 
 def parse_sku(sku: str) -> dict:
-    """Parse SKU to extract color and size"""
-    size_codes = ['XXX', 'XX', 'XL', 'HS', 'HX', 'S', 'L']
+    """Parse SKU to extract size and color
+    
+    SKU format: BWF-AD-1225-HS-W
+    - Size is second to last group: HS, S, L, XL, HX, XX, XXX
+    - Color is last group: W, B, N, G, etc.
+    """
+    if not sku:
+        return {"color": "UNK", "size": "UNK"}
+    
     parts = sku.replace('_', '-').replace('.', '-').split('-')
     parts = [p.strip().upper() for p in parts if p.strip()]
     
@@ -21,28 +28,22 @@ def parse_sku(sku: str) -> dict:
     size = "UNK"
     
     if len(parts) >= 2:
-        last_part = parts[-1]
-        for size_code in size_codes:
-            if last_part == size_code or last_part.endswith(size_code):
-                size = size_code
-                break
-        
-        if len(parts) >= 2:
-            second_last = parts[-2] if size != "UNK" else parts[-1]
-            if len(second_last) <= 3 and second_last.isalpha():
-                color = second_last
-    
-    if color == "UNK" or size == "UNK":
-        clean_sku = sku.upper().replace(' ', '')
-        for size_code in size_codes:
-            if clean_sku.endswith(size_code):
-                size = size_code
-                remaining = clean_sku[:-len(size_code)].rstrip('-_')
-                if remaining:
-                    last_char = remaining[-1]
-                    if last_char.isalpha():
-                        color = last_char
-                break
+        # Color is the LAST part
+        color = parts[-1]
+        # Size is the SECOND TO LAST part
+        size = parts[-2]
+    elif len(parts) == 1:
+        # Single part - try to extract from end
+        part = parts[0]
+        if len(part) >= 2:
+            color = part[-1]
+            # Look for size codes
+            size_codes = ['XXX', 'XX', 'XL', 'HS', 'HX', 'S', 'L']
+            remaining = part[:-1]
+            for code in size_codes:
+                if remaining.endswith(code):
+                    size = code
+                    break
     
     return {"color": color, "size": size}
 
