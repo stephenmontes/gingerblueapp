@@ -274,11 +274,13 @@ export function FrameList({ batch, activeTimer, currentStageId, stages }) {
         )}
       </CardHeader>
       <CardContent>
-        {/* Timer warning if not active */}
+        {/* Timer warning if not active for this stage */}
         {!hasActiveTimer && (
           <div className="flex items-center gap-2 text-orange-400 text-sm bg-orange-500/10 px-4 py-3 rounded-lg mb-4">
             <Clock className="w-5 h-5" />
-            <span className="font-medium">Start your timer to update quantities</span>
+            <span className="font-medium">
+              Start your timer for {currentStage?.name || "this stage"} to update quantities
+            </span>
           </div>
         )}
         
