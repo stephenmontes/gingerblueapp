@@ -104,24 +104,22 @@ Build a manufacturing and fulfillment app for Shopify websites with:
 ## Prioritized Backlog
 
 ### P0 (Critical - Not implemented)
-- Shopify API integration for order syncing
-- Etsy API integration for order syncing
+- None - all requested features implemented
 
 ### P1 (Important)
-- Real-time order sync webhooks
 - Email notifications for order status changes
-- Export reports to CSV/PDF
+- Date range filters for reports
+- Custom production stage creation
 
 ### P2 (Nice to have)
-- Custom production stage creation
 - Drag-and-drop Kanban cards
 - Dark/light theme toggle
 - Mobile responsive improvements
+- Batch order operations
 
 ## Next Tasks
 
-1. **Shopify Integration** - Add real API key input and sync functionality
-2. **Etsy Integration** - Add OAuth flow for Etsy API
-3. **Webhooks** - Set up real-time order syncing
-4. **Time Reports** - Add date range filters to reports
-5. **Notifications** - Email/push notifications for critical events
+1. **Test with real credentials** - Add actual Shopify/Etsy API keys to test live sync
+2. **Set up webhooks** - Configure webhooks in Shopify/Etsy admin using the provided URLs
+3. **Email notifications** - Add email alerts for critical events
+4. **Date range filters** - Add date filters to reports for better analysis
