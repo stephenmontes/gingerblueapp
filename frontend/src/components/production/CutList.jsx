@@ -456,7 +456,7 @@ export function FrameList({ batch, activeTimer, currentStageId, stages }) {
   );
 }
 
-function SizeGroupRows({ group, isLast, updating, localValues, localRejected, onQtyChange, onRejectedChange, onCompletedChange, onMoveToNextStage, hasActiveTimer, nextStage, isQualityCheckStage }) {
+function SizeGroupRows({ group, isLast, updating, localValues, localRejected, onQtyChange, onRejectedChange, onCompletedChange, onMoveToNextStage, onMoveToInventory, hasActiveTimer, nextStage, isQualityCheckStage }) {
   return (
     <>
       {group.frames.map((frame, frameIndex) => {
