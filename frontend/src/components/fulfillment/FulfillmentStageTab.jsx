@@ -402,6 +402,7 @@ function OrdersView({
                   onMarkShipped={() => onMarkShipped(order.order_id)}
                   onShowInventory={() => onShowInventory(order)}
                   onOpenWorksheet={() => onOpenWorksheet(order)}
+                  onPrintOrder={() => onPrintOrder(order)}
                 />
               ))}
             </TableBody>
