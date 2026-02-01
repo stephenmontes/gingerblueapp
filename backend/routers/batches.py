@@ -597,3 +597,103 @@ async def update_cut_list_item(
     
     return {"message": "Item updated", "size": size, "color": color, "qty_made": qty_made, "completed": completed}
 
+
+@router.post("/{batch_id}/cut-list/move-to-assembly")
+async def move_cut_list_item_to_assembly(
+    batch_id: str,
+    size: str,
+    color: str,
+    quantity: int = 1,
+    user: User = Depends(get_current_user)
+):
+    """Move items from cut list to assembly stage"""
+    batch = await db.production_batches.find_one({"batch_id": batch_id})
+    if not batch:
+        raise HTTPException(status_code=404, detail="Batch not found")
+    
+    # Find assembly stage
+    assembly_stage = await db.production_stages.find_one({"stage_id": "stage_assembly"})
+    if not assembly_stage:
+        # Fallback - find by name
+        assembly_stage = await db.production_stages.find_one({"name": {"$regex": "assembly", "$options": "i"}})
+    
+    if not assembly_stage:
+        raise HTTPException(status_code=404, detail="Assembly stage not found")
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    # Find production items matching this size/color in the cutting stage
+    cutting_stage = await db.production_stages.find_one({"stage_id": "stage_cutting"})
+    cutting_stage_id = cutting_stage["stage_id"] if cutting_stage else "stage_cutting"
+    
+    # Get items in the batch that match size/color and are in cutting stage
+    items_to_move = await db.production_items.find({
+        "batch_id": batch_id,
+        "size": size.upper(),
+        "color": color.upper(),
+        "current_stage_id": cutting_stage_id
+    }, {"_id": 0}).to_list(quantity)
+    
+    if not items_to_move:
+        # If no items found in cutting, check if they're in 'new' stage
+        items_to_move = await db.production_items.find({
+            "batch_id": batch_id,
+            "size": size.upper(),
+            "color": color.upper(),
+            "current_stage_id": "stage_new"
+        }, {"_id": 0}).to_list(quantity)
+    
+    moved_count = 0
+    for item in items_to_move[:quantity]:
+        await db.production_items.update_one(
+            {"item_id": item["item_id"]},
+            {
+                "$set": {
+                    "current_stage_id": assembly_stage["stage_id"],
+                    "current_stage_name": assembly_stage["name"],
+                    "stage_updated_at": now,
+                    "stage_updated_by": user.user_id,
+                    "updated_at": now
+                }
+            }
+        )
+        moved_count += 1
+        
+        # Log the stage transition
+        await db.production_logs.insert_one({
+            "log_id": f"log_{uuid.uuid4().hex[:12]}",
+            "item_id": item["item_id"],
+            "batch_id": batch_id,
+            "from_stage": item.get("current_stage_id"),
+            "to_stage": assembly_stage["stage_id"],
+            "to_stage_name": assembly_stage["name"],
+            "moved_by": user.user_id,
+            "moved_by_name": user.name,
+            "quantity": 1,
+            "created_at": now
+        })
+    
+    # Update cut list progress - reduce qty_made for moved items
+    if moved_count > 0:
+        progress = await db.cut_list_progress.find_one({"batch_id": batch_id})
+        if progress:
+            items = progress.get("items", [])
+            for item in items:
+                if item["size"] == size.upper() and item["color"] == color.upper():
+                    # Track moved quantity separately
+                    item["qty_moved_to_assembly"] = item.get("qty_moved_to_assembly", 0) + moved_count
+                    break
+            
+            await db.cut_list_progress.update_one(
+                {"batch_id": batch_id},
+                {"$set": {"items": items, "updated_at": now}}
+            )
+    
+    return {
+        "message": f"Moved {moved_count} items to Assembly",
+        "moved_count": moved_count,
+        "size": size,
+        "color": color,
+        "to_stage": assembly_stage["name"]
+    }
+
