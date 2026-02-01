@@ -419,6 +419,7 @@ export function FrameList({ batch, activeTimer, currentStageId, stages }) {
                 onRejectedChange={handleRejectedChange}
                 onCompletedChange={handleCompletedChange}
                 onMoveToNextStage={handleMoveToNextStage}
+                onMoveToInventory={handleMoveToInventory}
                 hasActiveTimer={hasActiveTimer}
                 nextStage={nextStage}
                 isQualityCheckStage={isQualityCheckStage}
