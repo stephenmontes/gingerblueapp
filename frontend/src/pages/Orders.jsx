@@ -317,7 +317,20 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
 
   const dropshipStores = stores.filter(s => s.platform === "dropship" || s.platform === "csv");
 
+  // Statuses that are considered "inactive" (excluded from active view)
+  const inactiveStatuses = ["shipped", "cancelled", "completed"];
+
   const filteredOrders = orders.filter((order) => {
+    // Apply status filter first
+    if (statusFilter === "active") {
+      // Exclude shipped, cancelled, completed orders
+      if (inactiveStatuses.includes(order.status)) return false;
+    } else if (statusFilter !== "all") {
+      // Filter by specific status
+      if (order.status !== statusFilter) return false;
+    }
+    
+    // Then apply search filter
     if (!searchTerm) return true;
     const term = searchTerm.toLowerCase();
     return (
