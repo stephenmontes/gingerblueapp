@@ -226,9 +226,9 @@ async def transform_shipstation_order(
         "order_number": str(ss_order.get("orderNumber", "")),
         "external_order_id": str(ss_order.get("orderKey", "")),
         "shipstation_order_id": ss_order.get("orderId"),
-        "shipstation_store_id": store_id,
+        "shipstation_store_id": shipstation_store_id,
         "store_name": store_name,
-        "store_id": f"shipstation_{store_id}",
+        "store_id": store_id,
         "source_platform": marketplace.lower(),
         "platform": "shipstation",
         
