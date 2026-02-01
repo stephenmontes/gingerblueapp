@@ -62,45 +62,6 @@ export default function Production() {
     }
   }
 
-  async function handleStartTimer() {
-    if (!selectedBatch) return;
-    try {
-      const res = await fetch(API + "/batches/" + selectedBatch.batch_id + "/start-timer", {
-        method: "POST",
-        credentials: "include",
-      });
-      if (res.ok) {
-        toast.success("Timer started - you are now responsible for this batch");
-        loadInitialData();
-        loadBatchDetails(selectedBatch.batch_id);
-      } else {
-        const err = await res.json();
-        toast.error(err.detail || "Failed to start timer");
-      }
-    } catch (err) {
-      toast.error("Failed to start timer");
-    }
-  }
-
-  async function handleStopTimer() {
-    if (!selectedBatch) return;
-    try {
-      const res = await fetch(API + "/batches/" + selectedBatch.batch_id + "/stop-timer", {
-        method: "POST",
-        credentials: "include",
-      });
-      if (res.ok) {
-        const result = await res.json();
-        const minutes = result.duration_minutes ? result.duration_minutes.toFixed(1) : "0";
-        toast.success("Timer stopped - " + minutes + " minutes logged");
-        loadInitialData();
-        loadBatchDetails(selectedBatch.batch_id);
-      }
-    } catch (err) {
-      toast.error("Failed to stop timer");
-    }
-  }
-
   async function handleUpdateQty(itemId, qtyCompleted) {
     try {
       const res = await fetch(API + "/items/" + itemId + "/update?qty_completed=" + qtyCompleted, {
@@ -131,7 +92,7 @@ export default function Production() {
       });
       if (res.ok) {
         const result = await res.json();
-        toast.success(result.message || "Item moved");
+        toast.success(result.message || "Item moved to next stage");
         loadBatchDetails(selectedBatch.batch_id);
         loadInitialData();
       }
@@ -153,7 +114,7 @@ export default function Production() {
       <div>
         <h1 className="text-3xl font-heading font-bold">Frame Production</h1>
         <p className="text-muted-foreground mt-1">
-          Manage production batches and track items through stages
+          Track time per stage • Each user works on their assigned stage
         </p>
       </div>
 
@@ -173,8 +134,6 @@ export default function Production() {
               batchDetails={batchDetails}
               stageSummary={stageSummary}
               stages={stages}
-              onStartTimer={handleStartTimer}
-              onStopTimer={handleStopTimer}
               onUpdateQty={handleUpdateQty}
               onMoveStage={handleMoveStage}
             />
