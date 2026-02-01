@@ -433,10 +433,51 @@ function WorksheetTimer({ activeTimer, currentStage, timerLoading, onStart, onPa
 
   if (hasTimerForOtherStage) {
     return (
-      <div className="p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg mb-4">
-        <div className="flex items-center gap-2 text-yellow-400 text-sm">
-          <Clock className="w-4 h-4" />
-          <span>Timer active for <strong>{activeTimer.stage_name}</strong> - stop it first to start here</span>
+      <div className="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg mb-4">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center">
+              <Clock className="w-5 h-5 text-yellow-400" />
+            </div>
+            <div>
+              <p className="font-medium text-yellow-400">Timer Active Elsewhere</p>
+              <p className="text-sm text-muted-foreground">
+                Currently tracking: <strong>{activeTimer.stage_name}</strong>
+                {activeTimer.order_number && <span> • Order #{activeTimer.order_number}</span>}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {isPaused ? (
+              <Button 
+                size="sm" 
+                onClick={onResume}
+                disabled={timerLoading}
+                className="gap-1 bg-green-600 hover:bg-green-700"
+              >
+                <Play className="w-4 h-4" /> Resume
+              </Button>
+            ) : (
+              <Button 
+                size="sm" 
+                variant="secondary"
+                onClick={onPause}
+                disabled={timerLoading}
+                className="gap-1"
+              >
+                <Pause className="w-4 h-4" /> Pause
+              </Button>
+            )}
+            <Button 
+              size="sm" 
+              variant="destructive"
+              onClick={onStop}
+              disabled={timerLoading}
+              className="gap-1"
+            >
+              <StopCircle className="w-4 h-4" /> Stop
+            </Button>
+          </div>
         </div>
       </div>
     );
