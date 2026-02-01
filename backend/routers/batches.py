@@ -667,6 +667,8 @@ async def move_all_completed_frames(
                     "current_stage_id": next_stage["stage_id"],
                     "current_stage_name": next_stage.get("name", ""),
                     "qty_completed": 0,  # Reset for next stage
+                    "qty_rejected": 0,   # Reset rejected count for next stage
+                    "status": "pending",
                     "stage_updated_at": now,
                     "updated_at": now
                 }
