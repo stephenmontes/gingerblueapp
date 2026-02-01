@@ -187,6 +187,7 @@ Build a manufacturing and fulfillment app for Shopify websites with:
   - Identical items grouped with subtotals
   - Expandable rows showing order breakdown
   - Print-friendly layout with grand total
+- ✅ **Batch Number in Order Fulfillment** (Feb 2026): Orders display their associated batch name/ID in the fulfillment view
 
 ## Prioritized Backlog
 
