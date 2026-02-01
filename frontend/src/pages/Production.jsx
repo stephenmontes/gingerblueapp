@@ -136,6 +136,7 @@ export default function Production() {
               stages={stages}
               onUpdateQty={handleUpdateQty}
               onMoveStage={handleMoveStage}
+              onRefresh={() => loadBatchDetails(selectedBatch.batch_id)}
             />
           ) : (
             <NoBatchSelected />
