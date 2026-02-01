@@ -181,6 +181,12 @@ Build a manufacturing and fulfillment app for Shopify websites with:
   - Stock status badges showing in-stock, partial, or out-of-stock for each order
   - Inventory allocation tracking (which inventory items used for which order)
   - Low stock alerts banner showing orders with insufficient inventory
+- ✅ **Print List Consolidated View** (Feb 2026):
+  - Items List view for Print List, Mount List, and Finish stages
+  - Items sorted by SKU: 2nd group (color) → 3rd group (number) → 4th group (size)
+  - Identical items grouped with subtotals
+  - Expandable rows showing order breakdown
+  - Print-friendly layout with grand total
 
 ## Prioritized Backlog
 
