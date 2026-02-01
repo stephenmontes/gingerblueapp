@@ -810,3 +810,223 @@ async def get_users_for_time_entry(user: User = Depends(get_current_user)):
     users = await db.users.find({}, {"_id": 0, "user_id": 1, "name": 1, "email": 1}).to_list(100)
     return users
 
+
+
+# Daily hours limit and grouped reports
+DAILY_HOURS_LIMIT = 9
+
+@router.get("/reports/hours-by-user-date")
+async def get_hours_by_user_date(
+    period: str = "day",  # day, week, month
+    user: User = Depends(get_current_user)
+):
+    """Get hours grouped by user and date for reporting."""
+    
+    now = datetime.now(timezone.utc)
+    
+    # Calculate date range based on period
+    if period == "day":
+        start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    elif period == "week":
+        days_since_monday = now.weekday()
+        start_date = (now - timedelta(days=days_since_monday)).replace(hour=0, minute=0, second=0, microsecond=0)
+    elif period == "month":
+        start_date = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    else:
+        start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    
+    # Get all completed time logs in the period
+    time_logs = await db.fulfillment_time_logs.find({
+        "completed_at": {"$gte": start_date.isoformat()},
+        "duration_minutes": {"$gt": 0}
+    }, {"_id": 0}).to_list(5000)
+    
+    # Group by user and date
+    user_date_data = {}
+    
+    for log in time_logs:
+        user_id = log["user_id"]
+        user_name = log["user_name"]
+        
+        # Get date from completed_at
+        completed = log.get("completed_at", "")
+        if completed:
+            try:
+                log_date = datetime.fromisoformat(completed.replace('Z', '+00:00')).strftime("%Y-%m-%d")
+            except:
+                continue
+        else:
+            continue
+        
+        key = f"{user_id}_{log_date}"
+        
+        if key not in user_date_data:
+            user_date_data[key] = {
+                "user_id": user_id,
+                "user_name": user_name,
+                "date": log_date,
+                "total_minutes": 0,
+                "total_items": 0,
+                "total_orders": 0,
+                "entries": [],
+                "exceeds_limit": False
+            }
+        
+        user_date_data[key]["total_minutes"] += log.get("duration_minutes", 0)
+        user_date_data[key]["total_items"] += log.get("items_processed", 0)
+        user_date_data[key]["total_orders"] += log.get("orders_processed", 0)
+        user_date_data[key]["entries"].append({
+            "log_id": log["log_id"],
+            "stage_name": log["stage_name"],
+            "order_number": log.get("order_number"),
+            "duration_minutes": round(log.get("duration_minutes", 0), 1),
+            "items_processed": log.get("items_processed", 0),
+            "completed_at": log.get("completed_at")
+        })
+    
+    # Check if exceeds limit and calculate totals
+    result = []
+    for key, data in user_date_data.items():
+        total_hours = data["total_minutes"] / 60
+        data["total_hours"] = round(total_hours, 2)
+        data["labor_cost"] = round(total_hours * 30, 2)
+        data["exceeds_limit"] = total_hours > DAILY_HOURS_LIMIT
+        data["entries"] = sorted(data["entries"], key=lambda x: x.get("completed_at") or "", reverse=True)
+        result.append(data)
+    
+    # Sort by date desc, then user name
+    result.sort(key=lambda x: (x["date"], x["user_name"]), reverse=True)
+    
+    return {
+        "period": period,
+        "start_date": start_date.strftime("%Y-%m-%d"),
+        "data": result,
+        "daily_limit_hours": DAILY_HOURS_LIMIT
+    }
+
+
+@router.get("/user/daily-hours-check")
+async def check_user_daily_hours(user: User = Depends(get_current_user)):
+    """Check if the current user has exceeded the daily hours limit."""
+    
+    today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    
+    # Get all completed time logs for today for this user
+    pipeline = [
+        {"$match": {
+            "user_id": user.user_id,
+            "completed_at": {"$gte": today_start.isoformat()},
+            "duration_minutes": {"$gt": 0}
+        }},
+        {"$group": {
+            "_id": None,
+            "total_minutes": {"$sum": "$duration_minutes"}
+        }}
+    ]
+    
+    result = await db.fulfillment_time_logs.aggregate(pipeline).to_list(1)
+    
+    total_minutes = result[0]["total_minutes"] if result else 0
+    total_hours = total_minutes / 60
+    
+    # Also check if there's an active timer and add its time
+    active_timer = await db.fulfillment_time_logs.find_one({
+        "user_id": user.user_id,
+        "completed_at": None
+    }, {"_id": 0})
+    
+    active_timer_minutes = 0
+    if active_timer:
+        started = datetime.fromisoformat(active_timer["started_at"].replace('Z', '+00:00'))
+        now = datetime.now(timezone.utc)
+        if not active_timer.get("is_paused"):
+            active_timer_minutes = (now - started).total_seconds() / 60
+        active_timer_minutes += active_timer.get("accumulated_minutes", 0)
+    
+    total_hours_with_active = (total_minutes + active_timer_minutes) / 60
+    
+    return {
+        "user_id": user.user_id,
+        "user_name": user.name,
+        "date": today_start.strftime("%Y-%m-%d"),
+        "completed_hours": round(total_hours, 2),
+        "active_timer_hours": round(active_timer_minutes / 60, 2),
+        "total_hours": round(total_hours_with_active, 2),
+        "daily_limit": DAILY_HOURS_LIMIT,
+        "exceeds_limit": total_hours_with_active > DAILY_HOURS_LIMIT,
+        "remaining_hours": round(max(0, DAILY_HOURS_LIMIT - total_hours_with_active), 2)
+    }
+
+
+@router.post("/user/acknowledge-limit-exceeded")
+async def acknowledge_limit_exceeded(
+    continue_working: bool,
+    user: User = Depends(get_current_user)
+):
+    """Record user's response to exceeding daily hours limit."""
+    
+    now = datetime.now(timezone.utc)
+    
+    # Log the acknowledgment
+    await db.daily_limit_acknowledgments.insert_one({
+        "user_id": user.user_id,
+        "user_name": user.name,
+        "acknowledged_at": now.isoformat(),
+        "continue_working": continue_working,
+        "date": now.strftime("%Y-%m-%d")
+    })
+    
+    if continue_working:
+        # User wants to continue - mark that they've acknowledged for today
+        await db.users.update_one(
+            {"user_id": user.user_id},
+            {"$set": {
+                "daily_limit_acknowledged": now.strftime("%Y-%m-%d"),
+                "daily_limit_acknowledged_at": now.isoformat()
+            }}
+        )
+        return {"message": "Acknowledged. You may continue working.", "action": "continue"}
+    else:
+        # User chose not to continue - stop any active timer
+        active_timer = await db.fulfillment_time_logs.find_one({
+            "user_id": user.user_id,
+            "completed_at": None
+        })
+        
+        if active_timer:
+            started = datetime.fromisoformat(active_timer["started_at"].replace('Z', '+00:00'))
+            accumulated = active_timer.get("accumulated_minutes", 0)
+            if not active_timer.get("is_paused"):
+                session_minutes = (now - started).total_seconds() / 60
+            else:
+                session_minutes = 0
+            total_minutes = accumulated + session_minutes
+            
+            await db.fulfillment_time_logs.update_one(
+                {"log_id": active_timer["log_id"]},
+                {"$set": {
+                    "completed_at": now.isoformat(),
+                    "duration_minutes": total_minutes,
+                    "auto_stopped": True,
+                    "auto_stop_reason": "User chose to stop after exceeding daily limit"
+                }}
+            )
+        
+        return {"message": "Timer stopped. Please log out.", "action": "logout"}
+
+
+@router.get("/user/check-limit-acknowledged")
+async def check_limit_acknowledged(user: User = Depends(get_current_user)):
+    """Check if user has already acknowledged the daily limit for today."""
+    
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    
+    user_doc = await db.users.find_one({"user_id": user.user_id}, {"_id": 0})
+    
+    acknowledged_date = user_doc.get("daily_limit_acknowledged") if user_doc else None
+    
+    return {
+        "acknowledged_today": acknowledged_date == today,
+        "acknowledged_date": acknowledged_date
+    }
+
