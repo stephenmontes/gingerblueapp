@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Clock, StopCircle, Play, Pause } from "lucide-react";
 import { toast } from "sonner";
+import { FulfillmentUserStats } from "./FulfillmentUserStats";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -109,18 +110,26 @@ export function FulfillmentTimerBanner({ onTimerChange }) {
         </div>
         <div className="flex items-center gap-2">
           {isPaused ? (
-            <Button size="sm" onClick={handleResume} className="gap-1 bg-green-600 hover:bg-green-700">
+            <Button size="sm" onClick={handleResume} className="gap-1 bg-green-600 hover:bg-green-700" data-testid="resume-fulfillment-timer">
               <Play className="w-4 h-4" /> Resume
             </Button>
           ) : (
-            <Button size="sm" variant="secondary" onClick={handlePause} className="gap-1">
+            <Button size="sm" variant="secondary" onClick={handlePause} className="gap-1" data-testid="pause-fulfillment-timer">
               <Pause className="w-4 h-4" /> Pause
             </Button>
           )}
-          <Button size="sm" variant="destructive" onClick={handleStop} className="gap-1">
+          <Button size="sm" variant="destructive" onClick={handleStop} className="gap-1" data-testid="stop-fulfillment-timer">
             <StopCircle className="w-4 h-4" /> Stop
           </Button>
         </div>
+      </div>
+      
+      {/* User's Stage KPIs */}
+      <div className="mt-3 pt-3 border-t border-border/50">
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-muted-foreground mb-2">Your stats for this stage:</p>
+        </div>
+        <FulfillmentUserStats stageId={activeTimer.stage_id} stageName={activeTimer.stage_name} />
       </div>
     </div>
   );
