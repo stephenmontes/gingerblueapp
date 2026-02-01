@@ -173,6 +173,7 @@ Build a manufacturing and fulfillment app for Shopify websites with:
 - ✅ **Add to Frame Inventory button** (auto-creates inventory)
 - ✅ **Batch Stats KPIs** - Combined hours, labor cost, avg cost/frame, rejection rate
 - ✅ **FrameInventory.jsx refactored** (Feb 2026) - Split 838-line file into 7 components to prevent RangeError build errors
+- ✅ **User Stage KPIs on Production page** (Feb 2026) - Shows user's personal stats (time, qty made, avg/hr) while time tracking
 
 ## Prioritized Backlog
 
