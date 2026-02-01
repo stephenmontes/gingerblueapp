@@ -726,5 +726,4 @@ async def move_cut_list_item_to_assembly(
         "to_stage": assembly_stage["name"],
         "remaining_in_cutting": remaining
     }
-    }
 
