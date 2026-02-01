@@ -234,16 +234,17 @@ export default function Orders({ user }) {
   };
 
   const downloadCsvTemplate = () => {
-    const csv = `order_number,customer_name,customer_email,sku,quantity,item_name,price,shipping_address1,shipping_city,shipping_state,shipping_zip,shipping_country,notes
-PO-12345,John Smith,john@example.com,FRAME-8X10-OAK,2,Oak Frame 8x10,29.99,123 Main St,New York,NY,10001,US,Gift wrap
-PO-12345,John Smith,john@example.com,FRAME-11X14-WAL,1,Walnut Frame 11x14,39.99,123 Main St,New York,NY,10001,US,Gift wrap
-PO-12346,Jane Doe,jane@example.com,FRAME-5X7-BLK,3,Black Frame 5x7,19.99,456 Oak Ave,Los Angeles,CA,90001,US,`;
+    // Template matches Antique Farmhouse CSV format
+    const csv = `Order Number,Full Name,Address 1,City,State,Zip,Item Number,Price,Qty,Order Comments,Order Date
+PO-12345,John Smith,123 Main St,New York,NY,10001,FRAME-8X10-OAK,29.99,2,Gift wrap,2025-02-15
+PO-12345,John Smith,123 Main St,New York,NY,10001,FRAME-11X14-WAL,39.99,1,Gift wrap,2025-02-15
+PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-02-15`;
     
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'order_upload_template.csv';
+    a.download = 'antique_farmhouse_template.csv';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
