@@ -153,52 +153,6 @@ export function FulfillmentStageTab({ stage, stages, onRefresh }) {
     );
   }
 
-  // For stages with consolidated view, show tabs to switch between views
-  if (showConsolidatedView) {
-    return (
-      <div className="space-y-4">
-        <Tabs value={viewMode} onValueChange={setViewMode}>
-          <TabsList className="bg-muted/50">
-            <TabsTrigger value="orders" className="gap-2">
-              <List className="w-4 h-4" />
-              Orders View
-            </TabsTrigger>
-            <TabsTrigger value="items" className="gap-2">
-              <Printer className="w-4 h-4" />
-              Items List (Sorted)
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="orders">
-            <OrdersView
-              orders={orders}
-              stage={stage}
-              stages={stages}
-              selectedOrders={selectedOrders}
-              outOfStockCount={outOfStockCount}
-              nextStage={nextStage}
-              isLastStage={isLastStage}
-              onToggleOrderSelection={toggleOrderSelection}
-              onToggleAllOrders={toggleAllOrders}
-              onMoveOrderToNext={moveOrderToNext}
-              onMoveOrderToStage={moveOrderToStage}
-              onBulkMoveOrders={bulkMoveOrders}
-              onMarkShipped={markShipped}
-              onShowInventory={setInventoryDialogOrder}
-            />
-          </TabsContent>
-
-          <TabsContent value="items">
-            <PrintListView stageId={stage.stage_id} />
-          </TabsContent>
-        </Tabs>
-
-        <InventoryDialog order={inventoryDialogOrder} onClose={() => setInventoryDialogOrder(null)} />
-      </div>
-    );
-  }
-
-  // Default view for Orders and Pack stages
   return (
     <>
       <OrdersView
@@ -216,8 +170,18 @@ export function FulfillmentStageTab({ stage, stages, onRefresh }) {
         onBulkMoveOrders={bulkMoveOrders}
         onMarkShipped={markShipped}
         onShowInventory={setInventoryDialogOrder}
+        onOpenWorksheet={setWorksheetOrder}
       />
       <InventoryDialog order={inventoryDialogOrder} onClose={() => setInventoryDialogOrder(null)} />
+      <OrderWorksheet
+        order={worksheetOrder}
+        stages={stages}
+        currentStage={stage}
+        onClose={() => setWorksheetOrder(null)}
+        onMoveToNextStage={moveOrderToNext}
+        onRefresh={() => { loadOrders(); onRefresh(); }}
+      />
+    
     </>
   );
 }
