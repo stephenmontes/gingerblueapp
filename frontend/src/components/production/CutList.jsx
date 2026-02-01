@@ -368,6 +368,11 @@ export function FrameList({ batch, activeTimer, currentStageId, stages }) {
               <TableCell className="text-center font-mono text-base text-primary">
                 {grandTotalCompleted}
               </TableCell>
+              {isQualityCheckStage && (
+                <TableCell className="text-center font-mono text-base text-orange-400">
+                  {frames.reduce((sum, f) => sum + (localRejected[f.frame_id] || f.qty_rejected || 0), 0)}
+                </TableCell>
+              )}
               <TableCell className="text-center">
                 {grandTotalCompleted >= grandTotalRequired && (
                   <Check className="w-5 h-5 text-green-500 mx-auto" />
