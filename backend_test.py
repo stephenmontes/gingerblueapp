@@ -231,6 +231,15 @@ class ManufacturingAPITester:
         
         return endpoint_exists
 
+    def test_time_logs_endpoints(self):
+        """Test time logging endpoints"""
+        print("\n⏱️ Testing Time Logs...")
+        
+        success, status, data = self.make_request('GET', 'time-logs')
+        self.log_test("Get Time Logs", success, f"Status: {status}")
+        
+        return success
+
     def test_store_sync_endpoints(self):
         """Test store sync endpoints"""
         print("\n🔄 Testing Store Sync Endpoints...")
