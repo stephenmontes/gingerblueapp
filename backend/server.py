@@ -275,7 +275,7 @@ async def logout(request: Request, response: Response):
     if session_token:
         await db.user_sessions.delete_many({"session_token": session_token})
     
-    response.delete_cookie(key="session_token", path="/", samesite="none", secure=True)
+    response.delete_cookie(key="session_token", path="/", samesite="lax", secure=True)
     return {"message": "Logged out"}
 
 # ============== Users Routes ==============
