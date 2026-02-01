@@ -8,6 +8,7 @@ import Login from "@/pages/Login";
 import Dashboard from "@/pages/Dashboard";
 import Orders from "@/pages/Orders";
 import Production from "@/pages/Production";
+import FrameInventory from "@/pages/FrameInventory";
 import Team from "@/pages/Team";
 import Reports from "@/pages/Reports";
 import Settings from "@/pages/Settings";
@@ -203,6 +204,18 @@ function AppRouter() {
             {({ user, setUser }) => (
               <Layout user={user} setUser={setUser}>
                 <Production user={user} />
+              </Layout>
+            )}
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/inventory"
+        element={
+          <ProtectedRoute>
+            {({ user, setUser }) => (
+              <Layout user={user} setUser={setUser}>
+                <FrameInventory user={user} />
               </Layout>
             )}
           </ProtectedRoute>
