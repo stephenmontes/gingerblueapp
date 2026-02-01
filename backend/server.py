@@ -628,21 +628,23 @@ async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current
 @api_router.post("/stages/{stage_id}/start-timer")
 async def start_stage_timer(stage_id: str, user: User = Depends(get_current_user)):
     """Start time tracking for a user working on a specific stage.
-    Each user tracks their time per stage independently."""
+    User can only have ONE active timer at a time across all stages."""
     
     stage = await db.production_stages.find_one({"stage_id": stage_id}, {"_id": 0})
     if not stage:
         raise HTTPException(status_code=404, detail="Stage not found")
     
-    # Check if user already has an active timer for THIS stage
-    active_timer = await db.time_logs.find_one({
+    # Check if user already has ANY active timer (only one timer allowed at a time)
+    any_active_timer = await db.time_logs.find_one({
         "user_id": user.user_id,
-        "stage_id": stage_id,
         "completed_at": None
     }, {"_id": 0})
     
-    if active_timer:
-        raise HTTPException(status_code=400, detail="Timer already running for this stage")
+    if any_active_timer:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"You already have an active timer for {any_active_timer.get('stage_name', 'another stage')}. Stop it first."
+        )
     
     now = datetime.now(timezone.utc)
     
