@@ -97,22 +97,29 @@ export function FrameList({ batch, activeTimer, currentStageId, stages }) {
     fetchFrames();
   }, [fetchFrames]);
 
-  const saveToServer = async (frameId, qtyCompleted) => {
+  const saveToServer = async (frameId, qtyCompleted, qtyRejected = null) => {
     setUpdating(prev => ({ ...prev, [frameId]: true }));
     
     try {
-      const res = await fetch(
-        `${API}/batches/${batch.batch_id}/frames/${frameId}?qty_completed=${qtyCompleted}`,
-        { method: "PUT", credentials: "include" }
-      );
+      let url = `${API}/batches/${batch.batch_id}/frames/${frameId}?qty_completed=${qtyCompleted}`;
+      if (qtyRejected !== null) {
+        url += `&qty_rejected=${qtyRejected}`;
+      }
+      
+      const res = await fetch(url, { method: "PUT", credentials: "include" });
       
       if (res.ok) {
         // Update local state
         setFramesData(prev => {
           if (!prev) return prev;
-          const newFrames = prev.frames.map(f => 
-            f.frame_id === frameId ? { ...f, qty_completed: qtyCompleted } : f
-          );
+          const newFrames = prev.frames.map(f => {
+            if (f.frame_id === frameId) {
+              const updated = { ...f, qty_completed: qtyCompleted };
+              if (qtyRejected !== null) updated.qty_rejected = qtyRejected;
+              return updated;
+            }
+            return f;
+          });
           return { ...prev, frames: newFrames };
         });
       } else {
