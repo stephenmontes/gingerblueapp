@@ -8,6 +8,7 @@ import Login from "@/pages/Login";
 import Dashboard from "@/pages/Dashboard";
 import Orders from "@/pages/Orders";
 import Production from "@/pages/Production";
+import OrderFulfillment from "@/pages/OrderFulfillment";
 import FrameInventory from "@/pages/FrameInventory";
 import Team from "@/pages/Team";
 import Reports from "@/pages/Reports";
