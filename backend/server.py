@@ -138,8 +138,10 @@ class ProductionItem(BaseModel):
     size: str
     qty_required: int = 1
     qty_completed: int = 0
+    qty_rejected: int = 0  # Track rejected frames
     current_stage_id: str
     status: str = "pending"  # pending, in_progress, completed
+    added_to_inventory: bool = False  # Track if added to inventory
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class TimeLog(BaseModel):
