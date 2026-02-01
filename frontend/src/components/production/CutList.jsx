@@ -402,7 +402,8 @@ export function FrameList({ batch, activeTimer, currentStageId, stages }) {
                 </TableHead>
               )}
               <TableHead className="text-center w-24">Done</TableHead>
-              {nextStage && <TableHead className="text-center w-36">Action</TableHead>}
+              {nextStage && !isQualityCheckStage && <TableHead className="text-center w-36">Action</TableHead>}
+              {isQualityCheckStage && <TableHead className="text-center w-36">To Inventory</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
