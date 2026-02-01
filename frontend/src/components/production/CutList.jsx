@@ -66,6 +66,8 @@ export function FrameList({ batch, activeTimer, currentStageId, stages }) {
   const fetchFrames = useCallback(async () => {
     if (!batch?.batch_id) return;
     
+    setLoading(true);
+    
     try {
       // Fetch frames for current stage
       const url = currentStageId 
@@ -92,6 +94,13 @@ export function FrameList({ batch, activeTimer, currentStageId, stages }) {
       setLoading(false);
     }
   }, [batch?.batch_id, currentStageId]);
+
+  // Reset state when stage changes
+  useEffect(() => {
+    setLocalValues({});
+    setLocalRejected({});
+    setFramesData(null);
+  }, [currentStageId]);
 
   useEffect(() => {
     fetchFrames();
