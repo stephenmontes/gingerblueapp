@@ -25,12 +25,25 @@ async def get_orders(
     include_archived: Optional[bool] = False,
     user: User = Depends(get_current_user)
 ):
-    """Get all orders with optional filters"""
+    """Get all orders with optional filters
+    
+    Status filter options:
+    - "active": Shows orders that are NOT shipped, cancelled, or completed (default for UI)
+    - "all": Shows all orders
+    - Specific status (e.g., "pending", "shipped"): Shows only that status
+    """
     query = {}
     if store_id:
         query["store_id"] = store_id
-    if status:
+    
+    # Handle status filtering - "active" means exclude shipped/cancelled/completed
+    inactive_statuses = ["shipped", "cancelled", "completed"]
+    if status == "active":
+        query["status"] = {"$nin": inactive_statuses}
+    elif status and status != "all":
         query["status"] = status
+    # If status is "all" or None, no status filter is applied
+    
     if stage_id:
         query["current_stage_id"] = stage_id
     if unbatched:
@@ -42,10 +55,11 @@ async def get_orders(
     
     # Fetch from fulfillment_orders (synced orders) - this is the main orders collection
     # Sort by order_date (actual order date) descending, then by created_at as fallback
+    # Increase limit to handle larger datasets
     orders = await db.fulfillment_orders.find(query, {"_id": 0}).sort([
         ("order_date", -1),
         ("created_at", -1)
-    ]).to_list(1000)
+    ]).to_list(5000)
     return orders
 
 
