@@ -105,23 +105,28 @@ export default function Team({ user }) {
       }
     } catch (error) {
       console.error("Failed to fetch stats:", error);
-      toast.error("Failed to load stats");
     }
   }, [period, customStartDate, customEndDate]);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
-    await Promise.all([fetchUsers(), fetchStats()]);
-    setLoading(false);
-  };
+    try {
+      await Promise.all([fetchUsers(), fetchStats()]);
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchStats]);
 
   useEffect(() => {
-    fetchUsers();
+    fetchData();
   }, []);
 
+  // Re-fetch stats when period changes (but not on initial mount)
   useEffect(() => {
-    fetchStats();
-  }, [fetchStats]);
+    if (!loading) {
+      fetchStats();
+    }
+  }, [period, customStartDate, customEndDate]);
 
   // Handle period change
   const handlePeriodChange = (value) => {
