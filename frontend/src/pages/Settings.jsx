@@ -349,17 +349,23 @@ export default function Settings({ user }) {
                   <p className="text-xs text-muted-foreground mt-1">Your Shopify store URL (without https://)</p>
                 </div>
                 <div>
-                  <Label>Admin API Access Token <span className="text-destructive">*</span></Label>
+                  <Label>Admin API Access Token {!editStore && <span className="text-destructive">*</span>}</Label>
                   <Input 
                     type="password" 
                     value={formToken} 
                     onChange={(e) => setFormToken(e.target.value)} 
-                    placeholder={editStore ? "Leave blank to keep existing" : "shpat_xxxxx..."} 
+                    placeholder={editStore ? "••••••••••••••••  (leave blank to keep current)" : "shpat_xxxxx..."} 
                     data-testid="access-token-input" 
                   />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Get from Shopify Admin → Settings → Apps → Develop apps
-                  </p>
+                  {editStore ? (
+                    <p className="text-xs text-green-500 mt-1">
+                      ✓ Token saved. Enter a new token only if you want to change it.
+                    </p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Get from Shopify Admin → Settings → Apps → Develop apps
+                    </p>
+                  )}
                 </div>
               </>
             ) : formPlatform === "etsy" ? (
@@ -385,15 +391,23 @@ export default function Settings({ user }) {
                   <p className="text-xs text-muted-foreground mt-1">From Etsy Developer Portal</p>
                 </div>
                 <div>
-                  <Label>Access Token <span className="text-destructive">*</span></Label>
+                  <Label>Access Token {!editStore && <span className="text-destructive">*</span>}</Label>
                   <Input 
                     type="password" 
                     value={formToken} 
                     onChange={(e) => setFormToken(e.target.value)} 
-                    placeholder={editStore ? "Leave blank to keep existing" : "OAuth access token"} 
+                    placeholder={editStore ? "••••••••••••••••  (leave blank to keep current)" : "OAuth access token"} 
                     data-testid="access-token-input" 
                   />
-                  <p className="text-xs text-muted-foreground mt-1">OAuth 2.0 access token from Etsy</p>
+                  {editStore ? (
+                    <p className="text-xs text-green-500 mt-1">
+                      ✓ Token saved. Enter a new token only if you want to change it.
+                    </p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      OAuth 2.0 access token from Etsy
+                    </p>
+                  )}
                 </div>
               </>
             ) : (
