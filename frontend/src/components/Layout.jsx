@@ -27,7 +27,7 @@ const API = `${BACKEND_URL}/api`;
 const navItems = [
   { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { path: "/orders", label: "Orders", icon: Package },
-  { path: "/production", label: "Production", icon: Workflow },
+  { path: "/production", label: "Frame Production", icon: Workflow },
   { path: "/team", label: "Team", icon: Users },
   { path: "/reports", label: "Reports", icon: BarChart3 },
   { path: "/settings", label: "Settings", icon: Settings },
