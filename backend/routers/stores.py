@@ -52,11 +52,24 @@ async def test_connection(data: TestConnectionRequest, user: User = Depends(get_
     if user.role not in ["admin", "manager"]:
         raise HTTPException(status_code=403, detail="Not authorized")
     
+    # If using existing token, fetch it from the database
+    access_token = data.access_token
+    if data.use_existing_token and data.store_id:
+        store = await db.stores.find_one({"store_id": data.store_id})
+        if not store:
+            raise HTTPException(status_code=404, detail="Store not found")
+        access_token = store.get("access_token")
+        if not access_token:
+            raise HTTPException(status_code=400, detail="No existing token found for this store")
+    
+    if not access_token:
+        raise HTTPException(status_code=400, detail="Access token is required")
+    
     if data.platform == "shopify":
         if not data.shop_url:
             raise HTTPException(status_code=400, detail="Shop URL is required for Shopify")
         
-        service = ShopifyService(data.shop_url, data.access_token)
+        service = ShopifyService(data.shop_url, access_token)
         result = await service.test_connection()
         
         if result["success"]:
@@ -74,7 +87,7 @@ async def test_connection(data: TestConnectionRequest, user: User = Depends(get_
         if not data.shop_id or not data.api_key:
             raise HTTPException(status_code=400, detail="Shop ID and API Key are required for Etsy")
         
-        service = EtsyService(data.shop_id, data.access_token, data.api_key)
+        service = EtsyService(data.shop_id, access_token, data.api_key)
         result = await service.test_connection()
         
         if result["success"]:
