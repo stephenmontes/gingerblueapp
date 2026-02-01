@@ -31,7 +31,7 @@ class ShipStationService:
             async with httpx.AsyncClient(timeout=30.0) as client:
                 response = await client.get(
                     f"{self.BASE_URL}/accounts",
-                    headers=self.headers
+                    headers=self._get_headers()
                 )
                 if response.status_code == 200:
                     return {"success": True, "message": "Connected to ShipStation"}
@@ -48,7 +48,7 @@ class ShipStationService:
             async with httpx.AsyncClient(timeout=30.0) as client:
                 response = await client.get(
                     f"{self.BASE_URL}/carriers",
-                    headers=self.headers
+                    headers=self._get_headers()
                 )
                 response.raise_for_status()
                 return response.json()
@@ -61,7 +61,7 @@ class ShipStationService:
             async with httpx.AsyncClient(timeout=30.0) as client:
                 response = await client.get(
                     f"{self.BASE_URL}/carriers/listservices?carrierCode={carrier_code}",
-                    headers=self.headers
+                    headers=self._get_headers()
                 )
                 response.raise_for_status()
                 return response.json()
@@ -85,7 +85,7 @@ class ShipStationService:
                 response = await client.post(
                     f"{self.BASE_URL}/shipments/getrates",
                     json=rate_request,
-                    headers=self.headers
+                    headers=self._get_headers()
                 )
                 response.raise_for_status()
                 return response.json()
@@ -114,7 +114,7 @@ class ShipStationService:
                 response = await client.post(
                     f"{self.BASE_URL}/orders/createorder",
                     json=order_data,
-                    headers=self.headers
+                    headers=self._get_headers()
                 )
                 response.raise_for_status()
                 return response.json()
@@ -131,7 +131,7 @@ class ShipStationService:
                 response = await client.get(
                     f"{self.BASE_URL}/orders",
                     params=params,
-                    headers=self.headers
+                    headers=self._get_headers()
                 )
                 response.raise_for_status()
                 return response.json()
@@ -144,7 +144,7 @@ class ShipStationService:
             async with httpx.AsyncClient(timeout=30.0) as client:
                 response = await client.get(
                     f"{self.BASE_URL}/orders/{order_id}",
-                    headers=self.headers
+                    headers=self._get_headers()
                 )
                 response.raise_for_status()
                 return response.json()
@@ -170,7 +170,7 @@ class ShipStationService:
                 response = await client.post(
                     f"{self.BASE_URL}/shipments/createlabel",
                     json=label_request,
-                    headers=self.headers
+                    headers=self._get_headers()
                 )
                 response.raise_for_status()
                 return response.json()
@@ -186,7 +186,7 @@ class ShipStationService:
                 response = await client.post(
                     f"{self.BASE_URL}/shipments/voidlabel",
                     json={"shipmentId": shipment_id},
-                    headers=self.headers
+                    headers=self._get_headers()
                 )
                 response.raise_for_status()
                 return response.json()
@@ -201,7 +201,7 @@ class ShipStationService:
                 response = await client.get(
                     f"{self.BASE_URL}/shipments",
                     params=params,
-                    headers=self.headers
+                    headers=self._get_headers()
                 )
                 response.raise_for_status()
                 return response.json()
@@ -214,7 +214,7 @@ class ShipStationService:
             async with httpx.AsyncClient(timeout=30.0) as client:
                 response = await client.get(
                     f"{self.BASE_URL}/stores",
-                    headers=self.headers
+                    headers=self._get_headers()
                 )
                 response.raise_for_status()
                 return response.json()
@@ -235,7 +235,7 @@ class ShipStationService:
                         "notifyCustomer": True,
                         "notifySalesChannel": True
                     },
-                    headers=self.headers
+                    headers=self._get_headers()
                 )
                 response.raise_for_status()
                 return response.json()
