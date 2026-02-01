@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
-import { Clock, DollarSign, Package, TrendingUp } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Clock, DollarSign, Package, TrendingUp, Calendar } from "lucide-react";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -40,36 +41,47 @@ export function FulfillmentKpiBanner() {
 
   if (!kpis) return null;
 
+  const weekLabel = kpis.week_start && kpis.week_end 
+    ? `${kpis.week_start} - ${kpis.week_end}` 
+    : "This Week";
+
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4" data-testid="fulfillment-kpi-banner">
-      <KpiCard
-        icon={Clock}
-        label="Total Time"
-        value={formatTime(kpis.total_hours)}
-        subValue={`${kpis.avg_time_per_order} min/order avg`}
-        color="blue"
-      />
-      <KpiCard
-        icon={Package}
-        label="Orders Completed"
-        value={kpis.total_orders}
-        subValue={`${kpis.total_items} items total`}
-        color="green"
-      />
-      <KpiCard
-        icon={DollarSign}
-        label="Total Labor Cost"
-        value={`$${kpis.labor_cost.toLocaleString()}`}
-        subValue={`${kpis.session_count} work sessions`}
-        color="purple"
-      />
-      <KpiCard
-        icon={TrendingUp}
-        label="Cost Analysis"
-        value={`$${kpis.cost_per_order.toFixed(2)}/order`}
-        subValue={`$${kpis.cost_per_item.toFixed(2)}/frame`}
-        color="orange"
-      />
+    <div data-testid="fulfillment-kpi-banner">
+      <div className="flex items-center gap-2 mb-3">
+        <Calendar className="w-4 h-4 text-muted-foreground" />
+        <span className="text-sm text-muted-foreground">Weekly Summary:</span>
+        <Badge variant="outline" className="text-xs">{weekLabel}</Badge>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <KpiCard
+          icon={Clock}
+          label="Total Time"
+          value={formatTime(kpis.total_hours)}
+          subValue={`${kpis.avg_time_per_order} min/order avg`}
+          color="blue"
+        />
+        <KpiCard
+          icon={Package}
+          label="Orders Completed"
+          value={kpis.total_orders}
+          subValue={`${kpis.total_items} items total`}
+          color="green"
+        />
+        <KpiCard
+          icon={DollarSign}
+          label="Total Labor Cost"
+          value={`$${kpis.labor_cost.toLocaleString()}`}
+          subValue={`${kpis.session_count} work sessions`}
+          color="purple"
+        />
+        <KpiCard
+          icon={TrendingUp}
+          label="Cost Analysis"
+          value={`$${kpis.cost_per_order.toFixed(2)}/order`}
+          subValue={`$${kpis.cost_per_item.toFixed(2)}/frame`}
+          color="orange"
+        />
+      </div>
     </div>
   );
 }
