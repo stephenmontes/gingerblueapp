@@ -41,6 +41,9 @@ export function BatchDetailView({
   // Get workers for current stage
   const currentStageWorkers = stageWorkers && activeStageId ? stageWorkers[activeStageId] || [] : [];
 
+  // Check if current stage is the Cutting stage (for showing Cut List)
+  const isCuttingStage = activeStageId === "stage_cutting";
+
   return (
     <div className="space-y-4">
       <BatchHeader
@@ -68,8 +71,10 @@ export function BatchDetailView({
       {/* KPIs / Stats */}
       <BatchStats batchId={batch.batch_id} />
 
-      {/* Cut List - aggregated view by size and color */}
-      <CutList batch={batch} activeTimer={activeTimer} />
+      {/* Cut List - only show in Cutting stage */}
+      {isCuttingStage && (
+        <CutList batch={batch} activeTimer={activeTimer} />
+      )}
 
       <StageContent
         stageData={currentStageData}
