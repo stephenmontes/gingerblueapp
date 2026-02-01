@@ -515,7 +515,7 @@ function ColorDot({ color }) {
     "W": "#FFFFFF",
     "B": "#1a1a1a",
     "N": "#D2B48C",
-    "G": "#808080",
+    "G": "#FFD700",
     "R": "#DC2626",
     "BL": "#3B82F6",
     "GR": "#22C55E",
