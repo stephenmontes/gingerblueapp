@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { BatchList } from "../components/production/BatchList";
 import { BatchDetailView, NoBatchSelected } from "../components/production/BatchDetailView";
@@ -8,6 +9,7 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = BACKEND_URL + "/api";
 
 export default function Production() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [batches, setBatches] = useState([]);
   const [selectedBatch, setSelectedBatch] = useState(null);
   const [batchDetails, setBatchDetails] = useState(null);
@@ -29,6 +31,28 @@ export default function Production() {
     const interval = setInterval(loadStageWorkers, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  // Auto-select batch from URL parameter
+  useEffect(() => {
+    const batchId = searchParams.get("batch");
+    if (batchId && batches.length > 0 && !selectedBatch) {
+      const batch = batches.find(b => b.batch_id === batchId);
+      if (batch) {
+        setSelectedBatch(batch);
+        toast.info(`Viewing batch: ${batch.name}`);
+      }
+    }
+  }, [searchParams, batches, selectedBatch]);
+
+  // Update URL when batch is selected
+  function handleBatchSelect(batch) {
+    setSelectedBatch(batch);
+    if (batch) {
+      setSearchParams({ batch: batch.batch_id });
+    } else {
+      setSearchParams({});
+    }
+  }
 
   useEffect(() => {
     if (selectedBatch) {
