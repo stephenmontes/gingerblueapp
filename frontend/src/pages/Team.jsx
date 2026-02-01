@@ -68,34 +68,96 @@ export default function Team({ user }) {
   const [userStats, setUserStats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showTimerHistory, setShowTimerHistory] = useState(false);
+  
+  // Period filter state
+  const [period, setPeriod] = useState("all");
+  const [customStartDate, setCustomStartDate] = useState("");
+  const [customEndDate, setCustomEndDate] = useState("");
+  const [showCustomDatePicker, setShowCustomDatePicker] = useState(false);
 
-  const fetchData = async () => {
+  const fetchUsers = async () => {
     try {
-      const [usersRes, statsRes] = await Promise.all([
-        fetch(`${API}/users`, { credentials: "include" }),
-        fetch(`${API}/stats/users`, { credentials: "include" }),
-      ]);
-
+      const usersRes = await fetch(`${API}/users`, { credentials: "include" });
       if (usersRes.ok) {
         const usersData = await usersRes.json();
         setUsers(usersData);
       }
+    } catch (error) {
+      console.error("Failed to fetch users:", error);
+    }
+  };
 
+  const fetchStats = useCallback(async () => {
+    try {
+      let url = `${API}/stats/users`;
+      const params = new URLSearchParams();
+      
+      if (period === "custom" && customStartDate && customEndDate) {
+        params.append("start_date", customStartDate);
+        params.append("end_date", customEndDate);
+      } else if (period && period !== "all") {
+        params.append("period", period);
+      }
+      
+      if (params.toString()) {
+        url += `?${params.toString()}`;
+      }
+
+      const statsRes = await fetch(url, { credentials: "include" });
       if (statsRes.ok) {
         const statsData = await statsRes.json();
         setUserStats(statsData);
       }
     } catch (error) {
-      console.error("Failed to fetch team data:", error);
-      toast.error("Failed to load team data");
-    } finally {
-      setLoading(false);
+      console.error("Failed to fetch stats:", error);
+      toast.error("Failed to load stats");
     }
+  }, [period, customStartDate, customEndDate]);
+
+  const fetchData = async () => {
+    setLoading(true);
+    await Promise.all([fetchUsers(), fetchStats()]);
+    setLoading(false);
   };
 
   useEffect(() => {
-    fetchData();
+    fetchUsers();
   }, []);
+
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
+
+  // Handle period change
+  const handlePeriodChange = (value) => {
+    if (value === "custom") {
+      setShowCustomDatePicker(true);
+    } else {
+      setPeriod(value);
+      setShowCustomDatePicker(false);
+    }
+  };
+
+  // Apply custom date range
+  const applyCustomDateRange = () => {
+    if (customStartDate && customEndDate) {
+      setPeriod("custom");
+      setShowCustomDatePicker(false);
+    } else {
+      toast.error("Please select both start and end dates");
+    }
+  };
+
+  // Get period label for display
+  const getPeriodLabel = () => {
+    switch (period) {
+      case "day": return "Today";
+      case "week": return "This Week";
+      case "month": return "This Month";
+      case "custom": return `${customStartDate} - ${customEndDate}`;
+      default: return "All Time";
+    }
+  };
 
   const handleRoleChange = async (userId, newRole) => {
     try {
