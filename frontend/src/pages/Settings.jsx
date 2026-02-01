@@ -250,7 +250,7 @@ export default function Settings({ user }) {
             <CardDescription>Manage your store connections</CardDescription>
           </div>
           {isManager && (
-            <Button onClick={() => setAddStoreOpen(true)} className="gap-2" data-testid="add-store-btn">
+            <Button onClick={openAddStore} className="gap-2" data-testid="add-store-btn">
               <Plus className="w-4 h-4" />Add Store
             </Button>
           )}
