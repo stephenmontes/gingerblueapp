@@ -46,6 +46,42 @@ def get_sku_match_key(sku: str) -> str:
     return f"{color}-{size}"
 
 
+def parse_sku_for_sorting(sku: str) -> tuple:
+    """
+    Parse SKU into sortable components.
+    SKU format example: PREFIX-COLOR-NUMBER-SIZE (e.g., FRM-BLK-12-SM)
+    Sort by: 2nd group (letters/color), 3rd group (numbers), 4th group (letters/size)
+    Also uses second-to-last letters for final sorting
+    """
+    if not sku:
+        return ("ZZZ", 9999, "ZZZ", "ZZZ")
+    
+    parts = sku.replace('_', '-').replace('.', '-').split('-')
+    parts = [p.strip().upper() for p in parts if p.strip()]
+    
+    # Get sorting components
+    part2 = parts[1] if len(parts) > 1 else "ZZZ"  # 2nd group (usually color)
+    part3 = 9999  # 3rd group (numbers)
+    if len(parts) > 2:
+        try:
+            part3 = int(''.join(filter(str.isdigit, parts[2]))) if any(c.isdigit() for c in parts[2]) else 9999
+        except:
+            part3 = 9999
+    part4 = parts[3] if len(parts) > 3 else "ZZZ"  # 4th group (usually size)
+    
+    # Second to last letters in SKU for additional sorting
+    second_to_last = parts[-2] if len(parts) >= 2 else "ZZZ"
+    
+    return (part2, part3, part4, second_to_last)
+
+
+def get_item_group_key(item: dict) -> str:
+    """Create a grouping key for identical items (SKU + size combination)"""
+    sku = item.get("sku", "UNKNOWN")
+    name = item.get("name", "Unknown")
+    return f"{sku}||{name}"
+
+
 async def check_inventory_for_order(order: dict) -> dict:
     """Check inventory availability for all items in an order"""
     items = order.get("items", []) or order.get("line_items", [])
