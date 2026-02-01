@@ -182,6 +182,7 @@ export function FulfillmentStageTab({ stage, stages, onRefresh, onTimerChange })
         onClose={() => setWorksheetOrder(null)}
         onMoveToNextStage={moveOrderToNext}
         onRefresh={() => { loadOrders(); onRefresh(); }}
+        onTimerChange={onTimerChange}
       />
     
     </>
