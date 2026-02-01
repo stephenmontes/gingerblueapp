@@ -253,6 +253,12 @@ function OrdersView({
 }) {
   return (
     <Card className="bg-card border-border">
+      {/* Active Workers Banner */}
+      {stage.stage_id !== "fulfill_orders" && (
+        <div className="px-4 pt-4">
+          <ActiveWorkersBanner stageId={stage.stage_id} stageName={stage.name} />
+        </div>
+      )}
       {/* Timer Required Warning Banner */}
       {timerRequired && !hasActiveTimerForStage && (
         <div className="px-4 py-3 bg-yellow-500/10 border-b border-yellow-500/30 flex items-center gap-3">
