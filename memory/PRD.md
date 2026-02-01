@@ -198,20 +198,30 @@ Build a manufacturing and fulfillment app for Shopify websites with:
 - ✅ **Stage Cards Popup** (Feb 2026): Click summary cards at top of Order Fulfillment to see orders in that stage in a popup
 - ✅ **Batch Number in Order Fulfillment** (Feb 2026): Orders display their associated batch name/ID in the fulfillment view
 - ✅ **Batch Click-Through** (Feb 2026): Clicking batch badge navigates to Frame Production with that batch auto-selected
+- ✅ **Order Fulfillment Timer & KPI System** (Feb 2026):
+  - Timer start/stop/pause/resume functionality per stage
+  - FulfillmentTimerBanner shows active timer with live countdown
+  - User KPIs displayed in banner (Time, Orders, Avg/hr)
+  - Active workers badge shows who's working on each stage
+  - Timer history tracking for performance analytics
+  - Full API: `/api/fulfillment/stages/{id}/start-timer`, `/stop-timer`, `/pause-timer`, `/resume-timer`
+  - KPI endpoints: `/api/fulfillment/stats/user-kpis`, `/api/fulfillment/stats/stage-kpis`
 
 ## Prioritized Backlog
 
-### P0 - Critical
-- [ ] End-to-end test full production workflow
-- [ ] Test batch stats calculations
-
-### P1 - Important
-- [ ] Rejection trends report over time
-- [ ] Export batch stats to CSV/PDF
+### P1 - Important (Next Tasks)
+- [ ] Print Order Functionality - Add button to print order details from worksheet
+- [ ] Order Audit Log - Track changes to order status/details
+- [ ] Bulk "Mark All Complete" per stage - One-click completion
 
 ### P2 - Nice to Have
+- [ ] "Undo" Functionality - Revert major actions like bulk moves
+- [ ] UI State Persistence - Remember user preferences (collapsed states)
+- [ ] Auto-Timer Prompt - Suggest starting timer when entering stage
+- [ ] Inventory Adjustment Audit Log - Track all manual inventory changes
+- [ ] Rejection trends report over time
+- [ ] Export batch stats to CSV/PDF
 - [ ] Real store data testing
-- [ ] Auto-deduct inventory on production start
 
 ## 3rd Party Integrations
 - **Emergent Google Auth** - User login
