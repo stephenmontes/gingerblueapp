@@ -10,7 +10,12 @@ from dependencies import get_current_user
 router = APIRouter(prefix="/fulfillment", tags=["fulfillment-timers"])
 
 @router.post("/stages/{stage_id}/start-timer")
-async def start_fulfillment_timer(stage_id: str, user: User = Depends(get_current_user)):
+async def start_fulfillment_timer(
+    stage_id: str, 
+    order_id: Optional[str] = None,
+    order_number: Optional[str] = None,
+    user: User = Depends(get_current_user)
+):
     """Start time tracking for a user working on a fulfillment stage."""
     stage = await db.fulfillment_stages.find_one({"stage_id": stage_id}, {"_id": 0})
     if not stage:
@@ -36,6 +41,8 @@ async def start_fulfillment_timer(stage_id: str, user: User = Depends(get_curren
         "user_name": user.name,
         "stage_id": stage_id,
         "stage_name": stage["name"],
+        "order_id": order_id,
+        "order_number": order_number,
         "action": "started",
         "started_at": now.isoformat(),
         "orders_processed": 0,
@@ -52,6 +59,8 @@ async def start_fulfillment_timer(stage_id: str, user: User = Depends(get_curren
         "log_id": time_log["log_id"],
         "stage_id": stage_id,
         "stage_name": stage["name"],
+        "order_id": order_id,
+        "order_number": order_number,
         "user_name": user.name,
         "started_at": now.isoformat()
     }
