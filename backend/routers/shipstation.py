@@ -203,3 +203,122 @@ async def void_shipping_label(shipment_id: int, user: User = Depends(get_current
         raise HTTPException(status_code=400, detail=result["error"])
     
     return result
+
+
+# ============== Order Sync Endpoints ==============
+
+@router.post("/sync/orders/{store_id}")
+async def sync_orders_from_store(
+    store_id: int,
+    days_back: int = 365,
+    order_status: Optional[str] = None,
+    user: User = Depends(get_current_user)
+):
+    """
+    Sync orders from a specific ShipStation store
+    
+    Store IDs:
+    - 82108: GingerBlueCo (Etsy)
+    - 4089: ginger blue decor (Shopify)
+    - 64326: Ginger Blue Home (Shopify)
+    - 4088: Antique Farmhouse
+    """
+    if user.role not in ["admin", "manager"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    from services.shipstation_sync import sync_orders_from_shipstation
+    
+    result = await sync_orders_from_shipstation(
+        store_id=store_id,
+        days_back=days_back,
+        order_status=order_status
+    )
+    
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("errors", ["Sync failed"]))
+    
+    return result
+
+
+@router.post("/sync/gingerblueco")
+async def sync_gingerblueco_orders(
+    days_back: int = 365,
+    user: User = Depends(get_current_user)
+):
+    """Quick sync for GingerBlueCo Etsy store (ID: 82108)"""
+    if user.role not in ["admin", "manager"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    from services.shipstation_sync import sync_orders_from_shipstation, SHIPSTATION_STORES
+    
+    result = await sync_orders_from_shipstation(
+        store_id=SHIPSTATION_STORES["gingerblueco"],
+        days_back=days_back
+    )
+    
+    return result
+
+
+@router.post("/sync/shipments")
+async def sync_shipment_tracking(
+    days_back: int = 30,
+    user: User = Depends(get_current_user)
+):
+    """Sync shipment/tracking status from ShipStation for recent orders"""
+    if user.role not in ["admin", "manager"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    from services.shipstation_sync import sync_shipment_status
+    
+    result = await sync_shipment_status(days_back=days_back)
+    
+    return result
+
+
+@router.post("/sync/all")
+async def sync_all_shipstation(
+    days_back: int = 365,
+    user: User = Depends(get_current_user)
+):
+    """Sync orders from all ShipStation stores and update shipment status"""
+    if user.role not in ["admin", "manager"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    from services.shipstation_sync import sync_orders_from_shipstation, sync_shipment_status, SHIPSTATION_STORES
+    
+    results = {
+        "stores_synced": [],
+        "total_created": 0,
+        "total_updated": 0,
+        "shipments_updated": 0,
+        "errors": []
+    }
+    
+    # Sync each store
+    for store_name, store_id in SHIPSTATION_STORES.items():
+        if store_name == "rate_browser":  # Skip rate browser
+            continue
+            
+        result = await sync_orders_from_shipstation(
+            store_id=store_id,
+            days_back=days_back
+        )
+        
+        results["stores_synced"].append({
+            "store": store_name,
+            "store_id": store_id,
+            "created": result.get("created", 0),
+            "updated": result.get("updated", 0)
+        })
+        results["total_created"] += result.get("created", 0)
+        results["total_updated"] += result.get("updated", 0)
+        
+        if result.get("errors"):
+            results["errors"].extend(result["errors"])
+    
+    # Sync shipment status
+    shipment_result = await sync_shipment_status(days_back=30)
+    results["shipments_updated"] = shipment_result.get("orders_updated", 0)
+    
+    return results
+
