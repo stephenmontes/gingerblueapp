@@ -415,11 +415,12 @@ function SizeGroupRows({ group, isLast, updating, localValues, onQtyChange, onCo
             <Check className="w-4 h-4 text-green-500 mx-auto" />
           )}
         </TableCell>
+        <TableCell></TableCell>
       </TableRow>
 
       {!isLast && (
         <TableRow className="h-2 border-0">
-          <TableCell colSpan={5} className="p-0" />
+          <TableCell colSpan={6} className="p-0" />
         </TableRow>
       )}
     </>
