@@ -117,8 +117,8 @@ async def restore_batch(batch_id: str, user: User = Depends(get_current_user)):
         {"$set": {"status": "active"}, "$unset": {"archived_at": "", "archived_by": "", "final_stats": ""}}
     )
     
-    # Update orders status back to in_production
-    await db.orders.update_many(
+    # Update orders status back to in_production in fulfillment_orders
+    await db.fulfillment_orders.update_many(
         {"batch_id": batch_id},
         {"$set": {"status": "in_production", "updated_at": now}}
     )
@@ -133,7 +133,7 @@ async def get_batch(batch_id: str, user: User = Depends(get_current_user)):
         raise HTTPException(status_code=404, detail="Batch not found")
     
     items = await db.production_items.find({"batch_id": batch_id}, {"_id": 0}).to_list(1000)
-    orders = await db.orders.find({"order_id": {"$in": batch.get("order_ids", [])}}, {"_id": 0}).to_list(1000)
+    orders = await db.fulfillment_orders.find({"order_id": {"$in": batch.get("order_ids", [])}}, {"_id": 0}).to_list(1000)
     
     return {**batch, "items": items, "orders": orders}
 
