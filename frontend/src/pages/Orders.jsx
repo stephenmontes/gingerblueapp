@@ -144,10 +144,26 @@ export default function Orders({ user }) {
   };
 
   useEffect(() => {
-    fetchOrders();
+    // Reset to page 1 when filters change
+    setCurrentPage(1);
+    fetchOrders(1);
     fetchStores();
     fetchSyncStatus();
   }, [storeFilter, statusFilter, showOnlyUnbatched]);
+
+  // Fetch orders when page changes (but not when filters change - that's handled above)
+  useEffect(() => {
+    if (currentPage > 1) {
+      fetchOrders(currentPage);
+    }
+  }, [currentPage]);
+
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+      setLoading(true);
+    }
+  };
 
   const handleSyncOrders = async (storeId) => {
     setSyncing(storeId);
