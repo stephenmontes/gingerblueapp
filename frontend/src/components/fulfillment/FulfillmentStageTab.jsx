@@ -157,97 +157,178 @@ export function FulfillmentStageTab({ stage, stages, onRefresh }) {
     );
   }
 
+  // For stages with consolidated view, show tabs to switch between views
+  if (showConsolidatedView) {
+    return (
+      <div className="space-y-4">
+        <Tabs value={viewMode} onValueChange={setViewMode}>
+          <TabsList className="bg-muted/50">
+            <TabsTrigger value="orders" className="gap-2">
+              <List className="w-4 h-4" />
+              Orders View
+            </TabsTrigger>
+            <TabsTrigger value="items" className="gap-2">
+              <Printer className="w-4 h-4" />
+              Items List (Sorted)
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="orders">
+            <OrdersView
+              orders={orders}
+              stage={stage}
+              stages={stages}
+              selectedOrders={selectedOrders}
+              outOfStockCount={outOfStockCount}
+              nextStage={nextStage}
+              isLastStage={isLastStage}
+              onToggleOrderSelection={toggleOrderSelection}
+              onToggleAllOrders={toggleAllOrders}
+              onMoveOrderToNext={moveOrderToNext}
+              onMoveOrderToStage={moveOrderToStage}
+              onBulkMoveOrders={bulkMoveOrders}
+              onMarkShipped={markShipped}
+              onShowInventory={setInventoryDialogOrder}
+            />
+          </TabsContent>
+
+          <TabsContent value="items">
+            <PrintListView stageId={stage.stage_id} />
+          </TabsContent>
+        </Tabs>
+
+        <InventoryDialog order={inventoryDialogOrder} onClose={() => setInventoryDialogOrder(null)} />
+      </div>
+    );
+  }
+
+  // Default view for Orders and Pack stages
   return (
     <>
-      <Card className="bg-card border-border">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: stage.color }} />
-              {stage.name}
-              <Badge variant="secondary">{orders.length} orders</Badge>
-              {outOfStockCount > 0 && (
-                <Badge variant="outline" className="border-orange-500 text-orange-500 gap-1">
-                  <AlertTriangle className="w-3 h-3" />
-                  {outOfStockCount} low stock
-                </Badge>
-              )}
-            </CardTitle>
-            
-            {selectedOrders.length > 0 && (
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">{selectedOrders.length} selected</span>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button size="sm" className="gap-2">
-                      Move to <ChevronRight className="w-4 h-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    {stages.map((s) => (
-                      <DropdownMenuItem
-                        key={s.stage_id}
-                        onClick={() => bulkMoveOrders(s.stage_id)}
-                        disabled={s.stage_id === stage.stage_id}
-                      >
-                        <div className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: s.color }} />
-                        {s.name}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          {orders.length === 0 ? (
-            <div className="p-8 text-center text-muted-foreground">
-              <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p>No orders in this stage</p>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow className="border-border">
-                  <TableHead className="w-12">
-                    <Checkbox
-                      checked={selectedOrders.length === orders.length && orders.length > 0}
-                      onCheckedChange={toggleAllOrders}
-                    />
-                  </TableHead>
-                  <TableHead>Order #</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Items</TableHead>
-                  <TableHead>Stock Status</TableHead>
-                  <TableHead>Store</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {orders.map((order) => (
-                  <OrderRow
-                    key={order.order_id}
-                    order={order}
-                    stage={stage}
-                    stages={stages}
-                    nextStage={nextStage}
-                    isLastStage={isLastStage}
-                    isSelected={selectedOrders.includes(order.order_id)}
-                    onToggleSelect={() => toggleOrderSelection(order.order_id)}
-                    onMoveNext={() => moveOrderToNext(order.order_id)}
-                    onMoveToStage={(stageId) => moveOrderToStage(order.order_id, stageId)}
-                    onMarkShipped={() => markShipped(order.order_id)}
-                    onShowInventory={() => setInventoryDialogOrder(order)}
-                  />
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
-
+      <OrdersView
+        orders={orders}
+        stage={stage}
+        stages={stages}
+        selectedOrders={selectedOrders}
+        outOfStockCount={outOfStockCount}
+        nextStage={nextStage}
+        isLastStage={isLastStage}
+        onToggleOrderSelection={toggleOrderSelection}
+        onToggleAllOrders={toggleAllOrders}
+        onMoveOrderToNext={moveOrderToNext}
+        onMoveOrderToStage={moveOrderToStage}
+        onBulkMoveOrders={bulkMoveOrders}
+        onMarkShipped={markShipped}
+        onShowInventory={setInventoryDialogOrder}
+      />
       <InventoryDialog order={inventoryDialogOrder} onClose={() => setInventoryDialogOrder(null)} />
     </>
+  );
+}
+
+function OrdersView({
+  orders,
+  stage,
+  stages,
+  selectedOrders,
+  outOfStockCount,
+  nextStage,
+  isLastStage,
+  onToggleOrderSelection,
+  onToggleAllOrders,
+  onMoveOrderToNext,
+  onMoveOrderToStage,
+  onBulkMoveOrders,
+  onMarkShipped,
+  onShowInventory
+}) {
+  return (
+    <Card className="bg-card border-border">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: stage.color }} />
+            {stage.name}
+            <Badge variant="secondary">{orders.length} orders</Badge>
+            {outOfStockCount > 0 && (
+              <Badge variant="outline" className="border-orange-500 text-orange-500 gap-1">
+                <AlertTriangle className="w-3 h-3" />
+                {outOfStockCount} low stock
+              </Badge>
+            )}
+          </CardTitle>
+          
+          {selectedOrders.length > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">{selectedOrders.length} selected</span>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" className="gap-2">
+                    Move to <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  {stages.map((s) => (
+                    <DropdownMenuItem
+                      key={s.stage_id}
+                      onClick={() => onBulkMoveOrders(s.stage_id)}
+                      disabled={s.stage_id === stage.stage_id}
+                    >
+                      <div className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: s.color }} />
+                      {s.name}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent className="p-0">
+        {orders.length === 0 ? (
+          <div className="p-8 text-center text-muted-foreground">
+            <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
+            <p>No orders in this stage</p>
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow className="border-border">
+                <TableHead className="w-12">
+                  <Checkbox
+                    checked={selectedOrders.length === orders.length && orders.length > 0}
+                    onCheckedChange={onToggleAllOrders}
+                  />
+                </TableHead>
+                <TableHead>Order #</TableHead>
+                <TableHead>Customer</TableHead>
+                <TableHead>Items</TableHead>
+                <TableHead>Stock Status</TableHead>
+                <TableHead>Store</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {orders.map((order) => (
+                <OrderRow
+                  key={order.order_id}
+                  order={order}
+                  stage={stage}
+                  stages={stages}
+                  nextStage={nextStage}
+                  isLastStage={isLastStage}
+                  isSelected={selectedOrders.includes(order.order_id)}
+                  onToggleSelect={() => onToggleOrderSelection(order.order_id)}
+                  onMoveNext={() => onMoveOrderToNext(order.order_id)}
+                  onMoveToStage={(stageId) => onMoveOrderToStage(order.order_id, stageId)}
+                  onMarkShipped={() => onMarkShipped(order.order_id)}
+                  onShowInventory={() => onShowInventory(order)}
+                />
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </CardContent>
+    </Card>
   );
 }
