@@ -172,6 +172,7 @@ Build a manufacturing and fulfillment app for Shopify websites with:
 - ✅ **Rejected frames tracking** in Quality Check
 - ✅ **Add to Frame Inventory button** (auto-creates inventory)
 - ✅ **Batch Stats KPIs** - Combined hours, labor cost, avg cost/frame, rejection rate
+- ✅ **FrameInventory.jsx refactored** (Feb 2026) - Split 838-line file into 7 components to prevent RangeError build errors
 
 ## Prioritized Backlog
 
