@@ -53,6 +53,14 @@ export function OrderWorksheet({ order, stages, currentStage, onClose, onMoveToN
     }
   }, [order]);
 
+  // Also refresh timer when worksheet is opened
+  useEffect(() => {
+    if (order) {
+      const interval = setInterval(checkActiveTimer, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [order]);
+
   async function checkActiveTimer() {
     try {
       const res = await fetch(`${API}/fulfillment/user/active-timer`, { credentials: "include" });
