@@ -28,7 +28,10 @@ import {
   Store,
   CheckCircle,
   AlertCircle,
-  Loader2
+  Loader2,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown
 } from "lucide-react";
 import { toast } from "sonner";
 import { ProductDetails } from "@/components/products/ProductDetails";
@@ -51,6 +54,10 @@ export default function Products() {
   const [selectedStore, setSelectedStore] = useState("all");
   const [selectedVendor, setSelectedVendor] = useState("all");
   const [pagination, setPagination] = useState({ skip: 0, limit: 50, total: 0 });
+  
+  // Sorting state
+  const [sortColumn, setSortColumn] = useState("updated_at");
+  const [sortDirection, setSortDirection] = useState("desc");
 
   const loadStores = useCallback(async () => {
     try {
