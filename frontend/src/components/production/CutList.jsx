@@ -231,6 +231,50 @@ export function FrameList({ batch, activeTimer, currentStageId, stages }) {
     }
   };
 
+  const handleMoveToInventory = async (frameId) => {
+    setUpdating(prev => ({ ...prev, [frameId]: true }));
+    
+    try {
+      const res = await fetch(
+        `${API}/batches/${batch.batch_id}/frames/${frameId}/to-inventory`,
+        { method: "POST", credentials: "include" }
+      );
+      
+      if (res.ok) {
+        const result = await res.json();
+        toast.success(result.message);
+        fetchFrames(); // Refresh the list
+      } else {
+        const err = await res.json();
+        toast.error(err.detail || "Failed to move to inventory");
+      }
+    } catch (err) {
+      toast.error("Failed to move to inventory");
+    } finally {
+      setUpdating(prev => ({ ...prev, [frameId]: false }));
+    }
+  };
+
+  const handleMoveAllToInventory = async () => {
+    try {
+      const res = await fetch(
+        `${API}/batches/${batch.batch_id}/frames/all-to-inventory`,
+        { method: "POST", credentials: "include" }
+      );
+      
+      if (res.ok) {
+        const result = await res.json();
+        toast.success(result.message);
+        fetchFrames();
+      } else {
+        const err = await res.json();
+        toast.error(err.detail || "Failed to move to inventory");
+      }
+    } catch (err) {
+      toast.error("Failed to move to inventory");
+    }
+  };
+
   if (loading) {
     return (
       <Card className="bg-card border-border">
