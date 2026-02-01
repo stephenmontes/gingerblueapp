@@ -139,3 +139,50 @@ async def assign_order(order_id: str, assignee_id: str, user: User = Depends(get
         raise HTTPException(status_code=404, detail="Order not found")
     
     return {"message": "Order assigned"}
+
+
+@router.post("/sync/{store_id}")
+async def sync_store_orders(
+    store_id: str,
+    status: str = Query("any", description="Order status filter: any, open, closed"),
+    days_back: int = Query(30, ge=1, le=365, description="Number of days to sync"),
+    user: User = Depends(get_current_user)
+):
+    """Sync orders from a Shopify store"""
+    if user.role not in ["admin", "manager"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    # Verify store exists
+    store = await db.stores.find_one({"store_id": store_id})
+    if not store:
+        raise HTTPException(status_code=404, detail="Store not found")
+    
+    if store.get("platform") != "shopify":
+        raise HTTPException(status_code=400, detail="Only Shopify stores support order sync")
+    
+    # Run sync
+    result = await sync_orders_from_store(store_id, status=status, days_back=days_back)
+    
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("error", "Sync failed"))
+    
+    return result
+
+
+@router.get("/sync/status")
+async def get_sync_status(user: User = Depends(get_current_user)):
+    """Get order sync status for all stores"""
+    stores = await db.stores.find({"platform": "shopify"}, {"_id": 0}).to_list(100)
+    
+    result = []
+    for store in stores:
+        order_count = await db.fulfillment_orders.count_documents({"store_id": store["store_id"]})
+        result.append({
+            "store_id": store["store_id"],
+            "store_name": store.get("name", ""),
+            "last_order_sync": store.get("last_order_sync"),
+            "order_count": order_count,
+            "is_active": store.get("is_active", True)
+        })
+    
+    return result
