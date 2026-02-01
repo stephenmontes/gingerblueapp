@@ -223,18 +223,30 @@ export function OrderWorksheet({ order, stages, currentStage, onClose, onMoveToN
   }
 
   function updateItem(index, field, value) {
+    if (timerRequired && !hasActiveTimerForStage) {
+      toast.error("Start a timer before making changes");
+      return;
+    }
     setItems(prev => prev.map((item, i) => 
       i === index ? { ...item, [field]: value } : item
     ));
   }
 
   function markItemComplete(index, complete) {
+    if (timerRequired && !hasActiveTimerForStage) {
+      toast.error("Start a timer before marking items complete");
+      return;
+    }
     setItems(prev => prev.map((item, i) => 
       i === index ? { ...item, is_complete: complete, qty_done: complete ? (item.qty || item.quantity || 1) : item.qty_done } : item
     ));
   }
 
   function markAllComplete() {
+    if (timerRequired && !hasActiveTimerForStage) {
+      toast.error("Start a timer before marking items complete");
+      return;
+    }
     setItems(prev => prev.map(item => ({ 
       ...item, 
       is_complete: true, 
