@@ -23,14 +23,20 @@ async def get_orders(
     stage_id: Optional[str] = None,
     unbatched: Optional[bool] = None,
     include_archived: Optional[bool] = False,
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(100, ge=1, le=500, description="Items per page"),
     user: User = Depends(get_current_user)
 ):
-    """Get all orders with optional filters
+    """Get orders with optional filters and pagination
     
     Status filter options:
     - "active": Shows orders that are NOT shipped, cancelled, or completed (default for UI)
     - "all": Shows all orders
     - Specific status (e.g., "pending", "shipped"): Shows only that status
+    
+    Pagination:
+    - page: Page number (default 1)
+    - page_size: Items per page (default 100, max 500)
     """
     query = {}
     if store_id:
@@ -53,14 +59,28 @@ async def get_orders(
     if not include_archived:
         query["archived"] = {"$ne": True}
     
-    # Fetch from fulfillment_orders (synced orders) - this is the main orders collection
+    # Get total count for pagination info
+    total_count = await db.fulfillment_orders.count_documents(query)
+    
+    # Calculate skip for pagination
+    skip = (page - 1) * page_size
+    
+    # Fetch from fulfillment_orders with pagination
     # Sort by order_date (actual order date) descending, then by created_at as fallback
-    # Increase limit to handle larger datasets
     orders = await db.fulfillment_orders.find(query, {"_id": 0}).sort([
         ("order_date", -1),
         ("created_at", -1)
-    ]).to_list(5000)
-    return orders
+    ]).skip(skip).limit(page_size).to_list(page_size)
+    
+    return {
+        "orders": orders,
+        "pagination": {
+            "page": page,
+            "page_size": page_size,
+            "total_count": total_count,
+            "total_pages": (total_count + page_size - 1) // page_size
+        }
+    }
 
 
 @router.put("/{order_id}/archive")
