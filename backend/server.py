@@ -889,7 +889,7 @@ async def move_item_stage(
     user: User = Depends(get_current_user)
 ):
     """Move an individual item to the next stage.
-    This is a handoff - the item is passed from the current user's stage to the next stage."""
+    Each stage is a new task - qty_completed resets to 0 for the next user/stage."""
     item = await db.production_items.find_one({"item_id": item_id}, {"_id": 0})
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
@@ -900,16 +900,16 @@ async def move_item_stage(
     if not new_stage:
         raise HTTPException(status_code=404, detail="Stage not found")
     
-    # Update qty_completed if provided
-    qty_completed = move_data.qty_completed if move_data.qty_completed > 0 else item.get("qty_completed", 0)
-    status = "completed" if qty_completed >= item.get("qty_required", 1) else "in_progress"
+    # Record completed qty for this stage before resetting
+    completed_this_stage = item.get("qty_completed", 0)
     
+    # Reset qty_completed to 0 for the next stage (each stage is a new task)
     await db.production_items.update_one(
         {"item_id": item_id},
         {"$set": {
             "current_stage_id": move_data.new_stage_id,
-            "qty_completed": qty_completed,
-            "status": status
+            "qty_completed": 0,  # Reset for next stage
+            "status": "pending"
         }}
     )
     
@@ -924,24 +924,14 @@ async def move_item_stage(
         if active_timer:
             await db.time_logs.update_one(
                 {"log_id": active_timer["log_id"]},
-                {"$inc": {"items_processed": 1}}
+                {"$inc": {"items_processed": completed_this_stage}}
             )
     
-    # Update batch totals
-    batch = await db.production_batches.find_one({"batch_id": item["batch_id"]}, {"_id": 0})
-    if batch:
-        all_items = await db.production_items.find({"batch_id": item["batch_id"]}, {"_id": 0}).to_list(10000)
-        total_completed = sum(i.get("qty_completed", 0) for i in all_items)
-        await db.production_batches.update_one(
-            {"batch_id": item["batch_id"]},
-            {"$set": {"items_completed": total_completed}}
-        )
-    
     return {
-        "message": f"Item moved to {new_stage['name']}",
+        "message": f"Item moved to {new_stage['name']} (qty reset to 0)",
         "item_id": item_id,
         "new_stage": new_stage["name"],
-        "qty_completed": qty_completed
+        "completed_in_previous_stage": completed_this_stage
     }
 
 class BulkMoveRequest(BaseModel):
