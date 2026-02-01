@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Query
 from datetime import datetime, timezone
 import uuid
 
@@ -10,10 +10,34 @@ from dependencies import get_current_user
 router = APIRouter(prefix="/inventory", tags=["inventory"])
 
 @router.get("")
-async def get_inventory(user: User = Depends(get_current_user)):
-    """Get all inventory items"""
-    items = await db.inventory.find({}, {"_id": 0}).sort("name", 1).to_list(10000)
-    return items
+async def get_inventory(
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(100, ge=1, le=500, description="Items per page"),
+    search: str = Query(None, description="Search term for name or SKU"),
+    user: User = Depends(get_current_user)
+):
+    """Get inventory items with pagination"""
+    query = {}
+    if search:
+        query["$or"] = [
+            {"name": {"$regex": search, "$options": "i"}},
+            {"sku": {"$regex": search, "$options": "i"}}
+        ]
+    
+    total_count = await db.inventory.count_documents(query)
+    skip = (page - 1) * page_size
+    
+    items = await db.inventory.find(query, {"_id": 0}).sort("name", 1).skip(skip).limit(page_size).to_list(page_size)
+    
+    return {
+        "items": items,
+        "pagination": {
+            "page": page,
+            "page_size": page_size,
+            "total_count": total_count,
+            "total_pages": (total_count + page_size - 1) // page_size
+        }
+    }
 
 @router.post("")
 async def create_inventory_item(item_data: InventoryCreate, user: User = Depends(get_current_user)):
