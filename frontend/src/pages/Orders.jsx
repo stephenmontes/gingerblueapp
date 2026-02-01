@@ -566,11 +566,23 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Stores</SelectItem>
-                {stores.map((store) => (
-                  <SelectItem key={store.store_id} value={store.store_id}>
-                    {store.name}
-                  </SelectItem>
-                ))}
+                {stores.map((store) => {
+                  const platformColors = {
+                    shopify: "text-green-400",
+                    etsy: "text-orange-400",
+                    dropship: "text-purple-400",
+                  };
+                  return (
+                    <SelectItem key={store.store_id} value={store.store_id}>
+                      <span className="flex items-center gap-2">
+                        {store.name}
+                        <span className={`text-xs ${platformColors[store.platform] || "text-muted-foreground"}`}>
+                          ({store.platform === "dropship" ? "CSV" : store.platform})
+                        </span>
+                      </span>
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
