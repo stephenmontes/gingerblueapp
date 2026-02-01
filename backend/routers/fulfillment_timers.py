@@ -364,18 +364,66 @@ async def get_fulfillment_timer_history(
 
 
 @router.get("/stats/overall-kpis")
-async def get_fulfillment_overall_kpis(user: User = Depends(get_current_user)):
-    """Get weekly KPIs for the fulfillment workflow."""
-    # Calculate start of current week (Monday)
+async def get_fulfillment_overall_kpis(
+    period: str = "this_week",
+    user: User = Depends(get_current_user)
+):
+    """Get KPIs for the fulfillment workflow for a specified time period."""
     now = datetime.now(timezone.utc)
-    days_since_monday = now.weekday()
-    week_start = (now - timedelta(days=days_since_monday)).replace(hour=0, minute=0, second=0, microsecond=0)
     
-    # Aggregate completed time logs for this week
+    # Calculate date range based on period
+    if period == "today":
+        start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_date = now
+        period_label = "Today"
+        date_range = start_date.strftime("%b %d")
+    elif period == "yesterday":
+        start_date = (now - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+        end_date = start_date.replace(hour=23, minute=59, second=59)
+        period_label = "Yesterday"
+        date_range = start_date.strftime("%b %d")
+    elif period == "this_week":
+        days_since_monday = now.weekday()
+        start_date = (now - timedelta(days=days_since_monday)).replace(hour=0, minute=0, second=0, microsecond=0)
+        end_date = now
+        period_label = "This Week"
+        date_range = f"{start_date.strftime('%b %d')} - {(start_date + timedelta(days=6)).strftime('%b %d')}"
+    elif period == "last_week":
+        days_since_monday = now.weekday()
+        this_week_start = (now - timedelta(days=days_since_monday)).replace(hour=0, minute=0, second=0, microsecond=0)
+        start_date = this_week_start - timedelta(days=7)
+        end_date = this_week_start - timedelta(seconds=1)
+        period_label = "Last Week"
+        date_range = f"{start_date.strftime('%b %d')} - {(start_date + timedelta(days=6)).strftime('%b %d')}"
+    elif period == "this_month":
+        start_date = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        end_date = now
+        period_label = "This Month"
+        date_range = start_date.strftime("%B %Y")
+    elif period == "last_month":
+        first_of_this_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        end_date = first_of_this_month - timedelta(seconds=1)
+        start_date = end_date.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        period_label = "Last Month"
+        date_range = start_date.strftime("%B %Y")
+    elif period == "all_time":
+        start_date = datetime(2020, 1, 1, tzinfo=timezone.utc)
+        end_date = now
+        period_label = "All Time"
+        date_range = "All Time"
+    else:
+        # Default to this week
+        days_since_monday = now.weekday()
+        start_date = (now - timedelta(days=days_since_monday)).replace(hour=0, minute=0, second=0, microsecond=0)
+        end_date = now
+        period_label = "This Week"
+        date_range = f"{start_date.strftime('%b %d')} - {(start_date + timedelta(days=6)).strftime('%b %d')}"
+    
+    # Aggregate completed time logs for the period
     pipeline = [
         {"$match": {
             "duration_minutes": {"$gt": 0},
-            "completed_at": {"$ne": None, "$gte": week_start.isoformat()}
+            "completed_at": {"$ne": None, "$gte": start_date.isoformat(), "$lte": end_date.isoformat()}
         }},
         {"$group": {
             "_id": None,
@@ -398,8 +446,9 @@ async def get_fulfillment_overall_kpis(user: User = Depends(get_current_user)):
             "cost_per_item": 0,
             "avg_time_per_order": 0,
             "session_count": 0,
-            "week_start": week_start.strftime("%b %d"),
-            "week_end": (week_start + timedelta(days=6)).strftime("%b %d")
+            "period": period,
+            "period_label": period_label,
+            "date_range": date_range
         }
     
     data = result[0]
@@ -418,6 +467,14 @@ async def get_fulfillment_overall_kpis(user: User = Depends(get_current_user)):
         "total_orders": total_orders,
         "total_items": total_items,
         "labor_cost": round(labor_cost, 2),
+        "cost_per_order": round(cost_per_order, 2),
+        "cost_per_item": round(cost_per_item, 2),
+        "avg_time_per_order": round(avg_time_per_order, 1),
+        "session_count": data["session_count"],
+        "period": period,
+        "period_label": period_label,
+        "date_range": date_range
+    }
         "cost_per_order": round(cost_per_order, 2),
         "cost_per_item": round(cost_per_item, 2),
         "avg_time_per_order": round(avg_time_per_order, 1),
