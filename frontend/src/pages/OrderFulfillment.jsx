@@ -174,7 +174,7 @@ export default function OrderFulfillment() {
         )}
       </div>
 
-      {/* Stage Tabs - Button Style (matches Frame Production) */}
+      {/* Stage Tabs - Button Style with Stage Colors */}
       <div className="flex gap-2 overflow-x-auto pb-2">
         {stages.map((stage) => (
           <Button
@@ -182,17 +182,24 @@ export default function OrderFulfillment() {
             variant={activeTab === stage.stage_id ? "default" : "outline"}
             size="sm"
             onClick={() => setActiveTab(stage.stage_id)}
-            className={`flex items-center gap-2 whitespace-nowrap rounded-lg`}
+            className={`flex items-center gap-2 whitespace-nowrap rounded-lg transition-all`}
+            style={activeTab === stage.stage_id ? {
+              backgroundColor: stage.color,
+              borderColor: stage.color
+            } : {
+              borderColor: `${stage.color}50`
+            }}
             data-testid={`tab-${stage.stage_id}`}
           >
             <div 
               className="w-3 h-3 rounded-full" 
-              style={{ backgroundColor: stage.color }}
+              style={{ backgroundColor: activeTab === stage.stage_id ? '#fff' : stage.color }}
             />
             {stage.name}
             <Badge 
               variant="secondary" 
               className="text-xs"
+              style={activeTab === stage.stage_id ? { backgroundColor: 'rgba(255,255,255,0.2)', color: '#fff' } : {}}
             >
               {getStageCount(stage.stage_id)}
             </Badge>
