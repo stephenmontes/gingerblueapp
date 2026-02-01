@@ -95,6 +95,7 @@ export default function Settings({ user }) {
       storeData.api_key = formApiKey;
       if (formToken.trim()) storeData.access_token = formToken;
     }
+    // For dropship stores, no additional fields needed - just name and platform
 
     try {
       let res;
