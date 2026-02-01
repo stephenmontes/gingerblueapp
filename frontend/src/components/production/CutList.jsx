@@ -386,13 +386,13 @@ function SizeGroupRows({ group, isLast, updating, localValues, onQtyChange, onCo
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => onMoveToAssembly(item.size, item.color, displayQty)}
-                disabled={isDisabled || displayQty === 0}
+                onClick={() => onMoveToAssembly(item.size, item.color, item.completed ? item.qty_required : displayQty)}
+                disabled={isDisabled || (displayQty === 0 && !item.completed)}
                 className="gap-1 text-xs h-7"
                 data-testid={`move-assembly-${key}`}
               >
                 <ArrowRight className="w-3 h-3" />
-                Assembly
+                Move {item.completed ? item.qty_required : displayQty}
               </Button>
             </TableCell>
           </TableRow>
