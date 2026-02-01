@@ -285,6 +285,19 @@ Build a manufacturing and fulfillment app for Shopify websites with:
   - Added "Qty Rejected" column in Quality Check stage only
   - Orange styling for rejection input and totals
   - Backend already supports qty_rejected parameter in frame update endpoint
+- ✅ **Webhook Integration for Real-Time Order Sync** (Feb 2026):
+  - Shopify webhooks: orders/create, orders/updated, orders/cancelled
+  - Etsy webhook support via push notifications
+  - Webhook signature verification for Shopify
+  - Webhook logs for debugging (`/api/webhooks/logs`)
+  - Status endpoint (`/api/webhooks/status`) shows configuration
+  - Endpoints: `/api/webhooks/shopify/orders/create`, `/api/webhooks/shopify/orders/updated`, `/api/webhooks/shopify/orders/cancelled`, `/api/webhooks/etsy/orders/create`
+- ✅ **Export Team Stats** (Feb 2026):
+  - Added "Export Stats" button to Team page
+  - CSV export with period filtering (Today, Week, Month, Custom Range)
+  - Includes: User Name, Email, Role, Items Processed, Hours, Sessions, Items/Hour, Stages Worked, Labor Cost
+  - Totals row at bottom of export
+  - Endpoint: `/api/export/team-stats?period=day|week|month` or `?start_date=&end_date=`
 
 ## Prioritized Backlog
 
