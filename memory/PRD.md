@@ -1,125 +1,123 @@
-# ShopFactory - Manufacturing & Fulfillment App PRD
+# ShopFactory - Manufacturing & Fulfillment Hub
 
 ## Original Problem Statement
 Build a manufacturing and fulfillment app for Shopify websites with:
-- Manufacturing workflow with detailed production stages
-- Time tracking, reporting, avg products per hour
-- Per-user tracking for moving parts through production stages
-- Multi-store support: 2 Shopify stores + 1 Etsy store
-- Modern dark theme
-- Google login with company email
+- Manufacturing workflow tracking with time tracking, reporting, average products per hour
+- Tracking per user for moving parts through production stages
+- Connect to 2 Shopify stores and 1 Etsy store for live order syncing
+- Implement webhooks for real-time updates
+- Users must log in with their company Google email
+- Modern dark theme UI
+
+### Production Queue V2 ("Frame Production") Requirements:
+1. Rename "Production Queue" to "Frame Production" with sub-tabs for stages
+2. Allow selecting multiple orders from the "Orders" tab to create a production "batch"
+3. Display a consolidated list of all items from the batched orders
+4. Group items by color and size (derived from SKU)
+5. Show subtotals for each identical item group
+6. QTY to cut and QTY completed input boxes per item group
+7. Allow individual item groups to be moved to the next production stage
+8. Time tracker per batch with user assignment and performance metrics
 
 ## Architecture
 
 ### Tech Stack
-- **Frontend**: React 19 + Tailwind CSS + shadcn/ui
-- **Backend**: FastAPI (Python)
-- **Database**: MongoDB
-- **Authentication**: Emergent Google OAuth
+- **Backend:** FastAPI, Pydantic, MongoDB (motor), JWT sessions
+- **Frontend:** React, shadcn/ui, Tailwind CSS, sonner for toasts
+- **Authentication:** Emergent-managed Google OAuth
+- **Integrations:** Shopify API, Etsy API
 
-### Key Components
-- `/app/backend/server.py` - Main API server with all endpoints
-- `/app/frontend/src/App.js` - Main router with auth handling
-- `/app/frontend/src/pages/` - Page components (Dashboard, Orders, Production, Team, Reports, Settings)
-- `/app/frontend/src/components/Layout.jsx` - Sidebar navigation layout
+### File Structure
+```
+/app/
+├── backend/
+│   └── server.py              # FastAPI app with all routes and models
+└── frontend/
+    └── src/
+        ├── App.js             # Main router and auth logic
+        ├── components/
+        │   ├── Layout.jsx     # Sidebar navigation
+        │   └── production/    # Refactored production components
+        │       ├── BatchCard.jsx
+        │       ├── BatchList.jsx
+        │       ├── StageTabs.jsx
+        │       ├── ItemRow.jsx
+        │       ├── StageContent.jsx
+        │       ├── BatchHeader.jsx
+        │       ├── BatchDetailView.jsx
+        │       └── index.js
+        └── pages/
+            ├── Dashboard.jsx
+            ├── Login.jsx
+            ├── Orders.jsx
+            ├── Production.jsx
+            ├── Reports.jsx
+            ├── Settings.jsx
+            └── Team.jsx
+```
 
-## User Personas
-
-1. **Admin** - Full access, can manage stores, users, seed demo data
-2. **Manager** - Can add stores, view all reports
-3. **Worker** - Can move orders through production stages, tracked time
-
-## Core Requirements (Static)
-
-### Authentication
-- [x] Google OAuth via Emergent Auth
-- [x] First user becomes admin automatically
-- [x] Role-based access (admin/manager/worker)
-- [x] Session persistence with cookies
-
-### Multi-Store Support
-- [x] Connect multiple Shopify stores
-- [x] Connect Etsy store
-- [x] Store management in Settings
-- [x] Platform badges (Shopify/Etsy)
-
-### Production Workflow
-- [x] 6 default stages: New Orders → Cutting → Assembly → Quality Check → Packing → Ready to Ship
-- [x] Kanban board view
-- [x] Move orders between stages with button click
-- [x] Time logging when moving orders
-
-### Reporting
-- [x] Dashboard KPIs (total orders, pending, in production, completed)
-- [x] Orders by store pie chart
-- [x] Daily production bar chart
-- [x] User performance stats
-- [x] Stage analysis
-
-## What's Been Implemented (Feb 1, 2026)
-
-### Backend API Endpoints
-- `POST /api/auth/session` - Exchange session_id for session_token
+### Key API Endpoints
+- `POST /api/auth/session` - Create user session
 - `GET /api/auth/me` - Get current user
-- `POST /api/auth/logout` - Logout user
-- `GET /api/users` - List all users
-- `PUT /api/users/{id}/role` - Update user role
-- `GET /api/stores` - List stores
-- `POST /api/stores` - Add store
-- `PUT /api/stores/{id}` - Update store credentials
-- `DELETE /api/stores/{id}` - Remove store
-- `POST /api/stores/{id}/sync` - Sync orders from a single store
-- `POST /api/stores/sync-all` - Sync orders from all stores
-- `GET /api/stages` - List production stages
-- `GET /api/orders` - List orders with filters
-- `POST /api/orders` - Create order
-- `PUT /api/orders/{id}/stage` - Move order to new stage
-- `GET /api/time-logs` - Get time logs
-- `GET /api/stats/dashboard` - Dashboard statistics
-- `GET /api/stats/users` - User performance stats
-- `GET /api/stats/stages` - Stage statistics
-- `POST /api/demo/seed` - Seed demo data
-- `POST /api/webhooks/shopify/{store_id}` - Shopify webhook endpoint
-- `POST /api/webhooks/etsy/{store_id}` - Etsy webhook endpoint  
-- `GET /api/webhooks/info/{store_id}` - Get webhook setup info
-- `GET /api/export/orders` - Export orders to CSV
-- `GET /api/export/time-logs` - Export time logs to CSV
-- `GET /api/export/user-stats` - Export user stats to CSV
-- `GET /api/export/report-pdf` - Generate HTML report for PDF
+- `POST /api/batches` - Create production batch
+- `GET /api/batches` - List batches
+- `GET /api/batches/{id}` - Get batch details
+- `GET /api/batches/{id}/stage-summary` - Get batch stage summary
+- `POST /api/batches/{id}/start-timer` - Start batch timer
+- `POST /api/batches/{id}/stop-timer` - Stop batch timer
+- `PUT /api/items/{id}/update` - Update item quantity
+- `PUT /api/items/{id}/move-stage` - Move item to next stage
+- `GET /api/orders` - Get orders (filter: unbatched=true)
+- `POST /api/stores/{id}/sync` - Manual store sync
+- `GET /api/reports/export` - Export reports (format=csv|pdf)
 
-### Frontend Pages
-- Login (Google OAuth)
-- Dashboard (KPIs, charts, quick actions)
-- Orders (table with search/filters)
-- Production (Kanban board)
-- Team (member list, role management)
-- Reports (charts, tabs for different views)
-- Settings (stores, stages)
+### Database Schema
+- **users:** `{_id, email, name, picture, role}`
+- **stores:** `{_id, user_id, platform, store_url, api_key, access_token}`
+- **orders:** `{_id, external_id, store_id, customer_name, items, total, status, batch_id}`
+- **production_stages:** `{_id, name, order, color}`
+- **batches:** `{_id, name, user_id, status, order_ids, time_started, time_completed, assigned_user_id}`
+- **time_logs:** `{_id, user_id, batch_id, stage_id, started_at, ended_at}`
 
-### Design
-- Modern dark theme with "Tactical Industrial" aesthetic
-- Chivo + Manrope + JetBrains Mono fonts
-- Color palette: #09090B background, #3B82F6 primary, #22C55E secondary
+## What's Been Implemented
+
+### Completed (Feb 2025)
+- ✅ Full-stack app with Dashboard, Orders, Team, Reports, Settings pages
+- ✅ Google OAuth authentication (Emergent-managed)
+- ✅ Dark theme UI with modern design
+- ✅ Shopify/Etsy store integration (API keys, webhooks)
+- ✅ Manual order sync from stores
+- ✅ CSV/PDF export for reports
+- ✅ Frame Production page structure with batch management
+- ✅ **Fixed critical build error** - Refactored Production.jsx into smaller components
+
+### In Progress
+- 🔄 Frame Production feature end-to-end testing
+- 🔄 Item grouping by SKU (color/size parsing)
+- 🔄 Timer functionality verification
 
 ## Prioritized Backlog
 
-### P0 (Critical - Not implemented)
-- None - all requested features implemented
+### P0 - Critical
+- [ ] End-to-end test Frame Production workflow
+- [ ] Verify batch creation from Orders page
+- [ ] Test timer start/stop functionality
 
-### P1 (Important)
-- Email notifications for order status changes
-- Date range filters for reports
-- Custom production stage creation
+### P1 - Important
+- [ ] Fix ESLint warning in Orders.jsx
+- [ ] User performance metrics (avg items/stage)
+- [ ] Batch completion status tracking
 
-### P2 (Nice to have)
-- Drag-and-drop Kanban cards
-- Dark/light theme toggle
-- Mobile responsive improvements
-- Batch order operations
+### P2 - Nice to Have
+- [ ] Real store data testing (requires API credentials)
+- [ ] Additional reporting metrics
+- [ ] UI/UX refinements
 
-## Next Tasks
+## Known Issues
+- ESLint warning in `Orders.jsx` - missing useEffect dependency
+- Store integration requires user to provide API credentials
 
-1. **Test with real credentials** - Add actual Shopify/Etsy API keys to test live sync
-2. **Set up webhooks** - Configure webhooks in Shopify/Etsy admin using the provided URLs
-3. **Email notifications** - Add email alerts for critical events
-4. **Date range filters** - Add date filters to reports for better analysis
+## 3rd Party Integrations
+- **Emergent Google Auth** - User login
+- **Shopify API** - Order syncing (requires user API key)
+- **Etsy API** - Order syncing (requires user API key)
