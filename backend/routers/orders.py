@@ -41,7 +41,11 @@ async def get_orders(
         query["archived"] = {"$ne": True}
     
     # Fetch from fulfillment_orders (synced orders) - this is the main orders collection
-    orders = await db.fulfillment_orders.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    # Sort by order_date (actual order date) descending, then by created_at as fallback
+    orders = await db.fulfillment_orders.find(query, {"_id": 0}).sort([
+        ("order_date", -1),
+        ("created_at", -1)
+    ]).to_list(1000)
     return orders
 
 
