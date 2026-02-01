@@ -7,3 +7,5 @@ export { BatchHeader } from "./BatchHeader";
 export { BatchDetailView, NoBatchSelected } from "./BatchDetailView";
 export { StageTimer, ActiveWorkersDisplay } from "./StageTimer";
 export { BatchStats } from "./BatchStats";
+export { ActiveTimerBanner } from "./ActiveTimerBanner";
+export { BatchOrders } from "./BatchOrders";
