@@ -78,10 +78,13 @@ export function FrameList({ batch, activeTimer, currentStageId, stages }) {
         setFramesData(data);
         // Initialize local values
         const values = {};
+        const rejected = {};
         (data.frames || []).forEach(frame => {
           values[frame.frame_id] = frame.qty_completed || 0;
+          rejected[frame.frame_id] = frame.qty_rejected || 0;
         });
         setLocalValues(values);
+        setLocalRejected(rejected);
       }
     } catch (err) {
       console.error("Failed to load frames:", err);
