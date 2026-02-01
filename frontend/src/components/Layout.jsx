@@ -11,6 +11,7 @@ import {
   Settings,
   LogOut,
   Truck,
+  ShoppingBag,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -29,6 +30,7 @@ const API = `${BACKEND_URL}/api`;
 const navItems = [
   { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { path: "/orders", label: "Orders", icon: Package },
+  { path: "/products", label: "Products", icon: ShoppingBag },
   { path: "/production", label: "Frame Production", icon: Workflow },
   { path: "/fulfillment", label: "Order Fulfillment", icon: Truck },
   { path: "/inventory", label: "Frame Inventory", icon: Boxes },
