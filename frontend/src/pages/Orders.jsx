@@ -147,9 +147,11 @@ export default function Orders({ user }) {
   };
 
   useEffect(() => {
-    // Reset to page 1 when filters change
+    // Reset to page 1 and default sort (newest first) when filters change
     setCurrentPage(1);
-    fetchOrders(1);
+    setSortColumn("created_at");
+    setSortDirection("desc");
+    fetchOrders(1, "created_at", "desc");
     fetchStores();
     fetchSyncStatus();
   }, [storeFilter, statusFilter, showOnlyUnbatched]);
@@ -157,7 +159,7 @@ export default function Orders({ user }) {
   // Fetch orders when page changes (but not when filters change - that's handled above)
   useEffect(() => {
     if (currentPage > 1) {
-      fetchOrders(currentPage);
+      fetchOrders(currentPage, sortColumn, sortDirection);
     }
   }, [currentPage]);
 
