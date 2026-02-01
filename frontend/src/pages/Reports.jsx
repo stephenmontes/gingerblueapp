@@ -1,16 +1,6 @@
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,43 +9,22 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  Legend,
-} from "recharts";
-import {
-  TrendingUp,
-  Users,
-  Clock,
-  Package,
-  RefreshCw,
   BarChart3,
   Activity,
   Download,
   FileText,
   FileSpreadsheet,
-  DollarSign,
+  Users,
   AlertTriangle,
-  CheckCircle,
-  XCircle,
-  Boxes,
+  RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
+import { KpiCards, QualityTab, UsersTab, StagesTab, OverviewTab } from "@/components/reports";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-const COLORS = ["#3B82F6", "#22C55E", "#F59E0B", "#EF4444", "#8B5CF6", "#EC4899"];
-
-export default function Reports({ user }) {
+export default function Reports() {
   const [dashboardStats, setDashboardStats] = useState(null);
   const [productionKpis, setProductionKpis] = useState(null);
   const [userStats, setUserStats] = useState([]);
@@ -88,51 +57,33 @@ export default function Reports({ user }) {
   }, []);
 
   const handleExport = (type) => {
-    let url = "";
-    switch (type) {
-      case "orders-csv":
-        url = `${API}/export/orders`;
-        break;
-      case "time-logs-csv":
-        url = `${API}/export/time-logs`;
-        break;
-      case "user-stats-csv":
-        url = `${API}/export/user-stats`;
-        break;
-      case "production-kpis-csv":
-        url = `${API}/export/production-kpis`;
-        break;
-      case "inventory-csv":
-        url = `${API}/export/inventory`;
-        break;
-      case "report-pdf":
-        url = `${API}/export/report-pdf`;
-        break;
-      default:
-        return;
+    const urls = {
+      "orders-csv": `${API}/export/orders`,
+      "time-logs-csv": `${API}/export/time-logs`,
+      "user-stats-csv": `${API}/export/user-stats`,
+      "production-kpis-csv": `${API}/export/production-kpis`,
+      "inventory-csv": `${API}/export/inventory`,
+      "report-pdf": `${API}/export/report-pdf`,
+    };
+    const url = urls[type];
+    if (url) {
+      window.open(url, "_blank");
+      toast.success("Export started");
     }
-    window.open(url, "_blank");
-    toast.success("Export started");
   };
 
   if (loading) {
     return (
       <div className="space-y-6" data-testid="reports-loading">
         <div className="h-8 w-48 bg-muted animate-pulse rounded" />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {[...Array(4)].map((_, i) => (
-            <Card key={i} className="bg-card border-border animate-pulse">
-              <CardContent className="p-6 h-64" />
-            </Card>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="h-24 bg-muted animate-pulse rounded-lg" />
           ))}
         </div>
       </div>
     );
   }
-
-  const storeData = dashboardStats?.orders_by_store || [];
-  const dailyData = dashboardStats?.daily_production || [];
-  const kpis = productionKpis || {};
 
   return (
     <div className="space-y-6" data-testid="reports-page">
@@ -153,29 +104,29 @@ export default function Reports({ user }) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handleExport("orders-csv")} data-testid="export-orders-csv">
+              <DropdownMenuItem onClick={() => handleExport("orders-csv")}>
                 <FileSpreadsheet className="w-4 h-4 mr-2" />
                 Orders (CSV)
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExport("time-logs-csv")} data-testid="export-timelogs-csv">
+              <DropdownMenuItem onClick={() => handleExport("time-logs-csv")}>
                 <FileSpreadsheet className="w-4 h-4 mr-2" />
                 Time Logs (CSV)
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExport("user-stats-csv")} data-testid="export-userstats-csv">
+              <DropdownMenuItem onClick={() => handleExport("user-stats-csv")}>
                 <FileSpreadsheet className="w-4 h-4 mr-2" />
                 User Stats (CSV)
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => handleExport("production-kpis-csv")} data-testid="export-kpis-csv">
+              <DropdownMenuItem onClick={() => handleExport("production-kpis-csv")}>
                 <FileSpreadsheet className="w-4 h-4 mr-2" />
                 Production KPIs (CSV)
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExport("inventory-csv")} data-testid="export-inventory-csv">
+              <DropdownMenuItem onClick={() => handleExport("inventory-csv")}>
                 <FileSpreadsheet className="w-4 h-4 mr-2" />
                 Inventory (CSV)
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => handleExport("report-pdf")} data-testid="export-report-pdf">
+              <DropdownMenuItem onClick={() => handleExport("report-pdf")}>
                 <FileText className="w-4 h-4 mr-2" />
                 Full Report (PDF)
               </DropdownMenuItem>
@@ -188,139 +139,8 @@ export default function Reports({ user }) {
         </div>
       </div>
 
-      {/* KPI Summary Cards - Row 1 */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="bg-card border-border">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Package className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-2xl font-heading font-bold">
-                  {dashboardStats?.orders?.total || 0}
-                </p>
-                <p className="text-xs text-muted-foreground">Total Orders</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card border-border">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-green-500/10">
-                <CheckCircle className="w-5 h-5 text-green-500" />
-              </div>
-              <div>
-                <p className="text-2xl font-heading font-bold">
-                  {kpis?.production?.good_frames || 0}
-                </p>
-                <p className="text-xs text-muted-foreground">Good Frames</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card border-border">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-red-500/10">
-                <XCircle className="w-5 h-5 text-red-500" />
-              </div>
-              <div>
-                <p className="text-2xl font-heading font-bold text-red-400">
-                  {kpis?.production?.total_rejected || 0}
-                </p>
-                <p className="text-xs text-muted-foreground">Rejected</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className={`border-border ${(kpis?.quality?.rejection_rate || 0) > 5 ? "bg-red-500/10 border-red-500/30" : "bg-card"}`}>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-lg ${(kpis?.quality?.rejection_rate || 0) > 5 ? "bg-red-500/20" : "bg-orange-500/10"}`}>
-                <AlertTriangle className={`w-5 h-5 ${(kpis?.quality?.rejection_rate || 0) > 5 ? "text-red-500" : "text-orange-500"}`} />
-              </div>
-              <div>
-                <p className={`text-2xl font-heading font-bold ${(kpis?.quality?.rejection_rate || 0) > 5 ? "text-red-400" : ""}`}>
-                  {kpis?.quality?.rejection_rate || 0}%
-                </p>
-                <p className="text-xs text-muted-foreground">Rejection Rate</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* KPI Summary Cards - Row 2: Time & Cost */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="bg-card border-border">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-blue-500/10">
-                <Clock className="w-5 h-5 text-blue-500" />
-              </div>
-              <div>
-                <p className="text-2xl font-heading font-bold">
-                  {kpis?.time?.total_hours || 0}h
-                </p>
-                <p className="text-xs text-muted-foreground">Total Hours</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card border-border">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-secondary/10">
-                <TrendingUp className="w-5 h-5 text-secondary" />
-              </div>
-              <div>
-                <p className="text-2xl font-heading font-bold">
-                  {kpis?.time?.avg_items_per_hour || 0}
-                </p>
-                <p className="text-xs text-muted-foreground">Items/Hour</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card border-border">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-emerald-500/10">
-                <DollarSign className="w-5 h-5 text-emerald-500" />
-              </div>
-              <div>
-                <p className="text-2xl font-heading font-bold">
-                  ${kpis?.costs?.total_labor_cost || 0}
-                </p>
-                <p className="text-xs text-muted-foreground">Labor Cost</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card border-border">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-purple-500/10">
-                <DollarSign className="w-5 h-5 text-purple-500" />
-              </div>
-              <div>
-                <p className="text-2xl font-heading font-bold">
-                  ${kpis?.costs?.avg_cost_per_frame || 0}
-                </p>
-                <p className="text-xs text-muted-foreground">Avg Cost/Frame</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      {/* KPI Cards */}
+      <KpiCards dashboardStats={dashboardStats} productionKpis={productionKpis} />
 
       {/* Tabs */}
       <Tabs defaultValue="overview" className="space-y-6">
@@ -343,295 +163,20 @@ export default function Reports({ user }) {
           </TabsTrigger>
         </TabsList>
 
-        {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Orders by Store */}
-            <Card className="bg-card border-border" data-testid="report-orders-by-store">
-              <CardHeader>
-                <CardTitle>Orders by Store</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {storeData.length > 0 ? (
-                  <div className="h-72">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={storeData}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={50}
-                          outerRadius={90}
-                          paddingAngle={5}
-                          dataKey="count"
-                          nameKey="name"
-                        >
-                          {storeData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                          ))}
-                        </Pie>
-                        <Tooltip contentStyle={{ backgroundColor: "#18181B", border: "1px solid #27272A", borderRadius: "8px" }} />
-                        <Legend />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                ) : (
-                  <div className="h-72 flex items-center justify-center text-muted-foreground">No data available</div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Daily Production */}
-            <Card className="bg-card border-border" data-testid="report-daily-production">
-              <CardHeader>
-                <CardTitle>Daily Production</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {dailyData.length > 0 ? (
-                  <div className="h-72">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={dailyData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#27272A" />
-                        <XAxis dataKey="_id" stroke="#A1A1AA" tick={{ fill: "#A1A1AA" }} tickFormatter={(val) => val.split("-").slice(1).join("/")} />
-                        <YAxis stroke="#A1A1AA" tick={{ fill: "#A1A1AA" }} />
-                        <Tooltip contentStyle={{ backgroundColor: "#18181B", border: "1px solid #27272A", borderRadius: "8px" }} />
-                        <Bar dataKey="items" fill="#22C55E" radius={[4, 4, 0, 0]} name="Items Processed" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                ) : (
-                  <div className="h-72 flex items-center justify-center text-muted-foreground">No production data available</div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+          <OverviewTab dashboardStats={dashboardStats} />
         </TabsContent>
 
-        {/* Quality & Costs Tab */}
         <TabsContent value="quality" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Quality Summary */}
-            <Card className="bg-card border-border" data-testid="report-quality-summary">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <AlertTriangle className="w-5 h-5" />
-                  Quality Metrics
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Yield Rate</p>
-                      <p className="text-3xl font-bold text-green-400">{kpis?.quality?.yield_rate || 100}%</p>
-                    </div>
-                    <CheckCircle className="w-10 h-10 text-green-500/50" />
-                  </div>
-                  <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Rejection Rate</p>
-                      <p className={`text-3xl font-bold ${(kpis?.quality?.rejection_rate || 0) > 5 ? "text-red-400" : "text-orange-400"}`}>
-                        {kpis?.quality?.rejection_rate || 0}%
-                      </p>
-                    </div>
-                    <XCircle className="w-10 h-10 text-red-500/50" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="p-3 bg-green-500/10 rounded-lg text-center">
-                      <p className="text-2xl font-bold text-green-400">{kpis?.production?.good_frames || 0}</p>
-                      <p className="text-xs text-muted-foreground">Good Frames</p>
-                    </div>
-                    <div className="p-3 bg-red-500/10 rounded-lg text-center">
-                      <p className="text-2xl font-bold text-red-400">{kpis?.production?.total_rejected || 0}</p>
-                      <p className="text-xs text-muted-foreground">Rejected</p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Cost Summary */}
-            <Card className="bg-card border-border" data-testid="report-cost-summary">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <DollarSign className="w-5 h-5" />
-                  Cost Analysis
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Hourly Rate</p>
-                      <p className="text-3xl font-bold">${kpis?.costs?.hourly_rate || 22}/hr</p>
-                    </div>
-                    <Clock className="w-10 h-10 text-blue-500/50" />
-                  </div>
-                  <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Total Labor Cost</p>
-                      <p className="text-3xl font-bold text-emerald-400">${kpis?.costs?.total_labor_cost || 0}</p>
-                    </div>
-                    <DollarSign className="w-10 h-10 text-emerald-500/50" />
-                  </div>
-                  <div className="flex items-center justify-between p-4 bg-purple-500/10 rounded-lg">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Avg Cost Per Frame</p>
-                      <p className="text-3xl font-bold text-purple-400">${kpis?.costs?.avg_cost_per_frame || 0}</p>
-                    </div>
-                    <Boxes className="w-10 h-10 text-purple-500/50" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Batch KPIs Table */}
-          <Card className="bg-card border-border" data-testid="report-batch-kpis">
-            <CardHeader>
-              <CardTitle>Batch Performance</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {kpis?.batches?.length > 0 ? (
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-border">
-                      <TableHead>Batch</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Completed</TableHead>
-                      <TableHead className="text-right">Rejected</TableHead>
-                      <TableHead className="text-right">Good</TableHead>
-                      <TableHead className="text-right">Rejection %</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {kpis.batches.map((batch) => (
-                      <TableRow key={batch.batch_id} className="border-border">
-                        <TableCell className="font-medium">{batch.name}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className={batch.status === "active" ? "text-green-400 border-green-400/30" : "text-muted-foreground"}>
-                            {batch.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right font-mono">{batch.completed}</TableCell>
-                        <TableCell className="text-right font-mono text-red-400">{batch.rejected}</TableCell>
-                        <TableCell className="text-right font-mono text-green-400">{batch.good_frames}</TableCell>
-                        <TableCell className="text-right">
-                          <Badge variant="outline" className={batch.rejection_rate > 5 ? "text-red-400 border-red-400/30 bg-red-500/10" : "text-muted-foreground"}>
-                            {batch.rejection_rate}%
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              ) : (
-                <div className="py-8 text-center text-muted-foreground">No batch data available</div>
-              )}
-            </CardContent>
-          </Card>
+          <QualityTab productionKpis={productionKpis} />
         </TabsContent>
 
-        {/* User Performance Tab */}
         <TabsContent value="users" className="space-y-6">
-          <Card className="bg-card border-border" data-testid="report-user-performance">
-            <CardHeader>
-              <CardTitle>User Performance</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {userStats.length > 0 ? (
-                <>
-                  <div className="h-72 mb-6">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={userStats} layout="vertical">
-                        <CartesianGrid strokeDasharray="3 3" stroke="#27272A" />
-                        <XAxis type="number" stroke="#A1A1AA" tick={{ fill: "#A1A1AA" }} />
-                        <YAxis dataKey="user_name" type="category" stroke="#A1A1AA" tick={{ fill: "#A1A1AA" }} width={120} />
-                        <Tooltip contentStyle={{ backgroundColor: "#18181B", border: "1px solid #27272A", borderRadius: "8px" }} />
-                        <Bar dataKey="items_per_hour" fill="#3B82F6" radius={[0, 4, 4, 0]} name="Items/Hour" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="border-border">
-                        <TableHead>User</TableHead>
-                        <TableHead>Items Processed</TableHead>
-                        <TableHead>Hours Logged</TableHead>
-                        <TableHead>Items/Hour</TableHead>
-                        <TableHead>Sessions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {userStats.map((stat, index) => (
-                        <TableRow key={index} className="border-border">
-                          <TableCell className="font-medium">{stat.user_name}</TableCell>
-                          <TableCell className="font-mono">{stat.total_items}</TableCell>
-                          <TableCell className="font-mono">{stat.total_hours}h</TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className={stat.items_per_hour >= 10 ? "text-green-400 bg-green-400/10 border-green-400/20" : stat.items_per_hour >= 5 ? "text-amber-400 bg-amber-400/10 border-amber-400/20" : "text-muted-foreground"}>
-                              {stat.items_per_hour}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="font-mono">{stat.sessions}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </>
-              ) : (
-                <div className="h-72 flex items-center justify-center text-muted-foreground">No user performance data available</div>
-              )}
-            </CardContent>
-          </Card>
+          <UsersTab userStats={userStats} />
         </TabsContent>
 
-        {/* Stage Analysis Tab */}
         <TabsContent value="stages" className="space-y-6">
-          <Card className="bg-card border-border" data-testid="report-stage-analysis">
-            <CardHeader>
-              <CardTitle>Stage Analysis</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {stageStats.length > 0 ? (
-                <>
-                  <div className="h-72 mb-6">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={stageStats}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#27272A" />
-                        <XAxis dataKey="stage_name" stroke="#A1A1AA" tick={{ fill: "#A1A1AA" }} />
-                        <YAxis stroke="#A1A1AA" tick={{ fill: "#A1A1AA" }} />
-                        <Tooltip contentStyle={{ backgroundColor: "#18181B", border: "1px solid #27272A", borderRadius: "8px" }} />
-                        <Bar dataKey="total_items" fill="#8B5CF6" radius={[4, 4, 0, 0]} name="Total Items" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="border-border">
-                        <TableHead>Stage</TableHead>
-                        <TableHead>Total Items</TableHead>
-                        <TableHead>Total Hours</TableHead>
-                        <TableHead>Avg Min/Item</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {stageStats.map((stat, index) => (
-                        <TableRow key={index} className="border-border">
-                          <TableCell className="font-medium">{stat.stage_name}</TableCell>
-                          <TableCell className="font-mono">{stat.total_items}</TableCell>
-                          <TableCell className="font-mono">{stat.total_hours}h</TableCell>
-                          <TableCell className="font-mono">{stat.avg_minutes_per_item} min</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </>
-              ) : (
-                <div className="h-72 flex items-center justify-center text-muted-foreground">No stage data available</div>
-              )}
-            </CardContent>
-          </Card>
+          <StagesTab stageStats={stageStats} />
         </TabsContent>
       </Tabs>
     </div>
