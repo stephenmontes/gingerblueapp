@@ -286,8 +286,13 @@ function OrdersView({
   onOpenWorksheet,
   onTimerChange
 }) {
+  const stageColor = stage.color || "#6366F1";
+  
   return (
-    <Card className="bg-card border-border">
+    <Card 
+      className="bg-card border-border overflow-hidden"
+      style={{ borderTop: `4px solid ${stageColor}` }}
+    >
       {/* Active Workers Banner */}
       {stage.stage_id !== "fulfill_orders" && (
         <div className="px-4 pt-4">
