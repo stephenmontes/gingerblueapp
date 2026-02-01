@@ -63,6 +63,13 @@ export default function Orders({ user }) {
   const [sortColumn, setSortColumn] = useState("created_at");
   const [sortDirection, setSortDirection] = useState("desc");
 
+  // CSV Upload state
+  const [csvUploadOpen, setCsvUploadOpen] = useState(false);
+  const [csvFile, setCsvFile] = useState(null);
+  const [csvStoreId, setCsvStoreId] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
+
   const fetchOrders = async () => {
     try {
       let url = API + "/orders";
