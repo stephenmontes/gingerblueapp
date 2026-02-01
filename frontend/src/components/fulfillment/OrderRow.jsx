@@ -198,7 +198,8 @@ function OrderActions({
   onMoveToStage,
   onMarkShipped,
   onShowInventory,
-  onOpenWorksheet
+  onOpenWorksheet,
+  onPrintOrder
 }) {
   const isOrdersStage = stage.stage_id === "fulfill_orders";
   
@@ -239,34 +240,41 @@ function OrderActions({
           Ship
         </Button>
       )}
-      {isOrdersStage && (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button size="sm" variant="ghost">
-              <MoreVertical className="w-4 h-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={onShowInventory}>
-              <Info className="w-4 h-4 mr-2" />
-              View Inventory Status
-            </DropdownMenuItem>
-            {stages.map((s) => (
-              <DropdownMenuItem
-                key={s.stage_id}
-                onClick={() => onMoveToStage(s.stage_id)}
-                disabled={s.stage_id === stage.stage_id}
-              >
-                <div 
-                  className="w-2 h-2 rounded-full mr-2" 
-                  style={{ backgroundColor: s.color }}
-                />
-                Move to {s.name}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button size="sm" variant="ghost">
+            <MoreVertical className="w-4 h-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={onPrintOrder} data-testid={`print-order-${order.order_id}`}>
+            <Printer className="w-4 h-4 mr-2" />
+            Print Order
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={onShowInventory}>
+            <Info className="w-4 h-4 mr-2" />
+            View Inventory Status
+          </DropdownMenuItem>
+          {isOrdersStage && (
+            <>
+              <DropdownMenuSeparator />
+              {stages.map((s) => (
+                <DropdownMenuItem
+                  key={s.stage_id}
+                  onClick={() => onMoveToStage(s.stage_id)}
+                  disabled={s.stage_id === stage.stage_id}
+                >
+                  <div 
+                    className="w-2 h-2 rounded-full mr-2" 
+                    style={{ backgroundColor: s.color }}
+                  />
+                  Move to {s.name}
+                </DropdownMenuItem>
+              ))}
+            </>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }
