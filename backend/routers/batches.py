@@ -683,41 +683,6 @@ async def move_all_completed_frames(
 async def get_cut_list(batch_id: str, user: User = Depends(get_current_user)):
     """Get cut list with progress for a batch - redirects to frames endpoint"""
     return await get_batch_frames(batch_id, None, user)
-            return len(SIZE_ORDER)
-    
-    items = list(item_map.values())
-    items.sort(key=lambda x: (get_size_index(x["size"]), x["color"]))
-    
-    # Group by size for subtotals
-    size_groups = {}
-    for item in items:
-        size = item["size"]
-        if size not in size_groups:
-            size_groups[size] = {
-                "size": size,
-                "items": [],
-                "subtotal_required": 0,
-                "subtotal_made": 0
-            }
-        size_groups[size]["items"].append(item)
-        size_groups[size]["subtotal_required"] += item["qty_required"]
-        size_groups[size]["subtotal_made"] += item["qty_made"]
-    
-    groups = list(size_groups.values())
-    groups.sort(key=lambda x: get_size_index(x["size"]))
-    
-    # Calculate totals
-    grand_total_required = sum(item["qty_required"] for item in items)
-    grand_total_made = sum(item["qty_made"] for item in items)
-    
-    return {
-        "batch_id": batch_id,
-        "size_groups": groups,
-        "grand_total_required": grand_total_required,
-        "grand_total_made": grand_total_made
-    }
-
-@router.put("/{batch_id}/cut-list")
 async def update_cut_list(
     batch_id: str,
     update: CutListUpdate,
