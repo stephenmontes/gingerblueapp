@@ -40,7 +40,7 @@ function getColorName(code) {
   return COLOR_NAMES[code] || code;
 }
 
-export function FrameList({ batch, activeTimer, currentStageId, stages }) {
+export function FrameList({ batch, activeTimer, currentStageId, stages, onRefresh }) {
   const [framesData, setFramesData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState({});
