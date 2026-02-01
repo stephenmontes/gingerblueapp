@@ -134,8 +134,6 @@ const ProtectedRoute = ({ children }) => {
 
     checkAuth();
   }, [location, navigate]);
-          setIsAuthenticated(false);
-          navigate("/login", { replace: true });
         }
       } catch (error) {
         console.error("Auth check error:", error);
@@ -159,7 +157,17 @@ const ProtectedRoute = ({ children }) => {
     return null;
   }
 
-  return children({ user, setUser });
+  // Update setUser to also update sessionStorage
+  const handleSetUser = (newUser) => {
+    setUser(newUser);
+    if (newUser) {
+      sessionStorage.setItem("shopfactory_user", JSON.stringify(newUser));
+    } else {
+      sessionStorage.removeItem("shopfactory_user");
+    }
+  };
+
+  return children({ user, setUser: handleSetUser });
 };
 
 // App Router Component
