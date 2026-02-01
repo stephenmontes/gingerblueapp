@@ -273,7 +273,7 @@ export function CutList({ batch, activeTimer }) {
   );
 }
 
-function SizeGroupRows({ group, isLast, updating, localValues, onQtyChange, onCompletedChange }) {
+function SizeGroupRows({ group, isLast, updating, localValues, onQtyChange, onCompletedChange, hasActiveTimer }) {
   return (
     <>
       {group.items.map((item, itemIndex) => {
@@ -281,6 +281,7 @@ function SizeGroupRows({ group, isLast, updating, localValues, onQtyChange, onCo
         const isUpdating = updating[key];
         const displayQty = localValues[key] ?? item.qty_made;
         const isComplete = item.completed || displayQty >= item.qty_required;
+        const isDisabled = isUpdating || !hasActiveTimer;
         
         return (
           <TableRow
@@ -309,8 +310,8 @@ function SizeGroupRows({ group, isLast, updating, localValues, onQtyChange, onCo
                 min="0"
                 value={displayQty}
                 onChange={(e) => onQtyChange(item.size, item.color, e.target.value, item.completed)}
-                className="w-20 mx-auto text-center font-mono h-8"
-                disabled={isUpdating}
+                className={`w-20 mx-auto text-center font-mono h-8 ${!hasActiveTimer ? "opacity-50 cursor-not-allowed" : ""}`}
+                disabled={isDisabled}
                 data-testid={`qty-made-${key}`}
               />
             </TableCell>
@@ -321,9 +322,9 @@ function SizeGroupRows({ group, isLast, updating, localValues, onQtyChange, onCo
                   onCheckedChange={(checked) => 
                     onCompletedChange(item.size, item.color, checked, displayQty, item.qty_required)
                   }
-                  disabled={isUpdating}
+                  disabled={isDisabled}
                   data-testid={`completed-${key}`}
-                  className="h-5 w-5"
+                  className={`h-5 w-5 ${!hasActiveTimer ? "opacity-50 cursor-not-allowed" : ""}`}
                 />
                 {isUpdating && (
                   <Loader2 className="w-4 h-4 ml-2 animate-spin text-muted-foreground" />
