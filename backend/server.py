@@ -1589,7 +1589,9 @@ async def update_item_rejected(
 
 @api_router.post("/items/{item_id}/add-to-inventory")
 async def add_item_to_inventory(item_id: str, user: User = Depends(get_current_user)):
-    """Add completed item to frame inventory (from Quality Check stage)"""
+    """Add completed item to frame inventory (from Quality Check stage).
+    - Good frames: Combined by color+size
+    - Rejected frames: Added as separate 'REJECTED' inventory items"""
     item = await db.production_items.find_one({"item_id": item_id}, {"_id": 0})
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
@@ -1597,37 +1599,80 @@ async def add_item_to_inventory(item_id: str, user: User = Depends(get_current_u
     if item.get("added_to_inventory"):
         raise HTTPException(status_code=400, detail="Item already added to inventory")
     
-    # Calculate quantity to add (completed minus rejected)
-    qty_to_add = max(0, item.get("qty_completed", 0) - item.get("qty_rejected", 0))
+    qty_completed = item.get("qty_completed", 0)
+    qty_rejected = item.get("qty_rejected", 0)
+    qty_good = max(0, qty_completed - qty_rejected)
     
-    if qty_to_add <= 0:
-        raise HTTPException(status_code=400, detail="No frames to add (completed - rejected = 0)")
+    if qty_completed <= 0:
+        raise HTTPException(status_code=400, detail="No frames completed")
     
-    # Check if inventory item with same SKU exists
-    existing_inv = await db.inventory.find_one({"sku": item["sku"]}, {"_id": 0})
+    color = item.get("color", "")
+    size = item.get("size", "")
+    now = datetime.now(timezone.utc).isoformat()
     
-    if existing_inv:
-        # Update existing inventory
-        await db.inventory.update_one(
-            {"sku": item["sku"]},
-            {"$inc": {"quantity": qty_to_add},
-             "$set": {"updated_at": datetime.now(timezone.utc).isoformat()}}
-        )
-    else:
-        # Create new inventory item
-        inv_item = {
-            "item_id": f"inv_{uuid.uuid4().hex[:8]}",
-            "sku": item["sku"],
-            "name": item["name"],
-            "color": item.get("color", ""),
-            "size": item.get("size", ""),
-            "quantity": qty_to_add,
-            "min_stock": 10,
-            "location": "",
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "updated_at": datetime.now(timezone.utc).isoformat()
-        }
-        await db.inventory.insert_one(inv_item)
+    messages = []
+    
+    # Add GOOD frames to inventory (match by color + size)
+    if qty_good > 0:
+        existing_good = await db.inventory.find_one({
+            "color": color,
+            "size": size,
+            "is_rejected": {"$ne": True}
+        }, {"_id": 0})
+        
+        if existing_good:
+            await db.inventory.update_one(
+                {"item_id": existing_good["item_id"]},
+                {"$inc": {"quantity": qty_good},
+                 "$set": {"updated_at": now}}
+            )
+        else:
+            inv_item = {
+                "item_id": f"inv_{uuid.uuid4().hex[:8]}",
+                "sku": item["sku"],
+                "name": item["name"],
+                "color": color,
+                "size": size,
+                "quantity": qty_good,
+                "min_stock": 10,
+                "location": "",
+                "is_rejected": False,
+                "created_at": now,
+                "updated_at": now
+            }
+            await db.inventory.insert_one(inv_item)
+        messages.append(f"{qty_good} good frames added")
+    
+    # Add REJECTED frames to separate inventory (match by color + size + is_rejected)
+    if qty_rejected > 0:
+        existing_rejected = await db.inventory.find_one({
+            "color": color,
+            "size": size,
+            "is_rejected": True
+        }, {"_id": 0})
+        
+        if existing_rejected:
+            await db.inventory.update_one(
+                {"item_id": existing_rejected["item_id"]},
+                {"$inc": {"quantity": qty_rejected},
+                 "$set": {"updated_at": now}}
+            )
+        else:
+            rej_item = {
+                "item_id": f"inv_{uuid.uuid4().hex[:8]}",
+                "sku": f"{item['sku']}-REJ",
+                "name": f"{item['name']} (REJECTED)",
+                "color": color,
+                "size": size,
+                "quantity": qty_rejected,
+                "min_stock": 0,
+                "location": "Rejected",
+                "is_rejected": True,
+                "created_at": now,
+                "updated_at": now
+            }
+            await db.inventory.insert_one(rej_item)
+        messages.append(f"{qty_rejected} rejected frames added")
     
     # Mark item as added to inventory
     await db.production_items.update_one(
@@ -1636,9 +1681,62 @@ async def add_item_to_inventory(item_id: str, user: User = Depends(get_current_u
     )
     
     return {
-        "message": f"Added {qty_to_add} frames to inventory",
+        "message": ", ".join(messages),
         "sku": item["sku"],
-        "quantity_added": qty_to_add
+        "good_added": qty_good,
+        "rejected_added": qty_rejected
+    }
+
+@api_router.get("/inventory/summary")
+async def get_inventory_summary(user: User = Depends(get_current_user)):
+    """Get inventory grouped by color and size with subtotals."""
+    all_items = await db.inventory.find({}, {"_id": 0}).to_list(10000)
+    
+    # Group by color + size
+    grouped = {}
+    for item in all_items:
+        color = item.get("color", "Unknown")
+        size = item.get("size", "Unknown")
+        is_rejected = item.get("is_rejected", False)
+        key = f"{color}|{size}"
+        
+        if key not in grouped:
+            grouped[key] = {
+                "color": color,
+                "size": size,
+                "good_qty": 0,
+                "rejected_qty": 0,
+                "items": []
+            }
+        
+        if is_rejected:
+            grouped[key]["rejected_qty"] += item.get("quantity", 0)
+        else:
+            grouped[key]["good_qty"] += item.get("quantity", 0)
+        
+        grouped[key]["items"].append(item)
+    
+    # Convert to list and calculate totals
+    summary = []
+    total_good = 0
+    total_rejected = 0
+    
+    for key, data in grouped.items():
+        data["total_qty"] = data["good_qty"] + data["rejected_qty"]
+        total_good += data["good_qty"]
+        total_rejected += data["rejected_qty"]
+        summary.append(data)
+    
+    # Sort by color then size
+    summary.sort(key=lambda x: (x["color"], x["size"]))
+    
+    return {
+        "groups": summary,
+        "totals": {
+            "good": total_good,
+            "rejected": total_rejected,
+            "total": total_good + total_rejected
+        }
     }
 
 @api_router.get("/batches/{batch_id}/stats")
