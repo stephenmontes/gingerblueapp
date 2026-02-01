@@ -661,9 +661,12 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="awaiting_shipment">Awaiting Shipment</SelectItem>
+                <SelectItem value="pending">Pending Payment</SelectItem>
+                <SelectItem value="shipped">Shipped</SelectItem>
                 <SelectItem value="in_production">In Production</SelectItem>
                 <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
               </SelectContent>
             </Select>
             <div className="flex items-center gap-2">
