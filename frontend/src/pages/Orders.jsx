@@ -282,7 +282,7 @@ export default function Orders({ user }) {
 
   const handleSelectAll = (checked) => {
     if (checked) {
-      setSelectedOrders(filteredOrders.map((o) => o.order_id));
+      setSelectedOrders(sortedOrders.map((o) => o.order_id));
     } else {
       setSelectedOrders([]);
     }
