@@ -56,6 +56,85 @@ async def get_dashboard_stats(user: User = Depends(get_current_user)):
         "daily_production": daily_stats
     }
 
+@router.get("/stats/production-kpis")
+async def get_production_kpis(user: User = Depends(get_current_user)):
+    """Get production KPIs including rejection rates and costs"""
+    # Get all production items
+    items = await db.production_items.find({}, {"_id": 0}).to_list(10000)
+    
+    total_required = sum(item.get("qty_required", 0) for item in items)
+    total_completed = sum(item.get("qty_completed", 0) for item in items)
+    total_rejected = sum(item.get("qty_rejected", 0) for item in items)
+    good_frames = max(0, total_completed - total_rejected)
+    
+    # Time and cost calculations
+    time_logs = await db.time_logs.find({"completed_at": {"$ne": None}}, {"_id": 0}).to_list(10000)
+    total_minutes = sum(log.get("duration_minutes", 0) for log in time_logs)
+    total_hours = total_minutes / 60
+    total_items_processed = sum(log.get("items_processed", 0) for log in time_logs)
+    
+    hourly_rate = 22.0
+    labor_cost = total_hours * hourly_rate
+    avg_cost_per_frame = labor_cost / good_frames if good_frames > 0 else 0
+    rejection_rate = (total_rejected / total_completed * 100) if total_completed > 0 else 0
+    
+    # Inventory stats
+    inventory = await db.inventory.find({}, {"_id": 0}).to_list(10000)
+    good_inventory = sum(1 for i in inventory if not i.get("is_rejected"))
+    rejected_inventory = sum(1 for i in inventory if i.get("is_rejected"))
+    total_good_stock = sum(i.get("quantity", 0) for i in inventory if not i.get("is_rejected"))
+    total_rejected_stock = sum(i.get("quantity", 0) for i in inventory if i.get("is_rejected"))
+    
+    # Batch-level breakdown
+    batches = await db.production_batches.find({}, {"_id": 0}).to_list(100)
+    batch_kpis = []
+    for batch in batches:
+        batch_items = [i for i in items if i.get("batch_id") == batch.get("batch_id")]
+        b_completed = sum(i.get("qty_completed", 0) for i in batch_items)
+        b_rejected = sum(i.get("qty_rejected", 0) for i in batch_items)
+        b_good = max(0, b_completed - b_rejected)
+        b_rejection_rate = (b_rejected / b_completed * 100) if b_completed > 0 else 0
+        
+        batch_kpis.append({
+            "batch_id": batch.get("batch_id"),
+            "name": batch.get("name"),
+            "status": batch.get("status"),
+            "completed": b_completed,
+            "rejected": b_rejected,
+            "good_frames": b_good,
+            "rejection_rate": round(b_rejection_rate, 1)
+        })
+    
+    return {
+        "production": {
+            "total_required": total_required,
+            "total_completed": total_completed,
+            "total_rejected": total_rejected,
+            "good_frames": good_frames
+        },
+        "quality": {
+            "rejection_rate": round(rejection_rate, 1),
+            "yield_rate": round(100 - rejection_rate, 1)
+        },
+        "time": {
+            "total_hours": round(total_hours, 1),
+            "total_items_processed": total_items_processed,
+            "avg_items_per_hour": round((total_items_processed / total_minutes * 60), 1) if total_minutes > 0 else 0
+        },
+        "costs": {
+            "hourly_rate": hourly_rate,
+            "total_labor_cost": round(labor_cost, 2),
+            "avg_cost_per_frame": round(avg_cost_per_frame, 2)
+        },
+        "inventory": {
+            "good_skus": good_inventory,
+            "rejected_skus": rejected_inventory,
+            "total_good_stock": total_good_stock,
+            "total_rejected_stock": total_rejected_stock
+        },
+        "batches": batch_kpis
+    }
+
 @router.get("/stats/users")
 async def get_user_stats(user: User = Depends(get_current_user)):
     """Get user performance statistics"""
