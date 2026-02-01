@@ -134,16 +134,6 @@ const ProtectedRoute = ({ children }) => {
 
     checkAuth();
   }, [location, navigate]);
-        }
-      } catch (error) {
-        console.error("Auth check error:", error);
-        setIsAuthenticated(false);
-        navigate("/login", { replace: true });
-      }
-    };
-
-    checkAuth();
-  }, [location, navigate]);
 
   if (isAuthenticated === null) {
     return (
