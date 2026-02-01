@@ -8,7 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
-import { Package, Search, Filter, Eye, Store, Calendar, Layers, ArrowRight, CheckSquare } from "lucide-react";
+import { Package, Search, Filter, Eye, Store, Calendar, Layers, ArrowRight, CheckSquare, RefreshCw, CloudDownload, Loader2, ShoppingBag } from "lucide-react";
 import { toast } from "sonner";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
