@@ -280,10 +280,12 @@ async def delete_batch(batch_id: str, user: User = Depends(get_current_user)):
     first_stage = await db.production_stages.find_one(sort=[("order", 1)])
     first_stage_id = first_stage["stage_id"] if first_stage else "stage_new"
     
-    await db.orders.update_many(
+    # Update orders in fulfillment_orders collection
+    await db.fulfillment_orders.update_many(
         {"batch_id": batch_id},
         {"$set": {
             "batch_id": None,
+            "batch_name": None,
             "status": "pending",
             "current_stage_id": first_stage_id,
             "updated_at": datetime.now(timezone.utc).isoformat()
