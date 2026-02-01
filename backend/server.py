@@ -1321,6 +1321,89 @@ async def get_stage_stats(user: User = Depends(get_current_user)):
     stage_stats = await db.time_logs.aggregate(pipeline).to_list(100)
     return stage_stats
 
+# ============== Inventory Routes ==============
+
+@api_router.get("/inventory")
+async def get_inventory(user: User = Depends(get_current_user)):
+    """Get all inventory items"""
+    items = await db.inventory.find({}, {"_id": 0}).sort("name", 1).to_list(10000)
+    return items
+
+@api_router.post("/inventory")
+async def create_inventory_item(item_data: InventoryCreate, user: User = Depends(get_current_user)):
+    """Create a new inventory item"""
+    # Check for duplicate SKU
+    existing = await db.inventory.find_one({"sku": item_data.sku}, {"_id": 0})
+    if existing:
+        raise HTTPException(status_code=400, detail="SKU already exists")
+    
+    item = InventoryItem(**item_data.model_dump())
+    doc = item.model_dump()
+    doc["created_at"] = doc["created_at"].isoformat()
+    doc["updated_at"] = doc["updated_at"].isoformat()
+    
+    await db.inventory.insert_one(doc)
+    return {"message": "Item created", "item_id": item.item_id}
+
+@api_router.get("/inventory/{item_id}")
+async def get_inventory_item(item_id: str, user: User = Depends(get_current_user)):
+    """Get a single inventory item"""
+    item = await db.inventory.find_one({"item_id": item_id}, {"_id": 0})
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    return item
+
+@api_router.put("/inventory/{item_id}")
+async def update_inventory_item(item_id: str, item_data: InventoryCreate, user: User = Depends(get_current_user)):
+    """Update an inventory item"""
+    existing = await db.inventory.find_one({"item_id": item_id}, {"_id": 0})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Item not found")
+    
+    # Check for duplicate SKU (excluding current item)
+    sku_check = await db.inventory.find_one({"sku": item_data.sku, "item_id": {"$ne": item_id}}, {"_id": 0})
+    if sku_check:
+        raise HTTPException(status_code=400, detail="SKU already exists")
+    
+    update_data = item_data.model_dump()
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.inventory.update_one(
+        {"item_id": item_id},
+        {"$set": update_data}
+    )
+    return {"message": "Item updated"}
+
+@api_router.delete("/inventory/{item_id}")
+async def delete_inventory_item(item_id: str, user: User = Depends(get_current_user)):
+    """Delete an inventory item"""
+    result = await db.inventory.delete_one({"item_id": item_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Item not found")
+    return {"message": "Item deleted"}
+
+@api_router.put("/inventory/{item_id}/adjust")
+async def adjust_inventory_quantity(
+    item_id: str, 
+    adjustment: int,
+    user: User = Depends(get_current_user)
+):
+    """Adjust inventory quantity (positive to add, negative to subtract)"""
+    item = await db.inventory.find_one({"item_id": item_id}, {"_id": 0})
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    
+    new_quantity = max(0, item.get("quantity", 0) + adjustment)
+    
+    await db.inventory.update_one(
+        {"item_id": item_id},
+        {"$set": {
+            "quantity": new_quantity,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    return {"message": "Quantity adjusted", "new_quantity": new_quantity}
+
 # ============== Demo Data Route ==============
 
 @api_router.post("/demo/seed")
