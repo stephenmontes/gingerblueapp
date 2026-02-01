@@ -115,6 +115,28 @@ export default function OrderFulfillment() {
       {/* KPI Banner */}
       <FulfillmentKpiBanner />
 
+      {/* Order KPI Report Toggle */}
+      <div className="border border-border rounded-lg">
+        <Button
+          variant="ghost"
+          onClick={() => setShowReport(!showReport)}
+          className="w-full justify-between h-12"
+          data-testid="toggle-order-report"
+        >
+          <span className="flex items-center gap-2">
+            <FileText className="w-4 h-4" />
+            Order Time & Cost Report
+          </span>
+          {showReport ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+        </Button>
+        
+        {showReport && (
+          <div className="p-4 pt-0">
+            <OrderKpiReport />
+          </div>
+        )}
+      </div>
+
       {/* Stage Tabs - Button Style (matches Frame Production) */}
       <div className="flex gap-2 overflow-x-auto pb-2">
         {stages.map((stage) => (
