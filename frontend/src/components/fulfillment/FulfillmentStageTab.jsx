@@ -16,7 +16,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronRight, Package, AlertTriangle } from "lucide-react";
+import { ChevronRight, Package, AlertTriangle, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { OrderRow } from "./OrderRow";
 import { InventoryDialog } from "./InventoryDialog";
@@ -32,10 +32,46 @@ export function FulfillmentStageTab({ stage, stages, onRefresh, onTimerChange })
   const [selectedOrders, setSelectedOrders] = useState([]);
   const [inventoryDialogOrder, setInventoryDialogOrder] = useState(null);
   const [worksheetOrder, setWorksheetOrder] = useState(null);
+  const [activeTimer, setActiveTimer] = useState(null);
 
   useEffect(() => {
     loadOrders();
+    checkActiveTimer();
   }, [stage.stage_id]);
+
+  async function checkActiveTimer() {
+    try {
+      const res = await fetch(`${API}/fulfillment/user/active-timer`, { credentials: "include" });
+      if (res.ok) {
+        const timers = await res.json();
+        setActiveTimer(timers.length > 0 ? timers[0] : null);
+      }
+    } catch (err) {
+      console.error("Failed to check timer:", err);
+    }
+  }
+
+  function handleTimerChangeInternal() {
+    checkActiveTimer();
+    onTimerChange?.();
+  }
+
+  // Check if timer is required and active for this stage
+  const isOrdersStage = stage.stage_id === "fulfill_orders";
+  const hasActiveTimerForStage = activeTimer && activeTimer.stage_id === stage.stage_id;
+  const timerRequired = !isOrdersStage; // Timer required for all stages except Orders
+
+  function requiresTimer() {
+    if (!timerRequired) return false;
+    if (!hasActiveTimerForStage) {
+      toast.error("Start a timer before completing tasks in this stage", {
+        icon: <Clock className="w-4 h-4" />,
+        description: "Click 'Start Timer' to begin tracking your work"
+      });
+      return true;
+    }
+    return false;
+  }
 
   async function loadOrders() {
     try {
@@ -53,6 +89,7 @@ export function FulfillmentStageTab({ stage, stages, onRefresh, onTimerChange })
   }
 
   async function moveOrderToNext(orderId) {
+    if (requiresTimer()) return;
     try {
       const res = await fetch(`${API}/fulfillment/orders/${orderId}/move-next`, {
         method: "POST",
