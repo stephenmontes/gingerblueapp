@@ -35,7 +35,8 @@ async def get_orders(
     if unbatched:
         query["$or"] = [{"batch_id": None}, {"batch_id": {"$exists": False}}]
     
-    orders = await db.orders.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    # Fetch from fulfillment_orders (synced orders) - this is the main orders collection
+    orders = await db.fulfillment_orders.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
     return orders
 
 @router.post("")
