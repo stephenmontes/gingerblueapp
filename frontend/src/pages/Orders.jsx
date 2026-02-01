@@ -67,6 +67,12 @@ export default function Orders({ user }) {
   const [syncStatus, setSyncStatus] = useState([]);
   const [shipstationSyncing, setShipstationSyncing] = useState(false);
   
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const pageSize = 100;
+  
   // Sorting state
   const [sortColumn, setSortColumn] = useState("created_at");
   const [sortDirection, setSortDirection] = useState("desc");
