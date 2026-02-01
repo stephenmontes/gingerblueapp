@@ -300,7 +300,7 @@ export default function Team({ user }) {
       </Card>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="bg-card border-border">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -321,10 +321,28 @@ export default function Team({ user }) {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="label-caps mb-2">Total Hours Logged</p>
+                <p className="label-caps mb-2">Total Items</p>
+                <p className="text-4xl font-heading font-bold text-green-400">
+                  {totalItems.toLocaleString()}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">{getPeriodLabel()}</p>
+              </div>
+              <div className="p-3 rounded-lg bg-green-400/10">
+                <TrendingUp className="w-6 h-6 text-green-400" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-card border-border">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="label-caps mb-2">Hours Logged</p>
                 <p className="text-4xl font-heading font-bold text-secondary">
                   {totalHours.toFixed(1)}
                 </p>
+                <p className="text-xs text-muted-foreground mt-1">{getPeriodLabel()}</p>
               </div>
               <div className="p-3 rounded-lg bg-secondary/10">
                 <Clock className="w-6 h-6 text-secondary" />
