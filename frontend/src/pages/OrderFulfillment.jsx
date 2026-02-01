@@ -2,10 +2,11 @@ import { useEffect, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { RefreshCw, Package, Truck } from "lucide-react";
+import { RefreshCw, Truck } from "lucide-react";
 import { toast } from "sonner";
 import { FulfillmentStageTab } from "@/components/fulfillment/FulfillmentStageTab";
 import { FulfillmentSummary } from "@/components/fulfillment/FulfillmentSummary";
+import { StageOrdersPopup } from "@/components/fulfillment/StageOrdersPopup";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -15,6 +16,7 @@ export default function OrderFulfillment() {
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("fulfill_orders");
+  const [popupStage, setPopupStage] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -48,6 +50,17 @@ export default function OrderFulfillment() {
     if (!summary?.stages) return 0;
     const stage = summary.stages.find(s => s.stage_id === stageId);
     return stage?.count || 0;
+  }
+
+  function handleStageCardClick(stage) {
+    setPopupStage(stage);
+  }
+
+  function handleViewOrderFromPopup(order) {
+    // Switch to the stage tab and the popup will close
+    if (order.fulfillment_stage_id) {
+      setActiveTab(order.fulfillment_stage_id);
+    }
   }
 
   if (loading) {
@@ -87,8 +100,8 @@ export default function OrderFulfillment() {
         </Button>
       </div>
 
-      {/* Summary Cards */}
-      <FulfillmentSummary summary={summary} />
+      {/* Summary Cards - Now Clickable */}
+      <FulfillmentSummary summary={summary} onStageClick={handleStageCardClick} />
 
       {/* Stage Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
@@ -125,6 +138,13 @@ export default function OrderFulfillment() {
           </TabsContent>
         ))}
       </Tabs>
+
+      {/* Stage Orders Popup */}
+      <StageOrdersPopup 
+        stage={popupStage} 
+        onClose={() => setPopupStage(null)}
+        onViewOrder={handleViewOrderFromPopup}
+      />
     </div>
   );
 }
