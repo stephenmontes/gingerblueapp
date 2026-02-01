@@ -60,7 +60,12 @@ export function OrderRow({
         />
       </TableCell>
       <TableCell className="font-mono font-medium">
-        {order.order_number || order.order_id?.slice(-8)}
+        <button 
+          onClick={onOpenWorksheet}
+          className="hover:text-primary hover:underline cursor-pointer"
+        >
+          {order.order_number || order.order_id?.slice(-8)}
+        </button>
       </TableCell>
       <TableCell>
         <div>
@@ -69,9 +74,22 @@ export function OrderRow({
         </div>
       </TableCell>
       <TableCell>
-        <Badge variant="outline">
-          {order.line_items?.length || order.items?.length || order.item_count || 0} items
-        </Badge>
+        <div className="flex items-center gap-2">
+          {isAllComplete ? (
+            <Badge variant="outline" className="border-green-500 text-green-500 gap-1">
+              <CheckCircle className="w-3 h-3" />
+              {totalItems} done
+            </Badge>
+          ) : totalItems > 0 && completedItems > 0 ? (
+            <Badge variant="outline" className="border-orange-500 text-orange-500">
+              {completedItems}/{totalItems}
+            </Badge>
+          ) : (
+            <Badge variant="outline">
+              {totalItems} items
+            </Badge>
+          )}
+        </div>
       </TableCell>
       <TableCell>
         {order.batch_name ? (
