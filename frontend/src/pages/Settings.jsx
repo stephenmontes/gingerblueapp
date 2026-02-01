@@ -317,6 +317,7 @@ export default function Settings({ user }) {
                 <SelectContent position="popper" className="z-[9999]">
                   <SelectItem value="shopify">Shopify</SelectItem>
                   <SelectItem value="etsy">Etsy</SelectItem>
+                  <SelectItem value="dropship">Dropship (CSV Upload)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
