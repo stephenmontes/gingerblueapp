@@ -53,65 +53,72 @@ export function OrderKpiReport() {
   }), { totalMinutes: 0, totalCost: 0, totalItems: 0, orderCount: 0 });
 
   if (loading) {
-    return (
-      <Card className="bg-card border-border">
-        <CardContent className="p-8">
-          <div className="h-48 bg-muted/30 animate-pulse rounded-lg" />
-        </CardContent>
-      </Card>
-    );
+    return <LoadingState />;
   }
 
   return (
     <Card className="bg-card border-border" data-testid="order-kpi-report">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="w-5 h-5 text-primary" />
-            Order Time & Cost Report
-          </CardTitle>
-          <div className="relative w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Search orders..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-        </div>
-      </CardHeader>
+      <ReportHeader searchTerm={searchTerm} onSearchChange={setSearchTerm} />
       <CardContent>
         <ReportSummary totals={totals} />
-
-        {filteredOrders.length === 0 ? (
-          <EmptyState />
-        ) : (
-          <ReportTable orders={filteredOrders} onSelectOrder={setSelectedOrder} />
-        )}
+        <ReportContent 
+          orders={filteredOrders} 
+          onSelectOrder={setSelectedOrder} 
+        />
       </CardContent>
-
       <OrderDetailsDialog order={selectedOrder} onClose={() => setSelectedOrder(null)} />
     </Card>
   );
 }
 
+function LoadingState() {
+  return (
+    <Card className="bg-card border-border">
+      <CardContent className="p-8">
+        <div className="h-48 bg-muted/30 animate-pulse rounded-lg" />
+      </CardContent>
+    </Card>
+  );
+}
+
+function ReportHeader({ searchTerm, onSearchChange }) {
+  return (
+    <CardHeader>
+      <div className="flex items-center justify-between">
+        <CardTitle className="flex items-center gap-2">
+          <FileText className="w-5 h-5 text-primary" />
+          Order Time & Cost Report
+        </CardTitle>
+        <div className="relative w-64">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Search orders..."
+            value={searchTerm}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+      </div>
+    </CardHeader>
+  );
+}
+
 function ReportSummary({ totals }) {
+  const avgCostPerFrame = totals.totalItems > 0 
+    ? (totals.totalCost / totals.totalItems).toFixed(2) 
+    : '0.00';
+    
   return (
     <div className="grid grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg">
-      <SummaryCard label="Orders Tracked" value={totals.orderCount} icon={Package} />
-      <SummaryCard label="Total Time" value={formatTime(totals.totalMinutes)} icon={Clock} />
-      <SummaryCard label="Total Labor Cost" value={`$${totals.totalCost.toFixed(2)}`} icon={DollarSign} />
-      <SummaryCard 
-        label="Avg Cost/Frame" 
-        value={`$${totals.totalItems > 0 ? (totals.totalCost / totals.totalItems).toFixed(2) : '0.00'}`} 
-        icon={DollarSign} 
-      />
+      <SummaryItem icon={Package} label="Orders Tracked" value={totals.orderCount} />
+      <SummaryItem icon={Clock} label="Total Time" value={formatTime(totals.totalMinutes)} />
+      <SummaryItem icon={DollarSign} label="Total Labor Cost" value={`$${totals.totalCost.toFixed(2)}`} />
+      <SummaryItem icon={DollarSign} label="Avg Cost/Frame" value={`$${avgCostPerFrame}`} />
     </div>
   );
 }
 
-function SummaryCard({ label, value, icon: Icon }) {
+function SummaryItem({ icon: Icon, label, value }) {
   return (
     <div className="flex items-center gap-3">
       <div className="p-2 rounded-lg bg-primary/10">
@@ -125,22 +132,22 @@ function SummaryCard({ label, value, icon: Icon }) {
   );
 }
 
-function EmptyState() {
-  return (
-    <div className="text-center py-12 text-muted-foreground">
-      <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" />
-      <p>No order time data available yet</p>
-      <p className="text-sm mt-1">Start tracking time on orders in the worksheet</p>
-    </div>
-  );
-}
+function ReportContent({ orders, onSelectOrder }) {
+  if (orders.length === 0) {
+    return (
+      <div className="text-center py-12 text-muted-foreground">
+        <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" />
+        <p>No order time data available yet</p>
+        <p className="text-sm mt-1">Start tracking time on orders in the worksheet</p>
+      </div>
+    );
+  }
 
-function ReportTable({ orders, onSelectOrder }) {
   return (
     <Table>
       <TableHeader>
         <TableRow className="border-border">
-          <TableHead className="w-10"></TableHead>
+          <TableHead className="w-10" />
           <TableHead>Order #</TableHead>
           <TableHead>Customer</TableHead>
           <TableHead className="text-right">Time</TableHead>
