@@ -51,7 +51,8 @@ Build a manufacturing and fulfillment app for Shopify websites with:
 │   ├── items.py       # /api/items/* - update, move, add to inventory
 │   ├── orders.py      # /api/orders/*
 │   ├── inventory.py   # /api/inventory/* - CRUD, adjust, reject
-│   └── reports.py     # /api/stats/*, /api/time-logs
+│   ├── reports.py     # /api/stats/*, /api/time-logs
+│   └── exports.py     # /api/export/* - CSV/PDF exports
 └── services/
     └── sku_parser.py  # SKU parsing utilities
 ```
@@ -62,17 +63,22 @@ Build a manufacturing and fulfillment app for Shopify websites with:
 ├── App.js
 ├── components/
 │   ├── Layout.jsx
-│   ├── production/
-│   │   ├── BatchCard.jsx
-│   │   ├── BatchList.jsx
-│   │   ├── StageTabs.jsx
-│   │   ├── ItemRow.jsx        # Includes rejected qty + add to inventory
-│   │   ├── StageContent.jsx
-│   │   ├── BatchHeader.jsx
-│   │   ├── BatchDetailView.jsx
-│   │   ├── BatchStats.jsx     # KPIs: hours, costs, rejection rate
-│   │   ├── StageTimer.jsx
+│   ├── production/   # Production page components
+│   │   ├── BatchCard.jsx, BatchList.jsx, StageTabs.jsx
+│   │   ├── ItemRow.jsx, StageContent.jsx, BatchHeader.jsx
+│   │   ├── BatchDetailView.jsx, BatchStats.jsx, StageTimer.jsx
 │   │   └── index.js
+│   ├── reports/      # Reports page components (NEW)
+│   │   ├── KpiCards.jsx       # Summary cards
+│   │   ├── QualityTab.jsx     # Quality & Costs tab
+│   │   ├── QualityMetrics.jsx # Yield/rejection rates
+│   │   ├── CostAnalysis.jsx   # Labor cost analysis
+│   │   ├── BatchPerformance.jsx # Batch table
+│   │   ├── UsersTab.jsx       # User performance
+│   │   ├── StagesTab.jsx      # Stage analysis
+│   │   ├── OverviewTab.jsx    # Charts
+│   │   └── index.js
+│   └── ui/           # Shadcn UI components
         └── pages/
             ├── Dashboard.jsx
             ├── Login.jsx
