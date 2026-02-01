@@ -212,15 +212,52 @@ async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current
     
     await db.production_batches.insert_one(batch_doc)
     
+    # Get first fulfillment stage for Order Fulfillment workflow
+    fulfillment_stages = await db.fulfillment_stages.find({}, {"_id": 0}).sort("order", 1).to_list(100)
+    first_fulfill_stage = None
+    if fulfillment_stages:
+        first_fulfill_stage = fulfillment_stages[0]
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    # Update orders with batch info AND assign to fulfillment workflow
+    update_data = {
+        "batch_id": batch_id,
+        "status": "in_production",
+        "current_stage_id": first_stage["stage_id"],
+        "updated_at": now
+    }
+    
+    # Also assign to Order Fulfillment first stage
+    if first_fulfill_stage:
+        update_data["fulfillment_stage_id"] = first_fulfill_stage["stage_id"]
+        update_data["fulfillment_stage_name"] = first_fulfill_stage["name"]
+        update_data["fulfillment_updated_at"] = now
+        update_data["fulfillment_updated_by"] = user.user_id
+    
     await db.orders.update_many(
         {"order_id": {"$in": batch_data.order_ids}},
-        {"$set": {
-            "batch_id": batch_id,
-            "status": "in_production",
-            "current_stage_id": first_stage["stage_id"],
-            "updated_at": datetime.now(timezone.utc).isoformat()
-        }}
+        {"$set": update_data}
     )
+    
+    # Log the fulfillment assignment for each order
+    if first_fulfill_stage:
+        fulfillment_logs = []
+        for order_id in batch_data.order_ids:
+            fulfillment_logs.append({
+                "log_id": f"flog_{uuid.uuid4().hex[:12]}",
+                "order_id": order_id,
+                "from_stage": None,
+                "to_stage": first_fulfill_stage["stage_id"],
+                "to_stage_name": first_fulfill_stage["name"],
+                "user_id": user.user_id,
+                "user_name": user.name,
+                "action": "batch_created",
+                "batch_id": batch_id,
+                "created_at": now
+            })
+        if fulfillment_logs:
+            await db.fulfillment_logs.insert_many(fulfillment_logs)
     
     return {**{k: v for k, v in batch_doc.items() if k != "_id"}, "items_count": len(production_items)}
 
