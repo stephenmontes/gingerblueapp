@@ -428,6 +428,450 @@ async def create_stage(name: str, color: str = "#3B82F6", user: User = Depends(g
     await db.production_stages.insert_one(doc)
     return {k: v for k, v in doc.items() if k != "_id"}
 
+# ============== SKU Parser Helper ==============
+
+def parse_sku(sku: str) -> dict:
+    """Parse SKU to extract color and size
+    Format: PREFIX-XXX-COLOR-SIZE or variations
+    Size codes: S, L, XL, HS, HX, XX, XXX
+    Color codes: B, N, W, etc.
+    """
+    size_codes = ['XXX', 'XX', 'XL', 'HS', 'HX', 'S', 'L']
+    
+    # Split SKU by common delimiters
+    parts = sku.replace('_', '-').replace('.', '-').split('-')
+    parts = [p.strip().upper() for p in parts if p.strip()]
+    
+    color = "UNK"
+    size = "UNK"
+    
+    if len(parts) >= 2:
+        # Try to find size in the last part
+        last_part = parts[-1]
+        for size_code in size_codes:
+            if last_part == size_code or last_part.endswith(size_code):
+                size = size_code
+                break
+        
+        # Color is typically second to last
+        if len(parts) >= 2:
+            second_last = parts[-2] if size != "UNK" else parts[-1]
+            # If it's a single letter or short code, it's likely the color
+            if len(second_last) <= 3 and second_last.isalpha():
+                color = second_last
+    
+    # Fallback: try to extract from end of SKU string
+    if color == "UNK" or size == "UNK":
+        clean_sku = sku.upper().replace(' ', '')
+        for size_code in size_codes:
+            if clean_sku.endswith(size_code):
+                size = size_code
+                # Try to get color before size
+                remaining = clean_sku[:-len(size_code)].rstrip('-_')
+                if remaining:
+                    last_char = remaining[-1]
+                    if last_char.isalpha():
+                        color = last_char
+                break
+    
+    return {"color": color, "size": size}
+
+# ============== Production Batches Routes ==============
+
+@api_router.get("/batches")
+async def get_batches(
+    status: Optional[str] = None,
+    user: User = Depends(get_current_user)
+):
+    """Get all production batches"""
+    query = {}
+    if status:
+        query["status"] = status
+    
+    batches = await db.production_batches.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return batches
+
+@api_router.get("/batches/{batch_id}")
+async def get_batch(batch_id: str, user: User = Depends(get_current_user)):
+    """Get a single batch with its items"""
+    batch = await db.production_batches.find_one({"batch_id": batch_id}, {"_id": 0})
+    if not batch:
+        raise HTTPException(status_code=404, detail="Batch not found")
+    
+    # Get items for this batch
+    items = await db.production_items.find({"batch_id": batch_id}, {"_id": 0}).to_list(1000)
+    
+    # Get orders in this batch
+    orders = await db.orders.find({"order_id": {"$in": batch.get("order_ids", [])}}, {"_id": 0}).to_list(1000)
+    
+    return {
+        **batch,
+        "items": items,
+        "orders": orders
+    }
+
+@api_router.post("/batches")
+async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current_user)):
+    """Create a production batch from selected orders"""
+    if not batch_data.order_ids:
+        raise HTTPException(status_code=400, detail="No orders selected")
+    
+    # Get the orders
+    orders = await db.orders.find(
+        {"order_id": {"$in": batch_data.order_ids}},
+        {"_id": 0}
+    ).to_list(1000)
+    
+    if not orders:
+        raise HTTPException(status_code=404, detail="No orders found")
+    
+    # Get first production stage (skip "New Orders")
+    stages = await db.production_stages.find({}, {"_id": 0}).sort("order", 1).to_list(100)
+    first_stage = stages[1] if len(stages) > 1 else stages[0]
+    
+    # Create the batch
+    batch_id = f"batch_{uuid.uuid4().hex[:8]}"
+    total_items = 0
+    
+    # Parse items from orders and create production items
+    production_items = []
+    for order in orders:
+        for item in order.get("items", []):
+            sku = item.get("sku", "UNKNOWN")
+            parsed = parse_sku(sku)
+            qty = item.get("qty", 1)
+            total_items += qty
+            
+            prod_item = {
+                "item_id": f"item_{uuid.uuid4().hex[:8]}",
+                "batch_id": batch_id,
+                "order_id": order["order_id"],
+                "sku": sku,
+                "name": item.get("name", "Unknown Item"),
+                "color": parsed["color"],
+                "size": parsed["size"],
+                "qty_required": qty,
+                "qty_completed": 0,
+                "current_stage_id": first_stage["stage_id"],
+                "status": "pending",
+                "created_at": datetime.now(timezone.utc).isoformat()
+            }
+            production_items.append(prod_item)
+    
+    # Insert production items
+    if production_items:
+        await db.production_items.insert_many(production_items)
+    
+    # Create batch document
+    batch_doc = {
+        "batch_id": batch_id,
+        "name": batch_data.name,
+        "order_ids": batch_data.order_ids,
+        "current_stage_id": first_stage["stage_id"],
+        "assigned_to": None,
+        "assigned_name": None,
+        "status": "active",
+        "time_started": None,
+        "time_completed": None,
+        "total_items": total_items,
+        "items_completed": 0,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.production_batches.insert_one(batch_doc)
+    
+    # Update orders to reference this batch
+    await db.orders.update_many(
+        {"order_id": {"$in": batch_data.order_ids}},
+        {"$set": {
+            "batch_id": batch_id,
+            "status": "in_production",
+            "current_stage_id": first_stage["stage_id"],
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {
+        **{k: v for k, v in batch_doc.items() if k != "_id"},
+        "items_count": len(production_items)
+    }
+
+@api_router.post("/batches/{batch_id}/start-timer")
+async def start_batch_timer(batch_id: str, user: User = Depends(get_current_user)):
+    """Start time tracking for a batch - assigns user as responsible"""
+    batch = await db.production_batches.find_one({"batch_id": batch_id}, {"_id": 0})
+    if not batch:
+        raise HTTPException(status_code=404, detail="Batch not found")
+    
+    if batch.get("time_started"):
+        raise HTTPException(status_code=400, detail="Timer already started")
+    
+    now = datetime.now(timezone.utc)
+    
+    # Update batch with timer and assignment
+    await db.production_batches.update_one(
+        {"batch_id": batch_id},
+        {"$set": {
+            "time_started": now.isoformat(),
+            "assigned_to": user.user_id,
+            "assigned_name": user.name
+        }}
+    )
+    
+    # Create time log
+    stage = await db.production_stages.find_one({"stage_id": batch["current_stage_id"]}, {"_id": 0})
+    stage_name = stage["name"] if stage else "Unknown"
+    
+    time_log = {
+        "log_id": f"log_{uuid.uuid4().hex[:12]}",
+        "user_id": user.user_id,
+        "user_name": user.name,
+        "batch_id": batch_id,
+        "stage_id": batch["current_stage_id"],
+        "stage_name": stage_name,
+        "action": "started",
+        "started_at": now.isoformat(),
+        "items_processed": 0,
+        "created_at": now.isoformat()
+    }
+    await db.time_logs.insert_one(time_log)
+    
+    return {
+        "message": "Timer started",
+        "batch_id": batch_id,
+        "assigned_to": user.name,
+        "started_at": now.isoformat()
+    }
+
+@api_router.post("/batches/{batch_id}/stop-timer")
+async def stop_batch_timer(batch_id: str, user: User = Depends(get_current_user)):
+    """Stop time tracking for a batch"""
+    batch = await db.production_batches.find_one({"batch_id": batch_id}, {"_id": 0})
+    if not batch:
+        raise HTTPException(status_code=404, detail="Batch not found")
+    
+    if not batch.get("time_started"):
+        raise HTTPException(status_code=400, detail="Timer not started")
+    
+    now = datetime.now(timezone.utc)
+    started_at = datetime.fromisoformat(batch["time_started"])
+    if started_at.tzinfo is None:
+        started_at = started_at.replace(tzinfo=timezone.utc)
+    
+    duration_minutes = (now - started_at).total_seconds() / 60
+    
+    # Get completed items count
+    items_completed = await db.production_items.count_documents({
+        "batch_id": batch_id,
+        "status": "completed"
+    })
+    
+    # Update the open time log
+    await db.time_logs.update_one(
+        {"batch_id": batch_id, "completed_at": None},
+        {"$set": {
+            "completed_at": now.isoformat(),
+            "duration_minutes": round(duration_minutes, 2),
+            "items_processed": items_completed
+        }}
+    )
+    
+    return {
+        "message": "Timer stopped",
+        "duration_minutes": round(duration_minutes, 2),
+        "items_completed": items_completed
+    }
+
+@api_router.get("/batches/{batch_id}/items-grouped")
+async def get_batch_items_grouped(batch_id: str, user: User = Depends(get_current_user)):
+    """Get batch items grouped by color and size with subtotals"""
+    items = await db.production_items.find({"batch_id": batch_id}, {"_id": 0}).to_list(10000)
+    
+    # Group by color and size
+    grouped = {}
+    for item in items:
+        key = f"{item['color']}-{item['size']}"
+        if key not in grouped:
+            grouped[key] = {
+                "color": item["color"],
+                "size": item["size"],
+                "items": [],
+                "total_required": 0,
+                "total_completed": 0
+            }
+        grouped[key]["items"].append(item)
+        grouped[key]["total_required"] += item.get("qty_required", 1)
+        grouped[key]["total_completed"] += item.get("qty_completed", 0)
+    
+    # Convert to list and sort
+    result = list(grouped.values())
+    result.sort(key=lambda x: (x["color"], x["size"]))
+    
+    return result
+
+@api_router.put("/items/{item_id}/update")
+async def update_item_progress(
+    item_id: str,
+    qty_completed: int,
+    user: User = Depends(get_current_user)
+):
+    """Update the completed quantity for an item"""
+    item = await db.production_items.find_one({"item_id": item_id}, {"_id": 0})
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    
+    # Don't allow more completed than required
+    qty_completed = min(qty_completed, item.get("qty_required", 1))
+    
+    status = "completed" if qty_completed >= item.get("qty_required", 1) else "in_progress"
+    
+    await db.production_items.update_one(
+        {"item_id": item_id},
+        {"$set": {
+            "qty_completed": qty_completed,
+            "status": status
+        }}
+    )
+    
+    # Update batch totals
+    batch = await db.production_batches.find_one({"batch_id": item["batch_id"]}, {"_id": 0})
+    if batch:
+        # Recalculate completed items
+        all_items = await db.production_items.find({"batch_id": item["batch_id"]}, {"_id": 0}).to_list(10000)
+        total_completed = sum(i.get("qty_completed", 0) for i in all_items)
+        
+        await db.production_batches.update_one(
+            {"batch_id": item["batch_id"]},
+            {"$set": {"items_completed": total_completed}}
+        )
+    
+    return {"message": "Item updated", "qty_completed": qty_completed, "status": status}
+
+@api_router.put("/items/{item_id}/move-stage")
+async def move_item_stage(
+    item_id: str,
+    move_data: ItemMove,
+    user: User = Depends(get_current_user)
+):
+    """Move an individual item to the next stage"""
+    item = await db.production_items.find_one({"item_id": item_id}, {"_id": 0})
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    
+    # Get stage info
+    new_stage = await db.production_stages.find_one({"stage_id": move_data.new_stage_id}, {"_id": 0})
+    if not new_stage:
+        raise HTTPException(status_code=404, detail="Stage not found")
+    
+    # Update qty_completed if provided
+    qty_completed = move_data.qty_completed if move_data.qty_completed > 0 else item.get("qty_completed", 0)
+    status = "completed" if qty_completed >= item.get("qty_required", 1) else "in_progress"
+    
+    await db.production_items.update_one(
+        {"item_id": item_id},
+        {"$set": {
+            "current_stage_id": move_data.new_stage_id,
+            "qty_completed": qty_completed,
+            "status": status
+        }}
+    )
+    
+    # Create time log for this item move
+    time_log = {
+        "log_id": f"log_{uuid.uuid4().hex[:12]}",
+        "user_id": user.user_id,
+        "user_name": user.name,
+        "batch_id": item["batch_id"],
+        "order_id": item["order_id"],
+        "stage_id": move_data.new_stage_id,
+        "stage_name": new_stage["name"],
+        "action": "item_moved",
+        "started_at": datetime.now(timezone.utc).isoformat(),
+        "completed_at": datetime.now(timezone.utc).isoformat(),
+        "items_processed": qty_completed,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.time_logs.insert_one(time_log)
+    
+    # Update user stats for items moved
+    # This tracks avg items per stage for the user
+    
+    return {
+        "message": f"Item moved to {new_stage['name']}",
+        "item_id": item_id,
+        "new_stage": new_stage["name"],
+        "qty_completed": qty_completed
+    }
+
+@api_router.get("/batches/{batch_id}/stage-summary")
+async def get_batch_stage_summary(batch_id: str, user: User = Depends(get_current_user)):
+    """Get summary of items by stage for a batch"""
+    items = await db.production_items.find({"batch_id": batch_id}, {"_id": 0}).to_list(10000)
+    stages = await db.production_stages.find({}, {"_id": 0}).sort("order", 1).to_list(100)
+    
+    # Create stage map
+    stage_map = {s["stage_id"]: s for s in stages}
+    
+    # Group items by stage
+    stage_summary = {}
+    for stage in stages:
+        stage_summary[stage["stage_id"]] = {
+            "stage_id": stage["stage_id"],
+            "stage_name": stage["name"],
+            "color": stage["color"],
+            "order": stage["order"],
+            "total_items": 0,
+            "total_required": 0,
+            "total_completed": 0,
+            "items": []
+        }
+    
+    for item in items:
+        stage_id = item.get("current_stage_id", "stage_new")
+        if stage_id in stage_summary:
+            stage_summary[stage_id]["items"].append(item)
+            stage_summary[stage_id]["total_items"] += 1
+            stage_summary[stage_id]["total_required"] += item.get("qty_required", 1)
+            stage_summary[stage_id]["total_completed"] += item.get("qty_completed", 0)
+    
+    # Convert to sorted list
+    result = list(stage_summary.values())
+    result.sort(key=lambda x: x["order"])
+    
+    return result
+
+@api_router.delete("/batches/{batch_id}")
+async def delete_batch(batch_id: str, user: User = Depends(get_current_user)):
+    """Delete a batch and return orders to pending"""
+    if user.role not in ["admin", "manager"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    batch = await db.production_batches.find_one({"batch_id": batch_id}, {"_id": 0})
+    if not batch:
+        raise HTTPException(status_code=404, detail="Batch not found")
+    
+    # Delete production items
+    await db.production_items.delete_many({"batch_id": batch_id})
+    
+    # Reset orders
+    first_stage = await db.production_stages.find_one(sort=[("order", 1)])
+    first_stage_id = first_stage["stage_id"] if first_stage else "stage_new"
+    
+    await db.orders.update_many(
+        {"batch_id": batch_id},
+        {"$set": {
+            "batch_id": None,
+            "status": "pending",
+            "current_stage_id": first_stage_id,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    # Delete batch
+    await db.production_batches.delete_one({"batch_id": batch_id})
+    
+    return {"message": "Batch deleted"}
+
 # ============== Orders Routes ==============
 
 @api_router.get("/orders")
