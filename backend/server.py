@@ -707,11 +707,19 @@ async def stop_stage_timer(
         raise HTTPException(status_code=400, detail="No active timer for this stage")
     
     now = datetime.now(timezone.utc)
-    started_at = datetime.fromisoformat(active_timer["started_at"])
-    if started_at.tzinfo is None:
-        started_at = started_at.replace(tzinfo=timezone.utc)
+    accumulated = active_timer.get("accumulated_minutes", 0)
     
-    duration_minutes = (now - started_at).total_seconds() / 60
+    # If timer is paused, just use accumulated time
+    if active_timer.get("is_paused"):
+        duration_minutes = accumulated
+    else:
+        # Calculate time since last start/resume
+        started_at = datetime.fromisoformat(active_timer["started_at"])
+        if started_at.tzinfo is None:
+            started_at = started_at.replace(tzinfo=timezone.utc)
+        
+        current_session = (now - started_at).total_seconds() / 60
+        duration_minutes = accumulated + current_session
     
     # Update the time log
     await db.time_logs.update_one(
@@ -720,7 +728,8 @@ async def stop_stage_timer(
             "completed_at": now.isoformat(),
             "duration_minutes": round(duration_minutes, 2),
             "items_processed": items_processed,
-            "action": "stopped"
+            "action": "stopped",
+            "is_paused": False
         }}
     )
     
@@ -730,6 +739,82 @@ async def stop_stage_timer(
         "stage_name": active_timer["stage_name"],
         "duration_minutes": round(duration_minutes, 2),
         "items_processed": items_processed
+    }
+
+@api_router.post("/stages/{stage_id}/pause-timer")
+async def pause_stage_timer(stage_id: str, user: User = Depends(get_current_user)):
+    """Pause the timer - saves accumulated time."""
+    
+    active_timer = await db.time_logs.find_one({
+        "user_id": user.user_id,
+        "stage_id": stage_id,
+        "completed_at": None
+    }, {"_id": 0})
+    
+    if not active_timer:
+        raise HTTPException(status_code=400, detail="No active timer for this stage")
+    
+    if active_timer.get("is_paused"):
+        raise HTTPException(status_code=400, detail="Timer is already paused")
+    
+    now = datetime.now(timezone.utc)
+    started_at = datetime.fromisoformat(active_timer["started_at"])
+    if started_at.tzinfo is None:
+        started_at = started_at.replace(tzinfo=timezone.utc)
+    
+    # Calculate time in this session and add to accumulated
+    current_session = (now - started_at).total_seconds() / 60
+    accumulated = active_timer.get("accumulated_minutes", 0) + current_session
+    
+    await db.time_logs.update_one(
+        {"log_id": active_timer["log_id"]},
+        {"$set": {
+            "is_paused": True,
+            "paused_at": now.isoformat(),
+            "accumulated_minutes": round(accumulated, 2),
+            "action": "paused"
+        }}
+    )
+    
+    return {
+        "message": "Timer paused",
+        "stage_id": stage_id,
+        "stage_name": active_timer["stage_name"],
+        "accumulated_minutes": round(accumulated, 2)
+    }
+
+@api_router.post("/stages/{stage_id}/resume-timer")
+async def resume_stage_timer(stage_id: str, user: User = Depends(get_current_user)):
+    """Resume a paused timer."""
+    
+    active_timer = await db.time_logs.find_one({
+        "user_id": user.user_id,
+        "stage_id": stage_id,
+        "completed_at": None
+    }, {"_id": 0})
+    
+    if not active_timer:
+        raise HTTPException(status_code=400, detail="No active timer for this stage")
+    
+    if not active_timer.get("is_paused"):
+        raise HTTPException(status_code=400, detail="Timer is not paused")
+    
+    now = datetime.now(timezone.utc)
+    
+    await db.time_logs.update_one(
+        {"log_id": active_timer["log_id"]},
+        {"$set": {
+            "is_paused": False,
+            "started_at": now.isoformat(),  # Reset start time for new session
+            "action": "resumed"
+        }}
+    )
+    
+    return {
+        "message": "Timer resumed",
+        "stage_id": stage_id,
+        "stage_name": active_timer["stage_name"],
+        "accumulated_minutes": active_timer.get("accumulated_minutes", 0)
     }
 
 @api_router.get("/stages/{stage_id}/active-timer")
