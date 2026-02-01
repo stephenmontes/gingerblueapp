@@ -23,9 +23,11 @@ async def get_products(
     status: Optional[str] = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
+    sort_by: str = Query("updated_at", description="Field to sort by"),
+    sort_order: str = Query("desc", description="Sort order: asc or desc"),
     user: User = Depends(get_current_user)
 ):
-    """Get all products with optional filters"""
+    """Get all products with optional filters and sorting"""
     query = {}
     
     if store_id:
@@ -43,17 +45,33 @@ async def get_products(
             {"variants.barcode": {"$regex": search, "$options": "i"}}
         ]
     
+    # Map sort_by to actual field names
+    sort_field_map = {
+        "title": "title",
+        "product": "title",
+        "vendor": "vendor",
+        "type": "product_type",
+        "product_type": "product_type",
+        "status": "status",
+        "updated_at": "updated_at",
+        "created_at": "created_at"
+    }
+    sort_field = sort_field_map.get(sort_by, "updated_at")
+    sort_direction = 1 if sort_order == "asc" else -1
+    
     total = await db.products.count_documents(query)
     products = await db.products.find(
         query,
         {"_id": 0}
-    ).sort("updated_at", -1).skip(skip).limit(limit).to_list(limit)
+    ).sort(sort_field, sort_direction).skip(skip).limit(limit).to_list(limit)
     
     return {
         "products": products,
         "total": total,
         "skip": skip,
-        "limit": limit
+        "limit": limit,
+        "sort_by": sort_by,
+        "sort_order": sort_order
     }
 
 
