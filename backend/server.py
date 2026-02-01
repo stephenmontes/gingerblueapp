@@ -738,6 +738,32 @@ async def get_user_time_stats(user: User = Depends(get_current_user)):
     
     return list(stage_stats.values())
 
+@api_router.get("/stages/active-workers")
+async def get_stages_active_workers(user: User = Depends(get_current_user)):
+    """Get all active timers across all stages - shows who is working on what."""
+    active_timers = await db.time_logs.find({
+        "completed_at": None
+    }, {"_id": 0}).to_list(1000)
+    
+    # Group by stage
+    stage_workers = {}
+    for timer in active_timers:
+        stage_id = timer["stage_id"]
+        if stage_id not in stage_workers:
+            stage_workers[stage_id] = {
+                "stage_id": stage_id,
+                "stage_name": timer.get("stage_name", "Unknown"),
+                "workers": []
+            }
+        stage_workers[stage_id]["workers"].append({
+            "user_id": timer["user_id"],
+            "user_name": timer["user_name"],
+            "started_at": timer["started_at"],
+            "items_processed": timer.get("items_processed", 0)
+        })
+    
+    return list(stage_workers.values())
+
 @api_router.get("/batches/{batch_id}/items-grouped")
 async def get_batch_items_grouped(batch_id: str, user: User = Depends(get_current_user)):
     """Get batch items grouped by color and size with subtotals"""
