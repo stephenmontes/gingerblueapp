@@ -8,6 +8,7 @@ from routers.items import router as items_router
 from routers.orders import router as orders_router
 from routers.inventory import router as inventory_router
 from routers.reports import router as reports_router
+from routers.exports import router as exports_router
 
 __all__ = [
     "auth_router",
@@ -19,5 +20,6 @@ __all__ = [
     "items_router",
     "orders_router",
     "inventory_router",
-    "reports_router"
+    "reports_router",
+    "exports_router"
 ]
