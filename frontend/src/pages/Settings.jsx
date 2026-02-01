@@ -405,16 +405,18 @@ export default function Settings({ user }) {
             )}
           </div>
           <DialogFooter className="flex-col sm:flex-row gap-2">
-            <Button 
-              variant="outline" 
-              onClick={handleTestConnection}
-              disabled={testingConnection}
-              className="gap-2"
-              data-testid="test-connection-btn"
-            >
-              {testingConnection ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-              Test Connection
-            </Button>
+            {formPlatform !== "dropship" && (
+              <Button 
+                variant="outline" 
+                onClick={handleTestConnection}
+                disabled={testingConnection}
+                className="gap-2"
+                data-testid="test-connection-btn"
+              >
+                {testingConnection ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                Test Connection
+              </Button>
+            )}
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => setAddStoreOpen(false)}>Cancel</Button>
               <Button onClick={handleAddStore} data-testid="save-store-btn">
