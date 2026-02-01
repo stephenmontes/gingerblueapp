@@ -47,6 +47,7 @@ api_router.include_router(items_router)
 api_router.include_router(orders_router)
 api_router.include_router(inventory_router)
 api_router.include_router(reports_router)
+api_router.include_router(exports_router)
 
 # Root endpoint
 @api_router.get("/")
