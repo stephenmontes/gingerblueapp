@@ -387,12 +387,13 @@ export function FrameList({ batch, activeTimer, currentStageId, stages }) {
   );
 }
 
-function SizeGroupRows({ group, isLast, updating, localValues, onQtyChange, onCompletedChange, onMoveToNextStage, hasActiveTimer, nextStage }) {
+function SizeGroupRows({ group, isLast, updating, localValues, localRejected, onQtyChange, onRejectedChange, onCompletedChange, onMoveToNextStage, hasActiveTimer, nextStage, isQualityCheckStage }) {
   return (
     <>
       {group.frames.map((frame, frameIndex) => {
         const isUpdating = updating[frame.frame_id];
         const displayQty = localValues[frame.frame_id] ?? frame.qty_completed ?? 0;
+        const displayRejected = localRejected[frame.frame_id] ?? frame.qty_rejected ?? 0;
         const isComplete = displayQty >= frame.qty_required;
         const isDisabled = isUpdating || !hasActiveTimer;
         
@@ -429,6 +430,20 @@ function SizeGroupRows({ group, isLast, updating, localValues, onQtyChange, onCo
                 data-testid={`qty-${frame.frame_id}`}
               />
             </TableCell>
+            {isQualityCheckStage && (
+              <TableCell className="text-center">
+                <Input
+                  type="number"
+                  min="0"
+                  max={displayQty}
+                  value={displayRejected}
+                  onChange={(e) => onRejectedChange(frame.frame_id, e.target.value)}
+                  className={`w-20 mx-auto text-center font-mono h-8 border-orange-500/30 ${!hasActiveTimer ? "opacity-50 cursor-not-allowed" : ""} ${displayRejected > 0 ? "bg-orange-500/10 text-orange-400" : ""}`}
+                  disabled={isDisabled}
+                  data-testid={`rejected-${frame.frame_id}`}
+                />
+              </TableCell>
+            )}
             <TableCell className="text-center">
               <div className="flex items-center justify-center">
                 <Checkbox
@@ -473,6 +488,11 @@ function SizeGroupRows({ group, isLast, updating, localValues, onQtyChange, onCo
         <TableCell className="text-center font-mono text-primary">
           {group.subtotal_completed}
         </TableCell>
+        {isQualityCheckStage && (
+          <TableCell className="text-center font-mono text-orange-400">
+            {group.frames.reduce((sum, f) => sum + (localRejected[f.frame_id] || f.qty_rejected || 0), 0)}
+          </TableCell>
+        )}
         <TableCell className="text-center">
           {group.subtotal_completed >= group.subtotal_required && (
             <Check className="w-4 h-4 text-green-500 mx-auto" />
@@ -483,7 +503,7 @@ function SizeGroupRows({ group, isLast, updating, localValues, onQtyChange, onCo
 
       {!isLast && (
         <TableRow className="h-2 border-0">
-          <TableCell colSpan={nextStage ? 6 : 5} className="p-0" />
+          <TableCell colSpan={nextStage ? (isQualityCheckStage ? 7 : 6) : (isQualityCheckStage ? 6 : 5)} className="p-0" />
         </TableRow>
       )}
     </>
