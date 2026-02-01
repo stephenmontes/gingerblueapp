@@ -4,6 +4,7 @@ import { Layers } from "lucide-react";
 import { BatchHeader } from "./BatchHeader";
 import { StageTabs } from "./StageTabs";
 import { StageContent } from "./StageContent";
+import { BatchStats } from "./BatchStats";
 
 export function BatchDetailView({
   batch,
@@ -12,6 +13,7 @@ export function BatchDetailView({
   stages,
   onUpdateQty,
   onMoveStage,
+  onRefresh,
 }) {
   const [activeStageId, setActiveStageId] = useState(null);
 
@@ -36,6 +38,9 @@ export function BatchDetailView({
         stageColor={currentStageData?.color}
       />
 
+      {/* Batch Stats - Combined hours, cost, rejection rate */}
+      <BatchStats batchId={batch.batch_id} />
+
       <StageTabs
         stages={stageSummary || []}
         activeStageId={activeStageId}
@@ -47,6 +52,7 @@ export function BatchDetailView({
         stages={stages}
         onUpdateQty={onUpdateQty}
         onMoveStage={onMoveStage}
+        onRefresh={onRefresh}
       />
     </div>
   );
