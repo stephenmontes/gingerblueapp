@@ -197,7 +197,8 @@ async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current
                 "qty_required": qty,
                 "qty_completed": 0,
                 "qty_rejected": 0,
-                "current_stage_id": first_stage["stage_id"],
+                "current_stage_id": cutting_stage["stage_id"],
+                "current_stage_name": cutting_stage.get("name", "Cutting"),
                 "status": "pending",
                 "added_to_inventory": False,
                 "created_at": datetime.now(timezone.utc).isoformat()
@@ -211,7 +212,7 @@ async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current
         "batch_id": batch_id,
         "name": batch_data.name,
         "order_ids": batch_data.order_ids,
-        "current_stage_id": first_stage["stage_id"],
+        "current_stage_id": cutting_stage["stage_id"],
         "assigned_to": None,
         "assigned_name": None,
         "status": "active",
