@@ -38,12 +38,15 @@ function getColorName(code) {
   return COLOR_NAMES[code] || code;
 }
 
-export function CutList({ batch }) {
+export function CutList({ batch, activeTimer }) {
   const [cutListData, setCutListData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState({});
   const [localValues, setLocalValues] = useState({});
   const debounceTimers = useRef({});
+
+  // Check if user has an active timer running
+  const hasActiveTimer = activeTimer && !activeTimer.is_paused;
 
   const fetchCutList = useCallback(async () => {
     if (!batch?.batch_id) return;
