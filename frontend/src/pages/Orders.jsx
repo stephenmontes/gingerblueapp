@@ -905,7 +905,7 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
               </Select>
               {dropshipStores.length === 0 && (
                 <p className="text-xs text-amber-400 mt-1">
-                  No dropship stores configured. Go to Settings → Add Store → Select "Dropship (CSV Upload)"
+                  No dropship stores configured. Go to Settings → Add Store → Select Dropship (CSV Upload)
                 </p>
               )}
               {dropshipStores.length > 0 && (
