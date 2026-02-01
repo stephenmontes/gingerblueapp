@@ -53,6 +53,7 @@ api_router.include_router(reports_router)
 api_router.include_router(exports_router)
 api_router.include_router(fulfillment_router)
 api_router.include_router(fulfillment_timers_router)
+api_router.include_router(products_router)
 
 # Root endpoint
 @api_router.get("/")
