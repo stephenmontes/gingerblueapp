@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { ArrowRight, Check, Printer, X, Package, User, Clock, Play, Pause, StopCircle } from "lucide-react";
 import { toast } from "sonner";
 import { SkuLink } from "./SkuLink";
+import { PrintOrderDialog } from "./PrintOrderDialog";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
