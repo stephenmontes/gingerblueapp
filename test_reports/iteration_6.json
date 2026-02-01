@@ -1,0 +1,79 @@
+{
+  "summary": "Verified all P0 fixes for Production page: (1) Timer banner now correctly receives activeTimer prop from Production.jsx, (2) Rejection tracking column appears only in Quality Check stage with orange styling, (3) Backend PUT /api/batches/{batch_id}/frames/{frame_id} accepts both qty_completed and qty_rejected parameters",
+  
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  
+  "passed_tests": [
+    "P0 Fix 1: ActiveTimerBanner receives activeTimer prop from Production.jsx (line 195)",
+    "P0 Fix 1: Timer banner shows Pause/Stop buttons when timer is active",
+    "P0 Fix 1: Timer banner displays stage name and elapsed time correctly",
+    "P0 Fix 1: Timer banner disappears when timer is stopped",
+    "P0 Fix 2: Rejected column appears in Quality Check stage (stage_ready)",
+    "P0 Fix 2: Rejected column has orange styling (⚠️ icon, text-orange-400)",
+    "P0 Fix 2: Rejected column NOT shown in Cutting stage (correct behavior)",
+    "P0 Fix 2: Rejected column NOT shown in other stages (Assembly, Sand, Paint)",
+    "P0 Fix 2: Grand Total row shows rejected count in orange",
+    "Backend: PUT /api/batches/{batch_id}/frames/{frame_id}?qty_completed=5 works",
+    "Backend: PUT /api/batches/{batch_id}/frames/{frame_id}?qty_completed=5&qty_rejected=2 works",
+    "Backend: qty_rejected value persists in database after update",
+    "Backend: GET /api/batches/{batch_id}/frames returns qty_rejected field",
+    "Backend: GET /api/batches/{batch_id}/frames?stage_id=stage_ready filters correctly",
+    "Backend: GET /api/stages returns Quality Check stage with stage_id=stage_ready",
+    "Backend: GET /api/user/active-timers returns timer list",
+    "Backend: GET /api/stages/active-workers returns worker counts",
+    "Auth: All endpoints require authentication (401 without session)"
+  ],
+  
+  "test_report_links": [
+    "/app/backend/tests/test_p0_fixes.py",
+    "/app/test_reports/pytest/p0_fixes_results.xml"
+  ],
+  
+  "action_items": [],
+  
+  "critical_code_review_comments": [
+    "Production.jsx line 195: activeTimer={activeTimer} prop correctly passed to ActiveTimerBanner",
+    "ActiveTimerBanner.jsx line 11: Receives activeTimer prop and uses it as source of truth",
+    "CutList.jsx line 63: isQualityCheckStage check correctly identifies stage_ready or 'quality' in name",
+    "CutList.jsx lines 329-335: Rejected column header with orange AlertTriangle icon",
+    "CutList.jsx lines 433-446: Rejected input field with orange styling when value > 0",
+    "batches.py lines 506-537: update_frame endpoint accepts qty_completed and qty_rejected query params"
+  ],
+  
+  "updated_files": [
+    "/app/backend/tests/test_p0_fixes.py"
+  ],
+  
+  "success_rate": {
+    "backend": "100% (14/14 tests passed)",
+    "frontend": "100% (all P0 fixes verified)"
+  },
+  
+  "test_credentials": {
+    "session_token": "test_session_1769977085456",
+    "user_id": "test-user-1769977085456"
+  },
+  
+  "seed_data_creation": "Used existing batch_9314298d with frame_a7699f06 in Quality Check stage",
+  
+  "retest_needed": false,
+  
+  "should_main_agent_self_test": false,
+  
+  "context_for_next_testing_agent": "All P0 fixes verified. Timer banner prop passing works correctly - when timer is started, the ActiveTimerBanner component receives the activeTimer state from Production.jsx and displays Pause/Stop controls. Rejection tracking column appears only in Quality Check stage (stage_ready) with orange styling. Backend endpoint PUT /api/batches/{batch_id}/frames/{frame_id} accepts both qty_completed and qty_rejected query parameters. Test session 'test_session_1769977085456' is valid for future testing. Batch 'batch_9314298d' has one frame (frame_a7699f06) in Quality Check stage for testing rejection functionality.",
+  
+  "verification_screenshots": [
+    "Timer started: Shows ActiveTimerBanner with 'Timer active: Cutting', Pause/Stop buttons visible",
+    "Quality Check stage: Shows Frame List with Rejected column (⚠️ Rejected header in orange)",
+    "Cutting stage: Shows Frame List WITHOUT Rejected column (correct behavior)"
+  ]
+}
