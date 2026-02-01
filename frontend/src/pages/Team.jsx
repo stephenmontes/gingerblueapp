@@ -37,6 +37,7 @@ import {
   History,
   Calendar,
   Filter,
+  Download,
 } from "lucide-react";
 import { toast } from "sonner";
 import { TimerHistory } from "@/components/TimerHistory";
