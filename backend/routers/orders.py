@@ -25,6 +25,8 @@ async def get_orders(
     include_archived: Optional[bool] = False,
     page: int = Query(1, ge=1, description="Page number"),
     page_size: int = Query(100, ge=1, le=500, description="Items per page"),
+    sort_by: str = Query("order_date", description="Field to sort by"),
+    sort_order: str = Query("desc", description="Sort order: asc or desc"),
     user: User = Depends(get_current_user)
 ):
     """Get orders with optional filters and pagination
