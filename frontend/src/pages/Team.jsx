@@ -256,6 +256,10 @@ export default function Team({ user }) {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={handleExportStats} className="gap-2" data-testid="export-team-stats-btn">
+            <Download className="w-4 h-4" />
+            Export Stats
+          </Button>
           <Button variant="outline" onClick={() => setShowTimerHistory(true)} className="gap-2" data-testid="my-timer-history-btn">
             <History className="w-4 h-4" />
             My Timer History
