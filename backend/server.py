@@ -19,7 +19,8 @@ from routers import (
     items_router,
     orders_router,
     inventory_router,
-    reports_router
+    reports_router,
+    exports_router
 )
 
 # Configure logging
