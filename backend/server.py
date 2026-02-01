@@ -1695,8 +1695,6 @@ async def add_item_to_inventory(item_id: str, user: User = Depends(get_current_u
         "good_added": qty_good,
         "rejected_added": qty_rejected
     }
-        "quantity_added": qty_to_add
-    }
 
 @api_router.get("/batches/{batch_id}/stats")
 async def get_batch_stats(batch_id: str, user: User = Depends(get_current_user)):
