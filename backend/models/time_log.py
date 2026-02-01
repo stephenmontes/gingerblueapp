@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional
 from datetime import datetime, timezone
+import uuid
 
 class TimeLog(BaseModel):
     """Time tracking per user, per stage - users typically work on one stage"""
@@ -26,5 +27,3 @@ class TimeLogCreate(BaseModel):
     stage_name: str
     action: str
     items_processed: int = 1
-
-import uuid
