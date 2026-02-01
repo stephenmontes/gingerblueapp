@@ -515,6 +515,36 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
         </div>
       )}
 
+      {/* Dropship Stores Banner */}
+      {dropshipStores.length > 0 && (
+        <Card className="bg-purple-500/10 border-purple-500/30">
+          <CardContent className="p-4">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                  <FileSpreadsheet className="w-5 h-5 text-purple-400" />
+                </div>
+                <div>
+                  <h3 className="font-medium text-purple-100">Dropship Stores</h3>
+                  <p className="text-sm text-purple-300">
+                    {dropshipStores.map(s => s.name).join(", ")} — Upload CSV to import orders
+                  </p>
+                </div>
+              </div>
+              <Button 
+                variant="outline" 
+                onClick={() => setCsvUploadOpen(true)}
+                className="gap-2 border-purple-500/50 text-purple-300 hover:bg-purple-500/20 hover:text-purple-100"
+                data-testid="dropship-upload-csv-btn"
+              >
+                <Upload className="w-4 h-4" />
+                Upload CSV
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Filters */}
       <Card className="bg-card border-border">
         <CardContent className="p-4">
