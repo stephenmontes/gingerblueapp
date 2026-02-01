@@ -12,6 +12,7 @@ from routers.exports import router as exports_router
 from routers.fulfillment import router as fulfillment_router
 from routers.fulfillment_timers import router as fulfillment_timers_router
 from routers.products import router as products_router
+from routers.webhooks import router as webhooks_router
 
 __all__ = [
     "auth_router",
@@ -27,5 +28,6 @@ __all__ = [
     "exports_router",
     "fulfillment_router",
     "fulfillment_timers_router",
-    "products_router"
+    "products_router",
+    "webhooks_router"
 ]
