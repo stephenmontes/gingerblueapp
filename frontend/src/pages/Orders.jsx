@@ -337,7 +337,7 @@ export default function Orders({ user }) {
         <div>
           <h1 className="text-3xl font-heading font-bold">Orders</h1>
           <p className="text-muted-foreground mt-1">
-            Sync from Shopify and send orders to Frame Production
+            Sync from Shopify & Etsy and send orders to Frame Production
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -365,17 +365,20 @@ export default function Orders({ user }) {
       </div>
 
       {/* Sync Status Cards */}
-      {shopifyStores.length > 0 && (
+      {syncableStores.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {shopifyStores.map((store) => {
+          {syncableStores.map((store) => {
             const status = syncStatus.find(s => s.store_id === store.store_id);
+            const isEtsy = store.platform === "etsy";
+            const platformColor = isEtsy ? "orange" : "green";
             return (
               <Card key={store.store_id} className="bg-card border-border">
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
-                        <ShoppingBag className="w-5 h-5 text-green-500" />
+                      <div className={`w-10 h-10 rounded-lg bg-${platformColor}-500/10 flex items-center justify-center`}
+                           style={{ backgroundColor: isEtsy ? 'rgba(249, 115, 22, 0.1)' : 'rgba(34, 197, 94, 0.1)' }}>
+                        <ShoppingBag className="w-5 h-5" style={{ color: isEtsy ? '#f97316' : '#22c55e' }} />
                       </div>
                       <div>
                         <h3 className="font-medium">{store.name}</h3>
@@ -384,9 +387,14 @@ export default function Orders({ user }) {
                         </p>
                       </div>
                     </div>
-                    <Badge variant={store.is_active ? "default" : "secondary"} className={store.is_active ? "bg-green-600" : ""}>
-                      {store.is_active ? "Active" : "Inactive"}
-                    </Badge>
+                    <div className="flex flex-col items-end gap-1">
+                      <Badge variant="outline" className="text-xs capitalize">
+                        {store.platform}
+                      </Badge>
+                      <Badge variant={store.is_active ? "default" : "secondary"} className={store.is_active ? "bg-green-600" : ""}>
+                        {store.is_active ? "Active" : "Inactive"}
+                      </Badge>
+                    </div>
                   </div>
                   
                   {status?.last_order_sync && (
