@@ -36,7 +36,8 @@ export function OrderRow({
   onMoveToStage,
   onMarkShipped,
   onShowInventory,
-  onOpenWorksheet
+  onOpenWorksheet,
+  onPrintOrder
 }) {
   const navigate = useNavigate();
   const invStatus = order.inventory_status;
