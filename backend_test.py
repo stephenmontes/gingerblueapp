@@ -74,11 +74,11 @@ class ManufacturingAPITester:
         return success
 
     def test_auth_flow(self):
-        """Test authentication flow - create test session"""
+        """Test authentication flow - use existing test session"""
         print("\n🔐 Testing Authentication...")
         
-        # Create test session directly (simulating OAuth flow)
-        test_session_id = f"test_session_{uuid.uuid4().hex[:12]}"
+        # Use the existing test session mentioned in review request
+        test_session_id = "test_session_admin_123"
         
         # Test session creation endpoint
         session_data = {"session_id": test_session_id}
@@ -89,12 +89,21 @@ class ManufacturingAPITester:
         self.log_test("Auth Session Endpoint Exists", endpoint_exists, 
                      f"Status: {status} (expected 400/401/422)")
         
-        # For testing purposes, we'll create a mock session token
-        # In real scenario, this would come from Emergent Auth
-        self.session_token = f"test_token_{uuid.uuid4().hex}"
-        self.user_id = f"test_user_{uuid.uuid4().hex[:12]}"
+        # Try to use the test session token directly if it exists in MongoDB
+        # For testing purposes, we'll use a known test token
+        self.session_token = "test_session_admin_123"
+        self.user_id = "test_user_admin_123"
         
-        return endpoint_exists
+        # Test if we can access protected endpoint with this token
+        success, status, data = self.make_request('GET', 'auth/me')
+        if success:
+            self.log_test("Test Session Authentication", True, "Successfully authenticated with test session")
+            return True
+        else:
+            # If test session doesn't work, create a mock token for testing
+            self.session_token = f"test_token_{uuid.uuid4().hex}"
+            self.log_test("Test Session Authentication", False, f"Test session failed, using mock token. Status: {status}")
+            return endpoint_exists
 
     def test_protected_endpoints_without_auth(self):
         """Test that protected endpoints require authentication"""
