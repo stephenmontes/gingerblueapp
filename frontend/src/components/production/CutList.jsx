@@ -45,7 +45,9 @@ export function FrameList({ batch, activeTimer, currentStageId, stages }) {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState({});
   const [localValues, setLocalValues] = useState({});
+  const [localRejected, setLocalRejected] = useState({});
   const debounceTimers = useRef({});
+  const rejectedTimers = useRef({});
 
   // Check if user has an active timer running FOR THIS SPECIFIC STAGE
   const hasActiveTimer = activeTimer && 
@@ -56,6 +58,10 @@ export function FrameList({ batch, activeTimer, currentStageId, stages }) {
   const currentStage = stages?.find(s => s.stage_id === currentStageId);
   const currentStageOrder = currentStage?.order ?? 0;
   const nextStage = stages?.find(s => s.order === currentStageOrder + 1);
+  
+  // Check if this is the Quality Check stage (last stage, usually "stage_ready" or contains "quality")
+  const isQualityCheckStage = currentStageId === "stage_ready" || 
+    currentStage?.name?.toLowerCase().includes("quality");
 
   const fetchFrames = useCallback(async () => {
     if (!batch?.batch_id) return;
