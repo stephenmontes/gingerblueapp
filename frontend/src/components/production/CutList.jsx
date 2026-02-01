@@ -140,8 +140,17 @@ export function CutList({ batch }) {
     }, 500);
   };
 
-  const handleCompletedChange = (size, color, checked, currentQty) => {
-    saveToServer(size, color, currentQty, checked);
+  const handleCompletedChange = (size, color, checked, currentQty, qtyRequired) => {
+    // When marking as done, auto-fill qty_made to match required amount
+    const newQty = checked ? qtyRequired : currentQty;
+    
+    // Update local value if checked
+    if (checked) {
+      const key = `${size}-${color}`;
+      setLocalValues(prev => ({ ...prev, [key]: newQty }));
+    }
+    
+    saveToServer(size, color, newQty, checked);
   };
 
   if (loading) {
