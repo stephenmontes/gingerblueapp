@@ -7,3 +7,4 @@ export { UsersTab } from "./UsersTab";
 export { StagesTab } from "./StagesTab";
 export { OverviewTab } from "./OverviewTab";
 export { StageUserKpis } from "./StageUserKpis";
+export { StageKpiCard } from "./StageKpiCard";
