@@ -53,6 +53,9 @@ export function BatchDetailView({
         activeTimer={activeTimer}
       />
 
+      {/* Cut List - aggregated view by size and color */}
+      <CutList batchDetails={batchDetails} />
+
       <BatchOrders orders={orders} />
 
       <BatchStats batchId={batch.batch_id} />
