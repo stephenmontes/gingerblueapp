@@ -211,11 +211,22 @@ async def get_stage_active_workers(stage_id: str, user: User = Depends(get_curre
     
     workers = []
     for timer in active_timers:
+        # Calculate elapsed time
+        started = datetime.fromisoformat(timer["started_at"].replace('Z', '+00:00'))
+        elapsed_minutes = (datetime.now(timezone.utc) - started).total_seconds() / 60
+        if timer.get("is_paused"):
+            elapsed_minutes = timer.get("accumulated_minutes", 0)
+        else:
+            elapsed_minutes += timer.get("accumulated_minutes", 0)
+        
         workers.append({
             "user_id": timer["user_id"],
             "user_name": timer["user_name"],
             "started_at": timer["started_at"],
-            "is_paused": timer.get("is_paused", False)
+            "is_paused": timer.get("is_paused", False),
+            "order_id": timer.get("order_id"),
+            "order_number": timer.get("order_number"),
+            "elapsed_minutes": round(elapsed_minutes, 1)
         })
     
     return workers
