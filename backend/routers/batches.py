@@ -143,7 +143,8 @@ async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current
     if not batch_data.order_ids:
         raise HTTPException(status_code=400, detail="No orders selected")
     
-    already_batched = await db.orders.find(
+    # Check in fulfillment_orders collection (main orders collection)
+    already_batched = await db.fulfillment_orders.find(
         {"order_id": {"$in": batch_data.order_ids}, "batch_id": {"$ne": None}},
         {"_id": 0, "order_id": 1, "batch_id": 1}
     ).to_list(1000)
@@ -155,7 +156,8 @@ async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current
             detail=f"Orders already in a batch: {', '.join(order_ids[:3])}{'...' if len(order_ids) > 3 else ''}"
         )
     
-    orders = await db.orders.find({"order_id": {"$in": batch_data.order_ids}}, {"_id": 0}).to_list(1000)
+    # Get orders from fulfillment_orders collection
+    orders = await db.fulfillment_orders.find({"order_id": {"$in": batch_data.order_ids}}, {"_id": 0}).to_list(1000)
     
     if not orders:
         raise HTTPException(status_code=404, detail="No orders found")
