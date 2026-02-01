@@ -281,6 +281,7 @@ export function CutList({ batch, activeTimer }) {
               <TableHead className="text-center w-24">Required</TableHead>
               <TableHead className="text-center w-28">Qty Made</TableHead>
               <TableHead className="text-center w-24">Done</TableHead>
+              <TableHead className="text-center w-36">Action</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -293,6 +294,7 @@ export function CutList({ batch, activeTimer }) {
                 localValues={localValues}
                 onQtyChange={handleQtyChange}
                 onCompletedChange={handleCompletedChange}
+                onMoveToAssembly={handleMoveToAssembly}
                 hasActiveTimer={hasActiveTimer}
               />
             ))}
