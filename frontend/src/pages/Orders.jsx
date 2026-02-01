@@ -83,7 +83,8 @@ export default function Orders({ user }) {
       let url = API + "/orders";
       const params = new URLSearchParams();
       if (storeFilter !== "all") params.append("store_id", storeFilter);
-      if (statusFilter !== "all") params.append("status", statusFilter);
+      // Don't send "active" to backend - it's a frontend-only filter
+      if (statusFilter !== "all" && statusFilter !== "active") params.append("status", statusFilter);
       if (showOnlyUnbatched) params.append("unbatched", "true");
       if (params.toString()) url += "?" + params.toString();
 
