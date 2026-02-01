@@ -338,7 +338,7 @@ export function OrderWorksheet({ order, stages, currentStage, onClose, onMoveToN
         <ItemsWorksheet items={items} onUpdateItem={updateItem} onMarkComplete={markItemComplete} />
 
         <DialogFooter className="flex-col sm:flex-row gap-2 mt-4">
-          <Button variant="outline" onClick={() => window.print()} className="gap-2">
+          <Button variant="outline" onClick={() => setShowPrintDialog(true)} className="gap-2" data-testid="open-print-dialog">
             <Printer className="w-4 h-4" /> Print
           </Button>
           <Button variant="secondary" onClick={handleSaveProgress} disabled={saving}>
@@ -355,6 +355,13 @@ export function OrderWorksheet({ order, stages, currentStage, onClose, onMoveToN
             </Button>
           )}
         </DialogFooter>
+
+        {/* Print Order Dialog */}
+        <PrintOrderDialog 
+          order={showPrintDialog ? order : null}
+          currentStage={currentStage}
+          onClose={() => setShowPrintDialog(false)}
+        />
       </DialogContent>
     </Dialog>
   );
