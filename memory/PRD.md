@@ -40,7 +40,8 @@ Build a manufacturing and fulfillment app for Shopify websites with:
 │   ├── order.py       # Order, OrderCreate
 │   ├── production.py  # ProductionStage, ProductionBatch, ProductionItem
 │   ├── time_log.py    # TimeLog
-│   └── inventory.py   # InventoryItem, InventoryCreate
+│   ├── inventory.py   # InventoryItem, InventoryCreate
+│   └── product.py     # Product, ProductVariant, ProductImage (Shopify sync)
 ├── routers/
 │   ├── auth.py        # /api/auth/* - login, logout, session
 │   ├── users.py       # /api/users/*
@@ -48,6 +49,9 @@ Build a manufacturing and fulfillment app for Shopify websites with:
 │   ├── stages.py      # /api/stages/*
 │   ├── timers.py      # Timer start/stop/pause/resume
 │   ├── batches.py     # /api/batches/* - create, stats, items
+│   ├── products.py    # /api/products/* - sync, list, search (NEW)
+├── services/
+│   └── shopify_service.py  # Shopify API integration (NEW)
 │   ├── items.py       # /api/items/* - update, move, add to inventory
 │   ├── orders.py      # /api/orders/*
 │   ├── inventory.py   # /api/inventory/* - CRUD, adjust, reject
