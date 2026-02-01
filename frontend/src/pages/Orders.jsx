@@ -984,15 +984,66 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
         </DialogContent>
       </Dialog>
 
-      {/* Summary */}
+      {/* Pagination & Summary */}
       {sortedOrders.length > 0 && (
-        <div className="text-sm text-muted-foreground text-center">
-          Showing {sortedOrders.length} of {orders.length} orders
-          {sortColumn !== "created_at" && (
-            <span className="ml-2">
-              • Sorted by {sortColumn.replace("_", " ")} ({sortDirection === "asc" ? "ascending" : "descending"})
-            </span>
+        <div className="flex flex-col items-center gap-4">
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(1)}
+                disabled={currentPage === 1}
+                data-testid="first-page-btn"
+              >
+                First
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                data-testid="prev-page-btn"
+              >
+                Previous
+              </Button>
+              <span className="text-sm text-muted-foreground px-4">
+                Page {currentPage} of {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                data-testid="next-page-btn"
+              >
+                Next
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(totalPages)}
+                disabled={currentPage === totalPages}
+                data-testid="last-page-btn"
+              >
+                Last
+              </Button>
+            </div>
           )}
+          
+          {/* Summary */}
+          <div className="text-sm text-muted-foreground text-center">
+            Showing {sortedOrders.length} of {totalCount} orders
+            {totalPages > 1 && (
+              <span className="ml-2">• Page {currentPage} of {totalPages}</span>
+            )}
+            {sortColumn !== "created_at" && (
+              <span className="ml-2">
+                • Sorted by {sortColumn.replace("_", " ")} ({sortDirection === "asc" ? "ascending" : "descending"})
+              </span>
+            )}
+          </div>
         </div>
       )}
 
