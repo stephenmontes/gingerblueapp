@@ -809,12 +809,14 @@ async def move_item_stage(
     move_data: ItemMove,
     user: User = Depends(get_current_user)
 ):
-    """Move an individual item to the next stage"""
+    """Move an individual item to the next stage.
+    This is a handoff - the item is passed from the current user's stage to the next stage."""
     item = await db.production_items.find_one({"item_id": item_id}, {"_id": 0})
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
     
-    # Get stage info
+    # Get previous and new stage info
+    prev_stage_id = item.get("current_stage_id")
     new_stage = await db.production_stages.find_one({"stage_id": move_data.new_stage_id}, {"_id": 0})
     if not new_stage:
         raise HTTPException(status_code=404, detail="Stage not found")
@@ -832,25 +834,29 @@ async def move_item_stage(
         }}
     )
     
-    # Create time log for this item move
-    time_log = {
-        "log_id": f"log_{uuid.uuid4().hex[:12]}",
-        "user_id": user.user_id,
-        "user_name": user.name,
-        "batch_id": item["batch_id"],
-        "order_id": item["order_id"],
-        "stage_id": move_data.new_stage_id,
-        "stage_name": new_stage["name"],
-        "action": "item_moved",
-        "started_at": datetime.now(timezone.utc).isoformat(),
-        "completed_at": datetime.now(timezone.utc).isoformat(),
-        "items_processed": qty_completed,
-        "created_at": datetime.now(timezone.utc).isoformat()
-    }
-    await db.time_logs.insert_one(time_log)
+    # If user has an active timer for the previous stage, increment items processed
+    if prev_stage_id:
+        active_timer = await db.time_logs.find_one({
+            "user_id": user.user_id,
+            "stage_id": prev_stage_id,
+            "completed_at": None
+        }, {"_id": 0})
+        
+        if active_timer:
+            await db.time_logs.update_one(
+                {"log_id": active_timer["log_id"]},
+                {"$inc": {"items_processed": 1}}
+            )
     
-    # Update user stats for items moved
-    # This tracks avg items per stage for the user
+    # Update batch totals
+    batch = await db.production_batches.find_one({"batch_id": item["batch_id"]}, {"_id": 0})
+    if batch:
+        all_items = await db.production_items.find({"batch_id": item["batch_id"]}, {"_id": 0}).to_list(10000)
+        total_completed = sum(i.get("qty_completed", 0) for i in all_items)
+        await db.production_batches.update_one(
+            {"batch_id": item["batch_id"]},
+            {"$set": {"items_completed": total_completed}}
+        )
     
     return {
         "message": f"Item moved to {new_stage['name']}",
