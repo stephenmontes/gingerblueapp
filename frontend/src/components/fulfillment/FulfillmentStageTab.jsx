@@ -16,12 +16,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChevronRight, Package, AlertTriangle, List, Printer } from "lucide-react";
+import { ChevronRight, Package, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { OrderRow } from "./OrderRow";
 import { InventoryDialog } from "./InventoryDialog";
-import { PrintListView } from "./PrintListView";
+import { OrderWorksheet } from "./OrderWorksheet";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -31,10 +30,7 @@ export function FulfillmentStageTab({ stage, stages, onRefresh }) {
   const [loading, setLoading] = useState(true);
   const [selectedOrders, setSelectedOrders] = useState([]);
   const [inventoryDialogOrder, setInventoryDialogOrder] = useState(null);
-  const [viewMode, setViewMode] = useState("orders");
-
-  // Show consolidated view for Print List, Mount List, and Finish stages
-  const showConsolidatedView = ["fulfill_print", "fulfill_mount", "fulfill_finish"].includes(stage.stage_id);
+  const [worksheetOrder, setWorksheetOrder] = useState(null);
 
   useEffect(() => {
     loadOrders();
