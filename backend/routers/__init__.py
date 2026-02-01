@@ -11,6 +11,7 @@ from routers.reports import router as reports_router
 from routers.exports import router as exports_router
 from routers.fulfillment import router as fulfillment_router
 from routers.fulfillment_timers import router as fulfillment_timers_router
+from routers.products import router as products_router
 
 __all__ = [
     "auth_router",
@@ -25,5 +26,6 @@ __all__ = [
     "reports_router",
     "exports_router",
     "fulfillment_router",
-    "fulfillment_timers_router"
+    "fulfillment_timers_router",
+    "products_router"
 ]
