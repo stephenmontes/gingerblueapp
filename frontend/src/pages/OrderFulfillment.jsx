@@ -152,6 +152,28 @@ export default function OrderFulfillment() {
         )}
       </div>
 
+      {/* Time Entry Manager Toggle (Admin/Manager only) */}
+      <div className="border border-border rounded-lg">
+        <Button
+          variant="ghost"
+          onClick={() => setShowTimeManager(!showTimeManager)}
+          className="w-full justify-between h-12"
+          data-testid="toggle-time-manager"
+        >
+          <span className="flex items-center gap-2">
+            <Settings className="w-4 h-4" />
+            Time Entry Management (Admin)
+          </span>
+          {showTimeManager ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+        </Button>
+        
+        {showTimeManager && (
+          <div className="p-4 pt-0">
+            <TimeEntryManager />
+          </div>
+        )}
+      </div>
+
       {/* Stage Tabs - Button Style (matches Frame Production) */}
       <div className="flex gap-2 overflow-x-auto pb-2">
         {stages.map((stage) => (
