@@ -59,6 +59,7 @@ export function CutList({ batch }) {
   const [cutListData, setCutListData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState({});
+  const [localValues, setLocalValues] = useState({}); // Track local input values
 
   const fetchCutList = useCallback(async () => {
     if (!batch?.batch_id) return;
@@ -70,6 +71,15 @@ export function CutList({ batch }) {
       if (res.ok) {
         const data = await res.json();
         setCutListData(data);
+        // Initialize local values from fetched data
+        const values = {};
+        data.size_groups.forEach(group => {
+          group.items.forEach(item => {
+            const key = `${item.size}-${item.color}`;
+            values[key] = item.qty_made;
+          });
+        });
+        setLocalValues(values);
       }
     } catch (err) {
       console.error("Failed to load cut list:", err);
@@ -82,7 +92,7 @@ export function CutList({ batch }) {
     fetchCutList();
   }, [fetchCutList]);
 
-  const handleUpdateItem = async (size, color, qtyMade, completed) => {
+  const saveToServer = useCallback(async (size, color, qtyMade, completed) => {
     const key = `${size}-${color}`;
     setUpdating(prev => ({ ...prev, [key]: true }));
     
@@ -103,31 +113,59 @@ export function CutList({ batch }) {
       );
       
       if (res.ok) {
-        // Update local state
+        // Update cutListData state
         setCutListData(prev => {
           if (!prev) return prev;
           
-          const newGroups = prev.size_groups.map(group => ({
-            ...group,
-            items: group.items.map(item => {
+          const newGroups = prev.size_groups.map(group => {
+            const newItems = group.items.map(item => {
               if (item.size === size && item.color === color) {
                 return { ...item, qty_made: qtyMade, completed };
               }
               return item;
-            }),
-            subtotal_made: group.items.reduce((sum, item) => {
-              if (item.size === size && item.color === color) {
-                return sum + qtyMade;
-              }
-              return sum + item.qty_made;
-            }, 0)
-          }));
+            });
+            return {
+              ...group,
+              items: newItems,
+              subtotal_made: newItems.reduce((sum, item) => sum + item.qty_made, 0)
+            };
+          });
           
           return {
             ...prev,
             size_groups: newGroups,
-            grand_total_made: newGroups.reduce(
-              (sum, g) => sum + g.subtotal_made,
+            grand_total_made: newGroups.reduce((sum, g) => sum + g.subtotal_made, 0)
+          };
+        });
+      } else {
+        toast.error("Failed to save");
+      }
+    } catch (err) {
+      toast.error("Failed to save");
+    } finally {
+      setUpdating(prev => ({ ...prev, [key]: false }));
+    }
+  }, [batch?.batch_id]);
+
+  // Debounced save function (500ms delay)
+  const debouncedSave = useDebounce(saveToServer, 500);
+
+  // Handle local input change - update immediately, debounce server save
+  const handleQtyChange = (size, color, value, currentCompleted) => {
+    const key = `${size}-${color}`;
+    const qty = parseInt(value) || 0;
+    
+    // Update local value immediately for responsive UI
+    setLocalValues(prev => ({ ...prev, [key]: qty }));
+    
+    // Debounce the server save
+    debouncedSave(size, color, qty, currentCompleted);
+  };
+
+  // Handle completed checkbox - save immediately
+  const handleCompletedChange = (size, color, checked, currentQty) => {
+    saveToServer(size, color, currentQty, checked);
+  };
               0
             )
           };
