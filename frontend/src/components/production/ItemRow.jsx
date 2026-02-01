@@ -128,8 +128,16 @@ export function ItemRow({ item, stages, currentStageId, onUpdateQty, onMoveStage
     }
   }
 
-  function handleMove() {
+  async function handleMove() {
+    if (!hasActiveTimer) {
+      showTimerWarning();
+      return;
+    }
     if (nextStage) {
+      // Save current qty first, then move
+      if (qty !== qtyCompleted) {
+        await onUpdateQty(item.item_id, qty);
+      }
       onMoveStage(item.item_id, nextStage.stage_id, qty);
     }
   }
