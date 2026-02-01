@@ -195,6 +195,7 @@ Build a manufacturing and fulfillment app for Shopify websites with:
   - "Move to Next Stage" button enabled when all items complete
   - Save Progress button to persist worksheet state
   - Print button for physical worksheets
+- ✅ **Stage Cards Popup** (Feb 2026): Click summary cards at top of Order Fulfillment to see orders in that stage in a popup
 - ✅ **Batch Number in Order Fulfillment** (Feb 2026): Orders display their associated batch name/ID in the fulfillment view
 - ✅ **Batch Click-Through** (Feb 2026): Clicking batch badge navigates to Frame Production with that batch auto-selected
 
