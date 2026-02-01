@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -11,12 +11,10 @@ const COLOR_LABELS = { B: "Black", W: "White", N: "Natural" };
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = BACKEND_URL + "/api";
 
-export function ItemRow({ item, stages, currentStageId, onUpdateQty, onMoveStage, onRefresh }) {
+export function ItemRow({ item, stages, currentStageId, onUpdateQty, onMoveStage, onRefresh, hasActiveTimer }) {
   const [qty, setQty] = useState(item.qty_completed || 0);
   const [rejectedQty, setRejectedQty] = useState(item.qty_rejected || 0);
   const [addingToInventory, setAddingToInventory] = useState(false);
-  const [hasActiveTimer, setHasActiveTimer] = useState(false);
-  const [checkingTimer, setCheckingTimer] = useState(true);
   
   const currentIdx = stages.findIndex((s) => s.stage_id === item.current_stage_id);
   const nextStage = currentIdx >= 0 && currentIdx < stages.length - 1 ? stages[currentIdx + 1] : null;
@@ -34,27 +32,6 @@ export function ItemRow({ item, stages, currentStageId, onUpdateQty, onMoveStage
   const isQualityCheckStage = item.current_stage_id === "stage_ready";
   const canAddToInventory = isQualityCheckStage && qtyCompleted > 0 && !item.added_to_inventory;
   const goodFrames = Math.max(0, qtyCompleted - qtyRejected);
-
-  // Check if user has active timer for this stage
-  useEffect(() => {
-    checkTimerStatus();
-  }, [item.current_stage_id]);
-
-  async function checkTimerStatus() {
-    try {
-      const res = await fetch(API + "/stages/" + item.current_stage_id + "/active-timer", {
-        credentials: "include",
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setHasActiveTimer(data.active);
-      }
-    } catch (err) {
-      console.error("Failed to check timer:", err);
-    } finally {
-      setCheckingTimer(false);
-    }
-  }
 
   function showTimerWarning() {
     toast.error(
@@ -157,28 +134,11 @@ export function ItemRow({ item, stages, currentStageId, onUpdateQty, onMoveStage
     }
   }
 
-  // Show loading state while checking timer
-  if (checkingTimer) {
-    return (
-      <div className="p-4 bg-muted/30 rounded-lg border border-border animate-pulse">
-        <div className="h-6 w-48 bg-muted rounded" />
-      </div>
-    );
-  }
-
   return (
     <div
       className={`flex flex-col gap-3 p-4 bg-muted/30 rounded-lg border ${hasActiveTimer ? "border-border" : "border-orange-500/30"}`}
       data-testid={`item-row-${item.item_id}`}
     >
-      {/* Timer warning banner */}
-      {!hasActiveTimer && (
-        <div className="flex items-center gap-2 text-orange-400 text-sm bg-orange-500/10 px-3 py-2 rounded-md -mt-1 -mx-1">
-          <Clock className="w-4 h-4" />
-          <span>Start your timer to update quantities</span>
-        </div>
-      )}
-
       {/* Top row - Item info and progress */}
       <div className="flex items-center gap-4">
         {/* Completed Checkbox - Quick way to mark as done */}
