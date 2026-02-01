@@ -186,6 +186,9 @@ async def transform_shipstation_order(
                 "variants.sku": sku
             }, {"_id": 0, "product_id": 1, "title": 1, "images": 1})
         
+        # Handle weight which might be None
+        item_weight = ss_item.get("weight") or {}
+        
         item_doc = {
             "line_item_id": f"li_{uuid.uuid4().hex[:8]}",
             "shipstation_item_id": ss_item.get("orderItemId"),
@@ -196,8 +199,8 @@ async def transform_shipstation_order(
             "qty": ss_item.get("quantity", 1),
             "qty_done": ss_item.get("quantity", 1) if local_status == "shipped" else 0,
             "unit_price": ss_item.get("unitPrice", 0),
-            "weight_value": ss_item.get("weight", {}).get("value"),
-            "weight_units": ss_item.get("weight", {}).get("units"),
+            "weight_value": item_weight.get("value") if item_weight else None,
+            "weight_units": item_weight.get("units") if item_weight else None,
             "image_url": ss_item.get("imageUrl"),
             "product_matched": matched_product is not None,
             "matched_product_id": matched_product.get("product_id") if matched_product else None,
