@@ -290,8 +290,15 @@ export default function Settings({ user }) {
                   shopify: { bg: "bg-green-400/10", text: "text-green-400", border: "border-green-400/20" },
                   etsy: { bg: "bg-orange-400/10", text: "text-orange-400", border: "border-orange-400/20" },
                   dropship: { bg: "bg-purple-400/10", text: "text-purple-400", border: "border-purple-400/20" },
+                  shipstation: { bg: "bg-blue-400/10", text: "text-blue-400", border: "border-blue-400/20" },
                 };
                 const style = platformStyles[store.platform] || platformStyles.dropship;
+                const platformLabel = {
+                  shopify: "Shopify",
+                  etsy: "Etsy",
+                  dropship: "CSV Upload",
+                  shipstation: store.shipstation_marketplace || "ShipStation"
+                };
                 return (
                 <div key={store.store_id} className="flex items-center justify-between p-4 rounded-lg bg-muted/30 border border-border" data-testid={`store-item-${store.store_id}`}>
                   <div className="flex items-center gap-4">
@@ -301,7 +308,7 @@ export default function Settings({ user }) {
                     <div>
                       <p className="font-semibold">{store.name}</p>
                       <Badge variant="outline" className={`${style.text} ${style.bg} ${style.border}`}>
-                        {store.platform === "dropship" ? "CSV Upload" : store.platform}
+                        {platformLabel[store.platform] || store.platform}
                       </Badge>
                     </div>
                   </div>
