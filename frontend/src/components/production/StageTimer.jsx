@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Play, Pause, User } from "lucide-react";
+import { Play, Pause } from "lucide-react";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = BACKEND_URL + "/api";
@@ -13,11 +13,7 @@ export function StageTimer({ stageId, stageName, stageColor }) {
   const [itemsProcessed, setItemsProcessed] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    checkActiveTimer();
-  }, [stageId]);
-
-  async function checkActiveTimer() {
+  const checkActiveTimer = useCallback(async () => {
     try {
       const res = await fetch(API + "/stages/" + stageId + "/active-timer", {
         credentials: "include",
@@ -34,7 +30,11 @@ export function StageTimer({ stageId, stageName, stageColor }) {
     } finally {
       setLoading(false);
     }
-  }
+  }, [stageId]);
+
+  useEffect(() => {
+    checkActiveTimer();
+  }, [checkActiveTimer]);
 
   async function handleStartTimer() {
     try {
@@ -143,42 +143,4 @@ function LiveTimer({ startedAt }) {
 
   const formatted = [h, m, s].map((n) => String(n).padStart(2, "0")).join(":");
   return <span className="font-mono text-sm text-primary">{formatted}</span>;
-}
-
-export function ActiveWorkersDisplay({ stageId }) {
-  const [workers, setWorkers] = useState([]);
-
-  useEffect(() => {
-    fetchActiveWorkers();
-    const interval = setInterval(fetchActiveWorkers, 30000); // Refresh every 30s
-    return () => clearInterval(interval);
-  }, []);
-
-  async function fetchActiveWorkers() {
-    try {
-      const res = await fetch(API + "/stages/active-workers", {
-        credentials: "include",
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setWorkers(data);
-      }
-    } catch (err) {
-      console.error("Failed to fetch active workers:", err);
-    }
-  }
-
-  const stageWorkers = workers.find((s) => s.stage_id === stageId);
-  if (!stageWorkers || stageWorkers.workers.length === 0) {
-    return null;
-  }
-
-  return (
-    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-      <User className="w-4 h-4" />
-      <span>
-        {stageWorkers.workers.map((w) => w.user_name).join(", ")} working
-      </span>
-    </div>
-  );
 }
