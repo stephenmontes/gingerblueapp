@@ -155,6 +155,7 @@ export default function Production() {
             batches={batches}
             selectedBatch={selectedBatch}
             onSelectBatch={setSelectedBatch}
+            onRefresh={loadInitialData}
           />
         </div>
 
