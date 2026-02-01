@@ -547,7 +547,7 @@ export default function Orders({ user }) {
                     </TableCell>
                     <TableCell>
                       <div>
-                        <p className="font-mono text-sm">{order.order_id}</p>
+                        <p className="font-mono text-sm font-medium">#{order.order_number || order.order_id}</p>
                         <p className="text-xs text-muted-foreground font-mono">
                           {order.external_id}
                         </p>
