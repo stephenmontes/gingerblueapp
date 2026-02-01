@@ -55,6 +55,8 @@ export default function Orders({ user }) {
   const [createBatchOpen, setCreateBatchOpen] = useState(false);
   const [batchName, setBatchName] = useState("");
   const [showOnlyUnbatched, setShowOnlyUnbatched] = useState(true);
+  const [syncing, setSyncing] = useState(null);
+  const [syncStatus, setSyncStatus] = useState([]);
 
   const fetchOrders = async () => {
     try {
@@ -89,10 +91,82 @@ export default function Orders({ user }) {
     }
   };
 
+  const fetchSyncStatus = async () => {
+    try {
+      const response = await fetch(API + "/orders/sync/status", { credentials: "include" });
+      if (response.ok) {
+        const data = await response.json();
+        setSyncStatus(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch sync status:", error);
+    }
+  };
+
   useEffect(() => {
     fetchOrders();
     fetchStores();
+    fetchSyncStatus();
   }, [storeFilter, statusFilter, showOnlyUnbatched]);
+
+  const handleSyncOrders = async (storeId) => {
+    setSyncing(storeId);
+    try {
+      const response = await fetch(`${API}/orders/sync/${storeId}?days_back=30`, {
+        method: "POST",
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        toast.success(
+          `Synced ${result.synced} orders (${result.created} new, ${result.updated} updated, ${result.skipped} skipped)`
+        );
+        fetchOrders();
+        fetchSyncStatus();
+      } else {
+        const error = await response.json();
+        toast.error(error.detail || "Failed to sync orders");
+      }
+    } catch (error) {
+      toast.error("Failed to sync orders");
+    } finally {
+      setSyncing(null);
+    }
+  };
+
+  const handleSyncAllStores = async () => {
+    const shopifyStores = stores.filter(s => s.platform === "shopify" && s.is_active);
+    if (shopifyStores.length === 0) {
+      toast.error("No active Shopify stores to sync");
+      return;
+    }
+
+    setSyncing("all");
+    let totalSynced = 0;
+    let totalCreated = 0;
+
+    for (const store of shopifyStores) {
+      try {
+        const response = await fetch(`${API}/orders/sync/${store.store_id}?days_back=30`, {
+          method: "POST",
+          credentials: "include",
+        });
+        if (response.ok) {
+          const result = await response.json();
+          totalSynced += result.synced;
+          totalCreated += result.created;
+        }
+      } catch (error) {
+        console.error(`Failed to sync ${store.name}:`, error);
+      }
+    }
+
+    toast.success(`Synced ${totalSynced} orders from ${shopifyStores.length} stores (${totalCreated} new)`);
+    fetchOrders();
+    fetchSyncStatus();
+    setSyncing(null);
+  };
 
   const filteredOrders = orders.filter((order) => {
     if (!searchTerm) return true;
