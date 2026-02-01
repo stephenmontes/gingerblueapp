@@ -196,3 +196,96 @@ async def get_time_logs(
     
     logs = await db.time_logs.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
     return logs
+
+@router.get("/stats/stage-user-kpis")
+async def get_stage_user_kpis(
+    stage_id: Optional[str] = None,
+    user: User = Depends(get_current_user)
+):
+    """Get KPIs for each user per stage: time in stage, avg items made, items sent to next stage"""
+    # Build match query
+    match_query = {"duration_minutes": {"$gt": 0}, "completed_at": {"$ne": None}}
+    if stage_id:
+        match_query["stage_id"] = stage_id
+    
+    # Aggregate time logs by user and stage
+    pipeline = [
+        {"$match": match_query},
+        {"$group": {
+            "_id": {"user_id": "$user_id", "user_name": "$user_name", "stage_id": "$stage_id", "stage_name": "$stage_name"},
+            "total_minutes": {"$sum": "$duration_minutes"},
+            "total_items": {"$sum": "$items_processed"},
+            "session_count": {"$sum": 1}
+        }},
+        {"$project": {
+            "_id": 0,
+            "user_id": "$_id.user_id",
+            "user_name": "$_id.user_name",
+            "stage_id": "$_id.stage_id",
+            "stage_name": "$_id.stage_name",
+            "total_hours": {"$round": [{"$divide": ["$total_minutes", 60]}, 2]},
+            "total_minutes": {"$round": ["$total_minutes", 1]},
+            "total_items": 1,
+            "session_count": 1,
+            "avg_items_per_session": {"$round": [{"$divide": ["$total_items", "$session_count"]}, 1]},
+            "items_per_hour": {"$cond": {
+                "if": {"$gt": ["$total_minutes", 0]},
+                "then": {"$round": [{"$multiply": [{"$divide": ["$total_items", "$total_minutes"]}, 60]}, 1]},
+                "else": 0
+            }}
+        }},
+        {"$sort": {"stage_name": 1, "total_items": -1}}
+    ]
+    
+    user_stage_stats = await db.time_logs.aggregate(pipeline).to_list(1000)
+    
+    # Get all stages for reference
+    stages = await db.production_stages.find({}, {"_id": 0}).sort("order", 1).to_list(100)
+    stage_order = {s["stage_id"]: s["order"] for s in stages}
+    stage_names = {s["stage_id"]: s["name"] for s in stages}
+    
+    # Group by stage for easier frontend consumption
+    stages_data = {}
+    for stat in user_stage_stats:
+        sid = stat["stage_id"]
+        if sid not in stages_data:
+            stages_data[sid] = {
+                "stage_id": sid,
+                "stage_name": stat.get("stage_name", stage_names.get(sid, "Unknown")),
+                "order": stage_order.get(sid, 99),
+                "users": [],
+                "totals": {
+                    "total_hours": 0,
+                    "total_items": 0,
+                    "total_sessions": 0
+                }
+            }
+        stages_data[sid]["users"].append(stat)
+        stages_data[sid]["totals"]["total_hours"] += stat["total_hours"]
+        stages_data[sid]["totals"]["total_items"] += stat["total_items"]
+        stages_data[sid]["totals"]["total_sessions"] += stat["session_count"]
+    
+    # Calculate stage averages
+    for sid, data in stages_data.items():
+        total_users = len(data["users"])
+        if total_users > 0:
+            data["totals"]["avg_hours_per_user"] = round(data["totals"]["total_hours"] / total_users, 2)
+            data["totals"]["avg_items_per_user"] = round(data["totals"]["total_items"] / total_users, 1)
+        if data["totals"]["total_hours"] > 0:
+            data["totals"]["overall_items_per_hour"] = round(data["totals"]["total_items"] / data["totals"]["total_hours"], 1)
+        else:
+            data["totals"]["overall_items_per_hour"] = 0
+    
+    # Sort by stage order
+    result = sorted(stages_data.values(), key=lambda x: x["order"])
+    
+    return {
+        "stages": result,
+        "summary": {
+            "total_stages": len(result),
+            "total_users_tracked": len(set(s["user_id"] for s in user_stage_stats)),
+            "total_hours": round(sum(s["total_hours"] for s in user_stage_stats), 2),
+            "total_items": sum(s["total_items"] for s in user_stage_stats)
+        }
+    }
+
