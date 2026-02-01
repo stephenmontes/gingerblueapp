@@ -200,13 +200,13 @@ export function ItemRow({ item, stages, currentStageId, onUpdateQty, onMoveStage
           </Button>
         </div>
 
-        {/* Move to Next Stage Button */}
+        {/* Move to Next Stage Button - always visible if there's a next stage */}
         {nextStage && (
           <Button
             size="sm"
             onClick={handleMove}
             className="gap-1"
-            disabled={qtyCompleted < qtyRequired}
+            disabled={!hasActiveTimer || qty === 0}
             data-testid={`move-item-${item.item_id}`}
           >
             <ArrowRight className="w-4 h-4" />
