@@ -231,12 +231,61 @@ class ManufacturingAPITester:
         
         return endpoint_exists
 
-    def test_time_logs_endpoints(self):
-        """Test time logging endpoints"""
-        print("\n⏱️ Testing Time Logs...")
+    def test_store_sync_endpoints(self):
+        """Test store sync endpoints"""
+        print("\n🔄 Testing Store Sync Endpoints...")
         
-        success, status, data = self.make_request('GET', 'time-logs')
-        self.log_test("Get Time Logs", success, f"Status: {status}")
+        # Test sync all stores endpoint
+        success, status, data = self.make_request('POST', 'stores/sync-all', expected_status=403)
+        endpoint_exists = status in [403, 401, 422]  # Expected to fail without proper admin auth
+        self.log_test("Sync All Stores Endpoint", endpoint_exists, 
+                     f"Status: {status} (expected 403/401 without admin)")
+        
+        # Test individual store sync (using a test store ID)
+        test_store_id = "store_test_123"
+        success, status, data = self.make_request('POST', f'stores/{test_store_id}/sync', expected_status=404)
+        endpoint_exists = status in [404, 403, 401]  # Expected to fail - store not found or no auth
+        self.log_test("Individual Store Sync Endpoint", endpoint_exists,
+                     f"Status: {status} (expected 404/403/401)")
+        
+        return endpoint_exists
+
+    def test_webhook_endpoints(self):
+        """Test webhook endpoints"""
+        print("\n🪝 Testing Webhook Endpoints...")
+        
+        test_store_id = "store_test_123"
+        
+        # Test Shopify webhook endpoint
+        webhook_data = {"test": "data"}
+        success, status, data = self.make_request('POST', f'webhooks/shopify/{test_store_id}', webhook_data)
+        self.log_test("Shopify Webhook Endpoint", success, f"Status: {status}")
+        
+        # Test Etsy webhook endpoint  
+        success, status, data = self.make_request('POST', f'webhooks/etsy/{test_store_id}', webhook_data)
+        self.log_test("Etsy Webhook Endpoint", success, f"Status: {status}")
+        
+        return success
+
+    def test_export_endpoints(self):
+        """Test export endpoints"""
+        print("\n📤 Testing Export Endpoints...")
+        
+        # Test Orders CSV export
+        success, status, data = self.make_request('GET', 'export/orders')
+        self.log_test("Export Orders CSV", success, f"Status: {status}")
+        
+        # Test Time Logs CSV export
+        success, status, data = self.make_request('GET', 'export/time-logs')
+        self.log_test("Export Time Logs CSV", success, f"Status: {status}")
+        
+        # Test User Stats CSV export
+        success, status, data = self.make_request('GET', 'export/user-stats')
+        self.log_test("Export User Stats CSV", success, f"Status: {status}")
+        
+        # Test Report PDF export
+        success, status, data = self.make_request('GET', 'export/report-pdf')
+        self.log_test("Export Report PDF", success, f"Status: {status}")
         
         return success
 
