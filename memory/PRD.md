@@ -162,7 +162,7 @@ Build a manufacturing and fulfillment app for Shopify websites with:
 
 ## What's Been Implemented
 
-### Completed (Feb 2025)
+### Completed (Feb 2025 - Feb 2026)
 - ✅ Full-stack app with all pages
 - ✅ Google OAuth authentication
 - ✅ Dark theme UI
@@ -272,6 +272,19 @@ Build a manufacturing and fulfillment app for Shopify websites with:
   - Created test store "Antique Farmhouse" with dropship platform
   - Updated template download to use Antique Farmhouse format
   - API: `POST /api/orders/upload-csv/{store_id}`, `GET /api/orders/csv-template`
+- ✅ **Frame-Centric Production Workflow** (Feb 2026):
+  - Refactored production to aggregate items by size/color into "frames"
+  - New `batch_frames` collection stores aggregated production items
+  - Frames move through stages as a unit instead of individual items
+  - FrameList component shows all frames filtered by current stage
+  - API: `GET /api/batches/{id}/frames`, `PUT /api/batches/{id}/frames/{frame_id}`, `POST /api/batches/{id}/frames/{frame_id}/move`
+- ✅ **Timer Banner Prop Fix** (Feb 2026):
+  - Fixed ActiveTimerBanner to receive activeTimer as prop from Production.jsx
+  - Timer banner now updates correctly when timer is stopped from another stage
+- ✅ **Quality Check Rejection Tracking** (Feb 2026):
+  - Added "Qty Rejected" column in Quality Check stage only
+  - Orange styling for rejection input and totals
+  - Backend already supports qty_rejected parameter in frame update endpoint
 
 ## Prioritized Backlog
 
