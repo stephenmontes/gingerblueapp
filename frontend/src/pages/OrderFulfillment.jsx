@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { RefreshCw, Truck, Users, Clock, FileText, ChevronDown, ChevronUp } from "lucide-react";
+import { RefreshCw, Truck, Users, Clock, FileText, ChevronDown, ChevronUp, Settings } from "lucide-react";
 import { toast } from "sonner";
 import { FulfillmentStageTab } from "@/components/fulfillment/FulfillmentStageTab";
 import { FulfillmentSummary } from "@/components/fulfillment/FulfillmentSummary";
@@ -9,6 +9,7 @@ import { StageOrdersPopup } from "@/components/fulfillment/StageOrdersPopup";
 import { FulfillmentTimerBanner } from "@/components/fulfillment/FulfillmentTimerBanner";
 import { FulfillmentKpiBanner } from "@/components/fulfillment/FulfillmentKpiBanner";
 import { OrderKpiReport } from "@/components/fulfillment/OrderKpiReport";
+import { TimeEntryManager } from "@/components/fulfillment/TimeEntryManager";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -21,10 +22,24 @@ export default function OrderFulfillment() {
   const [popupStage, setPopupStage] = useState(null);
   const [timerVersion, setTimerVersion] = useState(0);
   const [showReport, setShowReport] = useState(false);
+  const [showTimeManager, setShowTimeManager] = useState(false);
 
   useEffect(() => {
     loadData();
+    // Auto-stop inactive timers on page load
+    autoStopInactiveTimers();
   }, []);
+
+  async function autoStopInactiveTimers() {
+    try {
+      await fetch(`${API}/fulfillment/timers/auto-stop-inactive`, {
+        method: "POST",
+        credentials: "include"
+      });
+    } catch (err) {
+      // Silently fail - this is a background cleanup task
+    }
+  }
 
   function handleTimerChange() {
     setTimerVersion(v => v + 1);
