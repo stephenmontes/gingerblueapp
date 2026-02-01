@@ -43,11 +43,14 @@ export default function Layout({ children, user, setUser }) {
         method: "POST",
         credentials: "include",
       });
+      // Clear session storage
+      sessionStorage.removeItem("shopfactory_user");
       setUser(null);
       toast.success("Logged out successfully");
       navigate("/login", { replace: true });
     } catch (error) {
       console.error("Logout error:", error);
+      sessionStorage.removeItem("shopfactory_user");
       navigate("/login", { replace: true });
     }
   };
