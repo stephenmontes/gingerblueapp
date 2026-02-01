@@ -27,7 +27,8 @@ import {
   Trash2,
   AlertTriangle,
   PlusCircle,
-  MinusCircle
+  MinusCircle,
+  XCircle
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -45,6 +46,10 @@ export default function FrameInventory() {
   const [adjustItem, setAdjustItem] = useState(null);
   const [adjustAmount, setAdjustAmount] = useState(0);
   const [adjustReason, setAdjustReason] = useState("");
+  
+  // Rejection dialog state
+  const [rejectItem, setRejectItem] = useState(null);
+  const [rejectAmount, setRejectAmount] = useState(1);
   
   // Form state
   const [formData, setFormData] = useState({
