@@ -327,7 +327,7 @@ export default function Orders({ user }) {
     }
   };
 
-  const isAllSelected = filteredOrders.length > 0 && selectedOrders.length === filteredOrders.length;
+  const isAllSelected = sortedOrders.length > 0 && selectedOrders.length === sortedOrders.length;
   const shopifyStores = stores.filter(s => s.platform === "shopify");
 
   return (
