@@ -46,33 +46,54 @@ def get_sku_match_key(sku: str) -> str:
     return f"{color}-{size}"
 
 
+# Size sort order: S, L, XL, HS, HX, XX, XXX
+SIZE_SORT_ORDER = {
+    'S': 0,
+    'L': 1,
+    'XL': 2,
+    'HS': 3,
+    'HX': 4,
+    'XX': 5,
+    'XXX': 6
+}
+
+
+def get_size_sort_key(size_str: str) -> tuple:
+    """
+    Get sort key for size. Returns (priority, alphabetical_fallback)
+    Known sizes get priority 0-6, unknown sizes get priority 99 and sort alphabetically
+    """
+    size_upper = size_str.upper().strip()
+    if size_upper in SIZE_SORT_ORDER:
+        return (SIZE_SORT_ORDER[size_upper], "")
+    else:
+        return (99, size_upper)  # Fallback to alphabetical
+
+
 def parse_sku_for_sorting(sku: str) -> tuple:
     """
-    Parse SKU into sortable components.
-    SKU format example: PREFIX-COLOR-NUMBER-SIZE (e.g., FRM-BLK-12-SM)
-    Sort by: 2nd group (letters/color), 3rd group (numbers), 4th group (letters/size)
-    Also uses second-to-last letters for final sorting
+    Parse SKU and return sort key based on SIZE (second-to-last group).
+    Sort order: S, L, XL, HS, HX, XX, XXX, then alphabetically for others.
     """
     if not sku:
-        return ("ZZZ", 9999, "ZZZ", "ZZZ")
+        return (99, "ZZZ", "ZZZ")
     
     parts = sku.replace('_', '-').replace('.', '-').split('-')
     parts = [p.strip().upper() for p in parts if p.strip()]
     
-    # Get sorting components
-    part2 = parts[1] if len(parts) > 1 else "ZZZ"  # 2nd group (usually color)
-    part3 = 9999  # 3rd group (numbers)
-    if len(parts) > 2:
-        try:
-            part3 = int(''.join(filter(str.isdigit, parts[2]))) if any(c.isdigit() for c in parts[2]) else 9999
-        except:
-            part3 = 9999
-    part4 = parts[3] if len(parts) > 3 else "ZZZ"  # 4th group (usually size)
+    # Get the second-to-last part (SIZE)
+    if len(parts) >= 2:
+        size_part = parts[-2]
+    elif len(parts) == 1:
+        size_part = parts[0]
+    else:
+        size_part = "ZZZ"
     
-    # Second to last letters in SKU for additional sorting
-    second_to_last = parts[-2] if len(parts) >= 2 else "ZZZ"
+    # Get size sort priority
+    size_priority, size_alpha = get_size_sort_key(size_part)
     
-    return (part2, part3, part4, second_to_last)
+    # Also include full SKU for secondary sorting within same size
+    return (size_priority, size_alpha, sku.upper())
 
 
 def get_item_group_key(item: dict) -> str:
