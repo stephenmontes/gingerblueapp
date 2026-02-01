@@ -304,7 +304,8 @@ export default function Settings({ user }) {
                     )}
                   </div>
                 </div>
-              ))}
+              );
+              })}
             </div>
           )}
         </CardContent>
