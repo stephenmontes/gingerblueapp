@@ -1587,7 +1587,6 @@ async def update_item_rejected(
     
     return {"message": "Rejected quantity updated", "qty_rejected": qty_rejected}
 
-@api_router.post("/items/{item_id}/add-to-inventory")
 def get_sku_match_key(sku: str) -> str:
     """Extract last two groups from SKU for matching.
     E.g., 'FRAME-BLK-SM' -> 'BLK-SM', 'PROD-001-B-L' -> 'B-L'"""
@@ -1596,6 +1595,7 @@ def get_sku_match_key(sku: str) -> str:
         return f"{parts[-2]}-{parts[-1]}"
     return sku
 
+@api_router.post("/items/{item_id}/add-to-inventory")
 async def add_item_to_inventory(item_id: str, user: User = Depends(get_current_user)):
     """Add completed item to frame inventory (from Quality Check stage).
     - Good frames go to main inventory
