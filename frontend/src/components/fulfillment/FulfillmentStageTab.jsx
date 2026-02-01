@@ -277,9 +277,6 @@ function OrdersView({
                 </Badge>
               )}
             </CardTitle>
-            {stage.stage_id !== "fulfill_orders" && (
-              <FulfillmentStageTimer stage={stage} onTimerChange={onTimerChange} />
-            )}
           </div>
           
           {selectedOrders.length > 0 && (
