@@ -9,7 +9,7 @@ const stageIcons = {
   fulfill_pack: Truck,
 };
 
-export function FulfillmentSummary({ summary }) {
+export function FulfillmentSummary({ summary, onStageClick }) {
   if (!summary) return null;
 
   return (
@@ -32,7 +32,10 @@ export function FulfillmentSummary({ summary }) {
       {/* Stage Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {/* Unassigned Orders */}
-        <Card className="bg-card border-border">
+        <Card 
+          className="bg-card border-border cursor-pointer hover:border-primary/50 transition-colors"
+          onClick={() => onStageClick && onStageClick({ stage_id: "unassigned", stage_name: "Unassigned", color: "#6B7280" })}
+        >
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
               <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
@@ -52,7 +55,8 @@ export function FulfillmentSummary({ summary }) {
           return (
             <Card 
               key={stage.stage_id} 
-              className={`bg-card border-border ${hasStockIssues ? 'border-orange-500/30' : ''}`}
+              className={`bg-card border-border cursor-pointer hover:border-primary/50 transition-colors ${hasStockIssues ? 'border-orange-500/30' : ''}`}
+              onClick={() => onStageClick && onStageClick(stage)}
             >
               <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-2">
