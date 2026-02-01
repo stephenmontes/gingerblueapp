@@ -498,7 +498,7 @@ export default function Orders({ user }) {
               <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
               <p className="text-muted-foreground">Loading orders...</p>
             </div>
-          ) : filteredOrders.length === 0 ? (
+          ) : sortedOrders.length === 0 ? (
             <div className="p-8 text-center" data-testid="no-orders">
               <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
               <p className="text-lg font-semibold mb-2">No orders found</p>
@@ -521,18 +521,18 @@ export default function Orders({ user }) {
                       data-testid="select-all-checkbox"
                     />
                   </TableHead>
-                  <TableHead className="label-caps">Order ID</TableHead>
-                  <TableHead className="label-caps">Store</TableHead>
-                  <TableHead className="label-caps">Customer</TableHead>
-                  <TableHead className="label-caps">Items</TableHead>
-                  <TableHead className="label-caps">Total</TableHead>
-                  <TableHead className="label-caps">Status</TableHead>
-                  <TableHead className="label-caps">Date</TableHead>
+                  <SortableHeader column="order_number">Order #</SortableHeader>
+                  <SortableHeader column="store_name">Store</SortableHeader>
+                  <SortableHeader column="customer_name">Customer</SortableHeader>
+                  <SortableHeader column="items">Items</SortableHeader>
+                  <SortableHeader column="total_price">Total</SortableHeader>
+                  <SortableHeader column="status">Status</SortableHeader>
+                  <SortableHeader column="created_at">Date</SortableHeader>
                   <TableHead className="label-caps">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredOrders.map((order) => (
+                {sortedOrders.map((order) => (
                   <TableRow
                     key={order.order_id}
                     className={`border-border hover:bg-muted/30 ${selectedOrders.includes(order.order_id) ? "bg-primary/5" : ""}`}
