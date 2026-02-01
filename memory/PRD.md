@@ -175,6 +175,7 @@ Build a manufacturing and fulfillment app for Shopify websites with:
 - ✅ **FrameInventory.jsx refactored** (Feb 2026) - Split 838-line file into 7 components to prevent RangeError build errors
 - ✅ **User Stage KPIs on Production page** (Feb 2026) - Shows user's personal stats (time, qty made, avg/hr) while time tracking
 - ✅ **Order Fulfillment page** (Feb 2026) - New page with 5 stages: Orders, Print List, Mount List, Finish, Pack and Ship
+- ✅ **Batch-Fulfillment Integration** (Feb 2026) - When batch is created, orders are automatically sent to Order Fulfillment as individual items
 
 ## Prioritized Backlog
 
