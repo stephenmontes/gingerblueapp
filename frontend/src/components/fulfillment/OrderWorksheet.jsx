@@ -214,6 +214,19 @@ export function OrderWorksheet({ order, stages, currentStage, onClose, onMoveToN
 
         <OrderInfo order={order} currentStage={currentStage} />
         
+        {/* Timer Section - Only for non-Orders stages */}
+        {currentStage?.stage_id !== "fulfill_orders" && (
+          <WorksheetTimer 
+            activeTimer={activeTimer}
+            currentStage={currentStage}
+            timerLoading={timerLoading}
+            onStart={handleStartTimer}
+            onPause={handlePauseTimer}
+            onResume={handleResumeTimer}
+            onStop={handleStopTimer}
+          />
+        )}
+        
         <ProgressBar completed={completedCount} total={items.length} />
 
         <div className="flex justify-between items-center mb-2">
