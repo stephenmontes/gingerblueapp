@@ -31,99 +31,104 @@ export function BatchStats({ batchId }) {
   }
 
   if (loading) {
-    return (
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="h-20 bg-muted/30 animate-pulse rounded-lg" />
-        ))}
-      </div>
-    );
+    return <StatsLoading />;
   }
 
   if (!stats) return null;
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-      {/* Combined Hours */}
-      <Card className="bg-card/50 border-border">
-        <CardContent className="p-3">
-          <div className="flex items-center gap-2 mb-1">
-            <Clock className="w-4 h-4 text-blue-400" />
-            <span className="text-xs text-muted-foreground">Combined Hours</span>
-          </div>
-          <p className="text-xl font-bold">{stats.time.total_hours}h</p>
-          <p className="text-xs text-muted-foreground">
-            {stats.user_breakdown.length} worker{stats.user_breakdown.length !== 1 ? "s" : ""}
-          </p>
-        </CardContent>
-      </Card>
+      <StatCard
+        icon={Clock}
+        iconColor="text-blue-400"
+        label="Combined Hours"
+        value={stats.time.total_hours + "h"}
+        subtitle={stats.user_breakdown.length + " workers"}
+      />
+      <StatCard
+        icon={DollarSign}
+        iconColor="text-green-400"
+        label="Labor Cost"
+        value={"$" + stats.costs.total_labor_cost}
+        subtitle={"@ $" + stats.costs.hourly_rate + "/hr"}
+      />
+      <StatCard
+        icon={DollarSign}
+        iconColor="text-primary"
+        label="Avg Cost/Frame"
+        value={"$" + stats.costs.avg_cost_per_frame}
+        subtitle={stats.totals.good_frames + " good frames"}
+      />
+      <StatCard
+        icon={XCircle}
+        iconColor={stats.quality.rejection_rate > 5 ? "text-red-400" : "text-muted-foreground"}
+        label="Rejection Rate"
+        value={stats.quality.rejection_rate + "%"}
+        subtitle={stats.quality.rejected_count + " rejected"}
+        highlight={stats.quality.rejection_rate > 5}
+      />
+      <WorkerBreakdown workers={stats.user_breakdown} />
+    </div>
+  );
+}
 
-      {/* Total Labor Cost */}
-      <Card className="bg-card/50 border-border">
-        <CardContent className="p-3">
-          <div className="flex items-center gap-2 mb-1">
-            <DollarSign className="w-4 h-4 text-green-400" />
-            <span className="text-xs text-muted-foreground">Labor Cost</span>
-          </div>
-          <p className="text-xl font-bold">${stats.costs.total_labor_cost}</p>
-          <p className="text-xs text-muted-foreground">
-            @ ${stats.costs.hourly_rate}/hr
-          </p>
-        </CardContent>
-      </Card>
+function StatsLoading() {
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="h-20 bg-muted/30 animate-pulse rounded-lg" />
+      <div className="h-20 bg-muted/30 animate-pulse rounded-lg" />
+      <div className="h-20 bg-muted/30 animate-pulse rounded-lg" />
+      <div className="h-20 bg-muted/30 animate-pulse rounded-lg" />
+    </div>
+  );
+}
 
-      {/* Avg Cost Per Frame */}
-      <Card className="bg-card/50 border-border">
-        <CardContent className="p-3">
-          <div className="flex items-center gap-2 mb-1">
-            <DollarSign className="w-4 h-4 text-primary" />
-            <span className="text-xs text-muted-foreground">Avg Cost/Frame</span>
-          </div>
-          <p className="text-xl font-bold">${stats.costs.avg_cost_per_frame}</p>
-          <p className="text-xs text-muted-foreground">
-            {stats.totals.good_frames} good frames
-          </p>
-        </CardContent>
-      </Card>
+function StatCard({ icon: Icon, iconColor, label, value, subtitle, highlight }) {
+  const bgClass = highlight ? "bg-red-500/10 border-red-500/30" : "bg-card/50";
+  const valueClass = highlight ? "text-red-400" : "";
+  
+  return (
+    <Card className={bgClass + " border-border"}>
+      <CardContent className="p-3">
+        <div className="flex items-center gap-2 mb-1">
+          <Icon className={"w-4 h-4 " + iconColor} />
+          <span className="text-xs text-muted-foreground">{label}</span>
+        </div>
+        <p className={"text-xl font-bold " + valueClass}>{value}</p>
+        <p className="text-xs text-muted-foreground">{subtitle}</p>
+      </CardContent>
+    </Card>
+  );
+}
 
-      {/* Rejection Rate */}
-      <Card className={`border-border ${stats.quality.rejection_rate > 5 ? "bg-red-500/10 border-red-500/30" : "bg-card/50"}`}>
-        <CardContent className="p-3">
-          <div className="flex items-center gap-2 mb-1">
-            <XCircle className={`w-4 h-4 ${stats.quality.rejection_rate > 5 ? "text-red-400" : "text-muted-foreground"}`} />
-            <span className="text-xs text-muted-foreground">Rejection Rate</span>
-          </div>
-          <p className={`text-xl font-bold ${stats.quality.rejection_rate > 5 ? "text-red-400" : ""}`}>
-            {stats.quality.rejection_rate}%
-          </p>
-          <p className="text-xs text-muted-foreground">
-            {stats.quality.rejected_count} rejected
-          </p>
-        </CardContent>
-      </Card>
+function WorkerBreakdown({ workers }) {
+  if (!workers || workers.length === 0) return null;
+  
+  return (
+    <Card className="bg-card/50 border-border col-span-2 md:col-span-4">
+      <CardContent className="p-3">
+        <div className="flex items-center gap-2 mb-2">
+          <Users className="w-4 h-4 text-muted-foreground" />
+          <span className="text-sm font-medium">Hours by Worker</span>
+        </div>
+        <div className="flex flex-wrap gap-4">
+          {workers.map((user, idx) => (
+            <WorkerItem key={idx} user={user} />
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
-      {/* User Breakdown - Full width */}
-      {stats.user_breakdown.length > 0 && (
-        <Card className="bg-card/50 border-border col-span-2 md:col-span-4">
-          <CardContent className="p-3">
-            <div className="flex items-center gap-2 mb-2">
-              <Users className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm font-medium">Hours by Worker</span>
-            </div>
-            <div className="flex flex-wrap gap-4">
-              {stats.user_breakdown.map((user, idx) => (
-                <div key={idx} className="text-sm">
-                  <span className="text-muted-foreground">{user.user_name}:</span>{" "}
-                  <span className="font-medium">{user.hours}h</span>
-                  <span className="text-xs text-muted-foreground ml-1">
-                    ({user.items_processed} items)
-                  </span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+function WorkerItem({ user }) {
+  return (
+    <div className="text-sm">
+      <span className="text-muted-foreground">{user.user_name}:</span>{" "}
+      <span className="font-medium">{user.hours}h</span>
+      <span className="text-xs text-muted-foreground ml-1">
+        ({user.items_processed} items)
+      </span>
     </div>
   );
 }
