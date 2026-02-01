@@ -57,6 +57,10 @@ export default function Orders({ user }) {
   const [showOnlyUnbatched, setShowOnlyUnbatched] = useState(true);
   const [syncing, setSyncing] = useState(null);
   const [syncStatus, setSyncStatus] = useState([]);
+  
+  // Sorting state
+  const [sortColumn, setSortColumn] = useState("created_at");
+  const [sortDirection, setSortDirection] = useState("desc");
 
   const fetchOrders = async () => {
     try {
