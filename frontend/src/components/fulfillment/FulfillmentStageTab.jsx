@@ -195,13 +195,39 @@ export function FulfillmentStageTab({ stage, stages, onRefresh, onTimerChange })
     );
   }
 
+  // Function to open worksheet for a specific order
+  async function openWorksheetForOrder(orderId) {
+    // Find the order in current orders list
+    let order = orders.find(o => o.order_id === orderId);
+    
+    // If not in current stage, fetch it
+    if (!order) {
+      try {
+        const res = await fetch(`${API}/orders/${orderId}`, { credentials: "include" });
+        if (res.ok) {
+          order = await res.json();
+        }
+      } catch (err) {
+        toast.error("Failed to load order");
+        return;
+      }
+    }
+    
+    if (order) {
+      setWorksheetOrder(order);
+    } else {
+      toast.error("Order not found");
+    }
+  }
+
   return (
     <>
       {/* My Timer Controls - Show if user has any active timer */}
       {activeTimer && (
         <MyTimerControls 
           activeTimer={activeTimer} 
-          onTimerChange={handleTimerChangeInternal} 
+          onTimerChange={handleTimerChangeInternal}
+          onOpenWorksheet={openWorksheetForOrder}
         />
       )}
       
