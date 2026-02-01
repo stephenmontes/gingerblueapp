@@ -83,6 +83,112 @@ async def export_time_logs_csv(user: User = Depends(get_current_user)):
         headers={"Content-Disposition": f"attachment; filename=time_logs_{datetime.now().strftime('%Y%m%d')}.csv"}
     )
 
+@router.get("/team-stats")
+async def export_team_stats_csv(
+    period: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    user: User = Depends(get_current_user)
+):
+    """Export team statistics to CSV with optional date filtering
+    
+    Periods: day, week, month, or use custom start_date/end_date
+    """
+    # Build date filter
+    date_filter = {}
+    if period == "day":
+        today = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+        date_filter = {"started_at": {"$gte": today.isoformat()}}
+    elif period == "week":
+        week_start = datetime.now(timezone.utc) - timedelta(days=7)
+        date_filter = {"started_at": {"$gte": week_start.isoformat()}}
+    elif period == "month":
+        month_start = datetime.now(timezone.utc) - timedelta(days=30)
+        date_filter = {"started_at": {"$gte": month_start.isoformat()}}
+    elif start_date and end_date:
+        date_filter = {
+            "started_at": {"$gte": start_date, "$lte": end_date + "T23:59:59"}
+        }
+    
+    # Aggregate user stats
+    match_stage = {"$match": {"duration_minutes": {"$gt": 0}}}
+    if date_filter:
+        match_stage["$match"].update(date_filter)
+    
+    pipeline = [
+        match_stage,
+        {"$group": {
+            "_id": {"user_id": "$user_id", "user_name": "$user_name"},
+            "total_items": {"$sum": "$items_processed"},
+            "total_minutes": {"$sum": "$duration_minutes"},
+            "sessions": {"$sum": 1},
+            "stages_worked": {"$addToSet": "$stage_name"}
+        }}
+    ]
+    
+    stats = await db.time_logs.aggregate(pipeline).to_list(100)
+    
+    # Get user info for roles
+    users = await db.users.find({}, {"_id": 0, "user_id": 1, "role": 1, "email": 1}).to_list(100)
+    user_map = {u["user_id"]: u for u in users}
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Header
+    writer.writerow([
+        "User Name", "Email", "Role", "Total Items Processed", 
+        "Total Hours", "Sessions", "Items Per Hour", "Stages Worked",
+        "Labor Cost ($22/hr)"
+    ])
+    
+    hourly_rate = 22.0
+    
+    for stat in stats:
+        user_id = stat["_id"]["user_id"]
+        user_info = user_map.get(user_id, {})
+        total_hours = round(stat["total_minutes"] / 60, 2)
+        items_per_hour = round((stat["total_items"] / stat["total_minutes"]) * 60, 1) if stat["total_minutes"] > 0 else 0
+        labor_cost = round(total_hours * hourly_rate, 2)
+        
+        writer.writerow([
+            stat["_id"]["user_name"],
+            user_info.get("email", ""),
+            user_info.get("role", "worker"),
+            stat["total_items"],
+            total_hours,
+            stat["sessions"],
+            items_per_hour,
+            ", ".join(stat.get("stages_worked", [])),
+            labor_cost
+        ])
+    
+    # Add totals row
+    total_items = sum(s["total_items"] for s in stats)
+    total_minutes = sum(s["total_minutes"] for s in stats)
+    total_hours = round(total_minutes / 60, 2)
+    total_sessions = sum(s["sessions"] for s in stats)
+    avg_items_per_hour = round((total_items / total_minutes) * 60, 1) if total_minutes > 0 else 0
+    total_labor_cost = round(total_hours * hourly_rate, 2)
+    
+    writer.writerow([])
+    writer.writerow([
+        "TOTALS", "", "", total_items, total_hours, total_sessions,
+        avg_items_per_hour, "", total_labor_cost
+    ])
+    
+    period_label = period or "all_time"
+    if start_date and end_date:
+        period_label = f"{start_date}_to_{end_date}"
+    
+    output.seek(0)
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=team_stats_{period_label}_{datetime.now().strftime('%Y%m%d')}.csv"}
+    )
+
+
 @router.get("/user-stats")
 async def export_user_stats_csv(user: User = Depends(get_current_user)):
     """Export user statistics to CSV"""
