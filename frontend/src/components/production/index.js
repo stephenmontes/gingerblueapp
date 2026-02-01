@@ -9,3 +9,4 @@ export { StageTimer, ActiveWorkersDisplay } from "./StageTimer";
 export { BatchStats } from "./BatchStats";
 export { ActiveTimerBanner } from "./ActiveTimerBanner";
 export { BatchOrders } from "./BatchOrders";
+export { UserStageStats } from "./UserStageStats";
