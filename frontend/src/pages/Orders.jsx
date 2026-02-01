@@ -375,56 +375,21 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
     );
   });
 
-  // Sort orders
+  // Orders are already sorted by backend, just apply search filter
   const sortedOrders = useMemo(() => {
-    const sorted = [...filteredOrders].sort((a, b) => {
-      let aVal, bVal;
-      
-      switch (sortColumn) {
-        case "order_number":
-          aVal = a.order_number || a.order_id || "";
-          bVal = b.order_number || b.order_id || "";
-          break;
-        case "store_name":
-          aVal = a.store_name || "";
-          bVal = b.store_name || "";
-          break;
-        case "customer_name":
-          aVal = a.customer_name || "";
-          bVal = b.customer_name || "";
-          break;
-        case "items":
-          aVal = a.items?.length || 0;
-          bVal = b.items?.length || 0;
-          return sortDirection === "asc" ? aVal - bVal : bVal - aVal;
-        case "total_price":
-          aVal = a.total_price || a.order_total || 0;
-          bVal = b.total_price || b.order_total || 0;
-          return sortDirection === "asc" ? aVal - bVal : bVal - aVal;
-        case "status":
-          aVal = a.status || "";
-          bVal = b.status || "";
-          break;
-        case "created_at":
-        default:
-          // Use order_date if available (actual order date), fallback to created_at (import date)
-          // Convert to timestamps for proper date comparison
-          const aDate = a.order_date || a.created_at || "";
-          const bDate = b.order_date || b.created_at || "";
-          aVal = aDate ? new Date(aDate).getTime() : 0;
-          bVal = bDate ? new Date(bDate).getTime() : 0;
-          // Numeric comparison for dates - newest first when desc
-          return sortDirection === "asc" ? aVal - bVal : bVal - aVal;
-      }
-      
-      if (typeof aVal === "string") {
-        const comparison = aVal.localeCompare(bVal);
-        return sortDirection === "asc" ? comparison : -comparison;
-      }
-      return 0;
-    });
-    return sorted;
-  }, [filteredOrders, sortColumn, sortDirection]);
+    // If no search term, use orders as-is (already sorted by backend)
+    if (!searchTerm) return orders;
+    
+    // Apply local search filter
+    const term = searchTerm.toLowerCase();
+    return orders.filter((order) => 
+      order.order_id?.toLowerCase().includes(term) ||
+      order.external_id?.toLowerCase().includes(term) ||
+      order.order_number?.toLowerCase().includes(term) ||
+      order.customer_name?.toLowerCase().includes(term) ||
+      order.customer_email?.toLowerCase().includes(term)
+    );
+  }, [orders, searchTerm]);
 
   // Handle column sort
   // Handle column sort - fetch from backend with new sort order
