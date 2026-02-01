@@ -326,6 +326,14 @@ export function FrameList({ batch, activeTimer, currentStageId, stages }) {
               <TableHead className="w-28">Color</TableHead>
               <TableHead className="text-center w-24">Required</TableHead>
               <TableHead className="text-center w-28">Completed</TableHead>
+              {isQualityCheckStage && (
+                <TableHead className="text-center w-28">
+                  <span className="flex items-center justify-center gap-1 text-orange-400">
+                    <AlertTriangle className="w-4 h-4" />
+                    Rejected
+                  </span>
+                </TableHead>
+              )}
               <TableHead className="text-center w-24">Done</TableHead>
               {nextStage && <TableHead className="text-center w-36">Action</TableHead>}
             </TableRow>
@@ -338,11 +346,14 @@ export function FrameList({ batch, activeTimer, currentStageId, stages }) {
                 isLast={groupIndex === sizeGroups.length - 1}
                 updating={updating}
                 localValues={localValues}
+                localRejected={localRejected}
                 onQtyChange={handleQtyChange}
+                onRejectedChange={handleRejectedChange}
                 onCompletedChange={handleCompletedChange}
                 onMoveToNextStage={handleMoveToNextStage}
                 hasActiveTimer={hasActiveTimer}
                 nextStage={nextStage}
+                isQualityCheckStage={isQualityCheckStage}
               />
             ))}
             
