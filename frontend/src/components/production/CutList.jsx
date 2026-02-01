@@ -315,6 +315,7 @@ export function CutList({ batch, activeTimer }) {
                   <Check className="w-5 h-5 text-green-500 mx-auto" />
                 )}
               </TableCell>
+              <TableCell></TableCell>
             </TableRow>
           </TableBody>
         </Table>
@@ -323,7 +324,7 @@ export function CutList({ batch, activeTimer }) {
   );
 }
 
-function SizeGroupRows({ group, isLast, updating, localValues, onQtyChange, onCompletedChange, hasActiveTimer }) {
+function SizeGroupRows({ group, isLast, updating, localValues, onQtyChange, onCompletedChange, onMoveToAssembly, hasActiveTimer }) {
   return (
     <>
       {group.items.map((item, itemIndex) => {
