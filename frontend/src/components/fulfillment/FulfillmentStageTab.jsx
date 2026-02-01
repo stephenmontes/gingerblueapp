@@ -16,10 +16,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronRight, Package, AlertTriangle } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ChevronRight, Package, AlertTriangle, List, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { OrderRow } from "./OrderRow";
 import { InventoryDialog } from "./InventoryDialog";
+import { PrintListView } from "./PrintListView";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
