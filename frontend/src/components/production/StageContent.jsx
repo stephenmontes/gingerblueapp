@@ -3,7 +3,7 @@ import { Progress } from "@/components/ui/progress";
 import { Layers } from "lucide-react";
 import { ItemRow } from "./ItemRow";
 
-export function StageContent({ stageData, stages, onUpdateQty, onMoveStage }) {
+export function StageContent({ stageData, stages, onUpdateQty, onMoveStage, onRefresh }) {
   if (!stageData) {
     return (
       <Card className="bg-card border-border">
@@ -23,8 +23,10 @@ export function StageContent({ stageData, stages, onUpdateQty, onMoveStage }) {
         <StageItems
           items={stageData.items}
           stages={stages}
+          currentStageId={stageData.stage_id}
           onUpdateQty={onUpdateQty}
           onMoveStage={onMoveStage}
+          onRefresh={onRefresh}
         />
       </CardContent>
     </Card>
@@ -49,7 +51,7 @@ function StageHeader({ stageData }) {
   );
 }
 
-function StageItems({ items, stages, onUpdateQty, onMoveStage }) {
+function StageItems({ items, stages, currentStageId, onUpdateQty, onMoveStage, onRefresh }) {
   const isEmpty = !items || items.length === 0;
 
   if (isEmpty) {
@@ -68,8 +70,10 @@ function StageItems({ items, stages, onUpdateQty, onMoveStage }) {
           key={item.item_id}
           item={item}
           stages={stages}
+          currentStageId={currentStageId}
           onUpdateQty={onUpdateQty}
           onMoveStage={onMoveStage}
+          onRefresh={onRefresh}
         />
       ))}
     </div>
