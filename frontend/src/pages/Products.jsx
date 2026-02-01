@@ -208,7 +208,7 @@ export default function Products() {
                 <SelectValue placeholder="All Stores" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Stores</SelectItem>
+                <SelectItem value="all">All Stores</SelectItem>
                 {stores.map((store) => (
                   <SelectItem key={store.store_id} value={store.store_id}>
                     {store.name}
@@ -221,7 +221,7 @@ export default function Products() {
                 <SelectValue placeholder="All Vendors" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Vendors</SelectItem>
+                <SelectItem value="all">All Vendors</SelectItem>
                 {stats?.top_vendors?.map((v) => (
                   <SelectItem key={v.vendor} value={v.vendor}>
                     {v.vendor} ({v.count})
