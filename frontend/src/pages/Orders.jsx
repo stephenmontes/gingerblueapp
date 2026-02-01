@@ -358,23 +358,6 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
 
   const dropshipStores = stores.filter(s => s.platform === "dropship" || s.platform === "csv");
 
-  // Statuses that are considered "inactive" (excluded from active view)
-  // Note: Backend now handles "active" filtering, so frontend only filters for search
-  const inactiveStatuses = ["shipped", "cancelled", "completed"];
-
-  const filteredOrders = orders.filter((order) => {
-    // Search filter only - status filtering is done by backend
-    if (!searchTerm) return true;
-    const term = searchTerm.toLowerCase();
-    return (
-      order.order_id?.toLowerCase().includes(term) ||
-      order.external_id?.toLowerCase().includes(term) ||
-      order.order_number?.toLowerCase().includes(term) ||
-      order.customer_name?.toLowerCase().includes(term) ||
-      order.customer_email?.toLowerCase().includes(term)
-    );
-  });
-
   // Orders are already sorted by backend, just apply search filter
   const sortedOrders = useMemo(() => {
     // If no search term, use orders as-is (already sorted by backend)
