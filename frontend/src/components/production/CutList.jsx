@@ -307,7 +307,7 @@ function SizeGroupRows({ group, isLast, updating, localValues, onQtyChange, onCo
                 <Checkbox
                   checked={item.completed}
                   onCheckedChange={(checked) => 
-                    onCompletedChange(item.size, item.color, checked, displayQty)
+                    onCompletedChange(item.size, item.color, checked, displayQty, item.qty_required)
                   }
                   disabled={isUpdating}
                   data-testid={`completed-${key}`}
