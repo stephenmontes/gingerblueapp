@@ -57,8 +57,8 @@ export function ItemRow({ item, stages, onUpdateQty, onMoveStage }) {
 
       <div className="w-32">
         <Progress value={progress} className="h-2" />
-        <p className="text-xs text-muted-foreground text-center mt-1">
-          {qtyCompleted}/{qtyRequired}
+        <p className={`text-xs text-center mt-1 ${hasExtras ? "text-green-400" : "text-muted-foreground"}`}>
+          {qtyCompleted}/{qtyRequired} {hasExtras && "(+" + (qtyCompleted - qtyRequired) + ")"}
         </p>
       </div>
 
