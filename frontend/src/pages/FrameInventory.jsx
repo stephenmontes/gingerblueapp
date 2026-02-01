@@ -11,13 +11,23 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { 
   Plus, 
+  Minus,
   Search, 
   Package, 
   Edit2, 
   Trash2,
-  AlertTriangle
+  AlertTriangle,
+  PlusCircle,
+  MinusCircle
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -30,6 +40,11 @@ export default function FrameInventory() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  
+  // Adjustment dialog state
+  const [adjustItem, setAdjustItem] = useState(null);
+  const [adjustAmount, setAdjustAmount] = useState(0);
+  const [adjustReason, setAdjustReason] = useState("");
   
   // Form state
   const [formData, setFormData] = useState({
@@ -101,6 +116,61 @@ export default function FrameInventory() {
     } catch (err) {
       toast.error("Failed to delete item");
     }
+  }
+
+  // Quick adjust (+1 or -1)
+  async function handleQuickAdjust(itemId, amount) {
+    try {
+      const res = await fetch(API + "/inventory/" + itemId + "/adjust?adjustment=" + amount, {
+        method: "PUT",
+        credentials: "include"
+      });
+      if (res.ok) {
+        const result = await res.json();
+        toast.success(`Quantity ${amount > 0 ? "increased" : "decreased"} to ${result.new_quantity}`);
+        fetchInventory();
+      } else {
+        const err = await res.json();
+        toast.error(err.detail || "Failed to adjust quantity");
+      }
+    } catch (err) {
+      toast.error("Failed to adjust quantity");
+    }
+  }
+
+  // Custom adjustment via dialog
+  async function handleCustomAdjust() {
+    if (!adjustItem || adjustAmount === 0) return;
+    
+    try {
+      const res = await fetch(API + "/inventory/" + adjustItem.item_id + "/adjust?adjustment=" + adjustAmount, {
+        method: "PUT",
+        credentials: "include"
+      });
+      if (res.ok) {
+        const result = await res.json();
+        toast.success(`Quantity adjusted to ${result.new_quantity}`);
+        fetchInventory();
+        closeAdjustDialog();
+      } else {
+        const err = await res.json();
+        toast.error(err.detail || "Failed to adjust quantity");
+      }
+    } catch (err) {
+      toast.error("Failed to adjust quantity");
+    }
+  }
+
+  function openAdjustDialog(item) {
+    setAdjustItem(item);
+    setAdjustAmount(0);
+    setAdjustReason("");
+  }
+
+  function closeAdjustDialog() {
+    setAdjustItem(null);
+    setAdjustAmount(0);
+    setAdjustReason("");
   }
 
   function resetForm() {
@@ -327,7 +397,7 @@ export default function FrameInventory() {
                 <TableHead>Name</TableHead>
                 <TableHead>Color</TableHead>
                 <TableHead>Size</TableHead>
-                <TableHead className="text-right">Quantity</TableHead>
+                <TableHead className="text-center">Quantity</TableHead>
                 <TableHead>Location</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -341,60 +411,240 @@ export default function FrameInventory() {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredInventory.map((item) => {
-                  const isLowStock = item.quantity <= item.min_stock;
-                  return (
-                    <TableRow key={item.item_id} className="border-border" data-testid={`inventory-row-${item.item_id}`}>
-                      <TableCell className="font-mono text-sm">{item.sku}</TableCell>
-                      <TableCell className="font-medium">{item.name}</TableCell>
-                      <TableCell>{item.color || "-"}</TableCell>
-                      <TableCell>{item.size || "-"}</TableCell>
-                      <TableCell className="text-right font-medium">
-                        <span className={isLowStock ? "text-orange-500" : ""}>
-                          {item.quantity}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">{item.location || "-"}</TableCell>
-                      <TableCell>
-                        {isLowStock ? (
-                          <Badge variant="outline" className="border-orange-500 text-orange-500">
-                            Low Stock
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="border-green-500 text-green-500">
-                            In Stock
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleEdit(item)}
-                            data-testid={`edit-inventory-${item.item_id}`}
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="text-destructive hover:text-destructive"
-                            onClick={() => handleDelete(item.item_id)}
-                            data-testid={`delete-inventory-${item.item_id}`}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
+                filteredInventory.map((item) => (
+                  <InventoryRow 
+                    key={item.item_id} 
+                    item={item}
+                    onQuickAdjust={handleQuickAdjust}
+                    onOpenAdjust={openAdjustDialog}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                  />
+                ))
               )}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
+
+      {/* Adjustment Dialog */}
+      <AdjustmentDialog
+        item={adjustItem}
+        amount={adjustAmount}
+        reason={adjustReason}
+        onAmountChange={setAdjustAmount}
+        onReasonChange={setAdjustReason}
+        onConfirm={handleCustomAdjust}
+        onClose={closeAdjustDialog}
+      />
     </div>
+  );
+}
+
+function InventoryRow({ item, onQuickAdjust, onOpenAdjust, onEdit, onDelete }) {
+  const isLowStock = item.quantity <= item.min_stock;
+  
+  return (
+    <TableRow className="border-border" data-testid={`inventory-row-${item.item_id}`}>
+      <TableCell className="font-mono text-sm">{item.sku}</TableCell>
+      <TableCell className="font-medium">{item.name}</TableCell>
+      <TableCell>{item.color || "-"}</TableCell>
+      <TableCell>{item.size || "-"}</TableCell>
+      <TableCell>
+        <div className="flex items-center justify-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8 w-8 p-0"
+            onClick={() => onQuickAdjust(item.item_id, -1)}
+            disabled={item.quantity <= 0}
+            data-testid={`qty-minus-${item.item_id}`}
+          >
+            <Minus className="w-4 h-4" />
+          </Button>
+          <button
+            onClick={() => onOpenAdjust(item)}
+            className={`min-w-[3rem] px-2 py-1 rounded font-medium cursor-pointer hover:bg-muted transition-colors ${isLowStock ? "text-orange-500" : ""}`}
+            data-testid={`qty-value-${item.item_id}`}
+          >
+            {item.quantity}
+          </button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8 w-8 p-0"
+            onClick={() => onQuickAdjust(item.item_id, 1)}
+            data-testid={`qty-plus-${item.item_id}`}
+          >
+            <Plus className="w-4 h-4" />
+          </Button>
+        </div>
+      </TableCell>
+      <TableCell className="text-muted-foreground">{item.location || "-"}</TableCell>
+      <TableCell>
+        {isLowStock ? (
+          <Badge variant="outline" className="border-orange-500 text-orange-500">
+            Low Stock
+          </Badge>
+        ) : (
+          <Badge variant="outline" className="border-green-500 text-green-500">
+            In Stock
+          </Badge>
+        )}
+      </TableCell>
+      <TableCell className="text-right">
+        <div className="flex items-center justify-end gap-1">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => onOpenAdjust(item)}
+            title="Adjust quantity"
+            data-testid={`adjust-inventory-${item.item_id}`}
+          >
+            <PlusCircle className="w-4 h-4" />
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => onEdit(item)}
+            data-testid={`edit-inventory-${item.item_id}`}
+          >
+            <Edit2 className="w-4 h-4" />
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="text-destructive hover:text-destructive"
+            onClick={() => onDelete(item.item_id)}
+            data-testid={`delete-inventory-${item.item_id}`}
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+}
+
+function AdjustmentDialog({ item, amount, reason, onAmountChange, onReasonChange, onConfirm, onClose }) {
+  if (!item) return null;
+
+  const newQuantity = Math.max(0, item.quantity + amount);
+
+  return (
+    <Dialog open={!!item} onOpenChange={onClose}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Adjust Inventory Quantity</DialogTitle>
+        </DialogHeader>
+        
+        <div className="space-y-4 py-4">
+          <div className="p-3 bg-muted/30 rounded-lg">
+            <p className="font-medium">{item.name}</p>
+            <p className="text-sm text-muted-foreground font-mono">{item.sku}</p>
+          </div>
+          
+          <div className="flex items-center justify-center gap-4">
+            <div className="text-center">
+              <p className="text-sm text-muted-foreground">Current</p>
+              <p className="text-2xl font-bold">{item.quantity}</p>
+            </div>
+            <div className="text-2xl text-muted-foreground">→</div>
+            <div className="text-center">
+              <p className="text-sm text-muted-foreground">New</p>
+              <p className={`text-2xl font-bold ${newQuantity < item.quantity ? "text-red-400" : newQuantity > item.quantity ? "text-green-400" : ""}`}>
+                {newQuantity}
+              </p>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-sm font-medium mb-2 block">Adjustment Amount</label>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => onAmountChange(amount - 10)}
+                disabled={item.quantity + amount - 10 < 0}
+              >
+                -10
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => onAmountChange(amount - 1)}
+                disabled={item.quantity + amount - 1 < 0}
+              >
+                -1
+              </Button>
+              <Input
+                type="number"
+                value={amount}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value) || 0;
+                  if (item.quantity + val >= 0) {
+                    onAmountChange(val);
+                  }
+                }}
+                className="w-24 text-center"
+                data-testid="adjust-amount-input"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => onAmountChange(amount + 1)}
+              >
+                +1
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => onAmountChange(amount + 10)}
+              >
+                +10
+              </Button>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-sm font-medium mb-2 block">Reason (optional)</label>
+            <Input
+              value={reason}
+              onChange={(e) => onReasonChange(e.target.value)}
+              placeholder="e.g., Received shipment, Damaged items, Inventory count..."
+              data-testid="adjust-reason-input"
+            />
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={onConfirm}
+            disabled={amount === 0}
+            className={amount < 0 ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"}
+            data-testid="confirm-adjust-btn"
+          >
+            {amount < 0 ? (
+              <>
+                <MinusCircle className="w-4 h-4 mr-2" />
+                Remove {Math.abs(amount)}
+              </>
+            ) : (
+              <>
+                <PlusCircle className="w-4 h-4 mr-2" />
+                Add {amount}
+              </>
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
