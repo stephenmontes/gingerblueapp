@@ -361,6 +361,50 @@ async def get_order_inventory_status(
     return await check_inventory_for_order(order)
 
 
+@router.put("/orders/{order_id}/worksheet")
+async def save_worksheet_progress(
+    order_id: str,
+    data: dict,
+    user: User = Depends(get_current_user)
+):
+    """Save worksheet progress for an order (qty_done, is_complete for each item)"""
+    order = await db.orders.find_one({"order_id": order_id})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    items = order.get("items", []) or order.get("line_items", [])
+    worksheet_items = data.get("items", [])
+    
+    # Update items with worksheet progress
+    for ws_item in worksheet_items:
+        idx = ws_item.get("item_index", -1)
+        if 0 <= idx < len(items):
+            items[idx]["qty_done"] = ws_item.get("qty_done", 0)
+            items[idx]["is_complete"] = ws_item.get("is_complete", False)
+    
+    # Check if all items are complete
+    all_complete = all(item.get("is_complete", False) for item in items) if items else False
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    await db.orders.update_one(
+        {"order_id": order_id},
+        {"$set": {
+            "items": items,
+            "worksheet_updated_at": now,
+            "worksheet_updated_by": user.user_id,
+            "all_items_complete": all_complete
+        }}
+    )
+    
+    return {
+        "message": "Worksheet saved",
+        "all_complete": all_complete,
+        "items_complete": sum(1 for i in items if i.get("is_complete", False)),
+        "total_items": len(items)
+    }
+
+
 @router.get("/stages/{stage_id}/orders")
 async def get_orders_by_stage(
     stage_id: str,
