@@ -12,16 +12,16 @@ class ShipStationService:
     
     def __init__(self):
         self.api_key = os.environ.get("SHIPSTATION_API_KEY", "")
+        self.api_secret = os.environ.get("SHIPSTATION_API_SECRET", "")
         self.headers = {
             "Authorization": f"Basic {self._encode_auth()}",
             "Content-Type": "application/json"
         }
     
     def _encode_auth(self) -> str:
-        """Encode API key for Basic auth (key:key format for single-key auth)"""
+        """Encode API key and secret for Basic auth"""
         import base64
-        # ShipStation uses API Key as both username and password when only key is provided
-        auth_string = f"{self.api_key}:{self.api_key}"
+        auth_string = f"{self.api_key}:{self.api_secret}"
         return base64.b64encode(auth_string.encode()).decode()
     
     async def test_connection(self) -> Dict[str, Any]:
