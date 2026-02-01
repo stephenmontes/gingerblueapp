@@ -352,8 +352,8 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
           bVal = b.items?.length || 0;
           return sortDirection === "asc" ? aVal - bVal : bVal - aVal;
         case "total_price":
-          aVal = a.total_price || 0;
-          bVal = b.total_price || 0;
+          aVal = a.total_price || a.order_total || 0;
+          bVal = b.total_price || b.order_total || 0;
           return sortDirection === "asc" ? aVal - bVal : bVal - aVal;
         case "status":
           aVal = a.status || "";
@@ -361,8 +361,9 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
           break;
         case "created_at":
         default:
-          aVal = a.created_at || "";
-          bVal = b.created_at || "";
+          // Use order_date if available (actual order date), fallback to created_at (import date)
+          aVal = a.order_date || a.created_at || "";
+          bVal = b.order_date || b.created_at || "";
           break;
       }
       
