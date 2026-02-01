@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowRight, CheckCircle2, PackagePlus, XCircle } from "lucide-react";
 import { toast } from "sonner";
 
@@ -24,7 +25,8 @@ export function ItemRow({ item, stages, currentStageId, onUpdateQty, onMoveStage
   const progress = Math.min((qtyCompleted / qtyRequired) * 100, 100);
   const hasExtras = qtyCompleted > qtyRequired;
   const colorLabel = COLOR_LABELS[item.color] || item.color;
-  const isComplete = !nextStage && qtyCompleted >= qtyRequired;
+  const isComplete = qtyCompleted >= qtyRequired;
+  const isFinalStage = !nextStage;
   
   // Check if this is the Quality Check (final) stage
   const isQualityCheckStage = item.current_stage_id === "stage_ready";
@@ -43,6 +45,17 @@ export function ItemRow({ item, stages, currentStageId, onUpdateQty, onMoveStage
 
   function handleSave() {
     onUpdateQty(item.item_id, qty);
+  }
+
+  // Quick complete - sets qty to required amount
+  function handleQuickComplete(checked) {
+    if (checked) {
+      setQty(qtyRequired);
+      onUpdateQty(item.item_id, qtyRequired);
+    } else {
+      setQty(0);
+      onUpdateQty(item.item_id, 0);
+    }
   }
 
   async function handleSaveRejected() {
@@ -95,6 +108,17 @@ export function ItemRow({ item, stages, currentStageId, onUpdateQty, onMoveStage
     >
       {/* Top row - Item info and progress */}
       <div className="flex items-center gap-4">
+        {/* Completed Checkbox - Quick way to mark as done */}
+        <div className="flex flex-col items-center gap-1">
+          <Checkbox
+            checked={qtyCompleted >= qtyRequired}
+            onCheckedChange={handleQuickComplete}
+            className="h-6 w-6 border-2 data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
+            data-testid={`complete-checkbox-${item.item_id}`}
+          />
+          <span className="text-[10px] text-muted-foreground">Done</span>
+        </div>
+
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <span className="font-medium truncate">{item.name}</span>
@@ -140,11 +164,13 @@ export function ItemRow({ item, stages, currentStageId, onUpdateQty, onMoveStage
           </Button>
         </div>
 
+        {/* Move to Next Stage Button */}
         {nextStage && (
           <Button
             size="sm"
             onClick={handleMove}
             className="gap-1"
+            disabled={qtyCompleted < qtyRequired}
             data-testid={`move-item-${item.item_id}`}
           >
             <ArrowRight className="w-4 h-4" />
@@ -152,7 +178,7 @@ export function ItemRow({ item, stages, currentStageId, onUpdateQty, onMoveStage
           </Button>
         )}
 
-        {isComplete && !isQualityCheckStage && (
+        {isFinalStage && isComplete && !isQualityCheckStage && (
           <Badge className="bg-green-500">
             <CheckCircle2 className="w-3 h-3 mr-1" />
             Done
