@@ -47,8 +47,10 @@ export function FrameList({ batch, activeTimer, currentStageId, stages }) {
   const [localValues, setLocalValues] = useState({});
   const debounceTimers = useRef({});
 
-  // Check if user has an active timer running
-  const hasActiveTimer = activeTimer && !activeTimer.is_paused;
+  // Check if user has an active timer running FOR THIS SPECIFIC STAGE
+  const hasActiveTimer = activeTimer && 
+    !activeTimer.is_paused && 
+    activeTimer.stage_id === currentStageId;
 
   // Get current stage info
   const currentStage = stages?.find(s => s.stage_id === currentStageId);
