@@ -16,11 +16,17 @@ export default function Settings({ user }) {
   const [stages, setStages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [addStoreOpen, setAddStoreOpen] = useState(false);
+  const [editStore, setEditStore] = useState(null);
   const [syncing, setSyncing] = useState({});
+  const [testingConnection, setTestingConnection] = useState(null);
+  
+  // Form state
   const [formName, setFormName] = useState("");
   const [formPlatform, setFormPlatform] = useState("shopify");
   const [formUrl, setFormUrl] = useState("");
+  const [formShopId, setFormShopId] = useState("");
   const [formToken, setFormToken] = useState("");
+  const [formApiKey, setFormApiKey] = useState("");
 
   const API = BACKEND_URL + "/api";
 
@@ -42,24 +48,134 @@ export default function Settings({ user }) {
     fetchData();
   }, [API]);
 
+  const resetForm = () => {
+    setFormName("");
+    setFormPlatform("shopify");
+    setFormUrl("");
+    setFormShopId("");
+    setFormToken("");
+    setFormApiKey("");
+  };
+
+  const openAddStore = () => {
+    resetForm();
+    setEditStore(null);
+    setAddStoreOpen(true);
+  };
+
+  const openEditStore = (store) => {
+    setFormName(store.name || "");
+    setFormPlatform(store.platform || "shopify");
+    setFormUrl(store.shop_url || "");
+    setFormShopId(store.shop_id || "");
+    setFormToken(""); // Don't show existing token
+    setFormApiKey(store.api_key || "");
+    setEditStore(store);
+    setAddStoreOpen(true);
+  };
+
   const handleAddStore = async () => {
     if (!formName.trim()) return toast.error("Store name required");
+    
+    const storeData = {
+      name: formName,
+      platform: formPlatform,
+    };
+
+    if (formPlatform === "shopify") {
+      if (!formUrl.trim()) return toast.error("Shop URL is required");
+      if (!formToken.trim() && !editStore) return toast.error("Access Token is required");
+      storeData.shop_url = formUrl;
+      if (formToken.trim()) storeData.access_token = formToken;
+    } else if (formPlatform === "etsy") {
+      if (!formShopId.trim()) return toast.error("Shop ID is required");
+      if (!formApiKey.trim()) return toast.error("API Key is required");
+      if (!formToken.trim() && !editStore) return toast.error("Access Token is required");
+      storeData.shop_id = formShopId;
+      storeData.api_key = formApiKey;
+      if (formToken.trim()) storeData.access_token = formToken;
+    }
+
     try {
-      const res = await fetch(API + "/stores", {
+      let res;
+      if (editStore) {
+        // Update existing store
+        res = await fetch(API + "/stores/" + editStore.store_id, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(storeData),
+        });
+      } else {
+        // Create new store
+        res = await fetch(API + "/stores", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(storeData),
+        });
+      }
+
+      if (res.ok) {
+        const store = await res.json();
+        if (editStore) {
+          setStores(stores.map(s => s.store_id === store.store_id ? store : s));
+          toast.success("Store updated");
+        } else {
+          setStores([...stores, store]);
+          toast.success("Store added");
+        }
+        setAddStoreOpen(false);
+        setEditStore(null);
+        resetForm();
+      } else {
+        const error = await res.json();
+        toast.error(error.detail || "Failed to save store");
+      }
+    } catch (err) {
+      toast.error("Failed to save store");
+    }
+  };
+
+  const handleTestConnection = async () => {
+    if (formPlatform === "shopify" && (!formUrl || !formToken)) {
+      toast.error("Please enter Shop URL and Access Token to test");
+      return;
+    }
+    if (formPlatform === "etsy" && (!formShopId || !formApiKey || !formToken)) {
+      toast.error("Please enter Shop ID, API Key, and Access Token to test");
+      return;
+    }
+
+    setTestingConnection(true);
+    try {
+      // For new stores, we need to create a temporary test
+      const testData = {
+        platform: formPlatform,
+        shop_url: formUrl,
+        shop_id: formShopId,
+        api_key: formApiKey,
+        access_token: formToken,
+      };
+
+      const res = await fetch(API + "/stores/test-connection", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ name: formName, platform: formPlatform, shop_url: formUrl, access_token: formToken }),
+        body: JSON.stringify(testData),
       });
+
       if (res.ok) {
-        const store = await res.json();
-        setStores([...stores, store]);
-        setAddStoreOpen(false);
-        setFormName(""); setFormUrl(""); setFormToken("");
-        toast.success("Store added");
+        const result = await res.json();
+        toast.success(`Connected to ${result.shop_name || "store"} successfully!`);
+      } else {
+        const error = await res.json();
+        toast.error(error.detail || "Connection failed");
       }
     } catch (err) {
-      toast.error("Failed to add store");
+      toast.error("Connection test failed");
+    } finally {
+      setTestingConnection(false);
     }
   };
 
