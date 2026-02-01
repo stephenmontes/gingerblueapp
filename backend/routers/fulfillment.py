@@ -231,6 +231,85 @@ async def get_fulfillment_stages(user: User = Depends(get_current_user)):
     return stages
 
 
+@router.get("/stages/{stage_id}/items-consolidated")
+async def get_stage_items_consolidated(
+    stage_id: str,
+    user: User = Depends(get_current_user)
+):
+    """
+    Get all items from orders in a stage, expanded, sorted by SKU components,
+    and grouped with subtotals for identical items.
+    
+    Sort order: 2nd SKU group (color) -> 3rd group (number) -> 4th group (size) -> 2nd-to-last letters
+    """
+    orders = await db.orders.find(
+        {"fulfillment_stage_id": stage_id},
+        {"_id": 0}
+    ).to_list(1000)
+    
+    # Expand all items from all orders
+    all_items = []
+    for order in orders:
+        items = order.get("items", []) or order.get("line_items", [])
+        for item in items:
+            qty = item.get("qty", 1) or item.get("quantity", 1)
+            all_items.append({
+                "order_id": order.get("order_id"),
+                "order_number": order.get("order_number", order.get("order_id", "")[-8:]),
+                "customer_name": order.get("customer_name", "N/A"),
+                "sku": item.get("sku", "UNKNOWN"),
+                "name": item.get("name", "Unknown Item"),
+                "quantity": qty,
+                "sort_key": parse_sku_for_sorting(item.get("sku", "")),
+                "group_key": get_item_group_key(item)
+            })
+    
+    # Sort items by SKU components
+    all_items.sort(key=lambda x: x["sort_key"])
+    
+    # Group identical items and calculate subtotals
+    grouped_items = {}
+    for item in all_items:
+        key = item["group_key"]
+        if key not in grouped_items:
+            grouped_items[key] = {
+                "sku": item["sku"],
+                "name": item["name"],
+                "total_quantity": 0,
+                "orders": [],
+                "sort_key": item["sort_key"]
+            }
+        grouped_items[key]["total_quantity"] += item["quantity"]
+        grouped_items[key]["orders"].append({
+            "order_id": item["order_id"],
+            "order_number": item["order_number"],
+            "customer_name": item["customer_name"],
+            "quantity": item["quantity"]
+        })
+    
+    # Convert to list and sort
+    grouped_list = list(grouped_items.values())
+    grouped_list.sort(key=lambda x: x["sort_key"])
+    
+    # Remove sort_key from response
+    for item in grouped_list:
+        del item["sort_key"]
+    
+    # Also return individual items sorted (for detailed view)
+    for item in all_items:
+        del item["sort_key"]
+        del item["group_key"]
+    
+    return {
+        "stage_id": stage_id,
+        "total_orders": len(orders),
+        "total_unique_items": len(grouped_list),
+        "total_item_count": sum(g["total_quantity"] for g in grouped_list),
+        "grouped_items": grouped_list,
+        "all_items_sorted": all_items
+    }
+
+
 @router.get("/orders")
 async def get_fulfillment_orders(
     status: Optional[str] = None,
