@@ -247,13 +247,13 @@ async def create_session(request: Request, response: Response):
     await db.user_sessions.delete_many({"user_id": user_id})
     await db.user_sessions.insert_one(session_doc)
     
-    # Set cookie
+    # Set cookie - use lax samesite for better compatibility
     response.set_cookie(
         key="session_token",
         value=session_token,
         httponly=True,
         secure=True,
-        samesite="none",
+        samesite="lax",
         path="/",
         max_age=7 * 24 * 60 * 60
     )
