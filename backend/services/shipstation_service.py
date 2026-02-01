@@ -29,14 +29,16 @@ class ShipStationService:
         """Test the ShipStation API connection"""
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
+                # Use carriers endpoint to test - it's reliable and always available
                 response = await client.get(
-                    f"{self.BASE_URL}/accounts",
+                    f"{self.BASE_URL}/carriers",
                     headers=self._get_headers()
                 )
                 if response.status_code == 200:
-                    return {"success": True, "message": "Connected to ShipStation"}
+                    carriers = response.json()
+                    return {"success": True, "message": f"Connected to ShipStation ({len(carriers)} carriers available)"}
                 elif response.status_code == 401:
-                    return {"success": False, "error": "Invalid API key"}
+                    return {"success": False, "error": "Invalid API credentials"}
                 else:
                     return {"success": False, "error": f"API error: {response.status_code}"}
         except Exception as e:
