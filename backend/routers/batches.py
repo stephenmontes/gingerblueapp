@@ -293,7 +293,7 @@ async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current
         if fulfillment_logs:
             await db.fulfillment_logs.insert_many(fulfillment_logs)
     
-    return {**{k: v for k, v in batch_doc.items() if k != "_id"}, "items_count": len(production_items)}
+    return {**{k: v for k, v in batch_doc.items() if k != "_id"}, "items_count": len(frame_items)}
 
 @router.delete("/{batch_id}")
 async def delete_batch(batch_id: str, user: User = Depends(get_current_user)):
