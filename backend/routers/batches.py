@@ -683,33 +683,6 @@ async def move_all_completed_frames(
 async def get_cut_list(batch_id: str, user: User = Depends(get_current_user)):
     """Get cut list with progress for a batch - redirects to frames endpoint"""
     return await get_batch_frames(batch_id, None, user)
-async def update_cut_list(
-    batch_id: str,
-    update: CutListUpdate,
-    user: User = Depends(get_current_user)
-):
-    """Update cut list progress for a batch"""
-    batch = await db.production_batches.find_one({"batch_id": batch_id})
-    if not batch:
-        raise HTTPException(status_code=404, detail="Batch not found")
-    
-    now = datetime.now(timezone.utc).isoformat()
-    
-    # Upsert cut list progress
-    await db.cut_list_progress.update_one(
-        {"batch_id": batch_id},
-        {
-            "$set": {
-                "batch_id": batch_id,
-                "items": [item.dict() for item in update.items],
-                "updated_at": now,
-                "updated_by": user.user_id
-            }
-        },
-        upsert=True
-    )
-    
-    return {"message": "Cut list updated", "batch_id": batch_id}
 
 @router.put("/{batch_id}/cut-list/item")
 async def update_cut_list_item(
@@ -720,179 +693,37 @@ async def update_cut_list_item(
     completed: bool = False,
     user: User = Depends(get_current_user)
 ):
-    """Update a single cut list item"""
-    batch = await db.production_batches.find_one({"batch_id": batch_id})
-    if not batch:
-        raise HTTPException(status_code=404, detail="Batch not found")
-    
-    now = datetime.now(timezone.utc).isoformat()
-    key = f"{size}-{color}"
-    
-    # Get existing progress
-    progress = await db.cut_list_progress.find_one({"batch_id": batch_id})
-    
-    if progress:
-        # Update existing item or add new one
-        items = progress.get("items", [])
-        found = False
-        for item in items:
-            if item["size"] == size and item["color"] == color:
-                item["qty_made"] = qty_made
-                item["completed"] = completed
-                found = True
-                break
-        
-        if not found:
-            items.append({
-                "size": size,
-                "color": color,
-                "qty_made": qty_made,
-                "completed": completed
-            })
-        
-        await db.cut_list_progress.update_one(
-            {"batch_id": batch_id},
-            {
-                "$set": {
-                    "items": items,
-                    "updated_at": now,
-                    "updated_by": user.user_id
-                }
-            }
-        )
-    else:
-        # Create new progress document
-        await db.cut_list_progress.insert_one({
-            "batch_id": batch_id,
-            "items": [{
-                "size": size,
-                "color": color,
-                "qty_made": qty_made,
-                "completed": completed
-            }],
-            "updated_at": now,
-            "updated_by": user.user_id
-        })
-    
-    return {"message": "Item updated", "size": size, "color": color, "qty_made": qty_made, "completed": completed}
-
-
-@router.post("/{batch_id}/cut-list/move-to-assembly")
-async def move_cut_list_item_to_assembly(
-    batch_id: str,
-    size: str,
-    color: str,
-    quantity: int = 1,
-    user: User = Depends(get_current_user)
-):
-    """Move items from cut list to assembly stage"""
-    import logging
-    logging.info(f"Move to assembly: batch={batch_id}, size={size}, color={color}, qty={quantity}")
-    
-    batch = await db.production_batches.find_one({"batch_id": batch_id})
-    if not batch:
-        raise HTTPException(status_code=404, detail="Batch not found")
-    
-    # Find assembly stage
-    assembly_stage = await db.production_stages.find_one({"stage_id": "stage_assembly"})
-    if not assembly_stage:
-        assembly_stage = await db.production_stages.find_one({"name": {"$regex": "assembly", "$options": "i"}})
-    
-    if not assembly_stage:
-        raise HTTPException(status_code=404, detail="Assembly stage not found")
-    
-    now = datetime.now(timezone.utc).isoformat()
-    
-    # Find production items matching this size/color in the cutting stage
-    cutting_stage_id = "stage_cutting"
-    
-    # Query for items - use case-insensitive matching
-    query = {
+    """Update a frame's completed quantity - maps to batch_frames"""
+    # Find the frame by size/color
+    frame = await db.batch_frames.find_one({
         "batch_id": batch_id,
-        "current_stage_id": cutting_stage_id
-    }
-    
-    # Add size/color filters with case-insensitive regex for flexibility
-    if size and size != "UNK":
-        query["size"] = {"$regex": f"^{size}$", "$options": "i"}
-    if color and color != "UNK":
-        query["color"] = {"$regex": f"^{color}$", "$options": "i"}
-    
-    logging.info(f"Query: {query}")
-    
-    # Get items to move (up to the requested quantity)
-    items_to_move = await db.production_items.find(query, {"_id": 0}).to_list(quantity)
-    
-    logging.info(f"Found {len(items_to_move)} items to move")
-    
-    moved_count = 0
-    for item in items_to_move[:quantity]:
-        await db.production_items.update_one(
-            {"item_id": item["item_id"]},
-            {
-                "$set": {
-                    "current_stage_id": assembly_stage["stage_id"],
-                    "current_stage_name": assembly_stage["name"],
-                    "stage_updated_at": now,
-                    "stage_updated_by": user.user_id,
-                    "updated_at": now
-                }
-            }
-        )
-        moved_count += 1
-        
-        # Log the stage transition
-        await db.production_logs.insert_one({
-            "log_id": f"log_{uuid.uuid4().hex[:12]}",
-            "item_id": item["item_id"],
-            "batch_id": batch_id,
-            "from_stage": item.get("current_stage_id"),
-            "to_stage": assembly_stage["stage_id"],
-            "to_stage_name": assembly_stage["name"],
-            "moved_by": user.user_id,
-            "moved_by_name": user.name,
-            "quantity": 1,
-            "created_at": now
-        })
-    
-    # Update cut list progress - track moved items
-    if moved_count > 0:
-        progress = await db.cut_list_progress.find_one({"batch_id": batch_id})
-        if progress:
-            items = progress.get("items", [])
-            for item in items:
-                if item["size"].upper() == size.upper() and item["color"].upper() == color.upper():
-                    item["qty_moved_to_assembly"] = item.get("qty_moved_to_assembly", 0) + moved_count
-                    break
-            
-            await db.cut_list_progress.update_one(
-                {"batch_id": batch_id},
-                {"$set": {"items": items, "updated_at": now}}
-            )
-    
-    # Get remaining count in cutting for this size/color
-    remaining = await db.production_items.count_documents({
-        "batch_id": batch_id,
-        "current_stage_id": "stage_cutting",
         "size": {"$regex": f"^{size}$", "$options": "i"},
         "color": {"$regex": f"^{color}$", "$options": "i"}
     })
     
-    if moved_count == 0:
-        return {
-            "message": f"No items to move - all {size}-{color} items already moved or none exist",
-            "moved_count": 0,
-            "size": size,
-            "color": color,
-            "remaining_in_cutting": remaining
-        }
+    if not frame:
+        raise HTTPException(status_code=404, detail=f"Frame {size}-{color} not found")
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    update_data = {
+        "qty_completed": qty_made,
+        "updated_at": now,
+        "updated_by": user.user_id
+    }
+    
+    if completed or qty_made >= frame.get("qty_required", 0):
+        update_data["status"] = "completed"
+    
+    await db.batch_frames.update_one(
+        {"frame_id": frame["frame_id"]},
+        {"$set": update_data}
+    )
     
     return {
-        "message": f"Moved {moved_count} {size}-{color} items to Assembly",
-        "moved_count": moved_count,
+        "message": "Frame updated",
+        "frame_id": frame["frame_id"],
         "size": size,
         "color": color,
-        "to_stage": assembly_stage["name"],
-        "remaining_in_cutting": remaining
+        "qty_completed": qty_made
     }
-
