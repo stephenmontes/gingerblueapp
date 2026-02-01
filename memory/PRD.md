@@ -227,7 +227,6 @@ Build a manufacturing and fulfillment app for Shopify websites with:
 ## Prioritized Backlog
 
 ### P1 - Important (Next Tasks)
-- [ ] Print Order Functionality - Add button to print order details from worksheet
 - [ ] Order Audit Log - Track changes to order status/details
 - [ ] Bulk "Mark All Complete" per stage - One-click completion
 
