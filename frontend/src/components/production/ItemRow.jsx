@@ -39,7 +39,7 @@ export function ItemRow({ item, stages, currentStageId, onUpdateQty, onMoveStage
         <Clock className="w-5 h-5" />
         <div>
           <p className="font-medium">Start your timer first!</p>
-          <p className="text-sm opacity-80">Click "Start" at the top to begin tracking time for this stage.</p>
+          <p className="text-sm opacity-80">Click Start at the top to begin tracking time for this stage.</p>
         </div>
       </div>,
       { duration: 4000 }
