@@ -119,6 +119,17 @@ export function MyTimerControls({ activeTimer, onTimerChange, onOpenWorksheet })
         </div>
         
         <div className="flex items-center gap-2">
+          {activeTimer.order_id && onOpenWorksheet && (
+            <Button 
+              size="sm" 
+              variant="outline"
+              onClick={() => onOpenWorksheet(activeTimer.order_id)}
+              className="gap-1"
+              data-testid="open-worksheet-btn"
+            >
+              <FileText className="w-4 h-4" /> Open Worksheet
+            </Button>
+          )}
           {isPaused ? (
             <Button 
               size="sm" 
