@@ -300,16 +300,18 @@ export default function Settings({ user }) {
         </CardContent>
       </Card>
 
-      <Dialog open={addStoreOpen} onOpenChange={setAddStoreOpen}>
-        <DialogContent>
+      <Dialog open={addStoreOpen} onOpenChange={(open) => { setAddStoreOpen(open); if (!open) { setEditStore(null); resetForm(); } }}>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Add Store</DialogTitle>
-            <DialogDescription>Connect your store to sync orders</DialogDescription>
+            <DialogTitle>{editStore ? "Edit Store" : "Add Store"}</DialogTitle>
+            <DialogDescription>
+              {editStore ? "Update your store credentials" : "Connect your Shopify or Etsy store"}
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div>
               <Label>Platform</Label>
-              <Select value={formPlatform} onValueChange={setFormPlatform}>
+              <Select value={formPlatform} onValueChange={setFormPlatform} disabled={!!editStore}>
                 <SelectTrigger data-testid="platform-select"><SelectValue /></SelectTrigger>
                 <SelectContent position="popper" className="z-[9999]">
                   <SelectItem value="shopify">Shopify</SelectItem>
@@ -321,18 +323,86 @@ export default function Settings({ user }) {
               <Label>Store Name</Label>
               <Input value={formName} onChange={(e) => setFormName(e.target.value)} placeholder="My Store" data-testid="store-name-input" />
             </div>
-            <div>
-              <Label>{formPlatform === "shopify" ? "Shop URL" : "Shop ID"}</Label>
-              <Input value={formUrl} onChange={(e) => setFormUrl(e.target.value)} placeholder={formPlatform === "shopify" ? "mystore.myshopify.com" : "12345678"} data-testid="shop-url-input" />
-            </div>
-            <div>
-              <Label>Access Token</Label>
-              <Input type="password" value={formToken} onChange={(e) => setFormToken(e.target.value)} placeholder="shpat_xxx..." data-testid="access-token-input" />
-            </div>
+
+            {formPlatform === "shopify" ? (
+              <>
+                <div>
+                  <Label>Shop URL <span className="text-destructive">*</span></Label>
+                  <Input 
+                    value={formUrl} 
+                    onChange={(e) => setFormUrl(e.target.value)} 
+                    placeholder="mystore.myshopify.com" 
+                    data-testid="shop-url-input" 
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Your Shopify store URL (without https://)</p>
+                </div>
+                <div>
+                  <Label>Admin API Access Token <span className="text-destructive">*</span></Label>
+                  <Input 
+                    type="password" 
+                    value={formToken} 
+                    onChange={(e) => setFormToken(e.target.value)} 
+                    placeholder={editStore ? "Leave blank to keep existing" : "shpat_xxxxx..."} 
+                    data-testid="access-token-input" 
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Get from Shopify Admin → Settings → Apps → Develop apps
+                  </p>
+                </div>
+              </>
+            ) : (
+              <>
+                <div>
+                  <Label>Shop ID <span className="text-destructive">*</span></Label>
+                  <Input 
+                    value={formShopId} 
+                    onChange={(e) => setFormShopId(e.target.value)} 
+                    placeholder="12345678" 
+                    data-testid="shop-id-input" 
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Your Etsy Shop ID (numeric)</p>
+                </div>
+                <div>
+                  <Label>API Key (Client ID) <span className="text-destructive">*</span></Label>
+                  <Input 
+                    value={formApiKey} 
+                    onChange={(e) => setFormApiKey(e.target.value)} 
+                    placeholder="xxxxxxxxxxxxxxxx" 
+                    data-testid="api-key-input" 
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">From Etsy Developer Portal</p>
+                </div>
+                <div>
+                  <Label>Access Token <span className="text-destructive">*</span></Label>
+                  <Input 
+                    type="password" 
+                    value={formToken} 
+                    onChange={(e) => setFormToken(e.target.value)} 
+                    placeholder={editStore ? "Leave blank to keep existing" : "OAuth access token"} 
+                    data-testid="access-token-input" 
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">OAuth 2.0 access token from Etsy</p>
+                </div>
+              </>
+            )}
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setAddStoreOpen(false)}>Cancel</Button>
-            <Button onClick={handleAddStore} data-testid="save-store-btn">Add</Button>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button 
+              variant="outline" 
+              onClick={handleTestConnection}
+              disabled={testingConnection}
+              className="gap-2"
+              data-testid="test-connection-btn"
+            >
+              {testingConnection ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+              Test Connection
+            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setAddStoreOpen(false)}>Cancel</Button>
+              <Button onClick={handleAddStore} data-testid="save-store-btn">
+                {editStore ? "Update" : "Add"} Store
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
