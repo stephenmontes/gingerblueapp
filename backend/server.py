@@ -541,9 +541,23 @@ async def get_batch(batch_id: str, user: User = Depends(get_current_user)):
 
 @api_router.post("/batches")
 async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current_user)):
-    """Create a production batch from selected orders"""
+    """Create a production batch from selected orders.
+    Orders can only be added to ONE batch - no duplicates allowed."""
     if not batch_data.order_ids:
         raise HTTPException(status_code=400, detail="No orders selected")
+    
+    # Check if any orders are already in a batch
+    already_batched = await db.orders.find(
+        {"order_id": {"$in": batch_data.order_ids}, "batch_id": {"$ne": None}},
+        {"_id": 0, "order_id": 1, "batch_id": 1}
+    ).to_list(1000)
+    
+    if already_batched:
+        order_ids = [o["order_id"] for o in already_batched]
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Orders already in a batch: {', '.join(order_ids[:3])}{'...' if len(order_ids) > 3 else ''}"
+        )
     
     # Get the orders
     orders = await db.orders.find(
@@ -581,8 +595,10 @@ async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current
                 "size": parsed["size"],
                 "qty_required": qty,
                 "qty_completed": 0,
+                "qty_rejected": 0,
                 "current_stage_id": first_stage["stage_id"],
                 "status": "pending",
+                "added_to_inventory": False,
                 "created_at": datetime.now(timezone.utc).isoformat()
             }
             production_items.append(prod_item)
