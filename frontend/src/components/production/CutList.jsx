@@ -34,32 +34,16 @@ const COLOR_NAMES = {
   "UNK": "Unknown",
 };
 
-// Get color display name
 function getColorName(code) {
   return COLOR_NAMES[code] || code;
-}
-
-// Custom hook for debouncing
-function useDebounce(callback, delay) {
-  const timeoutRef = useRef(null);
-  
-  const debouncedCallback = useCallback((...args) => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-    timeoutRef.current = setTimeout(() => {
-      callback(...args);
-    }, delay);
-  }, [callback, delay]);
-  
-  return debouncedCallback;
 }
 
 export function CutList({ batch }) {
   const [cutListData, setCutListData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState({});
-  const [localValues, setLocalValues] = useState({}); // Track local input values
+  const [localValues, setLocalValues] = useState({});
+  const debounceTimers = useRef({});
 
   const fetchCutList = useCallback(async () => {
     if (!batch?.batch_id) return;
@@ -71,12 +55,11 @@ export function CutList({ batch }) {
       if (res.ok) {
         const data = await res.json();
         setCutListData(data);
-        // Initialize local values from fetched data
+        // Initialize local values
         const values = {};
         data.size_groups.forEach(group => {
           group.items.forEach(item => {
-            const key = `${item.size}-${item.color}`;
-            values[key] = item.qty_made;
+            values[`${item.size}-${item.color}`] = item.qty_made;
           });
         });
         setLocalValues(values);
@@ -92,45 +75,37 @@ export function CutList({ batch }) {
     fetchCutList();
   }, [fetchCutList]);
 
-  const saveToServer = useCallback(async (size, color, qtyMade, completed) => {
+  const saveToServer = async (size, color, qtyMade, completed) => {
     const key = `${size}-${color}`;
     setUpdating(prev => ({ ...prev, [key]: true }));
     
     try {
       const params = new URLSearchParams({
-        size,
-        color,
+        size, color,
         qty_made: qtyMade.toString(),
         completed: completed.toString()
       });
       
       const res = await fetch(
         `${API}/batches/${batch.batch_id}/cut-list/item?${params}`,
-        {
-          method: "PUT",
-          credentials: "include"
-        }
+        { method: "PUT", credentials: "include" }
       );
       
       if (res.ok) {
-        // Update cutListData state
         setCutListData(prev => {
           if (!prev) return prev;
-          
           const newGroups = prev.size_groups.map(group => {
-            const newItems = group.items.map(item => {
-              if (item.size === size && item.color === color) {
-                return { ...item, qty_made: qtyMade, completed };
-              }
-              return item;
-            });
+            const newItems = group.items.map(item => 
+              item.size === size && item.color === color
+                ? { ...item, qty_made: qtyMade, completed }
+                : item
+            );
             return {
               ...group,
               items: newItems,
               subtotal_made: newItems.reduce((sum, item) => sum + item.qty_made, 0)
             };
           });
-          
           return {
             ...prev,
             size_groups: newGroups,
@@ -145,49 +120,28 @@ export function CutList({ batch }) {
     } finally {
       setUpdating(prev => ({ ...prev, [key]: false }));
     }
-  }, [batch?.batch_id]);
+  };
 
-  // Debounced save function (500ms delay)
-  const debouncedSave = useDebounce(saveToServer, 500);
-
-  // Handle local input change - update immediately, debounce server save
   const handleQtyChange = (size, color, value, currentCompleted) => {
     const key = `${size}-${color}`;
     const qty = parseInt(value) || 0;
     
-    // Update local value immediately for responsive UI
+    // Update local value immediately
     setLocalValues(prev => ({ ...prev, [key]: qty }));
     
-    // Debounce the server save
-    debouncedSave(size, color, qty, currentCompleted);
+    // Clear existing timer for this key
+    if (debounceTimers.current[key]) {
+      clearTimeout(debounceTimers.current[key]);
+    }
+    
+    // Debounce server save (500ms)
+    debounceTimers.current[key] = setTimeout(() => {
+      saveToServer(size, color, qty, currentCompleted);
+    }, 500);
   };
 
-  // Handle completed checkbox - save immediately
   const handleCompletedChange = (size, color, checked, currentQty) => {
     saveToServer(size, color, currentQty, checked);
-  };
-              0
-            )
-          };
-        });
-      } else {
-        toast.error("Failed to update item");
-      }
-    } catch (err) {
-      toast.error("Failed to update item");
-    } finally {
-      setUpdating(prev => ({ ...prev, [key]: false }));
-    }
-  };
-
-  // Debounced qty change handler
-  const handleQtyChange = (size, color, value, currentCompleted) => {
-    const qty = parseInt(value) || 0;
-    handleUpdateItem(size, color, qty, currentCompleted);
-  };
-
-  const handleCompletedChange = (size, color, checked, currentQty) => {
-    handleUpdateItem(size, color, currentQty, checked);
   };
 
   if (loading) {
@@ -268,6 +222,7 @@ export function CutList({ batch }) {
                 group={group}
                 isLast={groupIndex === size_groups.length - 1}
                 updating={updating}
+                localValues={localValues}
                 onQtyChange={handleQtyChange}
                 onCompletedChange={handleCompletedChange}
               />
@@ -297,15 +252,14 @@ export function CutList({ batch }) {
   );
 }
 
-// Component to render rows for each size group
-function SizeGroupRows({ group, isLast, updating, onQtyChange, onCompletedChange }) {
+function SizeGroupRows({ group, isLast, updating, localValues, onQtyChange, onCompletedChange }) {
   return (
     <>
-      {/* Items in this size group */}
       {group.items.map((item, itemIndex) => {
         const key = `${item.size}-${item.color}`;
         const isUpdating = updating[key];
-        const isComplete = item.completed || item.qty_made >= item.qty_required;
+        const displayQty = localValues[key] ?? item.qty_made;
+        const isComplete = item.completed || displayQty >= item.qty_required;
         
         return (
           <TableRow
@@ -313,11 +267,11 @@ function SizeGroupRows({ group, isLast, updating, onQtyChange, onCompletedChange
             className={`border-border hover:bg-muted/30 ${isComplete ? "bg-green-500/5" : ""}`}
           >
             <TableCell className="font-medium">
-              {itemIndex === 0 ? (
+              {itemIndex === 0 && (
                 <Badge variant="outline" className="font-mono">
                   {item.size}
                 </Badge>
-              ) : null}
+              )}
             </TableCell>
             <TableCell>
               <span className="flex items-center gap-2">
@@ -332,7 +286,7 @@ function SizeGroupRows({ group, isLast, updating, onQtyChange, onCompletedChange
               <Input
                 type="number"
                 min="0"
-                value={item.qty_made}
+                value={displayQty}
                 onChange={(e) => onQtyChange(item.size, item.color, e.target.value, item.completed)}
                 className="w-20 mx-auto text-center font-mono h-8"
                 disabled={isUpdating}
@@ -344,7 +298,7 @@ function SizeGroupRows({ group, isLast, updating, onQtyChange, onCompletedChange
                 <Checkbox
                   checked={item.completed}
                   onCheckedChange={(checked) => 
-                    onCompletedChange(item.size, item.color, checked, item.qty_made)
+                    onCompletedChange(item.size, item.color, checked, displayQty)
                   }
                   disabled={isUpdating}
                   data-testid={`completed-${key}`}
@@ -359,7 +313,7 @@ function SizeGroupRows({ group, isLast, updating, onQtyChange, onCompletedChange
         );
       })}
 
-      {/* Subtotal row for this size group */}
+      {/* Subtotal row */}
       <TableRow className="bg-muted/50 border-border font-semibold">
         <TableCell colSpan={2} className="text-right">
           {group.size} Subtotal:
@@ -377,17 +331,15 @@ function SizeGroupRows({ group, isLast, updating, onQtyChange, onCompletedChange
         </TableCell>
       </TableRow>
 
-      {/* Spacer between groups */}
       {!isLast && (
         <TableRow className="h-2 border-0">
-          <TableCell colSpan={5} className="p-0"></TableCell>
+          <TableCell colSpan={5} className="p-0" />
         </TableRow>
       )}
     </>
   );
 }
 
-// Color indicator dot
 function ColorDot({ color }) {
   const colorMap = {
     "W": "#FFFFFF",
@@ -406,7 +358,7 @@ function ColorDot({ color }) {
   };
 
   const bgColor = colorMap[color] || "#6B7280";
-  const isLight = color === "W" || color === "C" || color === "Y";
+  const isLight = ["W", "C", "Y"].includes(color);
 
   return (
     <span
