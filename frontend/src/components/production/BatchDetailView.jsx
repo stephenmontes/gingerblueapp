@@ -54,7 +54,7 @@ export function BatchDetailView({
       />
 
       {/* Cut List - aggregated view by size and color */}
-      <CutList batchDetails={batchDetails} />
+      <CutList batch={batch} />
 
       <BatchOrders orders={orders} />
 
