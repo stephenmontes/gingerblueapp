@@ -10,6 +10,7 @@ import Orders from "@/pages/Orders";
 import Production from "@/pages/Production";
 import OrderFulfillment from "@/pages/OrderFulfillment";
 import FrameInventory from "@/pages/FrameInventory";
+import Products from "@/pages/Products";
 import Team from "@/pages/Team";
 import Reports from "@/pages/Reports";
 import Settings from "@/pages/Settings";
