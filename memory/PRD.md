@@ -176,6 +176,11 @@ Build a manufacturing and fulfillment app for Shopify websites with:
 - ✅ **User Stage KPIs on Production page** (Feb 2026) - Shows user's personal stats (time, qty made, avg/hr) while time tracking
 - ✅ **Order Fulfillment page** (Feb 2026) - New page with 5 stages: Orders, Print List, Mount List, Finish, Pack and Ship
 - ✅ **Batch-Fulfillment Integration** (Feb 2026) - When batch is created, orders are automatically sent to Order Fulfillment as individual items
+- ✅ **Inventory-Fulfillment Integration** (Feb 2026):
+  - Auto-deduct inventory when orders move to "Pack and Ship" stage
+  - Stock status badges showing in-stock, partial, or out-of-stock for each order
+  - Inventory allocation tracking (which inventory items used for which order)
+  - Low stock alerts banner showing orders with insufficient inventory
 
 ## Prioritized Backlog
 
