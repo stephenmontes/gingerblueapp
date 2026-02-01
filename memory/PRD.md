@@ -182,13 +182,19 @@ Build a manufacturing and fulfillment app for Shopify websites with:
   - Inventory allocation tracking (which inventory items used for which order)
   - Low stock alerts banner showing orders with insufficient inventory
 - ✅ **Print List Consolidated View** (Feb 2026):
-  - Items List view for Print List, Mount List, Finish, and Pack stages
   - Items sorted by SIZE (second-to-last SKU group): S → L → XL → HS → HX → XX → XXX
   - Unknown sizes sorted alphabetically
-  - Identical items grouped with subtotals
-  - Expandable rows showing order breakdown
   - Size column displayed prominently with badge
-  - Print-friendly layout with grand total
+- ✅ **Order Worksheet** (Feb 2026):
+  - Click order number to open worksheet dialog
+  - Items sorted by size (S → L → XL → HS → HX → XX → XXX)
+  - Qty needed and Qty done columns for each item
+  - Mark items as done checkbox
+  - Progress bar showing completion status
+  - "Mark All Done" button for quick completion
+  - "Move to Next Stage" button enabled when all items complete
+  - Save Progress button to persist worksheet state
+  - Print button for physical worksheets
 - ✅ **Batch Number in Order Fulfillment** (Feb 2026): Orders display their associated batch name/ID in the fulfillment view
 - ✅ **Batch Click-Through** (Feb 2026): Clicking batch badge navigates to Frame Production with that batch auto-selected
 
