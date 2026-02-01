@@ -356,12 +356,14 @@ function OrdersView({
           <Table>
             <TableHeader>
               <TableRow className="border-border">
-                <TableHead className="w-12">
-                  <Checkbox
-                    checked={selectedOrders.length === orders.length && orders.length > 0}
-                    onCheckedChange={onToggleAllOrders}
-                  />
-                </TableHead>
+                {stage.stage_id === "fulfill_orders" && (
+                  <TableHead className="w-12">
+                    <Checkbox
+                      checked={selectedOrders.length === orders.length && orders.length > 0}
+                      onCheckedChange={onToggleAllOrders}
+                    />
+                  </TableHead>
+                )}
                 <TableHead>Order #</TableHead>
                 <TableHead>Customer</TableHead>
                 <TableHead>Items</TableHead>
