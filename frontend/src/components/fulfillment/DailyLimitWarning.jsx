@@ -159,7 +159,7 @@ export function DailyLimitWarning({ onLogout }) {
 
   return (
     <Dialog open={showWarning} onOpenChange={() => {}}>
-      <DialogContent className="max-w-md" hideCloseButton>
+      <DialogContent className="max-w-md" hideCloseButton data-testid="daily-limit-warning-modal">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3 text-yellow-500">
             <AlertTriangle className="w-6 h-6" />
@@ -171,13 +171,13 @@ export function DailyLimitWarning({ onLogout }) {
           <div className="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm text-muted-foreground">Hours worked today</span>
-              <span className="text-2xl font-bold text-yellow-500">
+              <span className="text-2xl font-bold text-yellow-500" data-testid="hours-worked-today">
                 {hoursData.total_hours.toFixed(1)}h
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Daily limit</span>
-              <span className="text-lg font-medium">
+              <span className="text-lg font-medium" data-testid="daily-limit-value">
                 {hoursData.daily_limit}h
               </span>
             </div>
@@ -195,7 +195,7 @@ export function DailyLimitWarning({ onLogout }) {
           <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
             <Clock className="w-4 h-4 text-red-400" />
             <span className="text-sm text-red-400">
-              Auto-logout in: <strong>{formatCountdown(countdown)}</strong>
+              Auto-logout in: <strong data-testid="auto-logout-countdown">{formatCountdown(countdown)}</strong>
             </span>
           </div>
         </div>
@@ -206,6 +206,7 @@ export function DailyLimitWarning({ onLogout }) {
             onClick={handleStopWorking}
             disabled={loading}
             className="flex-1 gap-2"
+            data-testid="stop-logout-btn"
           >
             <LogOut className="w-4 h-4" />
             No, Stop & Logout
@@ -214,6 +215,7 @@ export function DailyLimitWarning({ onLogout }) {
             onClick={handleContinue}
             disabled={loading}
             className="flex-1 gap-2 bg-yellow-600 hover:bg-yellow-700"
+            data-testid="continue-working-btn"
           >
             Yes, Continue
           </Button>
