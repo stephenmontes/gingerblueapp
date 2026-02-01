@@ -142,8 +142,26 @@ export function OrderWorksheet({ order, stages, currentStage, onClose, onMoveToN
   const completedCount = items.filter(item => item.is_complete).length;
   const currentStageIndex = stages.findIndex(s => s.stage_id === currentStage?.stage_id);
   const nextStage = stages[currentStageIndex + 1];
+  
+  // Timer requirement check
+  const isOrdersStage = currentStage?.stage_id === "fulfill_orders";
+  const hasActiveTimerForStage = activeTimer && activeTimer.stage_id === currentStage?.stage_id;
+  const timerRequired = !isOrdersStage;
+
+  function requiresTimer() {
+    if (!timerRequired) return false;
+    if (!hasActiveTimerForStage) {
+      toast.error("Start a timer before completing tasks", {
+        icon: <Clock className="w-4 h-4" />,
+        description: "Timer is required to track your work"
+      });
+      return true;
+    }
+    return false;
+  }
 
   async function handleSaveProgress() {
+    if (requiresTimer()) return;
     setSaving(true);
     try {
       const res = await fetch(`${API}/fulfillment/orders/${order.order_id}/worksheet`, {
@@ -170,13 +188,38 @@ export function OrderWorksheet({ order, stages, currentStage, onClose, onMoveToN
   }
 
   async function handleMoveToNext() {
+    if (requiresTimer()) return;
     if (!allComplete) {
       toast.error("Complete all items before moving to next stage");
       return;
     }
-    await handleSaveProgress();
+    await handleSaveProgressInternal();
     onMoveToNextStage(order.order_id);
     onClose();
+  }
+  
+  // Internal save without timer check (called from handleMoveToNext after timer is validated)
+  async function handleSaveProgressInternal() {
+    setSaving(true);
+    try {
+      const res = await fetch(`${API}/fulfillment/orders/${order.order_id}/worksheet`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ items: items.map(i => ({ 
+          item_index: i.item_index, 
+          qty_done: i.qty_done, 
+          is_complete: i.is_complete 
+        }))})
+      });
+      if (res.ok) {
+        onRefresh();
+      }
+    } catch (err) {
+      console.error("Failed to save");
+    } finally {
+      setSaving(false);
+    }
   }
 
   function updateItem(index, field, value) {
