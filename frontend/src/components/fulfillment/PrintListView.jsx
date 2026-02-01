@@ -3,11 +3,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ChevronDown, ChevronRight, Printer } from "lucide-react";
+import { ChevronDown, ChevronRight, Printer, ArrowDownAZ } from "lucide-react";
 import { toast } from "sonner";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
+
+// Extract size from SKU (second-to-last group)
+function getSizeFromSku(sku) {
+  if (!sku) return "—";
+  const parts = sku.replace(/_/g, '-').replace(/\./g, '-').split('-').filter(p => p.trim());
+  if (parts.length >= 2) return parts[parts.length - 2].toUpperCase();
+  return parts[0]?.toUpperCase() || "—";
+}
 
 export function PrintListView({ stageId }) {
   const [data, setData] = useState(null);
@@ -60,6 +68,10 @@ export function PrintListView({ stageId }) {
           <span>•</span>
           <span className="font-medium">{data.total_item_count} pieces</span>
         </div>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+          <ArrowDownAZ className="w-3 h-3" />
+          <span>Sorted by size: S → L → XL → HS → HX → XX → XXX</span>
+        </div>
       </CardHeader>
       <CardContent className="p-0">
         <ItemsTable items={data.grouped_items} expandedItems={expandedItems} onToggle={toggleExpand} />
@@ -75,9 +87,10 @@ function ItemsTable({ items, expandedItems, onToggle }) {
       <TableHeader>
         <TableRow className="border-border">
           <TableHead className="w-8 print:hidden"></TableHead>
+          <TableHead>Size</TableHead>
           <TableHead>SKU</TableHead>
           <TableHead>Item Name</TableHead>
-          <TableHead className="text-right">Qty</TableHead>
+          <TableHead className="text-right">Subtotal</TableHead>
           <TableHead className="print:hidden">Orders</TableHead>
         </TableRow>
       </TableHeader>
@@ -91,6 +104,8 @@ function ItemsTable({ items, expandedItems, onToggle }) {
 }
 
 function ItemRow({ item, isExpanded, onToggle }) {
+  const size = getSizeFromSku(item.sku);
+  
   return (
     <>
       <TableRow className="border-border hover:bg-muted/50">
@@ -99,7 +114,10 @@ function ItemRow({ item, isExpanded, onToggle }) {
             {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
           </Button>
         </TableCell>
-        <TableCell className="font-mono font-medium">{item.sku}</TableCell>
+        <TableCell>
+          <Badge variant="outline" className="font-mono font-bold">{size}</Badge>
+        </TableCell>
+        <TableCell className="font-mono text-sm">{item.sku}</TableCell>
         <TableCell>{item.name}</TableCell>
         <TableCell className="text-right">
           <Badge variant="secondary" className="text-base font-bold">{item.total_quantity}</Badge>
@@ -116,7 +134,7 @@ function ItemRow({ item, isExpanded, onToggle }) {
 function ExpandedRow({ orders }) {
   return (
     <TableRow className="bg-muted/30 print:hidden">
-      <TableCell colSpan={5} className="p-0">
+      <TableCell colSpan={6} className="p-0">
         <div className="px-8 py-3 border-l-4 border-primary/30">
           <p className="text-xs text-muted-foreground mb-2">Order Breakdown:</p>
           <div className="grid grid-cols-3 gap-2">
