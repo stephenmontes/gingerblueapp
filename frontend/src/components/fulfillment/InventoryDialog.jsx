@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Package, AlertTriangle, CheckCircle, XCircle } from "lucide-react";
+import { SkuLink } from "./SkuLink";
 
 export function InventoryDialog({ order, onClose }) {
   if (!order) return null;
