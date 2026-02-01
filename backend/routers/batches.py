@@ -88,8 +88,8 @@ async def archive_batch(batch_id: str, user: User = Depends(get_current_user)):
         }}
     )
     
-    # Update orders status to completed
-    await db.orders.update_many(
+    # Update orders status to completed in fulfillment_orders
+    await db.fulfillment_orders.update_many(
         {"batch_id": batch_id},
         {"$set": {"status": "completed", "updated_at": now}}
     )
