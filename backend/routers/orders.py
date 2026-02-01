@@ -148,7 +148,7 @@ async def assign_order(order_id: str, assignee_id: str, user: User = Depends(get
 async def sync_store_orders(
     store_id: str,
     status: str = Query("any", description="Order status filter: any, open, closed"),
-    days_back: int = Query(30, ge=1, le=365, description="Number of days to sync"),
+    days_back: int = Query(365, ge=1, le=730, description="Number of days to sync"),
     user: User = Depends(get_current_user)
 ):
     """Sync orders from a Shopify or Etsy store"""
