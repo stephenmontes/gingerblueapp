@@ -50,15 +50,19 @@ export function OrderRow({
   const totalItems = items.length;
   const isAllComplete = totalItems > 0 && completedItems === totalItems;
   
+  const isOrdersStage = stage.stage_id === "fulfill_orders";
+  
   return (
     <TableRow className={`border-border ${isAllComplete ? 'bg-green-500/5' : ''}`}>
-      <TableCell>
-        <Checkbox
-          checked={isSelected}
-          onCheckedChange={onToggleSelect}
-          data-testid={`select-order-${order.order_id}`}
-        />
-      </TableCell>
+      {isOrdersStage && (
+        <TableCell>
+          <Checkbox
+            checked={isSelected}
+            onCheckedChange={onToggleSelect}
+            data-testid={`select-order-${order.order_id}`}
+          />
+        </TableCell>
+      )}
       <TableCell className="font-mono font-medium">
         {stage.stage_id !== "fulfill_orders" ? (
           <button 
