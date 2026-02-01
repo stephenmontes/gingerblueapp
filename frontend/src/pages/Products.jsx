@@ -71,7 +71,7 @@ export default function Products() {
     }
   }, []);
 
-  const loadProducts = useCallback(async () => {
+  const loadProducts = useCallback(async (sortCol = sortColumn, sortDir = sortDirection) => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
@@ -80,6 +80,8 @@ export default function Products() {
       if (selectedVendor && selectedVendor !== "all") params.append("vendor", selectedVendor);
       params.append("skip", pagination.skip.toString());
       params.append("limit", pagination.limit.toString());
+      params.append("sort_by", sortCol);
+      params.append("sort_order", sortDir);
 
       const res = await fetch(`${API}/products?${params}`, { credentials: "include" });
       if (res.ok) {
@@ -93,7 +95,7 @@ export default function Products() {
     } finally {
       setLoading(false);
     }
-  }, [searchQuery, selectedStore, selectedVendor, pagination.skip, pagination.limit]);
+  }, [searchQuery, selectedStore, selectedVendor, pagination.skip, pagination.limit, sortColumn, sortDirection]);
 
   const loadStats = useCallback(async () => {
     try {
