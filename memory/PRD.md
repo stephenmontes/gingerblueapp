@@ -215,6 +215,14 @@ Build a manufacturing and fulfillment app for Shopify websites with:
   - 15-minute auto-logout countdown if no response
   - Continue/Logout options with server-side acknowledgment tracking
   - API endpoints: `/api/fulfillment/reports/hours-by-user-date`, `/api/fulfillment/user/daily-hours-check`, `/api/fulfillment/user/acknowledge-limit-exceeded`, `/api/fulfillment/user/check-limit-acknowledged`
+- ✅ **Print Order Functionality** (Feb 2026):
+  - Print button in Order Worksheet dialog
+  - Print option in order row dropdown menu (all stages)
+  - PrintOrderDialog with professional print-friendly layout
+  - Includes: order number, date, stage, customer info, shipping address
+  - Items table sorted by size with checkboxes for completion tracking
+  - Notes section and printed timestamp footer
+  - Opens in new window for clean printing
 
 ## Prioritized Backlog
 
