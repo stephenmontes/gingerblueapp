@@ -292,6 +292,7 @@ function OrdersView({
   onMarkShipped,
   onShowInventory,
   onOpenWorksheet,
+  onPrintOrder,
   onTimerChange
 }) {
   const stageColor = stage.color || "#6366F1";
