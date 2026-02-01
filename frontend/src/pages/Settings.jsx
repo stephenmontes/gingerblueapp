@@ -399,7 +399,7 @@ export default function Settings({ user }) {
             ) : (
               <div className="p-4 rounded-lg bg-purple-400/10 border border-purple-400/20">
                 <p className="text-sm text-purple-400">
-                  Dropship stores don't require API credentials. Orders are imported via CSV upload on the Orders page.
+                  Dropship stores do not require API credentials. Orders are imported via CSV upload on the Orders page.
                 </p>
               </div>
             )}
