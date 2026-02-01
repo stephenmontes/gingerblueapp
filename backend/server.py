@@ -94,6 +94,7 @@ class Order(BaseModel):
     status: str = "pending"  # pending, in_production, completed, shipped
     current_stage_id: Optional[str] = None
     assigned_to: Optional[str] = None  # user_id
+    batch_id: Optional[str] = None  # Production batch ID
     notes: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -109,12 +110,45 @@ class OrderCreate(BaseModel):
     total_price: float = 0.0
     currency: str = "USD"
 
+# Production Batch - groups orders for frame production
+class ProductionBatch(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    batch_id: str = Field(default_factory=lambda: f"batch_{uuid.uuid4().hex[:8]}")
+    name: str
+    order_ids: List[str] = []
+    current_stage_id: str
+    assigned_to: Optional[str] = None
+    assigned_name: Optional[str] = None
+    status: str = "active"  # active, completed
+    time_started: Optional[datetime] = None
+    time_completed: Optional[datetime] = None
+    total_items: int = 0
+    items_completed: int = 0
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+# Production Item - individual item tracking within a batch
+class ProductionItem(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    item_id: str = Field(default_factory=lambda: f"item_{uuid.uuid4().hex[:8]}")
+    batch_id: str
+    order_id: str
+    sku: str
+    name: str
+    color: str
+    size: str
+    qty_required: int = 1
+    qty_completed: int = 0
+    current_stage_id: str
+    status: str = "pending"  # pending, in_progress, completed
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
 class TimeLog(BaseModel):
     model_config = ConfigDict(extra="ignore")
     log_id: str = Field(default_factory=lambda: f"log_{uuid.uuid4().hex[:12]}")
     user_id: str
     user_name: str
-    order_id: str
+    order_id: Optional[str] = None
+    batch_id: Optional[str] = None
     stage_id: str
     stage_name: str
     action: str  # started, completed, moved
@@ -125,7 +159,8 @@ class TimeLog(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class TimeLogCreate(BaseModel):
-    order_id: str
+    order_id: Optional[str] = None
+    batch_id: Optional[str] = None
     stage_id: str
     stage_name: str
     action: str
@@ -135,6 +170,15 @@ class StageMove(BaseModel):
     order_id: str
     new_stage_id: str
     items_processed: int = 1
+
+class BatchCreate(BaseModel):
+    name: str
+    order_ids: List[str]
+
+class ItemMove(BaseModel):
+    item_id: str
+    new_stage_id: str
+    qty_completed: int = 0
 
 # ============== Auth Helpers ==============
 
