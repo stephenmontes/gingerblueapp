@@ -275,11 +275,11 @@ async def upload_orders_csv(
         if sku:
             try:
                 qty = int(row.get("quantity", "1").strip() or "1")
-            except:
+            except (ValueError, TypeError):
                 qty = 1
             try:
                 price = float(row.get("price", "0").strip() or "0")
-            except:
+            except (ValueError, TypeError):
                 price = 0
             
             orders_map[order_num]["items"].append({
