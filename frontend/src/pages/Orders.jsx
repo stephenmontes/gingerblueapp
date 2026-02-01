@@ -588,6 +588,44 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
               </Card>
             );
           })}
+          
+          {/* ShipStation Sync Card */}
+          <Card className="bg-card border-blue-500/30 border">
+            <CardContent className="p-4">
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center"
+                       style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)' }}>
+                    <CloudDownload className="w-5 h-5 text-blue-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-medium">ShipStation</h3>
+                    <p className="text-xs text-muted-foreground">
+                      GingerBlueCo (Etsy)
+                    </p>
+                  </div>
+                </div>
+                <Badge variant="outline" className="text-xs text-blue-400 bg-blue-400/10 border-blue-400/20">
+                  Etsy
+                </Badge>
+              </div>
+              
+              <Button
+                size="sm"
+                className="w-full gap-2 bg-blue-600 hover:bg-blue-700"
+                onClick={() => handleShipStationSync()}
+                disabled={shipstationSyncing}
+                data-testid="sync-shipstation"
+              >
+                {shipstationSyncing ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-4 h-4" />
+                )}
+                Sync from ShipStation
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       )}
 
