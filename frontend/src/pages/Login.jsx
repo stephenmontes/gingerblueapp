@@ -85,7 +85,7 @@ export default function Login() {
         <div className="mt-8 pt-6 border-t border-border">
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
-              <p className="text-2xl font-heading font-bold text-primary">4</p>
+              <p className="text-2xl font-heading font-bold text-primary">5</p>
               <p className="text-xs text-muted-foreground">Stores</p>
             </div>
             <div>
