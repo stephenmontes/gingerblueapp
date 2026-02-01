@@ -152,14 +152,18 @@ async def sync_orders_from_shipstation(
 
 async def transform_shipstation_order(
     ss_order: Dict,
-    store_id: int,
+    shipstation_store_id: int,
     store_name: str,
-    marketplace: str
+    marketplace: str,
+    local_store_id: str = None
 ) -> Dict[str, Any]:
     """Transform a ShipStation order to our local format with product matching"""
     
     order_id = f"ord_{uuid.uuid4().hex[:12]}"
     now = datetime.now(timezone.utc).isoformat()
+    
+    # Use local store_id if provided, otherwise generate one
+    store_id = local_store_id or f"shipstation_{shipstation_store_id}"
     
     # Extract shipping address (handle None values)
     ship_to = ss_order.get("shipTo") or {}
