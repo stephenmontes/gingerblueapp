@@ -3,10 +3,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Layers } from "lucide-react";
 import { BatchHeader } from "./BatchHeader";
 import { StageTabs } from "./StageTabs";
-import { StageContent } from "./StageContent";
 import { BatchStats } from "./BatchStats";
 import { BatchOrders } from "./BatchOrders";
-import { CutList } from "./CutList";
+import { FrameList } from "./CutList";
 
 export function BatchDetailView({
   batch,
