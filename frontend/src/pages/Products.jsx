@@ -164,6 +164,42 @@ export default function Products() {
     }
   }
 
+  // Handle column sort
+  const handleSort = (column) => {
+    let newDirection;
+    if (sortColumn === column) {
+      newDirection = sortDirection === "asc" ? "desc" : "asc";
+    } else {
+      // Default to desc for date columns, asc for text columns
+      newDirection = column === "updated_at" ? "desc" : "asc";
+    }
+    setSortColumn(column);
+    setSortDirection(newDirection);
+    setPagination(prev => ({ ...prev, skip: 0 })); // Reset to first page
+    loadProducts(column, newDirection);
+  };
+
+  // Sortable header component
+  const SortableHeader = ({ column, children, className = "" }) => (
+    <TableHead 
+      className={`cursor-pointer hover:bg-muted/50 transition-colors select-none ${className}`}
+      onClick={() => handleSort(column)}
+    >
+      <div className="flex items-center gap-1">
+        {children}
+        {sortColumn === column ? (
+          sortDirection === "asc" ? (
+            <ArrowUp className="w-3 h-3" />
+          ) : (
+            <ArrowDown className="w-3 h-3" />
+          )
+        ) : (
+          <ArrowUpDown className="w-3 h-3 opacity-30" />
+        )}
+      </div>
+    </TableHead>
+  );
+
   const shopifyStores = stores.filter(s => s.platform === "shopify");
 
   return (
