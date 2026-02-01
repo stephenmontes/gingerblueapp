@@ -527,7 +527,7 @@ function SizeGroupRows({ group, isLast, updating, localValues, localRejected, on
                 )}
               </div>
             </TableCell>
-            {nextStage && (
+            {nextStage && !isQualityCheckStage && (
               <TableCell className="text-center">
                 <Button
                   size="sm"
@@ -539,6 +539,21 @@ function SizeGroupRows({ group, isLast, updating, localValues, localRejected, on
                 >
                   <ArrowRight className="w-3 h-3" />
                   {nextStage.name}
+                </Button>
+              </TableCell>
+            )}
+            {isQualityCheckStage && (
+              <TableCell className="text-center">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onMoveToInventory(frame.frame_id)}
+                  disabled={isDisabled || displayQty === 0}
+                  className="gap-1 text-xs h-7 border-green-500/30 text-green-400 hover:bg-green-500/10"
+                  data-testid={`to-inventory-${frame.frame_id}`}
+                >
+                  <PackagePlus className="w-3 h-3" />
+                  Inventory
                 </Button>
               </TableCell>
             )}
