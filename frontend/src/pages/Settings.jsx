@@ -68,7 +68,7 @@ export default function Settings({ user }) {
     setFormPlatform(store.platform || "shopify");
     setFormUrl(store.shop_url || "");
     setFormShopId(store.shop_id || "");
-    setFormToken(""); // Don't show existing token
+    setFormToken(""); // Token is not returned from API for security - leave blank to keep existing
     setFormApiKey(store.api_key || "");
     setEditStore(store);
     setAddStoreOpen(true);
