@@ -198,6 +198,7 @@ export function FrameList({ batch, activeTimer, currentStageId, stages, onRefres
         const result = await res.json();
         toast.success(result.message);
         fetchFrames(); // Refresh the list
+        onRefresh?.(); // Refresh parent to update stage counts
       } else {
         const err = await res.json();
         toast.error(err.detail || "Failed to move frame");
