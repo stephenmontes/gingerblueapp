@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { BatchList } from "../components/production/BatchList";
 import { BatchDetailView, NoBatchSelected } from "../components/production/BatchDetailView";
+import { ActiveTimerBanner } from "../components/production/ActiveTimerBanner";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = BACKEND_URL + "/api";
@@ -114,9 +115,12 @@ export default function Production() {
       <div>
         <h1 className="text-3xl font-heading font-bold">Frame Production</h1>
         <p className="text-muted-foreground mt-1">
-          Track time per stage • Each user works on their assigned stage
+          Track time per stage • One timer per user at a time
         </p>
       </div>
+
+      {/* Active Timer Banner - shows which stage user is tracking */}
+      <ActiveTimerBanner onTimerChange={loadInitialData} />
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <div className="lg:col-span-1">
