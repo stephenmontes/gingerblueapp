@@ -265,37 +265,37 @@ function AppRouter() {
       <Route
         path="/team"
         element={
-          <ProtectedRoute>
+          <RoleProtectedRoute allowedRoles={["admin", "manager"]}>
             {({ user, setUser }) => (
               <Layout user={user} setUser={setUser}>
                 <Team user={user} />
               </Layout>
             )}
-          </ProtectedRoute>
+          </RoleProtectedRoute>
         }
       />
       <Route
         path="/reports"
         element={
-          <ProtectedRoute>
+          <RoleProtectedRoute allowedRoles={["admin", "manager"]}>
             {({ user, setUser }) => (
               <Layout user={user} setUser={setUser}>
                 <Reports user={user} />
               </Layout>
             )}
-          </ProtectedRoute>
+          </RoleProtectedRoute>
         }
       />
       <Route
         path="/settings"
         element={
-          <ProtectedRoute>
+          <RoleProtectedRoute allowedRoles={["admin", "manager"]}>
             {({ user, setUser }) => (
               <Layout user={user} setUser={setUser}>
                 <Settings user={user} />
               </Layout>
             )}
-          </ProtectedRoute>
+          </RoleProtectedRoute>
         }
       />
       <Route
