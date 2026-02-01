@@ -2,84 +2,58 @@ import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Play, Pause, User } from "lucide-react";
+import { Play, Pause, Clock } from "lucide-react";
+import { toast } from "sonner";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = BACKEND_URL + "/api";
 
-export function BatchHeader({ batch, batchDetails, activeStageId, stageName, stageColor }) {
-  const [timerActive, setTimerActive] = useState(false);
-  const [startedAt, setStartedAt] = useState(null);
-  const [itemsProcessed, setItemsProcessed] = useState(0);
-
+export function BatchHeader({ batch, batchDetails, activeStageId, stageName, stageColor, onTimerChange, activeTimer }) {
   const totalItems = batchDetails ? batchDetails.total_items : 0;
   const orderCount = batch.order_ids ? batch.order_ids.length : 0;
 
-  useEffect(() => {
-    if (activeStageId) {
-      checkActiveTimer();
-    }
-  }, [activeStageId]);
-
-  async function checkActiveTimer() {
-    try {
-      const res = await fetch(API + "/stages/" + activeStageId + "/active-timer", {
-        credentials: "include",
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setTimerActive(data.active);
-        if (data.active) {
-          setStartedAt(data.started_at);
-        } else {
-          setStartedAt(null);
-        }
-      }
-    } catch (err) {
-      console.error("Failed to check timer:", err);
-    }
-  }
+  // Check if user has active timer for THIS stage
+  const hasTimerForThisStage = activeTimer && activeTimer.stage_id === activeStageId;
+  const hasTimerForOtherStage = activeTimer && activeTimer.stage_id !== activeStageId;
 
   async function handleStartTimer() {
     if (!activeStageId) return;
+    
     try {
       const res = await fetch(API + "/stages/" + activeStageId + "/start-timer", {
         method: "POST",
         credentials: "include",
       });
       if (res.ok) {
-        const data = await res.json();
-        setTimerActive(true);
-        setStartedAt(data.started_at);
-        setItemsProcessed(0);
+        toast.success("Timer started for " + stageName);
+        if (onTimerChange) onTimerChange();
+      } else {
+        const err = await res.json();
+        toast.error(err.detail || "Failed to start timer");
       }
     } catch (err) {
-      console.error("Failed to start timer:", err);
+      toast.error("Failed to start timer");
     }
   }
 
   async function handleStopTimer() {
     if (!activeStageId) return;
+    
     try {
-      const res = await fetch(
-        API + "/stages/" + activeStageId + "/stop-timer?items_processed=" + itemsProcessed,
-        {
-          method: "POST",
-          credentials: "include",
-        }
-      );
+      const res = await fetch(API + "/stages/" + activeStageId + "/stop-timer?items_processed=0", {
+        method: "POST",
+        credentials: "include",
+      });
       if (res.ok) {
-        setTimerActive(false);
-        setStartedAt(null);
+        toast.success("Timer stopped");
+        if (onTimerChange) onTimerChange();
+      } else {
+        const err = await res.json();
+        toast.error(err.detail || "Failed to stop timer");
       }
     } catch (err) {
-      console.error("Failed to stop timer:", err);
+      toast.error("Failed to stop timer");
     }
-  }
-
-  // Update items processed when items are moved
-  function incrementItemsProcessed() {
-    setItemsProcessed((prev) => prev + 1);
   }
 
   return (
@@ -108,17 +82,16 @@ export function BatchHeader({ batch, batchDetails, activeStageId, stageName, sta
             <div className="text-center">
               <p className="text-xs text-muted-foreground mb-1">Your Timer</p>
               <div className="font-mono text-2xl font-bold text-primary">
-                {timerActive ? <LiveTimer startedAt={startedAt} /> : "00:00:00"}
+                {hasTimerForThisStage ? (
+                  <LiveTimer startedAt={activeTimer.started_at} />
+                ) : (
+                  "00:00:00"
+                )}
               </div>
-              {timerActive && (
-                <Badge variant="secondary" className="text-xs mt-1">
-                  {itemsProcessed} items
-                </Badge>
-              )}
             </div>
             
             {/* Timer controls */}
-            {timerActive ? (
+            {hasTimerForThisStage ? (
               <Button
                 onClick={handleStopTimer}
                 variant="destructive"
@@ -128,6 +101,11 @@ export function BatchHeader({ batch, batchDetails, activeStageId, stageName, sta
                 <Pause className="w-4 h-4" />
                 Stop
               </Button>
+            ) : hasTimerForOtherStage ? (
+              <div className="text-sm text-orange-400 flex items-center gap-2">
+                <Clock className="w-4 h-4" />
+                Timer active on {activeTimer.stage_name}
+              </div>
             ) : (
               <Button
                 onClick={handleStartTimer}
