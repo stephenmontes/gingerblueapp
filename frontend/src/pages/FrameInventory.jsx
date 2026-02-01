@@ -178,6 +178,39 @@ export default function FrameInventory() {
     setAdjustReason("");
   }
 
+  // Rejection functions
+  function openRejectDialog(item) {
+    setRejectItem(item);
+    setRejectAmount(1);
+  }
+
+  function closeRejectDialog() {
+    setRejectItem(null);
+    setRejectAmount(1);
+  }
+
+  async function handleReject() {
+    if (!rejectItem || rejectAmount <= 0) return;
+    
+    try {
+      const res = await fetch(API + "/inventory/" + rejectItem.item_id + "/reject?quantity=" + rejectAmount, {
+        method: "POST",
+        credentials: "include"
+      });
+      if (res.ok) {
+        const result = await res.json();
+        toast.success(result.message);
+        fetchInventory();
+        closeRejectDialog();
+      } else {
+        const err = await res.json();
+        toast.error(err.detail || "Failed to reject items");
+      }
+    } catch (err) {
+      toast.error("Failed to reject items");
+    }
+  }
+
   function resetForm() {
     setFormData({
       sku: "",
