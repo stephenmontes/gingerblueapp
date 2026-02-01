@@ -1565,6 +1565,73 @@ async def adjust_inventory_quantity(
     )
     return {"message": "Quantity adjusted", "new_quantity": new_quantity}
 
+@api_router.post("/inventory/{item_id}/reject")
+async def reject_inventory_items(
+    item_id: str,
+    quantity: int,
+    user: User = Depends(get_current_user)
+):
+    """Reject items from good inventory - reduces good stock and adds to rejected inventory"""
+    item = await db.inventory.find_one({"item_id": item_id}, {"_id": 0})
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    
+    if item.get("is_rejected"):
+        raise HTTPException(status_code=400, detail="Cannot reject items from rejected inventory")
+    
+    if quantity <= 0:
+        raise HTTPException(status_code=400, detail="Quantity must be greater than 0")
+    
+    current_qty = item.get("quantity", 0)
+    if quantity > current_qty:
+        raise HTTPException(status_code=400, detail=f"Cannot reject more than available ({current_qty})")
+    
+    now = datetime.now(timezone.utc).isoformat()
+    sku_match_key = item.get("sku_match_key", item.get("sku", ""))
+    
+    # Reduce good inventory
+    new_good_qty = current_qty - quantity
+    await db.inventory.update_one(
+        {"item_id": item_id},
+        {"$set": {"quantity": new_good_qty, "updated_at": now}}
+    )
+    
+    # Add to rejected inventory (find existing or create new)
+    existing_rejected = await db.inventory.find_one({
+        "sku_match_key": sku_match_key,
+        "is_rejected": True
+    }, {"_id": 0})
+    
+    if existing_rejected:
+        await db.inventory.update_one(
+            {"item_id": existing_rejected["item_id"]},
+            {"$inc": {"quantity": quantity}, "$set": {"updated_at": now}}
+        )
+        new_rejected_qty = existing_rejected.get("quantity", 0) + quantity
+    else:
+        rej_item = {
+            "item_id": f"inv_{uuid.uuid4().hex[:8]}",
+            "sku": f"{item.get('sku', '')}-REJECTED",
+            "sku_match_key": sku_match_key,
+            "name": f"{item.get('name', '')} (REJECTED)",
+            "color": item.get("color", ""),
+            "size": item.get("size", ""),
+            "quantity": quantity,
+            "min_stock": 0,
+            "location": "Rejected Bin",
+            "is_rejected": True,
+            "created_at": now,
+            "updated_at": now
+        }
+        await db.inventory.insert_one(rej_item)
+        new_rejected_qty = quantity
+    
+    return {
+        "message": f"Rejected {quantity} frames",
+        "new_good_quantity": new_good_qty,
+        "rejected_quantity": new_rejected_qty
+    }
+
 # ============== Production Item Updates ==============
 
 @api_router.put("/items/{item_id}/reject")
