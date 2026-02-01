@@ -40,8 +40,8 @@ function getColorName(code) {
   return COLOR_NAMES[code] || code;
 }
 
-export function CutList({ batch, activeTimer }) {
-  const [cutListData, setCutListData] = useState(null);
+export function FrameList({ batch, activeTimer, currentStageId, stages }) {
+  const [framesData, setFramesData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState({});
   const [localValues, setLocalValues] = useState({});
@@ -50,72 +50,59 @@ export function CutList({ batch, activeTimer }) {
   // Check if user has an active timer running
   const hasActiveTimer = activeTimer && !activeTimer.is_paused;
 
-  const fetchCutList = useCallback(async () => {
+  // Get current stage info
+  const currentStage = stages?.find(s => s.stage_id === currentStageId);
+  const currentStageOrder = currentStage?.order ?? 0;
+  const nextStage = stages?.find(s => s.order === currentStageOrder + 1);
+
+  const fetchFrames = useCallback(async () => {
     if (!batch?.batch_id) return;
     
     try {
-      const res = await fetch(`${API}/batches/${batch.batch_id}/cut-list`, {
-        credentials: "include"
-      });
+      // Fetch frames for current stage
+      const url = currentStageId 
+        ? `${API}/batches/${batch.batch_id}/frames?stage_id=${currentStageId}`
+        : `${API}/batches/${batch.batch_id}/frames`;
+      
+      const res = await fetch(url, { credentials: "include" });
       if (res.ok) {
         const data = await res.json();
-        setCutListData(data);
+        setFramesData(data);
         // Initialize local values
         const values = {};
-        data.size_groups.forEach(group => {
-          group.items.forEach(item => {
-            values[`${item.size}-${item.color}`] = item.qty_made;
-          });
+        (data.frames || []).forEach(frame => {
+          values[frame.frame_id] = frame.qty_completed || 0;
         });
         setLocalValues(values);
       }
     } catch (err) {
-      console.error("Failed to load cut list:", err);
+      console.error("Failed to load frames:", err);
     } finally {
       setLoading(false);
     }
-  }, [batch?.batch_id]);
+  }, [batch?.batch_id, currentStageId]);
 
   useEffect(() => {
-    fetchCutList();
-  }, [fetchCutList]);
+    fetchFrames();
+  }, [fetchFrames]);
 
-  const saveToServer = async (size, color, qtyMade, completed) => {
-    const key = `${size}-${color}`;
-    setUpdating(prev => ({ ...prev, [key]: true }));
+  const saveToServer = async (frameId, qtyCompleted) => {
+    setUpdating(prev => ({ ...prev, [frameId]: true }));
     
     try {
-      const params = new URLSearchParams({
-        size, color,
-        qty_made: qtyMade.toString(),
-        completed: completed.toString()
-      });
-      
       const res = await fetch(
-        `${API}/batches/${batch.batch_id}/cut-list/item?${params}`,
+        `${API}/batches/${batch.batch_id}/frames/${frameId}?qty_completed=${qtyCompleted}`,
         { method: "PUT", credentials: "include" }
       );
       
       if (res.ok) {
-        setCutListData(prev => {
+        // Update local state
+        setFramesData(prev => {
           if (!prev) return prev;
-          const newGroups = prev.size_groups.map(group => {
-            const newItems = group.items.map(item => 
-              item.size === size && item.color === color
-                ? { ...item, qty_made: qtyMade, completed }
-                : item
-            );
-            return {
-              ...group,
-              items: newItems,
-              subtotal_made: newItems.reduce((sum, item) => sum + item.qty_made, 0)
-            };
-          });
-          return {
-            ...prev,
-            size_groups: newGroups,
-            grand_total_made: newGroups.reduce((sum, g) => sum + g.subtotal_made, 0)
-          };
+          const newFrames = prev.frames.map(f => 
+            f.frame_id === frameId ? { ...f, qty_completed: qtyCompleted } : f
+          );
+          return { ...prev, frames: newFrames };
         });
       } else {
         toast.error("Failed to save");
@@ -123,70 +110,78 @@ export function CutList({ batch, activeTimer }) {
     } catch (err) {
       toast.error("Failed to save");
     } finally {
-      setUpdating(prev => ({ ...prev, [key]: false }));
+      setUpdating(prev => ({ ...prev, [frameId]: false }));
     }
   };
 
-  const handleQtyChange = (size, color, value, currentCompleted) => {
-    const key = `${size}-${color}`;
+  const handleQtyChange = (frameId, value) => {
     const qty = parseInt(value) || 0;
     
     // Update local value immediately
-    setLocalValues(prev => ({ ...prev, [key]: qty }));
+    setLocalValues(prev => ({ ...prev, [frameId]: qty }));
     
-    // Clear existing timer for this key
-    if (debounceTimers.current[key]) {
-      clearTimeout(debounceTimers.current[key]);
+    // Clear existing timer
+    if (debounceTimers.current[frameId]) {
+      clearTimeout(debounceTimers.current[frameId]);
     }
     
     // Debounce server save (500ms)
-    debounceTimers.current[key] = setTimeout(() => {
-      saveToServer(size, color, qty, currentCompleted);
+    debounceTimers.current[frameId] = setTimeout(() => {
+      saveToServer(frameId, qty);
     }, 500);
   };
 
-  const handleCompletedChange = (size, color, checked, currentQty, qtyRequired) => {
-    // When marking as done, auto-fill qty_made to match required amount
-    const newQty = checked ? qtyRequired : currentQty;
-    
-    // Update local value if checked
-    if (checked) {
-      const key = `${size}-${color}`;
-      setLocalValues(prev => ({ ...prev, [key]: newQty }));
-    }
-    
-    saveToServer(size, color, newQty, checked);
+  const handleCompletedChange = (frame, checked) => {
+    const newQty = checked ? frame.qty_required : 0;
+    setLocalValues(prev => ({ ...prev, [frame.frame_id]: newQty }));
+    saveToServer(frame.frame_id, newQty);
   };
 
-  const handleMoveToAssembly = async (size, color, quantity) => {
-    const key = `${size}-${color}`;
-    setUpdating(prev => ({ ...prev, [key]: true }));
+  const handleMoveToNextStage = async (frameId) => {
+    if (!nextStage) return;
+    
+    setUpdating(prev => ({ ...prev, [frameId]: true }));
     
     try {
-      const params = new URLSearchParams({
-        size,
-        color,
-        quantity: quantity.toString()
-      });
-      
       const res = await fetch(
-        `${API}/batches/${batch.batch_id}/cut-list/move-to-assembly?${params}`,
+        `${API}/batches/${batch.batch_id}/frames/${frameId}/move?target_stage_id=${nextStage.stage_id}`,
         { method: "POST", credentials: "include" }
       );
       
       if (res.ok) {
         const result = await res.json();
         toast.success(result.message);
-        // Refresh cut list data
-        fetchCutList();
+        fetchFrames(); // Refresh the list
       } else {
         const err = await res.json();
-        toast.error(err.detail || "Failed to move items");
+        toast.error(err.detail || "Failed to move frame");
       }
     } catch (err) {
-      toast.error("Failed to move items");
+      toast.error("Failed to move frame");
     } finally {
-      setUpdating(prev => ({ ...prev, [key]: false }));
+      setUpdating(prev => ({ ...prev, [frameId]: false }));
+    }
+  };
+
+  const handleMoveAllCompleted = async () => {
+    if (!nextStage || !currentStageId) return;
+    
+    try {
+      const res = await fetch(
+        `${API}/batches/${batch.batch_id}/frames/move-all?from_stage_id=${currentStageId}`,
+        { method: "POST", credentials: "include" }
+      );
+      
+      if (res.ok) {
+        const result = await res.json();
+        toast.success(result.message);
+        fetchFrames();
+      } else {
+        const err = await res.json();
+        toast.error(err.detail || "Failed to move frames");
+      }
+    } catch (err) {
+      toast.error("Failed to move frames");
     }
   };
 
@@ -196,7 +191,7 @@ export function CutList({ batch, activeTimer }) {
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Scissors className="w-5 h-5" />
-            Cut List
+            Frame List
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -208,41 +203,45 @@ export function CutList({ batch, activeTimer }) {
     );
   }
 
-  if (!cutListData || cutListData.size_groups.length === 0) {
+  const frames = framesData?.frames || [];
+  const sizeGroups = framesData?.size_groups || [];
+
+  if (frames.length === 0) {
     return (
       <Card className="bg-card border-border">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Scissors className="w-5 h-5" />
-            Cut List
+            Frame List - {currentStage?.name || "All Stages"}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-center py-8 text-muted-foreground">
             <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            <p>No items in batch</p>
+            <p>No frames in this stage</p>
           </div>
         </CardContent>
       </Card>
     );
   }
 
-  const { size_groups, grand_total_required, grand_total_made } = cutListData;
-  const progressPercent = grand_total_required > 0 
-    ? Math.round((grand_total_made / grand_total_required) * 100) 
+  const grandTotalRequired = framesData?.grand_total_required || 0;
+  const grandTotalCompleted = framesData?.grand_total_completed || 0;
+  const progressPercent = grandTotalRequired > 0 
+    ? Math.round((grandTotalCompleted / grandTotalRequired) * 100) 
     : 0;
 
   return (
-    <Card className="bg-card border-border" data-testid="cut-list">
+    <Card className="bg-card border-border" data-testid="frame-list">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-lg">
             <Scissors className="w-5 h-5" />
-            Cut List
+            Frame List - {currentStage?.name || "All"}
           </div>
           <div className="flex items-center gap-3">
             <Badge variant="outline" className="text-sm px-3 py-1">
-              Made: {grand_total_made} / {grand_total_required}
+              Done: {grandTotalCompleted} / {grandTotalRequired}
             </Badge>
             <Badge 
               variant={progressPercent >= 100 ? "default" : "secondary"} 
@@ -255,14 +254,22 @@ export function CutList({ batch, activeTimer }) {
         
         {/* Progress Bar */}
         <div className="mt-3">
-          <Progress 
-            value={progressPercent} 
-            className="h-3"
-          />
-          <p className="text-xs text-muted-foreground mt-1 text-right">
-            {grand_total_made} of {grand_total_required} items completed
-          </p>
+          <Progress value={progressPercent} className="h-3" />
         </div>
+
+        {/* Move All Button */}
+        {nextStage && grandTotalCompleted > 0 && (
+          <div className="mt-3 flex justify-end">
+            <Button
+              onClick={handleMoveAllCompleted}
+              disabled={!hasActiveTimer}
+              className="gap-2"
+            >
+              <ArrowRight className="w-4 h-4" />
+              Move All Completed to {nextStage.name}
+            </Button>
+          </div>
+        )}
       </CardHeader>
       <CardContent>
         {/* Timer warning if not active */}
@@ -279,23 +286,24 @@ export function CutList({ batch, activeTimer }) {
               <TableHead className="w-20">Size</TableHead>
               <TableHead className="w-28">Color</TableHead>
               <TableHead className="text-center w-24">Required</TableHead>
-              <TableHead className="text-center w-28">Qty Made</TableHead>
+              <TableHead className="text-center w-28">Completed</TableHead>
               <TableHead className="text-center w-24">Done</TableHead>
-              <TableHead className="text-center w-36">Action</TableHead>
+              {nextStage && <TableHead className="text-center w-36">Action</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
-            {size_groups.map((group, groupIndex) => (
+            {sizeGroups.map((group, groupIndex) => (
               <SizeGroupRows
                 key={group.size}
                 group={group}
-                isLast={groupIndex === size_groups.length - 1}
+                isLast={groupIndex === sizeGroups.length - 1}
                 updating={updating}
                 localValues={localValues}
                 onQtyChange={handleQtyChange}
                 onCompletedChange={handleCompletedChange}
-                onMoveToAssembly={handleMoveToAssembly}
+                onMoveToNextStage={handleMoveToNextStage}
                 hasActiveTimer={hasActiveTimer}
+                nextStage={nextStage}
               />
             ))}
             
@@ -305,17 +313,17 @@ export function CutList({ batch, activeTimer }) {
                 Grand Total:
               </TableCell>
               <TableCell className="text-center font-mono text-base">
-                {grand_total_required}
+                {grandTotalRequired}
               </TableCell>
               <TableCell className="text-center font-mono text-base text-primary">
-                {grand_total_made}
+                {grandTotalCompleted}
               </TableCell>
               <TableCell className="text-center">
-                {grand_total_made >= grand_total_required && (
+                {grandTotalCompleted >= grandTotalRequired && (
                   <Check className="w-5 h-5 text-green-500 mx-auto" />
                 )}
               </TableCell>
-              <TableCell></TableCell>
+              {nextStage && <TableCell></TableCell>}
             </TableRow>
           </TableBody>
         </Table>
@@ -324,57 +332,55 @@ export function CutList({ batch, activeTimer }) {
   );
 }
 
-function SizeGroupRows({ group, isLast, updating, localValues, onQtyChange, onCompletedChange, onMoveToAssembly, hasActiveTimer }) {
+function SizeGroupRows({ group, isLast, updating, localValues, onQtyChange, onCompletedChange, onMoveToNextStage, hasActiveTimer, nextStage }) {
   return (
     <>
-      {group.items.map((item, itemIndex) => {
-        const key = `${item.size}-${item.color}`;
-        const isUpdating = updating[key];
-        const displayQty = localValues[key] ?? item.qty_made;
-        const isComplete = item.completed || displayQty >= item.qty_required;
+      {group.frames.map((frame, frameIndex) => {
+        const isUpdating = updating[frame.frame_id];
+        const displayQty = localValues[frame.frame_id] ?? frame.qty_completed ?? 0;
+        const isComplete = displayQty >= frame.qty_required;
         const isDisabled = isUpdating || !hasActiveTimer;
         
         return (
           <TableRow
-            key={key}
+            key={frame.frame_id}
             className={`border-border hover:bg-muted/30 ${isComplete ? "bg-green-500/5" : ""}`}
           >
             <TableCell className="font-medium">
-              {itemIndex === 0 && (
+              {frameIndex === 0 && (
                 <Badge variant="outline" className="font-mono">
-                  {item.size}
+                  {frame.size}
                 </Badge>
               )}
             </TableCell>
             <TableCell>
               <span className="flex items-center gap-2">
-                <ColorDot color={item.color} />
-                {getColorName(item.color)}
+                <ColorDot color={frame.color} />
+                {getColorName(frame.color)}
               </span>
             </TableCell>
             <TableCell className="text-center font-mono">
-              {item.qty_required}
+              {frame.qty_required}
             </TableCell>
             <TableCell className="text-center">
               <Input
                 type="number"
                 min="0"
+                max={frame.qty_required}
                 value={displayQty}
-                onChange={(e) => onQtyChange(item.size, item.color, e.target.value, item.completed)}
+                onChange={(e) => onQtyChange(frame.frame_id, e.target.value)}
                 className={`w-20 mx-auto text-center font-mono h-8 ${!hasActiveTimer ? "opacity-50 cursor-not-allowed" : ""}`}
                 disabled={isDisabled}
-                data-testid={`qty-made-${key}`}
+                data-testid={`qty-${frame.frame_id}`}
               />
             </TableCell>
             <TableCell className="text-center">
               <div className="flex items-center justify-center">
                 <Checkbox
-                  checked={item.completed}
-                  onCheckedChange={(checked) => 
-                    onCompletedChange(item.size, item.color, checked, displayQty, item.qty_required)
-                  }
+                  checked={isComplete}
+                  onCheckedChange={(checked) => onCompletedChange(frame, checked)}
                   disabled={isDisabled}
-                  data-testid={`completed-${key}`}
+                  data-testid={`done-${frame.frame_id}`}
                   className={`h-5 w-5 ${!hasActiveTimer ? "opacity-50 cursor-not-allowed" : ""}`}
                 />
                 {isUpdating && (
@@ -382,19 +388,21 @@ function SizeGroupRows({ group, isLast, updating, localValues, onQtyChange, onCo
                 )}
               </div>
             </TableCell>
-            <TableCell className="text-center">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => onMoveToAssembly(item.size, item.color, item.completed ? item.qty_required : displayQty)}
-                disabled={isDisabled || (displayQty === 0 && !item.completed)}
-                className="gap-1 text-xs h-7"
-                data-testid={`move-assembly-${key}`}
-              >
-                <ArrowRight className="w-3 h-3" />
-                Move {item.completed ? item.qty_required : displayQty}
-              </Button>
-            </TableCell>
+            {nextStage && (
+              <TableCell className="text-center">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onMoveToNextStage(frame.frame_id)}
+                  disabled={isDisabled || !isComplete}
+                  className="gap-1 text-xs h-7"
+                  data-testid={`move-${frame.frame_id}`}
+                >
+                  <ArrowRight className="w-3 h-3" />
+                  {nextStage.name}
+                </Button>
+              </TableCell>
+            )}
           </TableRow>
         );
       })}
@@ -408,19 +416,19 @@ function SizeGroupRows({ group, isLast, updating, localValues, onQtyChange, onCo
           {group.subtotal_required}
         </TableCell>
         <TableCell className="text-center font-mono text-primary">
-          {group.subtotal_made}
+          {group.subtotal_completed}
         </TableCell>
         <TableCell className="text-center">
-          {group.subtotal_made >= group.subtotal_required && (
+          {group.subtotal_completed >= group.subtotal_required && (
             <Check className="w-4 h-4 text-green-500 mx-auto" />
           )}
         </TableCell>
-        <TableCell></TableCell>
+        {nextStage && <TableCell></TableCell>}
       </TableRow>
 
       {!isLast && (
         <TableRow className="h-2 border-0">
-          <TableCell colSpan={6} className="p-0" />
+          <TableCell colSpan={nextStage ? 6 : 5} className="p-0" />
         </TableRow>
       )}
     </>
@@ -457,3 +465,6 @@ function ColorDot({ color }) {
     />
   );
 }
+
+// Export old name for compatibility
+export { FrameList as CutList };
