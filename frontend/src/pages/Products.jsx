@@ -48,8 +48,8 @@ export default function Products() {
   
   // Filters
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedStore, setSelectedStore] = useState("");
-  const [selectedVendor, setSelectedVendor] = useState("");
+  const [selectedStore, setSelectedStore] = useState("all");
+  const [selectedVendor, setSelectedVendor] = useState("all");
   const [pagination, setPagination] = useState({ skip: 0, limit: 50, total: 0 });
 
   const loadStores = useCallback(async () => {
