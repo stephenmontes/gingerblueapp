@@ -17,9 +17,10 @@ import {
   Users,
   AlertTriangle,
   RefreshCw,
+  Layers,
 } from "lucide-react";
 import { toast } from "sonner";
-import { KpiCards, QualityTab, UsersTab, StagesTab, OverviewTab } from "@/components/reports";
+import { KpiCards, QualityTab, UsersTab, StagesTab, OverviewTab, StageUserKpis } from "@/components/reports";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -144,10 +145,14 @@ export default function Reports() {
 
       {/* Tabs */}
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="bg-muted/50">
+        <TabsList className="bg-muted/50 flex-wrap h-auto gap-1">
           <TabsTrigger value="overview" className="gap-2" data-testid="tab-overview">
             <BarChart3 className="w-4 h-4" />
             Overview
+          </TabsTrigger>
+          <TabsTrigger value="stage-kpis" className="gap-2" data-testid="tab-stage-kpis">
+            <Layers className="w-4 h-4" />
+            Stage KPIs
           </TabsTrigger>
           <TabsTrigger value="quality" className="gap-2" data-testid="tab-quality">
             <AlertTriangle className="w-4 h-4" />
@@ -165,6 +170,10 @@ export default function Reports() {
 
         <TabsContent value="overview" className="space-y-6">
           <OverviewTab dashboardStats={dashboardStats} />
+        </TabsContent>
+
+        <TabsContent value="stage-kpis" className="space-y-6">
+          <StageUserKpis />
         </TabsContent>
 
         <TabsContent value="quality" className="space-y-6">
