@@ -316,6 +316,9 @@ class ManufacturingAPITester:
             self.test_user_stats,
             self.test_demo_data_seeding,
             self.test_time_logs_endpoints,
+            self.test_store_sync_endpoints,
+            self.test_webhook_endpoints,
+            self.test_export_endpoints,
         ]
         
         for test in tests:
