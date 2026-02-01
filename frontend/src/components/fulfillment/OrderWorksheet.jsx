@@ -66,14 +66,16 @@ export function OrderWorksheet({ order, stages, currentStage, onClose, onMoveToN
   }
 
   async function handleStartTimer() {
-    if (!currentStage) return;
+    if (!currentStage || !order) return;
     setTimerLoading(true);
     try {
-      const res = await fetch(`${API}/fulfillment/stages/${currentStage.stage_id}/start-timer`, {
-        method: "POST", credentials: "include"
-      });
+      const orderNum = order.order_number || order.order_id?.slice(-8);
+      const res = await fetch(
+        `${API}/fulfillment/stages/${currentStage.stage_id}/start-timer?order_id=${order.order_id}&order_number=${encodeURIComponent(orderNum)}`, 
+        { method: "POST", credentials: "include" }
+      );
       if (res.ok) {
-        toast.success(`Timer started for ${currentStage.name}`);
+        toast.success(`Timer started for Order #${orderNum}`);
         checkActiveTimer();
         onTimerChange?.();
       } else {
