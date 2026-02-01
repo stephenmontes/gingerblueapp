@@ -67,11 +67,26 @@ async def get_orders(
     # Calculate skip for pagination
     skip = (page - 1) * page_size
     
+    # Determine sort direction (1 for asc, -1 for desc)
+    sort_direction = 1 if sort_order == "asc" else -1
+    
+    # Map sort_by to actual field names
+    sort_field_map = {
+        "order_date": "order_date",
+        "created_at": "order_date",  # Use order_date as primary date field
+        "order_number": "order_number",
+        "store_name": "store_name",
+        "customer_name": "customer_name",
+        "total_price": "total_price",
+        "status": "status"
+    }
+    primary_sort_field = sort_field_map.get(sort_by, "order_date")
+    
     # Fetch from fulfillment_orders with pagination
-    # Sort by order_date (actual order date) descending, then by created_at as fallback
+    # Sort by requested field, with created_at as secondary sort for consistency
     orders = await db.fulfillment_orders.find(query, {"_id": 0}).sort([
-        ("order_date", -1),
-        ("created_at", -1)
+        (primary_sort_field, sort_direction),
+        ("created_at", sort_direction)
     ]).skip(skip).limit(page_size).to_list(page_size)
     
     return {
