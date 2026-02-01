@@ -818,6 +818,110 @@ PO-12346,Jane Doe,jane@example.com,FRAME-5X7-BLK,3,Black Frame 5x7,19.99,456 Oak
           )}
         </div>
       )}
+
+      {/* CSV Upload Dialog */}
+      <Dialog open={csvUploadOpen} onOpenChange={setCsvUploadOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileSpreadsheet className="w-5 h-5 text-primary" />
+              Upload Orders from CSV
+            </DialogTitle>
+            <DialogDescription>
+              Upload a CSV file to import dropship orders. Multiple items per order are supported.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {/* Store Selection */}
+            <div>
+              <Label>Select Store <span className="text-destructive">*</span></Label>
+              <Select value={csvStoreId} onValueChange={setCsvStoreId}>
+                <SelectTrigger data-testid="csv-store-select">
+                  <SelectValue placeholder="Select a store for these orders" />
+                </SelectTrigger>
+                <SelectContent>
+                  {stores.map((store) => (
+                    <SelectItem key={store.store_id} value={store.store_id}>
+                      <div className="flex items-center gap-2">
+                        <span>{store.name}</span>
+                        <Badge variant="outline" className="text-xs capitalize">{store.platform}</Badge>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1">
+                Choose the store these orders belong to (e.g., Antique Farmhouse)
+              </p>
+            </div>
+
+            {/* File Upload */}
+            <div>
+              <Label>CSV File <span className="text-destructive">*</span></Label>
+              <div className="mt-2">
+                <Input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".csv"
+                  onChange={handleFileSelect}
+                  className="cursor-pointer"
+                  data-testid="csv-file-input"
+                />
+              </div>
+              {csvFile && (
+                <p className="text-sm text-green-500 mt-2 flex items-center gap-1">
+                  <FileSpreadsheet className="w-4 h-4" />
+                  {csvFile.name} ({(csvFile.size / 1024).toFixed(1)} KB)
+                </p>
+              )}
+            </div>
+
+            {/* Template Download */}
+            <div className="bg-muted/50 rounded-lg p-4">
+              <p className="text-sm font-medium mb-2">Need a template?</p>
+              <p className="text-xs text-muted-foreground mb-3">
+                Download our CSV template with sample data and all supported columns.
+              </p>
+              <Button variant="outline" size="sm" onClick={downloadCsvTemplate} className="gap-2">
+                <Download className="w-4 h-4" />
+                Download Template
+              </Button>
+            </div>
+
+            {/* Column Info */}
+            <div className="text-xs text-muted-foreground">
+              <p className="font-medium mb-1">Required columns:</p>
+              <p>order_number, customer_name, sku</p>
+              <p className="font-medium mt-2 mb-1">Optional columns:</p>
+              <p>customer_email, quantity, item_name, price, shipping_address1, shipping_city, shipping_state, shipping_zip, shipping_country, notes</p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setCsvUploadOpen(false); setCsvFile(null); setCsvStoreId(""); }}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleCsvUpload} 
+              disabled={!csvFile || !csvStoreId || uploading}
+              data-testid="upload-csv-submit"
+            >
+              {uploading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <Upload className="w-4 h-4 mr-2" />
+                  Upload Orders
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
