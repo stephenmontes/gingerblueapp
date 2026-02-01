@@ -69,7 +69,7 @@ export function BatchDetailView({
       <BatchStats batchId={batch.batch_id} />
 
       {/* Cut List - aggregated view by size and color */}
-      <CutList batch={batch} />
+      <CutList batch={batch} activeTimer={activeTimer} />
 
       <StageContent
         stageData={currentStageData}
