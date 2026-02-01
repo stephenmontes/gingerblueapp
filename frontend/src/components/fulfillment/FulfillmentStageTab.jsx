@@ -303,8 +303,8 @@ function OrdersView({
                 <TableHead>Order #</TableHead>
                 <TableHead>Customer</TableHead>
                 <TableHead>Items</TableHead>
+                <TableHead>Batch</TableHead>
                 <TableHead>Stock Status</TableHead>
-                <TableHead>Store</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
