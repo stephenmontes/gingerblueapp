@@ -22,6 +22,7 @@ import { OrderRow } from "./OrderRow";
 import { InventoryDialog } from "./InventoryDialog";
 import { OrderWorksheet } from "./OrderWorksheet";
 import { ActiveWorkersBanner } from "./ActiveWorkersBanner";
+import { MyTimerControls } from "./MyTimerControls";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
