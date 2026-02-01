@@ -57,12 +57,12 @@ export default function Orders({ user }) {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [storeFilter, setStoreFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("active"); // Default to active orders
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [selectedOrders, setSelectedOrders] = useState([]);
   const [createBatchOpen, setCreateBatchOpen] = useState(false);
   const [batchName, setBatchName] = useState("");
-  const [showOnlyUnbatched, setShowOnlyUnbatched] = useState(true);
+  const [showOnlyUnbatched, setShowOnlyUnbatched] = useState(false); // Show all orders by default
   const [syncing, setSyncing] = useState(null);
   const [syncStatus, setSyncStatus] = useState([]);
   const [shipstationSyncing, setShipstationSyncing] = useState(false);
