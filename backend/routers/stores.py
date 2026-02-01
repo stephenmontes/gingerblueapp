@@ -19,7 +19,9 @@ class TestConnectionRequest(BaseModel):
     shop_url: Optional[str] = None
     shop_id: Optional[str] = None
     api_key: Optional[str] = None
-    access_token: str
+    access_token: Optional[str] = None
+    store_id: Optional[str] = None
+    use_existing_token: Optional[bool] = False
 
 
 @router.get("")
