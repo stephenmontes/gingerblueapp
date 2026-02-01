@@ -189,8 +189,8 @@ export default function Settings({ user }) {
             <div>
               <Label>Platform</Label>
               <Select value={formPlatform} onValueChange={setFormPlatform}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
+                <SelectTrigger data-testid="platform-select"><SelectValue /></SelectTrigger>
+                <SelectContent position="popper" className="z-[9999]">
                   <SelectItem value="shopify">Shopify</SelectItem>
                   <SelectItem value="etsy">Etsy</SelectItem>
                 </SelectContent>
