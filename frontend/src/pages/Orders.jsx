@@ -60,6 +60,7 @@ export default function Orders({ user }) {
   const [showOnlyUnbatched, setShowOnlyUnbatched] = useState(true);
   const [syncing, setSyncing] = useState(null);
   const [syncStatus, setSyncStatus] = useState([]);
+  const [shipstationSyncing, setShipstationSyncing] = useState(false);
   
   // Sorting state
   const [sortColumn, setSortColumn] = useState("created_at");
