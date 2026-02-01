@@ -197,3 +197,216 @@ async def get_sync_status(user: User = Depends(get_current_user)):
         })
     
     return result
+
+
+@router.post("/upload-csv/{store_id}")
+async def upload_orders_csv(
+    store_id: str,
+    file: UploadFile = File(...),
+    user: User = Depends(get_current_user)
+):
+    """Upload orders from a CSV file for dropship stores
+    
+    Expected CSV columns:
+    - order_number (required): Order/PO number
+    - customer_name (required): Customer name
+    - customer_email: Customer email
+    - sku (required): Product SKU
+    - quantity: Quantity (default 1)
+    - item_name: Product name
+    - price: Item price
+    - shipping_address1: Address line 1
+    - shipping_city: City
+    - shipping_state: State/Province
+    - shipping_zip: ZIP/Postal code
+    - shipping_country: Country
+    - notes: Order notes
+    """
+    if user.role not in ["admin", "manager"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    # Verify store exists
+    store = await db.stores.find_one({"store_id": store_id})
+    if not store:
+        raise HTTPException(status_code=404, detail="Store not found")
+    
+    store_name = store.get("name", "")
+    platform = store.get("platform", "dropship")
+    
+    # Read CSV content
+    try:
+        content = await file.read()
+        decoded = content.decode("utf-8-sig")  # Handle BOM
+        reader = csv.DictReader(io.StringIO(decoded))
+        rows = list(reader)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to parse CSV: {str(e)}")
+    
+    if not rows:
+        raise HTTPException(status_code=400, detail="CSV file is empty")
+    
+    # Group rows by order_number
+    orders_map = {}
+    for row in rows:
+        order_num = row.get("order_number", "").strip()
+        if not order_num:
+            continue
+        
+        if order_num not in orders_map:
+            orders_map[order_num] = {
+                "order_number": order_num,
+                "customer_name": row.get("customer_name", "").strip() or "Unknown Customer",
+                "customer_email": row.get("customer_email", "").strip(),
+                "shipping_address": {
+                    "name": row.get("customer_name", "").strip(),
+                    "address1": row.get("shipping_address1", "").strip(),
+                    "address2": row.get("shipping_address2", "").strip(),
+                    "city": row.get("shipping_city", "").strip(),
+                    "province": row.get("shipping_state", "").strip(),
+                    "zip": row.get("shipping_zip", "").strip(),
+                    "country": row.get("shipping_country", "").strip() or "US",
+                },
+                "notes": row.get("notes", "").strip(),
+                "items": []
+            }
+        
+        # Add item to order
+        sku = row.get("sku", "").strip()
+        if sku:
+            try:
+                qty = int(row.get("quantity", "1").strip() or "1")
+            except:
+                qty = 1
+            try:
+                price = float(row.get("price", "0").strip() or "0")
+            except:
+                price = 0
+            
+            orders_map[order_num]["items"].append({
+                "line_item_id": f"csv_{uuid.uuid4().hex[:8]}",
+                "sku": sku,
+                "name": row.get("item_name", "").strip() or sku,
+                "title": row.get("item_name", "").strip() or sku,
+                "quantity": qty,
+                "qty": qty,
+                "qty_done": 0,
+                "price": price,
+            })
+    
+    # Create/update orders
+    now = datetime.now(timezone.utc).isoformat()
+    result = {
+        "success": True,
+        "store_id": store_id,
+        "store_name": store_name,
+        "total_rows": len(rows),
+        "total_orders": len(orders_map),
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "errors": []
+    }
+    
+    for order_num, order_data in orders_map.items():
+        try:
+            # Check if order exists
+            existing = await db.fulfillment_orders.find_one({
+                "store_id": store_id,
+                "order_number": order_num
+            })
+            
+            if existing:
+                # Update existing - add new items, update existing
+                existing_skus = {i.get("sku"): i for i in existing.get("items", [])}
+                for item in order_data["items"]:
+                    if item["sku"] in existing_skus:
+                        # Keep qty_done from existing
+                        item["qty_done"] = existing_skus[item["sku"]].get("qty_done", 0)
+                
+                await db.fulfillment_orders.update_one(
+                    {"order_id": existing["order_id"]},
+                    {"$set": {
+                        "items": order_data["items"],
+                        "line_items": order_data["items"],
+                        "customer_name": order_data["customer_name"],
+                        "customer_email": order_data["customer_email"],
+                        "shipping_address": order_data["shipping_address"],
+                        "note": order_data["notes"],
+                        "updated_at": now,
+                        "synced_at": now,
+                    }}
+                )
+                result["updated"] += 1
+            else:
+                # Create new order
+                order_id = f"ord_{uuid.uuid4().hex[:12]}"
+                total_price = sum(i["price"] * i["qty"] for i in order_data["items"])
+                
+                order_doc = {
+                    "order_id": order_id,
+                    "external_id": order_num,
+                    "order_number": order_num,
+                    "store_id": store_id,
+                    "store_name": store_name,
+                    "platform": platform,
+                    "customer_name": order_data["customer_name"],
+                    "customer_email": order_data["customer_email"],
+                    "customer_phone": "",
+                    "items": order_data["items"],
+                    "line_items": order_data["items"],
+                    "total_price": total_price,
+                    "subtotal_price": total_price,
+                    "total_tax": 0,
+                    "currency": "USD",
+                    "financial_status": "paid",
+                    "fulfillment_status": "unfulfilled",
+                    "status": "pending",
+                    "current_stage_id": None,
+                    "fulfillment_stage_id": "fulfill_orders",
+                    "fulfillment_stage_name": "Orders",
+                    "assigned_to": None,
+                    "batch_id": None,
+                    "note": order_data["notes"],
+                    "tags": "dropship,csv-import",
+                    "shipping_address": order_data["shipping_address"],
+                    "created_at": now,
+                    "updated_at": now,
+                    "synced_at": now,
+                }
+                
+                await db.fulfillment_orders.insert_one(order_doc)
+                result["created"] += 1
+                
+        except Exception as e:
+            result["errors"].append(f"Order {order_num}: {str(e)}")
+    
+    # Update store last sync time
+    await db.stores.update_one(
+        {"store_id": store_id},
+        {"$set": {"last_order_sync": now}}
+    )
+    
+    return result
+
+
+@router.get("/csv-template")
+async def get_csv_template(user: User = Depends(get_current_user)):
+    """Get CSV template for order uploads"""
+    return {
+        "columns": [
+            {"name": "order_number", "required": True, "description": "Order or PO number"},
+            {"name": "customer_name", "required": True, "description": "Customer full name"},
+            {"name": "customer_email", "required": False, "description": "Customer email"},
+            {"name": "sku", "required": True, "description": "Product SKU"},
+            {"name": "quantity", "required": False, "description": "Quantity (default 1)"},
+            {"name": "item_name", "required": False, "description": "Product name"},
+            {"name": "price", "required": False, "description": "Item price"},
+            {"name": "shipping_address1", "required": False, "description": "Street address"},
+            {"name": "shipping_city", "required": False, "description": "City"},
+            {"name": "shipping_state", "required": False, "description": "State/Province"},
+            {"name": "shipping_zip", "required": False, "description": "ZIP/Postal code"},
+            {"name": "shipping_country", "required": False, "description": "Country code"},
+            {"name": "notes", "required": False, "description": "Order notes"},
+        ],
+        "sample_csv": "order_number,customer_name,customer_email,sku,quantity,item_name,price,shipping_address1,shipping_city,shipping_state,shipping_zip,shipping_country,notes\nPO-12345,John Smith,john@example.com,FRAME-001,2,Wood Frame 8x10,29.99,123 Main St,New York,NY,10001,US,Gift wrap please"
+    }
