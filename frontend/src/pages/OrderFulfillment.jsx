@@ -20,6 +20,7 @@ export default function OrderFulfillment() {
   const [activeTab, setActiveTab] = useState("fulfill_orders");
   const [popupStage, setPopupStage] = useState(null);
   const [timerVersion, setTimerVersion] = useState(0);
+  const [showReport, setShowReport] = useState(false);
 
   useEffect(() => {
     loadData();
