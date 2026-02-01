@@ -206,6 +206,15 @@ Build a manufacturing and fulfillment app for Shopify websites with:
   - Timer history tracking for performance analytics
   - Full API: `/api/fulfillment/stages/{id}/start-timer`, `/stop-timer`, `/pause-timer`, `/resume-timer`
   - KPI endpoints: `/api/fulfillment/stats/user-kpis`, `/api/fulfillment/stats/stage-kpis`
+- ✅ **User Date Report & Daily Work Limit System** (Feb 2026):
+  - Hours by User & Date report with daily/weekly/monthly period selector
+  - Grouped data by date with subtotals (hours, labor cost, orders, items)
+  - Individual user rows with expandable time entry details
+  - Automatic highlighting of users exceeding 9-hour daily limit
+  - DailyLimitWarning modal that appears when user exceeds limit
+  - 15-minute auto-logout countdown if no response
+  - Continue/Logout options with server-side acknowledgment tracking
+  - API endpoints: `/api/fulfillment/reports/hours-by-user-date`, `/api/fulfillment/user/daily-hours-check`, `/api/fulfillment/user/acknowledge-limit-exceeded`, `/api/fulfillment/user/check-limit-acknowledged`
 
 ## Prioritized Backlog
 
