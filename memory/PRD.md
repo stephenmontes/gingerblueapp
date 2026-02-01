@@ -66,7 +66,10 @@ Build a manufacturing and fulfillment app for Shopify websites with:
 - `PUT /api/users/{id}/role` - Update user role
 - `GET /api/stores` - List stores
 - `POST /api/stores` - Add store
+- `PUT /api/stores/{id}` - Update store credentials
 - `DELETE /api/stores/{id}` - Remove store
+- `POST /api/stores/{id}/sync` - Sync orders from a single store
+- `POST /api/stores/sync-all` - Sync orders from all stores
 - `GET /api/stages` - List production stages
 - `GET /api/orders` - List orders with filters
 - `POST /api/orders` - Create order
@@ -76,6 +79,13 @@ Build a manufacturing and fulfillment app for Shopify websites with:
 - `GET /api/stats/users` - User performance stats
 - `GET /api/stats/stages` - Stage statistics
 - `POST /api/demo/seed` - Seed demo data
+- `POST /api/webhooks/shopify/{store_id}` - Shopify webhook endpoint
+- `POST /api/webhooks/etsy/{store_id}` - Etsy webhook endpoint  
+- `GET /api/webhooks/info/{store_id}` - Get webhook setup info
+- `GET /api/export/orders` - Export orders to CSV
+- `GET /api/export/time-logs` - Export time logs to CSV
+- `GET /api/export/user-stats` - Export user stats to CSV
+- `GET /api/export/report-pdf` - Generate HTML report for PDF
 
 ### Frontend Pages
 - Login (Google OAuth)
