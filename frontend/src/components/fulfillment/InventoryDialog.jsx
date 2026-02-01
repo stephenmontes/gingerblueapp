@@ -83,7 +83,9 @@ function ItemTableRow({ item }) {
   return (
     <TableRow className="border-border">
       <TableCell className="font-medium">{item.name}</TableCell>
-      <TableCell className="font-mono text-sm">{item.sku}</TableCell>
+      <TableCell>
+        <SkuLink sku={item.sku} imageUrl={item.image_url || item.image} />
+      </TableCell>
       <TableCell className="text-right">{item.qty_needed}</TableCell>
       <TableCell className={`text-right ${qtyClass}`}>{item.qty_available}</TableCell>
       <TableCell><ItemBadge item={item} /></TableCell>
