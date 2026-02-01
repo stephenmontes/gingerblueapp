@@ -7,6 +7,7 @@ import { FulfillmentStageTab } from "@/components/fulfillment/FulfillmentStageTa
 import { FulfillmentSummary } from "@/components/fulfillment/FulfillmentSummary";
 import { StageOrdersPopup } from "@/components/fulfillment/StageOrdersPopup";
 import { FulfillmentTimerBanner } from "@/components/fulfillment/FulfillmentTimerBanner";
+import { FulfillmentKpiBanner } from "@/components/fulfillment/FulfillmentKpiBanner";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
