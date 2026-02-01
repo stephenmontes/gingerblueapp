@@ -240,6 +240,65 @@ export default function Team({ user }) {
         </div>
       </div>
 
+      {/* Period Filter */}
+      <Card className="bg-card border-border">
+        <CardContent className="p-4">
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm font-medium">View Stats:</span>
+            </div>
+            <Select value={period === "custom" ? "custom" : period} onValueChange={handlePeriodChange}>
+              <SelectTrigger className="w-40" data-testid="period-filter">
+                <SelectValue placeholder="Select period" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Time</SelectItem>
+                <SelectItem value="day">Today</SelectItem>
+                <SelectItem value="week">This Week</SelectItem>
+                <SelectItem value="month">This Month</SelectItem>
+                <SelectItem value="custom">Custom Range</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            {/* Custom Date Picker */}
+            {showCustomDatePicker && (
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2">
+                  <Label className="text-sm">From:</Label>
+                  <Input 
+                    type="date" 
+                    value={customStartDate}
+                    onChange={(e) => setCustomStartDate(e.target.value)}
+                    className="w-36"
+                    data-testid="custom-start-date"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label className="text-sm">To:</Label>
+                  <Input 
+                    type="date" 
+                    value={customEndDate}
+                    onChange={(e) => setCustomEndDate(e.target.value)}
+                    className="w-36"
+                    data-testid="custom-end-date"
+                  />
+                </div>
+                <Button size="sm" onClick={applyCustomDateRange} data-testid="apply-custom-range">
+                  Apply
+                </Button>
+              </div>
+            )}
+            
+            {/* Current filter badge */}
+            <Badge variant="secondary" className="gap-1">
+              <Calendar className="w-3 h-3" />
+              {getPeriodLabel()}
+            </Badge>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="bg-card border-border">
