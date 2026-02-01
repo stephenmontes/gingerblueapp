@@ -240,9 +240,21 @@ export function OrderWorksheet({ order, stages, currentStage, onClose, onMoveToN
       toast.error("Start a timer before making changes");
       return;
     }
-    setItems(prev => prev.map((item, i) => 
-      i === index ? { ...item, [field]: value } : item
-    ));
+    setItems(prev => prev.map((item, i) => {
+      if (i !== index) return item;
+      
+      const updatedItem = { ...item, [field]: value };
+      
+      // Auto-mark as complete if qty_done equals required qty
+      if (field === 'qty_done') {
+        const requiredQty = item.qty || item.quantity || 1;
+        if (value >= requiredQty) {
+          updatedItem.is_complete = true;
+        }
+      }
+      
+      return updatedItem;
+    }));
   }
 
   function markItemComplete(index, complete) {
