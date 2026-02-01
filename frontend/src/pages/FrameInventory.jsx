@@ -489,15 +489,23 @@ export default function FrameInventory() {
   );
 }
 
-function InventoryRow({ item, onQuickAdjust, onOpenAdjust, onEdit, onDelete }) {
+function InventoryRow({ item, onQuickAdjust, onOpenAdjust, onOpenReject, onEdit, onDelete }) {
   const isLowStock = item.quantity <= item.min_stock;
+  const isRejected = item.is_rejected;
   
   return (
-    <TableRow className="border-border" data-testid={`inventory-row-${item.item_id}`}>
-      <TableCell className="font-mono text-sm">{item.sku}</TableCell>
-      <TableCell className="font-medium">{item.name}</TableCell>
-      <TableCell>{item.color || "-"}</TableCell>
-      <TableCell>{item.size || "-"}</TableCell>
+    <TableRow 
+      className={`border-border ${isRejected ? "bg-red-500/10" : ""}`} 
+      data-testid={`inventory-row-${item.item_id}`}
+    >
+      <TableCell className={`font-mono text-sm ${isRejected ? "text-red-400" : ""}`}>
+        {item.sku}
+      </TableCell>
+      <TableCell className={`font-medium ${isRejected ? "text-red-400" : ""}`}>
+        {item.name}
+      </TableCell>
+      <TableCell className={isRejected ? "text-red-400" : ""}>{item.color || "-"}</TableCell>
+      <TableCell className={isRejected ? "text-red-400" : ""}>{item.size || "-"}</TableCell>
       <TableCell>
         <div className="flex items-center justify-center gap-2">
           <Button
@@ -512,7 +520,7 @@ function InventoryRow({ item, onQuickAdjust, onOpenAdjust, onEdit, onDelete }) {
           </Button>
           <button
             onClick={() => onOpenAdjust(item)}
-            className={`min-w-[3rem] px-2 py-1 rounded font-medium cursor-pointer hover:bg-muted transition-colors ${isLowStock ? "text-orange-500" : ""}`}
+            className={`min-w-[3rem] px-2 py-1 rounded font-medium cursor-pointer hover:bg-muted transition-colors ${isRejected ? "text-red-400" : isLowStock ? "text-orange-500" : ""}`}
             data-testid={`qty-value-${item.item_id}`}
           >
             {item.quantity}
@@ -528,9 +536,15 @@ function InventoryRow({ item, onQuickAdjust, onOpenAdjust, onEdit, onDelete }) {
           </Button>
         </div>
       </TableCell>
-      <TableCell className="text-muted-foreground">{item.location || "-"}</TableCell>
+      <TableCell className={`text-muted-foreground ${isRejected ? "text-red-400/70" : ""}`}>
+        {item.location || "-"}
+      </TableCell>
       <TableCell>
-        {isLowStock ? (
+        {isRejected ? (
+          <Badge variant="outline" className="border-red-500 text-red-500 bg-red-500/10">
+            Rejected
+          </Badge>
+        ) : isLowStock ? (
           <Badge variant="outline" className="border-orange-500 text-orange-500">
             Low Stock
           </Badge>
@@ -542,6 +556,19 @@ function InventoryRow({ item, onQuickAdjust, onOpenAdjust, onEdit, onDelete }) {
       </TableCell>
       <TableCell className="text-right">
         <div className="flex items-center justify-end gap-1">
+          {/* Only show Reject button for good inventory (not rejected items) */}
+          {!isRejected && (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
+              onClick={() => onOpenReject(item)}
+              title="Reject frames"
+              data-testid={`reject-inventory-${item.item_id}`}
+            >
+              <XCircle className="w-4 h-4" />
+            </Button>
+          )}
           <Button
             size="sm"
             variant="ghost"
