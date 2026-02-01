@@ -158,6 +158,38 @@ export function CutList({ batch, activeTimer }) {
     saveToServer(size, color, newQty, checked);
   };
 
+  const handleMoveToAssembly = async (size, color, quantity) => {
+    const key = `${size}-${color}`;
+    setUpdating(prev => ({ ...prev, [key]: true }));
+    
+    try {
+      const params = new URLSearchParams({
+        size,
+        color,
+        quantity: quantity.toString()
+      });
+      
+      const res = await fetch(
+        `${API}/batches/${batch.batch_id}/cut-list/move-to-assembly?${params}`,
+        { method: "POST", credentials: "include" }
+      );
+      
+      if (res.ok) {
+        const result = await res.json();
+        toast.success(result.message);
+        // Refresh cut list data
+        fetchCutList();
+      } else {
+        const err = await res.json();
+        toast.error(err.detail || "Failed to move items");
+      }
+    } catch (err) {
+      toast.error("Failed to move items");
+    } finally {
+      setUpdating(prev => ({ ...prev, [key]: false }));
+    }
+  };
+
   if (loading) {
     return (
       <Card className="bg-card border-border">
