@@ -149,7 +149,7 @@ async def sync_store_orders(
     days_back: int = Query(30, ge=1, le=365, description="Number of days to sync"),
     user: User = Depends(get_current_user)
 ):
-    """Sync orders from a Shopify store"""
+    """Sync orders from a Shopify or Etsy store"""
     if user.role not in ["admin", "manager"]:
         raise HTTPException(status_code=403, detail="Not authorized")
     
@@ -158,11 +158,15 @@ async def sync_store_orders(
     if not store:
         raise HTTPException(status_code=404, detail="Store not found")
     
-    if store.get("platform") != "shopify":
-        raise HTTPException(status_code=400, detail="Only Shopify stores support order sync")
+    platform = store.get("platform")
     
-    # Run sync
-    result = await sync_orders_from_store(store_id, status=status, days_back=days_back)
+    # Run sync based on platform
+    if platform == "shopify":
+        result = await sync_orders_from_store(store_id, status=status, days_back=days_back)
+    elif platform == "etsy":
+        result = await sync_orders_from_etsy_store(store_id, days_back=days_back)
+    else:
+        raise HTTPException(status_code=400, detail=f"Platform '{platform}' does not support order sync")
     
     if not result.get("success"):
         raise HTTPException(status_code=400, detail=result.get("error", "Sync failed"))
@@ -173,7 +177,10 @@ async def sync_store_orders(
 @router.get("/sync/status")
 async def get_sync_status(user: User = Depends(get_current_user)):
     """Get order sync status for all stores"""
-    stores = await db.stores.find({"platform": "shopify"}, {"_id": 0}).to_list(100)
+    stores = await db.stores.find(
+        {"platform": {"$in": ["shopify", "etsy"]}}, 
+        {"_id": 0}
+    ).to_list(100)
     
     result = []
     for store in stores:
@@ -181,6 +188,7 @@ async def get_sync_status(user: User = Depends(get_current_user)):
         result.append({
             "store_id": store["store_id"],
             "store_name": store.get("name", ""),
+            "platform": store.get("platform"),
             "last_order_sync": store.get("last_order_sync"),
             "order_count": order_count,
             "is_active": store.get("is_active", True)
