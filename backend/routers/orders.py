@@ -10,6 +10,7 @@ from models.production import StageMove
 from models.time_log import TimeLog
 from dependencies import get_current_user
 from services.shopify_service import sync_orders_from_store
+from services.etsy_service import sync_orders_from_etsy_store
 
 router = APIRouter(prefix="/orders", tags=["orders"])
 
