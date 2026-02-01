@@ -84,6 +84,9 @@ export function MyTimerControls({ activeTimer, onTimerChange, onOpenWorksheet })
       if (res.ok) {
         toast.success("Timer stopped");
         onTimerChange?.();
+      } else {
+        const err = await res.json();
+        toast.error(err.detail || "Failed to stop timer");
       }
     } catch (err) {
       toast.error("Failed to stop timer");
