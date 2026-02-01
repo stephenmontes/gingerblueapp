@@ -90,60 +90,70 @@ export function ActiveTimerBanner({ onTimerChange }) {
   const isPaused = activeTimer.is_paused;
 
   return (
-    <div className={`rounded-lg p-3 mb-4 flex items-center justify-between ${isPaused ? "bg-yellow-500/10 border border-yellow-500/30" : "bg-primary/10 border border-primary/30"}`}>
-      <div className="flex items-center gap-3">
-        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isPaused ? "bg-yellow-500/20" : "bg-primary/20"}`}>
-          <Clock className={`w-4 h-4 ${isPaused ? "text-yellow-400" : "text-primary animate-pulse"}`} />
-        </div>
-        <div>
-          <p className="text-sm font-medium">
-            Timer {isPaused ? "paused" : "active"}: <span className={isPaused ? "text-yellow-400" : "text-primary"}>{activeTimer.stage_name}</span>
-            {isPaused && <Badge variant="outline" className="ml-2 text-xs border-yellow-500 text-yellow-400">PAUSED</Badge>}
-          </p>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <LiveTimer 
-              startedAt={activeTimer.started_at} 
-              isPaused={isPaused}
-              accumulatedMinutes={activeTimer.accumulated_minutes || 0}
-            />
-            <span>•</span>
-            <span>{activeTimer.items_processed} items processed</span>
+    <div className={`rounded-lg p-4 mb-4 ${isPaused ? "bg-yellow-500/10 border border-yellow-500/30" : "bg-primary/10 border border-primary/30"}`}>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isPaused ? "bg-yellow-500/20" : "bg-primary/20"}`}>
+            <Clock className={`w-5 h-5 ${isPaused ? "text-yellow-400" : "text-primary animate-pulse"}`} />
+          </div>
+          <div>
+            <p className="text-sm font-medium">
+              Timer {isPaused ? "paused" : "active"}: <span className={isPaused ? "text-yellow-400" : "text-primary"}>{activeTimer.stage_name}</span>
+              {isPaused && <Badge variant="outline" className="ml-2 text-xs border-yellow-500 text-yellow-400">PAUSED</Badge>}
+            </p>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <LiveTimer 
+                startedAt={activeTimer.started_at} 
+                isPaused={isPaused}
+                accumulatedMinutes={activeTimer.accumulated_minutes || 0}
+              />
+              <span>•</span>
+              <span>{activeTimer.items_processed} items this session</span>
+            </div>
           </div>
         </div>
-      </div>
-      <div className="flex items-center gap-2">
-        {isPaused ? (
+        <div className="flex items-center gap-2">
+          {isPaused ? (
+            <Button
+              size="sm"
+              onClick={handleResumeTimer}
+              className="gap-1 bg-green-600 hover:bg-green-700"
+              data-testid="resume-active-timer"
+            >
+              <Play className="w-4 h-4" />
+              Resume
+            </Button>
+          ) : (
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={handlePauseTimer}
+              className="gap-1"
+              data-testid="pause-active-timer"
+            >
+              <Pause className="w-4 h-4" />
+              Pause
+            </Button>
+          )}
           <Button
             size="sm"
-            onClick={handleResumeTimer}
-            className="gap-1 bg-green-600 hover:bg-green-700"
-            data-testid="resume-active-timer"
-          >
-            <Play className="w-4 h-4" />
-            Resume
-          </Button>
-        ) : (
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={handlePauseTimer}
+            variant="destructive"
+            onClick={handleStopTimer}
             className="gap-1"
-            data-testid="pause-active-timer"
+            data-testid="stop-active-timer"
           >
-            <Pause className="w-4 h-4" />
-            Pause
+            <StopCircle className="w-4 h-4" />
+            Stop
           </Button>
-        )}
-        <Button
-          size="sm"
-          variant="destructive"
-          onClick={handleStopTimer}
-          className="gap-1"
-          data-testid="stop-active-timer"
-        >
-          <StopCircle className="w-4 h-4" />
-          Stop
-        </Button>
+        </div>
+      </div>
+      
+      {/* User's Stage KPIs */}
+      <div className="mt-3 pt-3 border-t border-border/50">
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-muted-foreground mb-2">Your stats for this stage:</p>
+        </div>
+        <UserStageStats stageId={activeTimer.stage_id} stageName={activeTimer.stage_name} />
       </div>
     </div>
   );
