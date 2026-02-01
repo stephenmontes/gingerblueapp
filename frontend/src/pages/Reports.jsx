@@ -15,6 +15,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -25,8 +26,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  LineChart,
-  Line,
   PieChart,
   Pie,
   Cell,
@@ -43,6 +42,11 @@ import {
   Download,
   FileText,
   FileSpreadsheet,
+  DollarSign,
+  AlertTriangle,
+  CheckCircle,
+  XCircle,
+  Boxes,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -53,32 +57,24 @@ const COLORS = ["#3B82F6", "#22C55E", "#F59E0B", "#EF4444", "#8B5CF6", "#EC4899"
 
 export default function Reports({ user }) {
   const [dashboardStats, setDashboardStats] = useState(null);
+  const [productionKpis, setProductionKpis] = useState(null);
   const [userStats, setUserStats] = useState([]);
   const [stageStats, setStageStats] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const fetchData = async () => {
     try {
-      const [dashRes, usersRes, stagesRes] = await Promise.all([
+      const [dashRes, kpisRes, usersRes, stagesRes] = await Promise.all([
         fetch(`${API}/stats/dashboard`, { credentials: "include" }),
+        fetch(`${API}/stats/production-kpis`, { credentials: "include" }),
         fetch(`${API}/stats/users`, { credentials: "include" }),
         fetch(`${API}/stats/stages`, { credentials: "include" }),
       ]);
 
-      if (dashRes.ok) {
-        const data = await dashRes.json();
-        setDashboardStats(data);
-      }
-
-      if (usersRes.ok) {
-        const data = await usersRes.json();
-        setUserStats(data);
-      }
-
-      if (stagesRes.ok) {
-        const data = await stagesRes.json();
-        setStageStats(data);
-      }
+      if (dashRes.ok) setDashboardStats(await dashRes.json());
+      if (kpisRes.ok) setProductionKpis(await kpisRes.json());
+      if (usersRes.ok) setUserStats(await usersRes.json());
+      if (stagesRes.ok) setStageStats(await stagesRes.json());
     } catch (error) {
       console.error("Failed to fetch reports:", error);
       toast.error("Failed to load reports");
@@ -103,14 +99,18 @@ export default function Reports({ user }) {
       case "user-stats-csv":
         url = `${API}/export/user-stats`;
         break;
+      case "production-kpis-csv":
+        url = `${API}/export/production-kpis`;
+        break;
+      case "inventory-csv":
+        url = `${API}/export/inventory`;
+        break;
       case "report-pdf":
         url = `${API}/export/report-pdf`;
         break;
       default:
         return;
     }
-    
-    // Open in new tab for download
     window.open(url, "_blank");
     toast.success("Export started");
   };
@@ -132,6 +132,7 @@ export default function Reports({ user }) {
 
   const storeData = dashboardStats?.orders_by_store || [];
   const dailyData = dashboardStats?.daily_production || [];
+  const kpis = productionKpis || {};
 
   return (
     <div className="space-y-6" data-testid="reports-page">
@@ -140,7 +141,7 @@ export default function Reports({ user }) {
         <div>
           <h1 className="text-3xl font-heading font-bold">Reports</h1>
           <p className="text-muted-foreground mt-1">
-            Production analytics and performance metrics
+            Production analytics, costs, and quality metrics
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -164,6 +165,16 @@ export default function Reports({ user }) {
                 <FileSpreadsheet className="w-4 h-4 mr-2" />
                 User Stats (CSV)
               </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => handleExport("production-kpis-csv")} data-testid="export-kpis-csv">
+                <FileSpreadsheet className="w-4 h-4 mr-2" />
+                Production KPIs (CSV)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport("inventory-csv")} data-testid="export-inventory-csv">
+                <FileSpreadsheet className="w-4 h-4 mr-2" />
+                Inventory (CSV)
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => handleExport("report-pdf")} data-testid="export-report-pdf">
                 <FileText className="w-4 h-4 mr-2" />
                 Full Report (PDF)
@@ -177,8 +188,8 @@ export default function Reports({ user }) {
         </div>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {/* KPI Summary Cards - Row 1 */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="bg-card border-border">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -198,14 +209,81 @@ export default function Reports({ user }) {
         <Card className="bg-card border-border">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-green-500/10">
+                <CheckCircle className="w-5 h-5 text-green-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-heading font-bold">
+                  {kpis?.production?.good_frames || 0}
+                </p>
+                <p className="text-xs text-muted-foreground">Good Frames</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-card border-border">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-red-500/10">
+                <XCircle className="w-5 h-5 text-red-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-heading font-bold text-red-400">
+                  {kpis?.production?.total_rejected || 0}
+                </p>
+                <p className="text-xs text-muted-foreground">Rejected</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className={`border-border ${(kpis?.quality?.rejection_rate || 0) > 5 ? "bg-red-500/10 border-red-500/30" : "bg-card"}`}>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className={`p-2 rounded-lg ${(kpis?.quality?.rejection_rate || 0) > 5 ? "bg-red-500/20" : "bg-orange-500/10"}`}>
+                <AlertTriangle className={`w-5 h-5 ${(kpis?.quality?.rejection_rate || 0) > 5 ? "text-red-500" : "text-orange-500"}`} />
+              </div>
+              <div>
+                <p className={`text-2xl font-heading font-bold ${(kpis?.quality?.rejection_rate || 0) > 5 ? "text-red-400" : ""}`}>
+                  {kpis?.quality?.rejection_rate || 0}%
+                </p>
+                <p className="text-xs text-muted-foreground">Rejection Rate</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* KPI Summary Cards - Row 2: Time & Cost */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card className="bg-card border-border">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-blue-500/10">
+                <Clock className="w-5 h-5 text-blue-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-heading font-bold">
+                  {kpis?.time?.total_hours || 0}h
+                </p>
+                <p className="text-xs text-muted-foreground">Total Hours</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-card border-border">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-secondary/10">
                 <TrendingUp className="w-5 h-5 text-secondary" />
               </div>
               <div>
                 <p className="text-2xl font-heading font-bold">
-                  {dashboardStats?.avg_items_per_hour || 0}
+                  {kpis?.time?.avg_items_per_hour || 0}
                 </p>
-                <p className="text-xs text-muted-foreground">Items/Hour Avg</p>
+                <p className="text-xs text-muted-foreground">Items/Hour</p>
               </div>
             </div>
           </CardContent>
@@ -214,14 +292,14 @@ export default function Reports({ user }) {
         <Card className="bg-card border-border">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-accent/10">
-                <Users className="w-5 h-5 text-accent" />
+              <div className="p-2 rounded-lg bg-emerald-500/10">
+                <DollarSign className="w-5 h-5 text-emerald-500" />
               </div>
               <div>
                 <p className="text-2xl font-heading font-bold">
-                  {userStats.length}
+                  ${kpis?.costs?.total_labor_cost || 0}
                 </p>
-                <p className="text-xs text-muted-foreground">Active Workers</p>
+                <p className="text-xs text-muted-foreground">Labor Cost</p>
               </div>
             </div>
           </CardContent>
@@ -230,14 +308,14 @@ export default function Reports({ user }) {
         <Card className="bg-card border-border">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-green-400/10">
-                <Clock className="w-5 h-5 text-green-400" />
+              <div className="p-2 rounded-lg bg-purple-500/10">
+                <DollarSign className="w-5 h-5 text-purple-500" />
               </div>
               <div>
                 <p className="text-2xl font-heading font-bold">
-                  {userStats.reduce((sum, s) => sum + (s.total_hours || 0), 0).toFixed(1)}h
+                  ${kpis?.costs?.avg_cost_per_frame || 0}
                 </p>
-                <p className="text-xs text-muted-foreground">Total Hours</p>
+                <p className="text-xs text-muted-foreground">Avg Cost/Frame</p>
               </div>
             </div>
           </CardContent>
@@ -250,6 +328,10 @@ export default function Reports({ user }) {
           <TabsTrigger value="overview" className="gap-2" data-testid="tab-overview">
             <BarChart3 className="w-4 h-4" />
             Overview
+          </TabsTrigger>
+          <TabsTrigger value="quality" className="gap-2" data-testid="tab-quality">
+            <AlertTriangle className="w-4 h-4" />
+            Quality & Costs
           </TabsTrigger>
           <TabsTrigger value="users" className="gap-2" data-testid="tab-users">
             <Users className="w-4 h-4" />
@@ -285,27 +367,16 @@ export default function Reports({ user }) {
                           nameKey="name"
                         >
                           {storeData.map((entry, index) => (
-                            <Cell
-                              key={`cell-${index}`}
-                              fill={COLORS[index % COLORS.length]}
-                            />
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                           ))}
                         </Pie>
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: "#18181B",
-                            border: "1px solid #27272A",
-                            borderRadius: "8px",
-                          }}
-                        />
+                        <Tooltip contentStyle={{ backgroundColor: "#18181B", border: "1px solid #27272A", borderRadius: "8px" }} />
                         <Legend />
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
                 ) : (
-                  <div className="h-72 flex items-center justify-center text-muted-foreground">
-                    No data available
-                  </div>
+                  <div className="h-72 flex items-center justify-center text-muted-foreground">No data available</div>
                 )}
               </CardContent>
             </Card>
@@ -321,32 +392,144 @@ export default function Reports({ user }) {
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={dailyData}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#27272A" />
-                        <XAxis
-                          dataKey="_id"
-                          stroke="#A1A1AA"
-                          tick={{ fill: "#A1A1AA" }}
-                          tickFormatter={(val) => val.split("-").slice(1).join("/")}
-                        />
+                        <XAxis dataKey="_id" stroke="#A1A1AA" tick={{ fill: "#A1A1AA" }} tickFormatter={(val) => val.split("-").slice(1).join("/")} />
                         <YAxis stroke="#A1A1AA" tick={{ fill: "#A1A1AA" }} />
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: "#18181B",
-                            border: "1px solid #27272A",
-                            borderRadius: "8px",
-                          }}
-                        />
+                        <Tooltip contentStyle={{ backgroundColor: "#18181B", border: "1px solid #27272A", borderRadius: "8px" }} />
                         <Bar dataKey="items" fill="#22C55E" radius={[4, 4, 0, 0]} name="Items Processed" />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
                 ) : (
-                  <div className="h-72 flex items-center justify-center text-muted-foreground">
-                    No production data available
-                  </div>
+                  <div className="h-72 flex items-center justify-center text-muted-foreground">No production data available</div>
                 )}
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        {/* Quality & Costs Tab */}
+        <TabsContent value="quality" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Quality Summary */}
+            <Card className="bg-card border-border" data-testid="report-quality-summary">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5" />
+                  Quality Metrics
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Yield Rate</p>
+                      <p className="text-3xl font-bold text-green-400">{kpis?.quality?.yield_rate || 100}%</p>
+                    </div>
+                    <CheckCircle className="w-10 h-10 text-green-500/50" />
+                  </div>
+                  <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Rejection Rate</p>
+                      <p className={`text-3xl font-bold ${(kpis?.quality?.rejection_rate || 0) > 5 ? "text-red-400" : "text-orange-400"}`}>
+                        {kpis?.quality?.rejection_rate || 0}%
+                      </p>
+                    </div>
+                    <XCircle className="w-10 h-10 text-red-500/50" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-3 bg-green-500/10 rounded-lg text-center">
+                      <p className="text-2xl font-bold text-green-400">{kpis?.production?.good_frames || 0}</p>
+                      <p className="text-xs text-muted-foreground">Good Frames</p>
+                    </div>
+                    <div className="p-3 bg-red-500/10 rounded-lg text-center">
+                      <p className="text-2xl font-bold text-red-400">{kpis?.production?.total_rejected || 0}</p>
+                      <p className="text-xs text-muted-foreground">Rejected</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Cost Summary */}
+            <Card className="bg-card border-border" data-testid="report-cost-summary">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <DollarSign className="w-5 h-5" />
+                  Cost Analysis
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Hourly Rate</p>
+                      <p className="text-3xl font-bold">${kpis?.costs?.hourly_rate || 22}/hr</p>
+                    </div>
+                    <Clock className="w-10 h-10 text-blue-500/50" />
+                  </div>
+                  <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Total Labor Cost</p>
+                      <p className="text-3xl font-bold text-emerald-400">${kpis?.costs?.total_labor_cost || 0}</p>
+                    </div>
+                    <DollarSign className="w-10 h-10 text-emerald-500/50" />
+                  </div>
+                  <div className="flex items-center justify-between p-4 bg-purple-500/10 rounded-lg">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Avg Cost Per Frame</p>
+                      <p className="text-3xl font-bold text-purple-400">${kpis?.costs?.avg_cost_per_frame || 0}</p>
+                    </div>
+                    <Boxes className="w-10 h-10 text-purple-500/50" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Batch KPIs Table */}
+          <Card className="bg-card border-border" data-testid="report-batch-kpis">
+            <CardHeader>
+              <CardTitle>Batch Performance</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {kpis?.batches?.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-border">
+                      <TableHead>Batch</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Completed</TableHead>
+                      <TableHead className="text-right">Rejected</TableHead>
+                      <TableHead className="text-right">Good</TableHead>
+                      <TableHead className="text-right">Rejection %</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {kpis.batches.map((batch) => (
+                      <TableRow key={batch.batch_id} className="border-border">
+                        <TableCell className="font-medium">{batch.name}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={batch.status === "active" ? "text-green-400 border-green-400/30" : "text-muted-foreground"}>
+                            {batch.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right font-mono">{batch.completed}</TableCell>
+                        <TableCell className="text-right font-mono text-red-400">{batch.rejected}</TableCell>
+                        <TableCell className="text-right font-mono text-green-400">{batch.good_frames}</TableCell>
+                        <TableCell className="text-right">
+                          <Badge variant="outline" className={batch.rejection_rate > 5 ? "text-red-400 border-red-400/30 bg-red-500/10" : "text-muted-foreground"}>
+                            {batch.rejection_rate}%
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <div className="py-8 text-center text-muted-foreground">No batch data available</div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* User Performance Tab */}
@@ -363,20 +546,8 @@ export default function Reports({ user }) {
                       <BarChart data={userStats} layout="vertical">
                         <CartesianGrid strokeDasharray="3 3" stroke="#27272A" />
                         <XAxis type="number" stroke="#A1A1AA" tick={{ fill: "#A1A1AA" }} />
-                        <YAxis
-                          dataKey="user_name"
-                          type="category"
-                          stroke="#A1A1AA"
-                          tick={{ fill: "#A1A1AA" }}
-                          width={120}
-                        />
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: "#18181B",
-                            border: "1px solid #27272A",
-                            borderRadius: "8px",
-                          }}
-                        />
+                        <YAxis dataKey="user_name" type="category" stroke="#A1A1AA" tick={{ fill: "#A1A1AA" }} width={120} />
+                        <Tooltip contentStyle={{ backgroundColor: "#18181B", border: "1px solid #27272A", borderRadius: "8px" }} />
                         <Bar dataKey="items_per_hour" fill="#3B82F6" radius={[0, 4, 4, 0]} name="Items/Hour" />
                       </BarChart>
                     </ResponsiveContainer>
@@ -384,11 +555,11 @@ export default function Reports({ user }) {
                   <Table>
                     <TableHeader>
                       <TableRow className="border-border">
-                        <TableHead className="label-caps">User</TableHead>
-                        <TableHead className="label-caps">Items Processed</TableHead>
-                        <TableHead className="label-caps">Hours Logged</TableHead>
-                        <TableHead className="label-caps">Items/Hour</TableHead>
-                        <TableHead className="label-caps">Sessions</TableHead>
+                        <TableHead>User</TableHead>
+                        <TableHead>Items Processed</TableHead>
+                        <TableHead>Hours Logged</TableHead>
+                        <TableHead>Items/Hour</TableHead>
+                        <TableHead>Sessions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -398,16 +569,7 @@ export default function Reports({ user }) {
                           <TableCell className="font-mono">{stat.total_items}</TableCell>
                           <TableCell className="font-mono">{stat.total_hours}h</TableCell>
                           <TableCell>
-                            <Badge
-                              variant="outline"
-                              className={
-                                stat.items_per_hour >= 10
-                                  ? "text-green-400 bg-green-400/10 border-green-400/20"
-                                  : stat.items_per_hour >= 5
-                                  ? "text-amber-400 bg-amber-400/10 border-amber-400/20"
-                                  : "text-muted-foreground"
-                              }
-                            >
+                            <Badge variant="outline" className={stat.items_per_hour >= 10 ? "text-green-400 bg-green-400/10 border-green-400/20" : stat.items_per_hour >= 5 ? "text-amber-400 bg-amber-400/10 border-amber-400/20" : "text-muted-foreground"}>
                               {stat.items_per_hour}
                             </Badge>
                           </TableCell>
@@ -418,9 +580,7 @@ export default function Reports({ user }) {
                   </Table>
                 </>
               ) : (
-                <div className="h-72 flex items-center justify-center text-muted-foreground">
-                  No user performance data available
-                </div>
+                <div className="h-72 flex items-center justify-center text-muted-foreground">No user performance data available</div>
               )}
             </CardContent>
           </Card>
@@ -439,19 +599,9 @@ export default function Reports({ user }) {
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={stageStats}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#27272A" />
-                        <XAxis
-                          dataKey="stage_name"
-                          stroke="#A1A1AA"
-                          tick={{ fill: "#A1A1AA" }}
-                        />
+                        <XAxis dataKey="stage_name" stroke="#A1A1AA" tick={{ fill: "#A1A1AA" }} />
                         <YAxis stroke="#A1A1AA" tick={{ fill: "#A1A1AA" }} />
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: "#18181B",
-                            border: "1px solid #27272A",
-                            borderRadius: "8px",
-                          }}
-                        />
+                        <Tooltip contentStyle={{ backgroundColor: "#18181B", border: "1px solid #27272A", borderRadius: "8px" }} />
                         <Bar dataKey="total_items" fill="#8B5CF6" radius={[4, 4, 0, 0]} name="Total Items" />
                       </BarChart>
                     </ResponsiveContainer>
@@ -459,10 +609,10 @@ export default function Reports({ user }) {
                   <Table>
                     <TableHeader>
                       <TableRow className="border-border">
-                        <TableHead className="label-caps">Stage</TableHead>
-                        <TableHead className="label-caps">Total Items</TableHead>
-                        <TableHead className="label-caps">Total Hours</TableHead>
-                        <TableHead className="label-caps">Avg Min/Item</TableHead>
+                        <TableHead>Stage</TableHead>
+                        <TableHead>Total Items</TableHead>
+                        <TableHead>Total Hours</TableHead>
+                        <TableHead>Avg Min/Item</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -478,9 +628,7 @@ export default function Reports({ user }) {
                   </Table>
                 </>
               ) : (
-                <div className="h-72 flex items-center justify-center text-muted-foreground">
-                  No stage data available
-                </div>
+                <div className="h-72 flex items-center justify-center text-muted-foreground">No stage data available</div>
               )}
             </CardContent>
           </Card>
