@@ -1,0 +1,400 @@
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
+import { 
+  Plus, 
+  Search, 
+  Package, 
+  Edit2, 
+  Trash2,
+  AlertTriangle
+} from "lucide-react";
+import { toast } from "sonner";
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const API = BACKEND_URL + "/api";
+
+export default function FrameInventory() {
+  const [inventory, setInventory] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
+  
+  // Form state
+  const [formData, setFormData] = useState({
+    sku: "",
+    name: "",
+    color: "",
+    size: "",
+    quantity: 0,
+    min_stock: 10,
+    location: ""
+  });
+
+  useEffect(() => {
+    fetchInventory();
+  }, []);
+
+  async function fetchInventory() {
+    try {
+      const res = await fetch(API + "/inventory", { credentials: "include" });
+      if (res.ok) {
+        setInventory(await res.json());
+      }
+    } catch (err) {
+      toast.error("Failed to load inventory");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    try {
+      const url = editingItem 
+        ? API + "/inventory/" + editingItem.item_id 
+        : API + "/inventory";
+      const method = editingItem ? "PUT" : "POST";
+      
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(formData)
+      });
+      
+      if (res.ok) {
+        toast.success(editingItem ? "Item updated" : "Item added");
+        fetchInventory();
+        resetForm();
+      } else {
+        const err = await res.json();
+        toast.error(err.detail || "Failed to save item");
+      }
+    } catch (err) {
+      toast.error("Failed to save item");
+    }
+  }
+
+  async function handleDelete(itemId) {
+    if (!confirm("Delete this inventory item?")) return;
+    try {
+      const res = await fetch(API + "/inventory/" + itemId, {
+        method: "DELETE",
+        credentials: "include"
+      });
+      if (res.ok) {
+        toast.success("Item deleted");
+        fetchInventory();
+      }
+    } catch (err) {
+      toast.error("Failed to delete item");
+    }
+  }
+
+  function resetForm() {
+    setFormData({
+      sku: "",
+      name: "",
+      color: "",
+      size: "",
+      quantity: 0,
+      min_stock: 10,
+      location: ""
+    });
+    setShowAddForm(false);
+    setEditingItem(null);
+  }
+
+  function handleEdit(item) {
+    setFormData({
+      sku: item.sku || "",
+      name: item.name || "",
+      color: item.color || "",
+      size: item.size || "",
+      quantity: item.quantity || 0,
+      min_stock: item.min_stock || 10,
+      location: item.location || ""
+    });
+    setEditingItem(item);
+    setShowAddForm(true);
+  }
+
+  const filteredInventory = inventory.filter(item => {
+    const search = searchTerm.toLowerCase();
+    return (
+      item.sku?.toLowerCase().includes(search) ||
+      item.name?.toLowerCase().includes(search) ||
+      item.color?.toLowerCase().includes(search) ||
+      item.size?.toLowerCase().includes(search)
+    );
+  });
+
+  const lowStockItems = inventory.filter(item => item.quantity <= item.min_stock);
+
+  if (loading) {
+    return (
+      <div className="space-y-6" data-testid="inventory-loading">
+        <div className="h-8 w-48 bg-muted animate-pulse rounded" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6" data-testid="frame-inventory-page">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-heading font-bold">Frame Inventory</h1>
+          <p className="text-muted-foreground mt-1">
+            Manage frame stock and materials
+          </p>
+        </div>
+        <Button 
+          onClick={() => setShowAddForm(true)} 
+          className="gap-2"
+          data-testid="add-inventory-btn"
+        >
+          <Plus className="w-4 h-4" />
+          Add Item
+        </Button>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="bg-card border-border">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
+                <Package className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{inventory.length}</p>
+                <p className="text-sm text-muted-foreground">Total Items</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-card border-border">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
+                <Package className="w-5 h-5 text-green-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">
+                  {inventory.reduce((sum, item) => sum + (item.quantity || 0), 0)}
+                </p>
+                <p className="text-sm text-muted-foreground">Total Stock</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className={`border-border ${lowStockItems.length > 0 ? "bg-orange-500/10 border-orange-500/30" : "bg-card"}`}>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${lowStockItems.length > 0 ? "bg-orange-500/20" : "bg-muted"}`}>
+                <AlertTriangle className={`w-5 h-5 ${lowStockItems.length > 0 ? "text-orange-500" : "text-muted-foreground"}`} />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{lowStockItems.length}</p>
+                <p className="text-sm text-muted-foreground">Low Stock Items</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Add/Edit Form */}
+      {showAddForm && (
+        <Card className="bg-card border-border">
+          <CardHeader>
+            <CardTitle>{editingItem ? "Edit Item" : "Add New Item"}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="text-sm font-medium mb-1 block">SKU</label>
+                <Input
+                  value={formData.sku}
+                  onChange={(e) => setFormData({...formData, sku: e.target.value})}
+                  placeholder="e.g., FRM-BLK-SM"
+                  required
+                  data-testid="inventory-sku-input"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Name</label>
+                <Input
+                  value={formData.name}
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  placeholder="Frame name"
+                  required
+                  data-testid="inventory-name-input"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Color</label>
+                <Input
+                  value={formData.color}
+                  onChange={(e) => setFormData({...formData, color: e.target.value})}
+                  placeholder="e.g., Black, Natural"
+                  data-testid="inventory-color-input"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Size</label>
+                <Input
+                  value={formData.size}
+                  onChange={(e) => setFormData({...formData, size: e.target.value})}
+                  placeholder="e.g., S, L, XL"
+                  data-testid="inventory-size-input"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Quantity</label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={formData.quantity}
+                  onChange={(e) => setFormData({...formData, quantity: parseInt(e.target.value) || 0})}
+                  data-testid="inventory-quantity-input"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Min Stock Level</label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={formData.min_stock}
+                  onChange={(e) => setFormData({...formData, min_stock: parseInt(e.target.value) || 0})}
+                  data-testid="inventory-min-stock-input"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="text-sm font-medium mb-1 block">Location</label>
+                <Input
+                  value={formData.location}
+                  onChange={(e) => setFormData({...formData, location: e.target.value})}
+                  placeholder="e.g., Shelf A-1"
+                  data-testid="inventory-location-input"
+                />
+              </div>
+              <div className="flex items-end gap-2">
+                <Button type="submit" data-testid="inventory-save-btn">
+                  {editingItem ? "Update" : "Add Item"}
+                </Button>
+                <Button type="button" variant="outline" onClick={resetForm}>
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Search */}
+      <div className="relative max-w-md">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Input
+          placeholder="Search by SKU, name, color, size..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10"
+          data-testid="inventory-search"
+        />
+      </div>
+
+      {/* Inventory Table */}
+      <Card className="bg-card border-border">
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow className="border-border">
+                <TableHead>SKU</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>Color</TableHead>
+                <TableHead>Size</TableHead>
+                <TableHead className="text-right">Quantity</TableHead>
+                <TableHead>Location</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredInventory.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                    {searchTerm ? "No items match your search" : "No inventory items yet"}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredInventory.map((item) => {
+                  const isLowStock = item.quantity <= item.min_stock;
+                  return (
+                    <TableRow key={item.item_id} className="border-border" data-testid={`inventory-row-${item.item_id}`}>
+                      <TableCell className="font-mono text-sm">{item.sku}</TableCell>
+                      <TableCell className="font-medium">{item.name}</TableCell>
+                      <TableCell>{item.color || "-"}</TableCell>
+                      <TableCell>{item.size || "-"}</TableCell>
+                      <TableCell className="text-right font-medium">
+                        <span className={isLowStock ? "text-orange-500" : ""}>
+                          {item.quantity}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">{item.location || "-"}</TableCell>
+                      <TableCell>
+                        {isLowStock ? (
+                          <Badge variant="outline" className="border-orange-500 text-orange-500">
+                            Low Stock
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="border-green-500 text-green-500">
+                            In Stock
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleEdit(item)}
+                            data-testid={`edit-inventory-${item.item_id}`}
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => handleDelete(item.item_id)}
+                            data-testid={`delete-inventory-${item.item_id}`}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
