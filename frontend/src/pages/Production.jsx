@@ -13,6 +13,7 @@ export default function Production() {
   const [batchDetails, setBatchDetails] = useState(null);
   const [stageSummary, setStageSummary] = useState([]);
   const [stages, setStages] = useState([]);
+  const [stageWorkers, setStageWorkers] = useState({});
   const [loading, setLoading] = useState(true);
   
   // Track active timer at page level - this is the source of truth
@@ -22,6 +23,11 @@ export default function Production() {
   useEffect(() => {
     loadInitialData();
     checkActiveTimer();
+    loadStageWorkers();
+    
+    // Poll for active workers every 30 seconds
+    const interval = setInterval(loadStageWorkers, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -29,6 +35,20 @@ export default function Production() {
       loadBatchDetails(selectedBatch.batch_id);
     }
   }, [selectedBatch]);
+
+  // Load active workers per stage
+  async function loadStageWorkers() {
+    try {
+      const res = await fetch(API + "/stages/active-workers", {
+        credentials: "include",
+      });
+      if (res.ok) {
+        setStageWorkers(await res.json());
+      }
+    } catch (err) {
+      console.error("Failed to load stage workers:", err);
+    }
+  }
 
   // Check for active timer
   const checkActiveTimer = useCallback(async () => {
@@ -48,6 +68,7 @@ export default function Production() {
   // Called when timer is started or stopped
   const handleTimerChange = useCallback(() => {
     checkActiveTimer();
+    loadStageWorkers();
     setTimerVersion(v => v + 1); // Force child components to re-check
     loadInitialData();
   }, [checkActiveTimer]);
