@@ -5,6 +5,7 @@ import { BatchHeader } from "./BatchHeader";
 import { StageTabs } from "./StageTabs";
 import { StageContent } from "./StageContent";
 import { BatchStats } from "./BatchStats";
+import { BatchOrders } from "./BatchOrders";
 
 export function BatchDetailView({
   batch,
@@ -17,7 +18,6 @@ export function BatchDetailView({
 }) {
   const [activeStageId, setActiveStageId] = useState(null);
 
-  // Set default active stage when summary loads
   useEffect(() => {
     if (stageSummary && stageSummary.length > 1 && !activeStageId) {
       setActiveStageId(stageSummary[1].stage_id);
@@ -27,6 +27,8 @@ export function BatchDetailView({
   const currentStageData = stageSummary 
     ? stageSummary.find((s) => s.stage_id === activeStageId) 
     : null;
+
+  const orders = batchDetails ? batchDetails.orders : [];
 
   return (
     <div className="space-y-4">
@@ -38,7 +40,8 @@ export function BatchDetailView({
         stageColor={currentStageData?.color}
       />
 
-      {/* Batch Stats - Combined hours, cost, rejection rate */}
+      <BatchOrders orders={orders} />
+
       <BatchStats batchId={batch.batch_id} />
 
       <StageTabs
