@@ -12,6 +12,7 @@ export function BatchDetailView({
   batchDetails,
   stageSummary,
   stages,
+  stageWorkers,
   onUpdateQty,
   onMoveStage,
   onRefresh,
@@ -36,6 +37,9 @@ export function BatchDetailView({
   // Check if current stage has active timer
   const hasActiveTimerForStage = activeTimer && activeTimer.stage_id === activeStageId;
 
+  // Get workers for current stage
+  const currentStageWorkers = stageWorkers && activeStageId ? stageWorkers[activeStageId] || [] : [];
+
   return (
     <div className="space-y-4">
       <BatchHeader
@@ -57,11 +61,13 @@ export function BatchDetailView({
         activeStageId={activeStageId}
         onStageSelect={setActiveStageId}
         activeTimer={activeTimer}
+        stageWorkers={stageWorkers}
       />
 
       <StageContent
         stageData={currentStageData}
         stages={stages}
+        stageWorkers={currentStageWorkers}
         onUpdateQty={onUpdateQty}
         onMoveStage={onMoveStage}
         onRefresh={onRefresh}
