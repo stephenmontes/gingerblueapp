@@ -178,10 +178,88 @@ export default function Orders({ user }) {
     return (
       order.order_id?.toLowerCase().includes(term) ||
       order.external_id?.toLowerCase().includes(term) ||
+      order.order_number?.toLowerCase().includes(term) ||
       order.customer_name?.toLowerCase().includes(term) ||
       order.customer_email?.toLowerCase().includes(term)
     );
   });
+
+  // Sort orders
+  const sortedOrders = useMemo(() => {
+    const sorted = [...filteredOrders].sort((a, b) => {
+      let aVal, bVal;
+      
+      switch (sortColumn) {
+        case "order_number":
+          aVal = a.order_number || a.order_id || "";
+          bVal = b.order_number || b.order_id || "";
+          break;
+        case "store_name":
+          aVal = a.store_name || "";
+          bVal = b.store_name || "";
+          break;
+        case "customer_name":
+          aVal = a.customer_name || "";
+          bVal = b.customer_name || "";
+          break;
+        case "items":
+          aVal = a.items?.length || 0;
+          bVal = b.items?.length || 0;
+          return sortDirection === "asc" ? aVal - bVal : bVal - aVal;
+        case "total_price":
+          aVal = a.total_price || 0;
+          bVal = b.total_price || 0;
+          return sortDirection === "asc" ? aVal - bVal : bVal - aVal;
+        case "status":
+          aVal = a.status || "";
+          bVal = b.status || "";
+          break;
+        case "created_at":
+        default:
+          aVal = a.created_at || "";
+          bVal = b.created_at || "";
+          break;
+      }
+      
+      if (typeof aVal === "string") {
+        const comparison = aVal.localeCompare(bVal);
+        return sortDirection === "asc" ? comparison : -comparison;
+      }
+      return 0;
+    });
+    return sorted;
+  }, [filteredOrders, sortColumn, sortDirection]);
+
+  // Handle column sort
+  const handleSort = (column) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortColumn(column);
+      setSortDirection("asc");
+    }
+  };
+
+  // Sortable header component
+  const SortableHeader = ({ column, children }) => (
+    <TableHead 
+      className="label-caps cursor-pointer hover:bg-muted/50 transition-colors select-none"
+      onClick={() => handleSort(column)}
+    >
+      <div className="flex items-center gap-1">
+        {children}
+        {sortColumn === column ? (
+          sortDirection === "asc" ? (
+            <ArrowUp className="w-3 h-3" />
+          ) : (
+            <ArrowDown className="w-3 h-3" />
+          )
+        ) : (
+          <ArrowUpDown className="w-3 h-3 opacity-30" />
+        )}
+      </div>
+    </TableHead>
+  );
 
   const formatDate = (dateStr) => {
     if (!dateStr) return "-";
