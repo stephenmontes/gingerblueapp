@@ -302,6 +302,7 @@ Build a manufacturing and fulfillment app for Shopify websites with:
 ## Prioritized Backlog
 
 ### P1 - Important (Next Tasks)
+- [ ] ShipStation Fulfillment UI - Get shipping rates and create labels
 - [ ] Order Audit Log - Track changes to order status/details
 - [ ] Bulk "Mark All Complete" per stage - One-click completion
 - [ ] Auto-sync products on a schedule (webhooks or polling)
