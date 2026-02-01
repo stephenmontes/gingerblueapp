@@ -1,14 +1,15 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Layers, ArrowRight, Clock } from "lucide-react";
+import { Layers, ArrowRight, Clock, Users, User, Pause } from "lucide-react";
 import { ItemRow } from "./ItemRow";
 import { toast } from "sonner";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = BACKEND_URL + "/api";
 
-export function StageContent({ stageData, stages, onUpdateQty, onMoveStage, onRefresh, hasActiveTimer, timerVersion }) {
+export function StageContent({ stageData, stages, stageWorkers, onUpdateQty, onMoveStage, onRefresh, hasActiveTimer, timerVersion }) {
   if (!stageData) {
     return (
       <Card className="bg-card border-border">
@@ -44,6 +45,11 @@ export function StageContent({ stageData, stages, onUpdateQty, onMoveStage, onRe
           hasActiveTimer={hasActiveTimer}
         />
         
+        {/* Active Workers Display */}
+        {stageWorkers && stageWorkers.length > 0 && (
+          <ActiveWorkers workers={stageWorkers} />
+        )}
+        
         {/* Timer warning if not active */}
         {!hasActiveTimer && items.length > 0 && (
           <div className="flex items-center gap-2 text-orange-400 text-sm bg-orange-500/10 px-4 py-3 rounded-lg mb-4">
@@ -64,6 +70,38 @@ export function StageContent({ stageData, stages, onUpdateQty, onMoveStage, onRe
         />
       </CardContent>
     </Card>
+  );
+}
+
+function ActiveWorkers({ workers }) {
+  if (!workers || workers.length === 0) return null;
+
+  return (
+    <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+      <div className="flex items-center gap-2 mb-2">
+        <Users className="w-4 h-4 text-blue-400" />
+        <span className="text-sm font-medium text-blue-400">
+          {workers.length} worker{workers.length !== 1 ? "s" : ""} active on this stage
+        </span>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {workers.map((worker, index) => (
+          <Badge 
+            key={worker.user_id || index} 
+            variant="outline" 
+            className={`gap-1 ${worker.is_paused ? "text-yellow-400 border-yellow-400/30" : "text-green-400 border-green-400/30"}`}
+          >
+            <User className="w-3 h-3" />
+            {worker.user_name}
+            {worker.is_paused ? (
+              <Pause className="w-3 h-3 text-yellow-400" />
+            ) : (
+              <Clock className="w-3 h-3 animate-pulse" />
+            )}
+          </Badge>
+        ))}
+      </div>
+    </div>
   );
 }
 
