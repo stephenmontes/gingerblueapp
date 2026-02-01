@@ -9,16 +9,15 @@ Build a manufacturing and fulfillment app for Shopify websites with:
 - Users must log in with their company Google email
 - Modern dark theme UI
 
-### Production Queue V2 ("Frame Production") Requirements:
-1. Rename "Production Queue" to "Frame Production" with sub-tabs for stages
-2. Allow selecting multiple orders from the "Orders" tab to create a production "batch"
-3. Display a consolidated list of all items from the batched orders
-4. Group items by color and size (derived from SKU)
-5. Show subtotals for each identical item group
-6. QTY to cut and QTY completed input boxes per item group
-7. Allow individual item groups to be moved to the next production stage
-8. **Time tracker per user, per stage** - Each user works on one stage and hands off to the next user
-9. Performance metrics: avg items per hour per user per stage
+### Production Workflow Requirements:
+1. **Frame Production** page with sub-tabs for stages
+2. Select multiple orders to create production "batches"
+3. Display consolidated list of items grouped by color/size (from SKU)
+4. QTY to cut and QTY completed inputs per item
+5. Move items through stages: New Orders → Cutting → Assembly → Sand → Paint → Quality Check
+6. **Per-user, per-stage time tracking** - Each user works on one stage
+7. **Quality Check stage** - Track rejected frames, add good frames to inventory
+8. **Batch KPIs** - Combined hours, labor cost ($22/hr), avg cost per frame, rejection rate
 
 ## Architecture
 
@@ -32,20 +31,21 @@ Build a manufacturing and fulfillment app for Shopify websites with:
 ```
 /app/
 ├── backend/
-│   └── server.py              # FastAPI app with all routes and models
+│   └── server.py
 └── frontend/
     └── src/
-        ├── App.js             # Main router and auth logic
+        ├── App.js
         ├── components/
-        │   ├── Layout.jsx     # Sidebar navigation
-        │   └── production/    # Refactored production components
+        │   ├── Layout.jsx
+        │   └── production/
         │       ├── BatchCard.jsx
         │       ├── BatchList.jsx
         │       ├── StageTabs.jsx
-        │       ├── ItemRow.jsx
+        │       ├── ItemRow.jsx        # Includes rejected qty + add to inventory
         │       ├── StageContent.jsx
         │       ├── BatchHeader.jsx
         │       ├── BatchDetailView.jsx
+        │       ├── BatchStats.jsx     # KPIs: hours, costs, rejection rate
         │       ├── StageTimer.jsx
         │       └── index.js
         └── pages/
@@ -53,124 +53,107 @@ Build a manufacturing and fulfillment app for Shopify websites with:
             ├── Login.jsx
             ├── Orders.jsx
             ├── Production.jsx
+            ├── FrameInventory.jsx     # NEW
             ├── Reports.jsx
             ├── Settings.jsx
             └── Team.jsx
 ```
 
+### Production Stages (in order)
+1. New Orders (stage_new)
+2. Cutting (stage_cutting)
+3. Assembly (stage_assembly)
+4. Sand (stage_qc)
+5. Paint (stage_packing)
+6. Quality Check (stage_ready) - Final stage with inventory transfer
+
 ### Key API Endpoints
 
-**Authentication:**
-- `POST /api/auth/session` - Create user session
-- `GET /api/auth/me` - Get current user
+**Stage Timers (Per-User):**
+- `POST /api/stages/{stage_id}/start-timer`
+- `POST /api/stages/{stage_id}/stop-timer`
+- `GET /api/stages/{stage_id}/active-timer`
+- `GET /api/user/time-stats`
 
-**Batches:**
-- `POST /api/batches` - Create production batch from orders
-- `GET /api/batches` - List all batches
-- `GET /api/batches/{id}` - Get batch details
-- `GET /api/batches/{id}/stage-summary` - Get items grouped by stage
+**Production Items:**
+- `PUT /api/items/{id}/update?qty_completed=X`
+- `PUT /api/items/{id}/reject?qty_rejected=X`
+- `PUT /api/items/{id}/move-stage`
+- `POST /api/items/{id}/add-to-inventory`
 
-**Items:**
-- `PUT /api/items/{id}/update` - Update item qty_completed
-- `PUT /api/items/{id}/move-stage` - Move item to next stage (increments user's items_processed)
+**Batch Stats:**
+- `GET /api/batches/{id}/stats` - Returns:
+  - Combined hours (all users)
+  - Labor cost (hours × $22)
+  - Avg cost per frame
+  - Rejection rate & count
+  - Worker breakdown
 
-**Stage Timers (Per-User, Per-Stage):**
-- `POST /api/stages/{stage_id}/start-timer` - Start user's timer for a stage
-- `POST /api/stages/{stage_id}/stop-timer` - Stop timer, records duration & items
-- `GET /api/stages/{stage_id}/active-timer` - Check if user has active timer
-- `GET /api/user/active-timers` - Get all user's active timers
-- `GET /api/user/time-stats` - Get user's performance stats (avg items/hour per stage)
-- `GET /api/stages/active-workers` - See who is working on which stage
-
-**Stores:**
-- `POST /api/stores/{id}/sync` - Manual store sync
-- `POST /api/webhooks/shopify` - Shopify webhook
-- `POST /api/webhooks/etsy` - Etsy webhook
-
-**Reports:**
-- `GET /api/reports/export` - Export reports (format=csv|pdf)
+**Inventory:**
+- `GET /api/inventory`
+- `POST /api/inventory`
+- `PUT /api/inventory/{id}`
+- `DELETE /api/inventory/{id}`
 
 ### Database Schema
 
-**users:**
-```json
-{ "user_id", "email", "name", "picture", "role" }
-```
-
-**stores:**
-```json
-{ "store_id", "name", "platform", "api_key", "shop_url", "access_token" }
-```
-
-**orders:**
-```json
-{ "order_id", "external_id", "store_id", "customer_name", "items", "total", "status", "batch_id" }
-```
-
-**production_stages:**
-```json
-{ "stage_id", "name", "order", "color" }
-```
-Default stages: New Orders → Cutting → Assembly → Quality Check → Packing → Ready to Ship
-
-**batches:**
-```json
-{ "batch_id", "name", "order_ids", "current_stage_id", "status", "total_items", "items_completed" }
-```
-
 **production_items:**
 ```json
-{ "item_id", "batch_id", "order_id", "sku", "name", "color", "size", "qty_required", "qty_completed", "current_stage_id", "status" }
+{
+  "item_id", "batch_id", "order_id", "sku", "name", "color", "size",
+  "qty_required", "qty_completed", "qty_rejected",
+  "current_stage_id", "status", "added_to_inventory"
+}
 ```
 
-**time_logs (Per-User, Per-Stage):**
+**time_logs:**
 ```json
 {
   "log_id", "user_id", "user_name", "stage_id", "stage_name",
-  "started_at", "completed_at", "duration_minutes", "items_processed",
-  "action" // started, stopped
+  "started_at", "completed_at", "duration_minutes", "items_processed"
+}
+```
+
+**inventory:**
+```json
+{
+  "item_id", "sku", "name", "color", "size",
+  "quantity", "min_stock", "location"
 }
 ```
 
 ## What's Been Implemented
 
 ### Completed (Feb 2025)
-- ✅ Full-stack app with Dashboard, Orders, Team, Reports, Settings pages
-- ✅ Google OAuth authentication (Emergent-managed)
-- ✅ Dark theme UI with modern design
-- ✅ Shopify/Etsy store integration (API keys, webhooks)
-- ✅ Manual order sync from stores
+- ✅ Full-stack app with all pages
+- ✅ Google OAuth authentication
+- ✅ Dark theme UI
+- ✅ Shopify/Etsy store integration
 - ✅ CSV/PDF export for reports
-- ✅ Frame Production page structure with batch management
-- ✅ **Fixed critical build error** - Refactored Production.jsx into smaller components
-- ✅ **Per-user, per-stage time tracking** - Each user tracks their own time on their assigned stage
-
-### In Progress
-- 🔄 End-to-end testing of timer flow
-- 🔄 User performance stats display
+- ✅ Frame Production with batch management
+- ✅ Per-user, per-stage time tracking
+- ✅ **Qty can exceed required** (for cutting extras)
+- ✅ **Stage names: Sand, Paint, Quality Check**
+- ✅ **Frame Inventory page** with full CRUD
+- ✅ **Rejected frames tracking** in Quality Check
+- ✅ **Add to Frame Inventory button** (auto-creates inventory)
+- ✅ **Batch Stats KPIs** - Combined hours, labor cost, avg cost/frame, rejection rate
 
 ## Prioritized Backlog
 
 ### P0 - Critical
-- [ ] End-to-end test: Create batch → Start timer → Move items → Stop timer
-- [ ] Verify items_processed increments correctly
-- [ ] Test with multiple users on different stages
+- [ ] End-to-end test full production workflow
+- [ ] Test batch stats calculations
 
 ### P1 - Important
-- [ ] Display user time stats on Dashboard or Team page
-- [ ] Show active workers per stage in Production view
-- [ ] Fix ESLint warnings
+- [ ] Rejection trends report over time
+- [ ] Export batch stats to CSV/PDF
 
 ### P2 - Nice to Have
-- [ ] Real store data testing (requires API credentials)
-- [ ] Historical performance reports
-- [ ] Stage assignment preferences per user
-
-## Known Issues
-- ESLint warnings in `Orders.jsx` and `BatchHeader.jsx` - missing useEffect dependencies
-- Store integration requires user to provide API credentials
+- [ ] Real store data testing
+- [ ] Auto-deduct inventory on production start
 
 ## 3rd Party Integrations
 - **Emergent Google Auth** - User login
-- **Shopify API** - Order syncing (requires user API key)
-- **Etsy API** - Order syncing (requires user API key)
+- **Shopify API** - Order syncing
+- **Etsy API** - Order syncing
