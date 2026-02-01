@@ -45,6 +45,26 @@ function PlatformBadge({ platform }) {
   );
 }
 
+function StatusBadge({ status }) {
+  const statusConfig = {
+    awaiting_shipment: { label: "Awaiting Shipment", color: "text-yellow-400 bg-yellow-400/10 border-yellow-400/20" },
+    pending: { label: "Pending Payment", color: "text-orange-400 bg-orange-400/10 border-orange-400/20" },
+    shipped: { label: "Shipped", color: "text-green-400 bg-green-400/10 border-green-400/20" },
+    in_production: { label: "In Production", color: "text-blue-400 bg-blue-400/10 border-blue-400/20" },
+    completed: { label: "Completed", color: "text-green-400 bg-green-400/10 border-green-400/20" },
+    cancelled: { label: "Cancelled", color: "text-red-400 bg-red-400/10 border-red-400/20" },
+    on_hold: { label: "On Hold", color: "text-purple-400 bg-purple-400/10 border-purple-400/20" },
+  };
+  
+  const config = statusConfig[status] || { label: status, color: "text-gray-400 bg-gray-400/10 border-gray-400/20" };
+  
+  return (
+    <Badge variant="outline" className={config.color}>
+      {config.label}
+    </Badge>
+  );
+}
+
 export default function Orders({ user }) {
   const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
