@@ -315,17 +315,24 @@ export default function Settings({ user }) {
                   <div className="flex items-center gap-2">
                     {isManager && (
                       <>
-                        <Button variant="ghost" size="sm" onClick={() => openEditStore(store)} data-testid={`edit-store-${store.store_id}`}>
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        {store.platform !== "dropship" && (
+                        {store.platform !== "shipstation" && (
+                          <Button variant="ghost" size="sm" onClick={() => openEditStore(store)} data-testid={`edit-store-${store.store_id}`}>
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                        )}
+                        {store.platform !== "dropship" && store.platform !== "shipstation" && (
                           <Button variant="ghost" size="sm" onClick={() => handleSync(store.store_id)} disabled={syncing[store.store_id]} data-testid={`sync-store-${store.store_id}`}>
                             {syncing[store.store_id] ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
                           </Button>
                         )}
+                        {store.platform === "shipstation" && (
+                          <Badge variant="outline" className="text-xs text-blue-400">
+                            Sync via Orders page
+                          </Badge>
+                        )}
                       </>
                     )}
-                    {isAdmin && (
+                    {isAdmin && store.platform !== "shipstation" && (
                       <Button variant="ghost" size="sm" className="text-destructive" onClick={() => handleDelete(store.store_id)} data-testid={`delete-store-${store.store_id}`}>
                         <Trash2 className="w-4 h-4" />
                       </Button>
