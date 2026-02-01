@@ -879,6 +879,7 @@ async def get_orders(
     store_id: Optional[str] = None,
     status: Optional[str] = None,
     stage_id: Optional[str] = None,
+    unbatched: Optional[bool] = None,
     user: User = Depends(get_current_user)
 ):
     """Get all orders with optional filters"""
@@ -889,6 +890,8 @@ async def get_orders(
         query["status"] = status
     if stage_id:
         query["current_stage_id"] = stage_id
+    if unbatched:
+        query["$or"] = [{"batch_id": None}, {"batch_id": {"$exists": False}}]
     
     orders = await db.orders.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
     return orders
