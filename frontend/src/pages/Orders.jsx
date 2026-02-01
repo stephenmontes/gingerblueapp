@@ -84,7 +84,7 @@ export default function Orders({ user }) {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
 
-  const fetchOrders = async (page = currentPage) => {
+  const fetchOrders = async (page = currentPage, sortCol = sortColumn, sortDir = sortDirection) => {
     try {
       let url = API + "/orders";
       const params = new URLSearchParams();
@@ -95,6 +95,9 @@ export default function Orders({ user }) {
       // Add pagination params
       params.append("page", page.toString());
       params.append("page_size", pageSize.toString());
+      // Add sort params - always sort newest first by default
+      params.append("sort_by", sortCol);
+      params.append("sort_order", sortDir);
       url += "?" + params.toString();
 
       const response = await fetch(url, { credentials: "include" });
