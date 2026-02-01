@@ -160,6 +160,28 @@ export default function OrderFulfillment() {
         )}
       </div>
 
+      {/* User Date Report Toggle */}
+      <div className="border border-border rounded-lg">
+        <Button
+          variant="ghost"
+          onClick={() => setShowUserDateReport(!showUserDateReport)}
+          className="w-full justify-between h-12"
+          data-testid="toggle-user-date-report"
+        >
+          <span className="flex items-center gap-2">
+            <Users className="w-4 h-4" />
+            Hours by User & Date Report
+          </span>
+          {showUserDateReport ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+        </Button>
+        
+        {showUserDateReport && (
+          <div className="p-4 pt-0">
+            <UserDateReport />
+          </div>
+        )}
+      </div>
+
       {/* Time Entry Manager Toggle (Admin/Manager only) */}
       <div className="border border-border rounded-lg">
         <Button
