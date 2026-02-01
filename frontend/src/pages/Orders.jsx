@@ -84,7 +84,7 @@ export default function Orders({ user }) {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
 
-  const fetchOrders = async () => {
+  const fetchOrders = async (page = currentPage) => {
     try {
       let url = API + "/orders";
       const params = new URLSearchParams();
@@ -92,12 +92,25 @@ export default function Orders({ user }) {
       // Send status filter to backend - backend now handles "active" filtering
       if (statusFilter !== "all") params.append("status", statusFilter);
       if (showOnlyUnbatched) params.append("unbatched", "true");
-      if (params.toString()) url += "?" + params.toString();
+      // Add pagination params
+      params.append("page", page.toString());
+      params.append("page_size", pageSize.toString());
+      url += "?" + params.toString();
 
       const response = await fetch(url, { credentials: "include" });
       if (response.ok) {
         const data = await response.json();
-        setOrders(data);
+        // Handle paginated response
+        if (data.orders) {
+          setOrders(data.orders);
+          setTotalPages(data.pagination?.total_pages || 1);
+          setTotalCount(data.pagination?.total_count || data.orders.length);
+          setCurrentPage(data.pagination?.page || 1);
+        } else {
+          // Fallback for non-paginated response
+          setOrders(Array.isArray(data) ? data : []);
+          setTotalCount(Array.isArray(data) ? data.length : 0);
+        }
       }
     } catch (error) {
       toast.error("Failed to load orders");
