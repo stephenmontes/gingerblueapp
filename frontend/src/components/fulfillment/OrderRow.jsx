@@ -7,6 +7,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { 
   MoreVertical, 
@@ -18,7 +19,8 @@ import {
   Info,
   Layers,
   ExternalLink,
-  FileText
+  FileText,
+  Printer
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
