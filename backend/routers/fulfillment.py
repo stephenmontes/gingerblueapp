@@ -11,11 +11,11 @@ router = APIRouter(prefix="/fulfillment", tags=["fulfillment"])
 
 # Default fulfillment stages
 DEFAULT_FULFILLMENT_STAGES = [
-    {"stage_id": "fulfill_orders", "name": "Orders", "order": 0, "color": "#6366F1"},
-    {"stage_id": "fulfill_print", "name": "Print List", "order": 1, "color": "#F59E0B"},
-    {"stage_id": "fulfill_mount", "name": "Mount List", "order": 2, "color": "#3B82F6"},
-    {"stage_id": "fulfill_finish", "name": "Finish", "order": 3, "color": "#8B5CF6"},
-    {"stage_id": "fulfill_pack", "name": "Pack and Ship", "order": 4, "color": "#22C55E"},
+    {"stage_id": "fulfill_orders", "name": "Orders", "order": 0, "color": "#6366F1"},  # Indigo
+    {"stage_id": "fulfill_print", "name": "Print List", "order": 1, "color": "#F59E0B"},  # Amber
+    {"stage_id": "fulfill_mount", "name": "Mount List", "order": 2, "color": "#EC4899"},  # Pink
+    {"stage_id": "fulfill_finish", "name": "Finish", "order": 3, "color": "#14B8A6"},  # Teal
+    {"stage_id": "fulfill_pack", "name": "Pack and Ship", "order": 4, "color": "#22C55E"},  # Green
 ]
 
 # Helper function to parse SKU and get match key
