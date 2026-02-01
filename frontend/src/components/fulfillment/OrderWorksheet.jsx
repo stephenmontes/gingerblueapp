@@ -40,6 +40,7 @@ export function OrderWorksheet({ order, stages, currentStage, onClose, onMoveToN
   const [saving, setSaving] = useState(false);
   const [activeTimer, setActiveTimer] = useState(null);
   const [timerLoading, setTimerLoading] = useState(false);
+  const [showPrintDialog, setShowPrintDialog] = useState(false);
 
   useEffect(() => {
     if (order) {
