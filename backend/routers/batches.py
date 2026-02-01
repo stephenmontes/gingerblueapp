@@ -163,12 +163,21 @@ async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current
     if not orders:
         raise HTTPException(status_code=404, detail="No orders found")
     
-    stages = await db.production_stages.find({}, {"_id": 0}).sort("order", 1).to_list(100)
-    first_stage = stages[1] if len(stages) > 1 else stages[0]
+    # Find the Cutting stage specifically - this is where cut list items start
+    cutting_stage = await db.production_stages.find_one({"stage_id": "stage_cutting"})
+    if not cutting_stage:
+        # Fallback - find by name
+        cutting_stage = await db.production_stages.find_one({"name": {"$regex": "cut", "$options": "i"}})
+    if not cutting_stage:
+        # Last fallback - use first stage
+        stages = await db.production_stages.find({}, {"_id": 0}).sort("order", 1).to_list(100)
+        cutting_stage = stages[0] if stages else {"stage_id": "stage_cutting", "name": "Cutting"}
     
     batch_id = f"batch_{uuid.uuid4().hex[:8]}"
     total_items = 0
     
+    # Items are ONLY added to the cutting stage (cut list)
+    # They will move to next stages when marked as done in the cut list
     production_items = []
     for order in orders:
         for item in order.get("items", []):
