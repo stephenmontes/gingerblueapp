@@ -263,7 +263,7 @@ async def get_stage_items_consolidated(
     
     Sort order: 2nd SKU group (color) -> 3rd group (number) -> 4th group (size) -> 2nd-to-last letters
     """
-    orders = await db.orders.find(
+    orders = await db.fulfillment_orders.find(
         {"fulfillment_stage_id": stage_id},
         {"_id": 0}
     ).to_list(1000)
@@ -350,7 +350,7 @@ async def get_fulfillment_orders(
     if status:
         query["fulfillment_status"] = status
     
-    orders = await db.orders.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    orders = await db.fulfillment_orders.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
     return orders
 
 
@@ -360,7 +360,7 @@ async def get_order_inventory_status(
     user: User = Depends(get_current_user)
 ):
     """Check inventory availability for a specific order"""
-    order = await db.orders.find_one({"order_id": order_id}, {"_id": 0})
+    order = await db.fulfillment_orders.find_one({"order_id": order_id}, {"_id": 0})
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
     
@@ -374,7 +374,7 @@ async def save_worksheet_progress(
     user: User = Depends(get_current_user)
 ):
     """Save worksheet progress for an order (qty_done, is_complete for each item)"""
-    order = await db.orders.find_one({"order_id": order_id})
+    order = await db.fulfillment_orders.find_one({"order_id": order_id})
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
     
@@ -393,7 +393,7 @@ async def save_worksheet_progress(
     
     now = datetime.now(timezone.utc).isoformat()
     
-    await db.orders.update_one(
+    await db.fulfillment_orders.update_one(
         {"order_id": order_id},
         {"$set": {
             "items": items,
@@ -418,7 +418,7 @@ async def get_orders_by_stage(
     user: User = Depends(get_current_user)
 ):
     """Get all orders in a specific fulfillment stage with inventory status"""
-    orders = await db.orders.find(
+    orders = await db.fulfillment_orders.find(
         {"fulfillment_stage_id": stage_id},
         {"_id": 0}
     ).sort("created_at", -1).to_list(1000)
@@ -443,7 +443,7 @@ async def assign_order_to_stage(
     user: User = Depends(get_current_user)
 ):
     """Assign an order to a fulfillment stage"""
-    order = await db.orders.find_one({"order_id": order_id})
+    order = await db.fulfillment_orders.find_one({"order_id": order_id})
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
     
@@ -458,7 +458,7 @@ async def assign_order_to_stage(
     if stage_id == "fulfill_pack":
         deduction_result = await deduct_inventory_for_order(order, user)
     
-    await db.orders.update_one(
+    await db.fulfillment_orders.update_one(
         {"order_id": order_id},
         {"$set": {
             "fulfillment_stage_id": stage_id,
@@ -495,7 +495,7 @@ async def move_order_to_next_stage(
     user: User = Depends(get_current_user)
 ):
     """Move an order to the next fulfillment stage"""
-    order = await db.orders.find_one({"order_id": order_id})
+    order = await db.fulfillment_orders.find_one({"order_id": order_id})
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
     
@@ -527,7 +527,7 @@ async def move_order_to_next_stage(
             pass
         deduction_result = await deduct_inventory_for_order(order, user)
     
-    await db.orders.update_one(
+    await db.fulfillment_orders.update_one(
         {"order_id": order_id},
         {"$set": {
             "fulfillment_stage_id": next_stage["stage_id"],
@@ -575,13 +575,13 @@ async def bulk_move_orders(
     # If moving to Pack and Ship, deduct inventory for each order
     if target_stage_id == "fulfill_pack":
         for oid in order_ids:
-            order = await db.orders.find_one({"order_id": oid}, {"_id": 0})
+            order = await db.fulfillment_orders.find_one({"order_id": oid}, {"_id": 0})
             if order and not order.get("inventory_deducted"):
                 result = await deduct_inventory_for_order(order, user)
                 deduction_results.append(result)
     
     # Update all orders
-    result = await db.orders.update_many(
+    result = await db.fulfillment_orders.update_many(
         {"order_id": {"$in": order_ids}},
         {"$set": {
             "fulfillment_stage_id": target_stage_id,
@@ -623,7 +623,7 @@ async def get_stage_order_count(
     user: User = Depends(get_current_user)
 ):
     """Get count of orders in a stage"""
-    count = await db.orders.count_documents({"fulfillment_stage_id": stage_id})
+    count = await db.fulfillment_orders.count_documents({"fulfillment_stage_id": stage_id})
     return {"stage_id": stage_id, "count": count}
 
 
@@ -636,7 +636,7 @@ async def get_fulfillment_summary(user: User = Depends(get_current_user)):
     total_out_of_stock = 0
     
     for stage in stages:
-        orders = await db.orders.find(
+        orders = await db.fulfillment_orders.find(
             {"fulfillment_stage_id": stage["stage_id"]},
             {"_id": 0}
         ).to_list(1000)
@@ -658,14 +658,14 @@ async def get_fulfillment_summary(user: User = Depends(get_current_user)):
             "out_of_stock_count": out_of_stock_orders
         })
     
-    unassigned = await db.orders.count_documents({
+    unassigned = await db.fulfillment_orders.count_documents({
         "$or": [
             {"fulfillment_stage_id": {"$exists": False}},
             {"fulfillment_stage_id": None}
         ]
     })
     
-    total = await db.orders.count_documents({})
+    total = await db.fulfillment_orders.count_documents({})
     
     return {
         "stages": summary,
@@ -678,7 +678,7 @@ async def get_fulfillment_summary(user: User = Depends(get_current_user)):
 @router.get("/inventory-alerts")
 async def get_inventory_alerts(user: User = Depends(get_current_user)):
     """Get list of orders with insufficient inventory"""
-    orders = await db.orders.find(
+    orders = await db.fulfillment_orders.find(
         {"fulfillment_stage_id": {"$exists": True, "$ne": None}},
         {"_id": 0}
     ).to_list(1000)
@@ -731,7 +731,7 @@ async def mark_order_shipped(
     user: User = Depends(get_current_user)
 ):
     """Mark an order as shipped and archive it"""
-    order = await db.orders.find_one({"order_id": order_id})
+    order = await db.fulfillment_orders.find_one({"order_id": order_id})
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
     
@@ -758,7 +758,7 @@ async def mark_order_shipped(
     if carrier:
         update_data["carrier"] = carrier
     
-    await db.orders.update_one(
+    await db.fulfillment_orders.update_one(
         {"order_id": order_id},
         {"$set": update_data}
     )
