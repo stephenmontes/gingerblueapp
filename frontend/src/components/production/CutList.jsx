@@ -217,6 +217,14 @@ export function CutList({ batch, activeTimer }) {
         </CardTitle>
       </CardHeader>
       <CardContent>
+        {/* Timer warning if not active */}
+        {!hasActiveTimer && (
+          <div className="flex items-center gap-2 text-orange-400 text-sm bg-orange-500/10 px-4 py-3 rounded-lg mb-4">
+            <Clock className="w-5 h-5" />
+            <span className="font-medium">Start your timer to update quantities</span>
+          </div>
+        )}
+        
         <Table>
           <TableHeader>
             <TableRow className="border-border">
@@ -237,6 +245,7 @@ export function CutList({ batch, activeTimer }) {
                 localValues={localValues}
                 onQtyChange={handleQtyChange}
                 onCompletedChange={handleCompletedChange}
+                hasActiveTimer={hasActiveTimer}
               />
             ))}
             
