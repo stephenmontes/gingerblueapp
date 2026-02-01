@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowRight, CheckCircle2, PackagePlus, XCircle } from "lucide-react";
+import { ArrowRight, CheckCircle2, PackagePlus, XCircle, Clock } from "lucide-react";
 import { toast } from "sonner";
 
 const COLOR_LABELS = { B: "Black", W: "White", N: "Natural" };
@@ -15,6 +15,8 @@ export function ItemRow({ item, stages, currentStageId, onUpdateQty, onMoveStage
   const [qty, setQty] = useState(item.qty_completed || 0);
   const [rejectedQty, setRejectedQty] = useState(item.qty_rejected || 0);
   const [addingToInventory, setAddingToInventory] = useState(false);
+  const [hasActiveTimer, setHasActiveTimer] = useState(false);
+  const [checkingTimer, setCheckingTimer] = useState(true);
   
   const currentIdx = stages.findIndex((s) => s.stage_id === item.current_stage_id);
   const nextStage = currentIdx >= 0 && currentIdx < stages.length - 1 ? stages[currentIdx + 1] : null;
@@ -33,22 +35,72 @@ export function ItemRow({ item, stages, currentStageId, onUpdateQty, onMoveStage
   const canAddToInventory = isQualityCheckStage && qtyCompleted > 0 && !item.added_to_inventory;
   const goodFrames = Math.max(0, qtyCompleted - qtyRejected);
 
+  // Check if user has active timer for this stage
+  useEffect(() => {
+    checkTimerStatus();
+  }, [item.current_stage_id]);
+
+  async function checkTimerStatus() {
+    try {
+      const res = await fetch(API + "/stages/" + item.current_stage_id + "/active-timer", {
+        credentials: "include",
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setHasActiveTimer(data.active);
+      }
+    } catch (err) {
+      console.error("Failed to check timer:", err);
+    } finally {
+      setCheckingTimer(false);
+    }
+  }
+
+  function showTimerWarning() {
+    toast.error(
+      <div className="flex items-center gap-2">
+        <Clock className="w-5 h-5" />
+        <div>
+          <p className="font-medium">Start your timer first!</p>
+          <p className="text-sm opacity-80">Click "Start" at the top to begin tracking time for this stage.</p>
+        </div>
+      </div>,
+      { duration: 4000 }
+    );
+  }
+
   function handleQtyChange(e) {
+    if (!hasActiveTimer) {
+      showTimerWarning();
+      return;
+    }
     const val = parseInt(e.target.value, 10) || 0;
     setQty(Math.max(0, val));
   }
 
   function handleRejectedChange(e) {
+    if (!hasActiveTimer) {
+      showTimerWarning();
+      return;
+    }
     const val = parseInt(e.target.value, 10) || 0;
     setRejectedQty(Math.max(0, val));
   }
 
   function handleSave() {
+    if (!hasActiveTimer) {
+      showTimerWarning();
+      return;
+    }
     onUpdateQty(item.item_id, qty);
   }
 
   // Quick complete - sets qty to required amount
   function handleQuickComplete(checked) {
+    if (!hasActiveTimer) {
+      showTimerWarning();
+      return;
+    }
     if (checked) {
       setQty(qtyRequired);
       onUpdateQty(item.item_id, qtyRequired);
@@ -59,6 +111,10 @@ export function ItemRow({ item, stages, currentStageId, onUpdateQty, onMoveStage
   }
 
   async function handleSaveRejected() {
+    if (!hasActiveTimer) {
+      showTimerWarning();
+      return;
+    }
     try {
       const res = await fetch(API + "/items/" + item.item_id + "/reject?qty_rejected=" + rejectedQty, {
         method: "PUT",
@@ -101,11 +157,28 @@ export function ItemRow({ item, stages, currentStageId, onUpdateQty, onMoveStage
     }
   }
 
+  // Show loading state while checking timer
+  if (checkingTimer) {
+    return (
+      <div className="p-4 bg-muted/30 rounded-lg border border-border animate-pulse">
+        <div className="h-6 w-48 bg-muted rounded" />
+      </div>
+    );
+  }
+
   return (
     <div
-      className="flex flex-col gap-3 p-4 bg-muted/30 rounded-lg border border-border"
+      className={`flex flex-col gap-3 p-4 bg-muted/30 rounded-lg border ${hasActiveTimer ? "border-border" : "border-orange-500/30"}`}
       data-testid={`item-row-${item.item_id}`}
     >
+      {/* Timer warning banner */}
+      {!hasActiveTimer && (
+        <div className="flex items-center gap-2 text-orange-400 text-sm bg-orange-500/10 px-3 py-2 rounded-md -mt-1 -mx-1">
+          <Clock className="w-4 h-4" />
+          <span>Start your timer to update quantities</span>
+        </div>
+      )}
+
       {/* Top row - Item info and progress */}
       <div className="flex items-center gap-4">
         {/* Completed Checkbox - Quick way to mark as done */}
@@ -113,7 +186,8 @@ export function ItemRow({ item, stages, currentStageId, onUpdateQty, onMoveStage
           <Checkbox
             checked={qtyCompleted >= qtyRequired}
             onCheckedChange={handleQuickComplete}
-            className="h-6 w-6 border-2 data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
+            disabled={!hasActiveTimer}
+            className={`h-6 w-6 border-2 data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600 ${!hasActiveTimer ? "opacity-50 cursor-not-allowed" : ""}`}
             data-testid={`complete-checkbox-${item.item_id}`}
           />
           <span className="text-[10px] text-muted-foreground">Done</span>
@@ -150,7 +224,8 @@ export function ItemRow({ item, stages, currentStageId, onUpdateQty, onMoveStage
               min="0"
               value={qty}
               onChange={handleQtyChange}
-              className="w-16 text-center"
+              disabled={!hasActiveTimer}
+              className={`w-16 text-center ${!hasActiveTimer ? "opacity-50 cursor-not-allowed" : ""}`}
               data-testid={`qty-input-${item.item_id}`}
             />
           </div>
@@ -158,6 +233,7 @@ export function ItemRow({ item, stages, currentStageId, onUpdateQty, onMoveStage
             size="sm"
             variant="outline"
             onClick={handleSave}
+            disabled={!hasActiveTimer}
             data-testid={`update-qty-${item.item_id}`}
           >
             Save
@@ -201,13 +277,15 @@ export function ItemRow({ item, stages, currentStageId, onUpdateQty, onMoveStage
               max={qtyCompleted}
               value={rejectedQty}
               onChange={handleRejectedChange}
-              className="w-16 text-center"
+              disabled={!hasActiveTimer}
+              className={`w-16 text-center ${!hasActiveTimer ? "opacity-50 cursor-not-allowed" : ""}`}
               data-testid={`rejected-input-${item.item_id}`}
             />
             <Button
               size="sm"
               variant="outline"
               onClick={handleSaveRejected}
+              disabled={!hasActiveTimer}
               data-testid={`save-rejected-${item.item_id}`}
             >
               Save
