@@ -145,7 +145,26 @@ export function FrameList({ batch, activeTimer, currentStageId, stages }) {
     
     // Debounce server save (500ms)
     debounceTimers.current[frameId] = setTimeout(() => {
-      saveToServer(frameId, qty);
+      const currentRejected = localRejected[frameId] || 0;
+      saveToServer(frameId, qty, currentRejected);
+    }, 500);
+  };
+
+  const handleRejectedChange = (frameId, value) => {
+    const qty = parseInt(value) || 0;
+    
+    // Update local value immediately
+    setLocalRejected(prev => ({ ...prev, [frameId]: qty }));
+    
+    // Clear existing timer
+    if (rejectedTimers.current[frameId]) {
+      clearTimeout(rejectedTimers.current[frameId]);
+    }
+    
+    // Debounce server save (500ms)
+    rejectedTimers.current[frameId] = setTimeout(() => {
+      const currentCompleted = localValues[frameId] || 0;
+      saveToServer(frameId, currentCompleted, qty);
     }, 500);
   };
 
