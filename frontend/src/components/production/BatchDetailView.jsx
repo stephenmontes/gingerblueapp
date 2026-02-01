@@ -53,12 +53,13 @@ export function BatchDetailView({
         activeTimer={activeTimer}
       />
 
+      {/* KPIs / Stats - above the lists */}
+      <BatchStats batchId={batch.batch_id} />
+
       {/* Cut List - aggregated view by size and color */}
       <CutList batch={batch} />
 
       <BatchOrders orders={orders} />
-
-      <BatchStats batchId={batch.batch_id} />
 
       <StageTabs
         stages={stageSummary || []}
