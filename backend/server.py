@@ -1406,6 +1406,158 @@ async def adjust_inventory_quantity(
     )
     return {"message": "Quantity adjusted", "new_quantity": new_quantity}
 
+# ============== Production Item Updates ==============
+
+@api_router.put("/items/{item_id}/reject")
+async def update_item_rejected(
+    item_id: str,
+    qty_rejected: int,
+    user: User = Depends(get_current_user)
+):
+    """Update the rejected quantity for an item"""
+    item = await db.production_items.find_one({"item_id": item_id}, {"_id": 0})
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    
+    qty_rejected = max(0, qty_rejected)
+    
+    await db.production_items.update_one(
+        {"item_id": item_id},
+        {"$set": {"qty_rejected": qty_rejected}}
+    )
+    
+    return {"message": "Rejected quantity updated", "qty_rejected": qty_rejected}
+
+@api_router.post("/items/{item_id}/add-to-inventory")
+async def add_item_to_inventory(item_id: str, user: User = Depends(get_current_user)):
+    """Add completed item to frame inventory (from Quality Check stage)"""
+    item = await db.production_items.find_one({"item_id": item_id}, {"_id": 0})
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    
+    if item.get("added_to_inventory"):
+        raise HTTPException(status_code=400, detail="Item already added to inventory")
+    
+    # Calculate quantity to add (completed minus rejected)
+    qty_to_add = max(0, item.get("qty_completed", 0) - item.get("qty_rejected", 0))
+    
+    if qty_to_add <= 0:
+        raise HTTPException(status_code=400, detail="No frames to add (completed - rejected = 0)")
+    
+    # Check if inventory item with same SKU exists
+    existing_inv = await db.inventory.find_one({"sku": item["sku"]}, {"_id": 0})
+    
+    if existing_inv:
+        # Update existing inventory
+        await db.inventory.update_one(
+            {"sku": item["sku"]},
+            {"$inc": {"quantity": qty_to_add},
+             "$set": {"updated_at": datetime.now(timezone.utc).isoformat()}}
+        )
+    else:
+        # Create new inventory item
+        inv_item = {
+            "item_id": f"inv_{uuid.uuid4().hex[:8]}",
+            "sku": item["sku"],
+            "name": item["name"],
+            "color": item.get("color", ""),
+            "size": item.get("size", ""),
+            "quantity": qty_to_add,
+            "min_stock": 10,
+            "location": "",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.inventory.insert_one(inv_item)
+    
+    # Mark item as added to inventory
+    await db.production_items.update_one(
+        {"item_id": item_id},
+        {"$set": {"added_to_inventory": True}}
+    )
+    
+    return {
+        "message": f"Added {qty_to_add} frames to inventory",
+        "sku": item["sku"],
+        "quantity_added": qty_to_add
+    }
+
+@api_router.get("/batches/{batch_id}/stats")
+async def get_batch_stats(batch_id: str, user: User = Depends(get_current_user)):
+    """Get comprehensive batch statistics including combined hours, costs, and rejection rate"""
+    batch = await db.production_batches.find_one({"batch_id": batch_id}, {"_id": 0})
+    if not batch:
+        raise HTTPException(status_code=404, detail="Batch not found")
+    
+    # Get all items in batch
+    items = await db.production_items.find({"batch_id": batch_id}, {"_id": 0}).to_list(10000)
+    
+    # Get all time logs for this batch's stages
+    time_logs = await db.time_logs.find({
+        "completed_at": {"$ne": None}
+    }, {"_id": 0}).to_list(10000)
+    
+    # Calculate totals
+    total_required = sum(item.get("qty_required", 0) for item in items)
+    total_completed = sum(item.get("qty_completed", 0) for item in items)
+    total_rejected = sum(item.get("qty_rejected", 0) for item in items)
+    total_good = total_completed - total_rejected
+    
+    # Calculate combined hours from all users
+    total_minutes = sum(log.get("duration_minutes", 0) for log in time_logs)
+    total_hours = total_minutes / 60
+    
+    # Calculate rejection rate
+    rejection_rate = (total_rejected / total_completed * 100) if total_completed > 0 else 0
+    
+    # Calculate avg cost per frame ($22/hour labor rate)
+    hourly_rate = 22.0
+    total_labor_cost = total_hours * hourly_rate
+    avg_cost_per_frame = total_labor_cost / total_good if total_good > 0 else 0
+    
+    # Get hours breakdown by user
+    user_hours = {}
+    for log in time_logs:
+        user_name = log.get("user_name", "Unknown")
+        if user_name not in user_hours:
+            user_hours[user_name] = {"minutes": 0, "items_processed": 0}
+        user_hours[user_name]["minutes"] += log.get("duration_minutes", 0)
+        user_hours[user_name]["items_processed"] += log.get("items_processed", 0)
+    
+    user_breakdown = [
+        {
+            "user_name": name,
+            "hours": round(data["minutes"] / 60, 2),
+            "items_processed": data["items_processed"]
+        }
+        for name, data in user_hours.items()
+    ]
+    
+    return {
+        "batch_id": batch_id,
+        "batch_name": batch.get("name", ""),
+        "totals": {
+            "required": total_required,
+            "completed": total_completed,
+            "rejected": total_rejected,
+            "good_frames": total_good
+        },
+        "time": {
+            "total_hours": round(total_hours, 2),
+            "total_minutes": round(total_minutes, 1)
+        },
+        "costs": {
+            "hourly_rate": hourly_rate,
+            "total_labor_cost": round(total_labor_cost, 2),
+            "avg_cost_per_frame": round(avg_cost_per_frame, 2)
+        },
+        "quality": {
+            "rejection_rate": round(rejection_rate, 1),
+            "rejected_count": total_rejected
+        },
+        "user_breakdown": user_breakdown
+    }
+
 # ============== Demo Data Route ==============
 
 @api_router.post("/demo/seed")
