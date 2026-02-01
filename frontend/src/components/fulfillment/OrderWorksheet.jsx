@@ -33,9 +33,11 @@ function sortBySize(items) {
   });
 }
 
-export function OrderWorksheet({ order, stages, currentStage, onClose, onMoveToNextStage, onRefresh }) {
+export function OrderWorksheet({ order, stages, currentStage, onClose, onMoveToNextStage, onRefresh, onTimerChange }) {
   const [items, setItems] = useState([]);
   const [saving, setSaving] = useState(false);
+  const [activeTimer, setActiveTimer] = useState(null);
+  const [timerLoading, setTimerLoading] = useState(false);
 
   useEffect(() => {
     if (order) {
@@ -47,8 +49,92 @@ export function OrderWorksheet({ order, stages, currentStage, onClose, onMoveToN
         is_complete: item.is_complete || false
       })));
       setItems(sorted);
+      checkActiveTimer();
     }
   }, [order]);
+
+  async function checkActiveTimer() {
+    try {
+      const res = await fetch(`${API}/fulfillment/user/active-timer`, { credentials: "include" });
+      if (res.ok) {
+        const timers = await res.json();
+        setActiveTimer(timers.length > 0 ? timers[0] : null);
+      }
+    } catch (err) {
+      console.error("Failed to check timer:", err);
+    }
+  }
+
+  async function handleStartTimer() {
+    if (!currentStage) return;
+    setTimerLoading(true);
+    try {
+      const res = await fetch(`${API}/fulfillment/stages/${currentStage.stage_id}/start-timer`, {
+        method: "POST", credentials: "include"
+      });
+      if (res.ok) {
+        toast.success(`Timer started for ${currentStage.name}`);
+        checkActiveTimer();
+        onTimerChange?.();
+      } else {
+        const err = await res.json();
+        toast.error(err.detail || "Failed to start timer");
+      }
+    } catch (err) {
+      toast.error("Failed to start timer");
+    } finally {
+      setTimerLoading(false);
+    }
+  }
+
+  async function handlePauseTimer() {
+    if (!activeTimer) return;
+    try {
+      const res = await fetch(`${API}/fulfillment/stages/${activeTimer.stage_id}/pause-timer`, {
+        method: "POST", credentials: "include"
+      });
+      if (res.ok) {
+        toast.info("Timer paused");
+        checkActiveTimer();
+        onTimerChange?.();
+      }
+    } catch (err) {
+      toast.error("Failed to pause timer");
+    }
+  }
+
+  async function handleResumeTimer() {
+    if (!activeTimer) return;
+    try {
+      const res = await fetch(`${API}/fulfillment/stages/${activeTimer.stage_id}/resume-timer`, {
+        method: "POST", credentials: "include"
+      });
+      if (res.ok) {
+        toast.success("Timer resumed");
+        checkActiveTimer();
+        onTimerChange?.();
+      }
+    } catch (err) {
+      toast.error("Failed to resume timer");
+    }
+  }
+
+  async function handleStopTimer() {
+    if (!activeTimer) return;
+    const itemsCompleted = items.filter(i => i.is_complete).length;
+    try {
+      const res = await fetch(`${API}/fulfillment/stages/${activeTimer.stage_id}/stop-timer?orders_processed=1&items_processed=${itemsCompleted}`, {
+        method: "POST", credentials: "include"
+      });
+      if (res.ok) {
+        toast.success("Timer stopped");
+        setActiveTimer(null);
+        onTimerChange?.();
+      }
+    } catch (err) {
+      toast.error("Failed to stop timer");
+    }
+  }
 
   if (!order) return null;
 
