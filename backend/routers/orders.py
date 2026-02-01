@@ -22,6 +22,7 @@ async def get_orders(
     status: Optional[str] = None,
     stage_id: Optional[str] = None,
     unbatched: Optional[bool] = None,
+    include_archived: Optional[bool] = False,
     user: User = Depends(get_current_user)
 ):
     """Get all orders with optional filters"""
@@ -35,9 +36,41 @@ async def get_orders(
     if unbatched:
         query["$or"] = [{"batch_id": None}, {"batch_id": {"$exists": False}}]
     
+    # Exclude archived orders by default
+    if not include_archived:
+        query["archived"] = {"$ne": True}
+    
     # Fetch from fulfillment_orders (synced orders) - this is the main orders collection
     orders = await db.fulfillment_orders.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
     return orders
+
+
+@router.put("/{order_id}/archive")
+async def archive_order(order_id: str, user: User = Depends(get_current_user)):
+    """Archive an order to remove it from active list"""
+    result = await db.fulfillment_orders.update_one(
+        {"order_id": order_id},
+        {"$set": {"archived": True, "archived_at": datetime.now(timezone.utc).isoformat(), "archived_by": user.user_id}}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    return {"message": "Order archived"}
+
+
+@router.put("/{order_id}/unarchive")
+async def unarchive_order(order_id: str, user: User = Depends(get_current_user)):
+    """Unarchive an order to restore it to active list"""
+    result = await db.fulfillment_orders.update_one(
+        {"order_id": order_id},
+        {"$set": {"archived": False}, "$unset": {"archived_at": "", "archived_by": ""}}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    return {"message": "Order restored"}
 
 @router.post("")
 async def create_order(order_data: OrderCreate, user: User = Depends(get_current_user)):
