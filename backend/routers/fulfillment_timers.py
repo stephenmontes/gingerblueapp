@@ -613,3 +613,200 @@ async def get_order_time_entries(order_id: str, user: User = Depends(get_current
         } for log in time_logs]
     }
 
+
+
+# Auto-stop inactive timers (called periodically or on page load)
+@router.post("/timers/auto-stop-inactive")
+async def auto_stop_inactive_timers(user: User = Depends(get_current_user)):
+    """Automatically stop timers that have been inactive for more than 4 hours."""
+    
+    four_hours_ago = datetime.now(timezone.utc) - timedelta(hours=4)
+    
+    # Find all active timers that started more than 4 hours ago and are not paused
+    inactive_timers = await db.fulfillment_time_logs.find({
+        "completed_at": None,
+        "is_paused": {"$ne": True},
+        "started_at": {"$lt": four_hours_ago.isoformat()}
+    }, {"_id": 0}).to_list(100)
+    
+    stopped_count = 0
+    for timer in inactive_timers:
+        started = datetime.fromisoformat(timer["started_at"].replace('Z', '+00:00'))
+        now = datetime.now(timezone.utc)
+        
+        # Calculate duration (cap at 4 hours for inactive timers)
+        accumulated = timer.get("accumulated_minutes", 0)
+        session_minutes = min((now - started).total_seconds() / 60, 240)  # Cap at 4 hours
+        total_minutes = accumulated + session_minutes
+        
+        await db.fulfillment_time_logs.update_one(
+            {"log_id": timer["log_id"]},
+            {"$set": {
+                "completed_at": now.isoformat(),
+                "duration_minutes": total_minutes,
+                "auto_stopped": True,
+                "auto_stop_reason": "Inactive for more than 4 hours"
+            }}
+        )
+        stopped_count += 1
+    
+    return {"message": f"Auto-stopped {stopped_count} inactive timers", "stopped_count": stopped_count}
+
+
+# Admin/Manager endpoints for editing time entries
+@router.get("/admin/time-entries")
+async def get_all_time_entries(
+    limit: int = 100,
+    user: User = Depends(get_current_user)
+):
+    """Get all time entries for admin review. Requires admin or manager role."""
+    
+    # Check if user is admin or manager
+    if user.role not in ["admin", "manager"]:
+        raise HTTPException(status_code=403, detail="Only admins and managers can view all time entries")
+    
+    time_logs = await db.fulfillment_time_logs.find(
+        {"completed_at": {"$ne": None}},
+        {"_id": 0}
+    ).sort("completed_at", -1).limit(limit).to_list(limit)
+    
+    return time_logs
+
+
+@router.put("/admin/time-entries/{log_id}")
+async def update_time_entry(
+    log_id: str,
+    duration_minutes: Optional[float] = None,
+    items_processed: Optional[int] = None,
+    orders_processed: Optional[int] = None,
+    notes: Optional[str] = None,
+    user: User = Depends(get_current_user)
+):
+    """Update a time entry. Requires admin or manager role."""
+    
+    # Check if user is admin or manager
+    if user.role not in ["admin", "manager"]:
+        raise HTTPException(status_code=403, detail="Only admins and managers can edit time entries")
+    
+    # Find the time entry
+    time_log = await db.fulfillment_time_logs.find_one({"log_id": log_id})
+    if not time_log:
+        raise HTTPException(status_code=404, detail="Time entry not found")
+    
+    update_data = {
+        "edited_at": datetime.now(timezone.utc).isoformat(),
+        "edited_by": user.user_id,
+        "edited_by_name": user.name
+    }
+    
+    if duration_minutes is not None:
+        update_data["duration_minutes"] = duration_minutes
+        update_data["original_duration_minutes"] = time_log.get("duration_minutes", 0)
+    
+    if items_processed is not None:
+        update_data["items_processed"] = items_processed
+    
+    if orders_processed is not None:
+        update_data["orders_processed"] = orders_processed
+    
+    if notes is not None:
+        update_data["admin_notes"] = notes
+    
+    await db.fulfillment_time_logs.update_one(
+        {"log_id": log_id},
+        {"$set": update_data}
+    )
+    
+    return {"message": "Time entry updated", "log_id": log_id}
+
+
+@router.post("/admin/time-entries/add")
+async def add_manual_time_entry(
+    user_id: str,
+    user_name: str,
+    stage_id: str,
+    stage_name: str,
+    duration_minutes: float,
+    order_id: Optional[str] = None,
+    order_number: Optional[str] = None,
+    items_processed: int = 0,
+    orders_processed: int = 1,
+    notes: Optional[str] = None,
+    entry_date: Optional[str] = None,
+    user: User = Depends(get_current_user)
+):
+    """Add a manual time entry for neglected time tracking. Requires admin or manager role."""
+    
+    # Check if user is admin or manager
+    if user.role not in ["admin", "manager"]:
+        raise HTTPException(status_code=403, detail="Only admins and managers can add manual time entries")
+    
+    now = datetime.now(timezone.utc)
+    
+    # Use provided date or current time
+    if entry_date:
+        try:
+            entry_datetime = datetime.fromisoformat(entry_date.replace('Z', '+00:00'))
+        except:
+            entry_datetime = now
+    else:
+        entry_datetime = now
+    
+    time_log = {
+        "log_id": f"flog_{uuid.uuid4().hex[:12]}",
+        "user_id": user_id,
+        "user_name": user_name,
+        "stage_id": stage_id,
+        "stage_name": stage_name,
+        "order_id": order_id,
+        "order_number": order_number,
+        "action": "manual_entry",
+        "started_at": entry_datetime.isoformat(),
+        "completed_at": entry_datetime.isoformat(),
+        "duration_minutes": duration_minutes,
+        "items_processed": items_processed,
+        "orders_processed": orders_processed,
+        "is_paused": False,
+        "accumulated_minutes": 0,
+        "pause_events": [],
+        "manual_entry": True,
+        "added_by": user.user_id,
+        "added_by_name": user.name,
+        "admin_notes": notes,
+        "created_at": now.isoformat()
+    }
+    
+    await db.fulfillment_time_logs.insert_one(time_log)
+    
+    return {"message": "Manual time entry added", "log_id": time_log["log_id"]}
+
+
+@router.delete("/admin/time-entries/{log_id}")
+async def delete_time_entry(
+    log_id: str,
+    user: User = Depends(get_current_user)
+):
+    """Delete a time entry. Requires admin or manager role."""
+    
+    # Check if user is admin or manager
+    if user.role not in ["admin", "manager"]:
+        raise HTTPException(status_code=403, detail="Only admins and managers can delete time entries")
+    
+    result = await db.fulfillment_time_logs.delete_one({"log_id": log_id})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Time entry not found")
+    
+    return {"message": "Time entry deleted", "log_id": log_id}
+
+
+@router.get("/admin/users")
+async def get_users_for_time_entry(user: User = Depends(get_current_user)):
+    """Get list of users for manual time entry. Requires admin or manager role."""
+    
+    if user.role not in ["admin", "manager"]:
+        raise HTTPException(status_code=403, detail="Only admins and managers can access this")
+    
+    users = await db.users.find({}, {"_id": 0, "user_id": 1, "name": 1, "email": 1}).to_list(100)
+    return users
+
