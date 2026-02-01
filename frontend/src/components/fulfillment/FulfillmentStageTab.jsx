@@ -161,7 +161,7 @@ export function FulfillmentStageTab({ stage, stages, onRefresh, onTimerChange })
         credentials: "include",
       });
       if (res.ok) {
-        toast.success("Order marked as shipped");
+        toast.success("Order shipped and archived");
         loadOrders();
         onRefresh();
       }
