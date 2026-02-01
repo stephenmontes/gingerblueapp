@@ -6,3 +6,4 @@ export { StageContent } from "./StageContent";
 export { BatchHeader } from "./BatchHeader";
 export { BatchDetailView, NoBatchSelected } from "./BatchDetailView";
 export { StageTimer, ActiveWorkersDisplay } from "./StageTimer";
+export { BatchStats } from "./BatchStats";
