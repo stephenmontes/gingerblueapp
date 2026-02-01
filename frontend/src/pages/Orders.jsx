@@ -183,6 +183,44 @@ export default function Orders({ user }) {
     setSyncing(null);
   };
 
+  // ShipStation sync handler
+  const handleShipStationSync = async (storeId = null) => {
+    setShipstationSyncing(true);
+    try {
+      // Sync orders from GingerBlueCo (Etsy) by default, or specific store
+      const endpoint = storeId 
+        ? `${API}/shipstation/sync/orders/${storeId}?days_back=365`
+        : `${API}/shipstation/sync/gingerblueco?days_back=365`;
+      
+      const response = await fetch(endpoint, {
+        method: "POST",
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        toast.success(
+          `ShipStation: Synced ${result.total_fetched || 0} orders (${result.created || 0} new, ${result.updated || 0} updated)`
+        );
+        
+        // Also sync shipment tracking
+        await fetch(`${API}/shipstation/sync/shipments?days_back=30`, {
+          method: "POST",
+          credentials: "include",
+        });
+        
+        fetchOrders();
+      } else {
+        const error = await response.json();
+        toast.error(error.detail || "ShipStation sync failed");
+      }
+    } catch (error) {
+      toast.error("ShipStation sync failed");
+    } finally {
+      setShipstationSyncing(false);
+    }
+  };
+
   // CSV Upload handlers
   const handleFileSelect = (e) => {
     const file = e.target.files?.[0];
