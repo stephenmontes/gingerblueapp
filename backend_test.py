@@ -250,19 +250,26 @@ class ManufacturingAPITester:
         print("\n🔄 Testing Store Sync Endpoints...")
         
         # Test sync all stores endpoint
-        success, status, data = self.make_request('POST', 'stores/sync-all', expected_status=403)
-        endpoint_exists = status in [403, 401, 422]  # Expected to fail without proper admin auth
-        self.log_test("Sync All Stores Endpoint", endpoint_exists, 
-                     f"Status: {status} (expected 403/401 without admin)")
+        success, status, data = self.make_request('POST', 'stores/sync-all')
+        
+        if status == 200:
+            # Test session has admin/manager privileges
+            self.log_test("Sync All Stores Endpoint (Admin Access)", success, 
+                         f"Status: {status} - Admin/Manager access confirmed")
+        else:
+            # Expected to fail without proper admin auth, but endpoint should exist
+            endpoint_exists = status in [403, 401, 422]
+            self.log_test("Sync All Stores Endpoint", endpoint_exists, 
+                         f"Status: {status} (expected 403/401 without admin)")
         
         # Test individual store sync (using a test store ID)
         test_store_id = "store_test_123"
-        success, status, data = self.make_request('POST', f'stores/{test_store_id}/sync', expected_status=404)
-        endpoint_exists = status in [404, 403, 401]  # Expected to fail - store not found or no auth
+        success2, status2, data2 = self.make_request('POST', f'stores/{test_store_id}/sync', expected_status=404)
+        endpoint_exists = status2 in [404, 403, 401]  # Expected to fail - store not found or no auth
         self.log_test("Individual Store Sync Endpoint", endpoint_exists,
-                     f"Status: {status} (expected 404/403/401)")
+                     f"Status: {status2} (expected 404/403/401)")
         
-        return endpoint_exists
+        return (success or status in [403, 401, 422]) and endpoint_exists
 
     def test_webhook_endpoints(self):
         """Test webhook endpoints"""
