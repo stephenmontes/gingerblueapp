@@ -475,13 +475,6 @@ async def get_fulfillment_overall_kpis(
         "period_label": period_label,
         "date_range": date_range
     }
-        "cost_per_order": round(cost_per_order, 2),
-        "cost_per_item": round(cost_per_item, 2),
-        "avg_time_per_order": round(avg_time_per_order, 1),
-        "session_count": data["session_count"],
-        "week_start": week_start.strftime("%b %d"),
-        "week_end": (week_start + timedelta(days=6)).strftime("%b %d")
-    }
 
 
 @router.get("/reports/order-kpis")
