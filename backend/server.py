@@ -23,7 +23,8 @@ from routers import (
     exports_router,
     fulfillment_router,
     fulfillment_timers_router,
-    products_router
+    products_router,
+    webhooks_router
 )
 from routers.shipstation import router as shipstation_router
 
