@@ -25,6 +25,7 @@ from routers import (
     fulfillment_timers_router,
     products_router
 )
+from routers.shipstation import router as shipstation_router
 
 # Configure logging
 logging.basicConfig(
