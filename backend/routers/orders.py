@@ -401,22 +401,44 @@ async def upload_orders_csv(
 
 @router.get("/csv-template")
 async def get_csv_template(user: User = Depends(get_current_user)):
-    """Get CSV template for order uploads"""
+    """Get CSV template for order uploads
+    
+    Supports Antique Farmhouse format and generic formats.
+    """
     return {
-        "columns": [
-            {"name": "order_number", "required": True, "description": "Order or PO number"},
-            {"name": "customer_name", "required": True, "description": "Customer full name"},
-            {"name": "customer_email", "required": False, "description": "Customer email"},
-            {"name": "sku", "required": True, "description": "Product SKU"},
-            {"name": "quantity", "required": False, "description": "Quantity (default 1)"},
-            {"name": "item_name", "required": False, "description": "Product name"},
-            {"name": "price", "required": False, "description": "Item price"},
-            {"name": "shipping_address1", "required": False, "description": "Street address"},
-            {"name": "shipping_city", "required": False, "description": "City"},
-            {"name": "shipping_state", "required": False, "description": "State/Province"},
-            {"name": "shipping_zip", "required": False, "description": "ZIP/Postal code"},
-            {"name": "shipping_country", "required": False, "description": "Country code"},
-            {"name": "notes", "required": False, "description": "Order notes"},
-        ],
-        "sample_csv": "order_number,customer_name,customer_email,sku,quantity,item_name,price,shipping_address1,shipping_city,shipping_state,shipping_zip,shipping_country,notes\nPO-12345,John Smith,john@example.com,FRAME-001,2,Wood Frame 8x10,29.99,123 Main St,New York,NY,10001,US,Gift wrap please"
+        "formats": [
+            {
+                "name": "Antique Farmhouse Format",
+                "columns": [
+                    {"name": "Order Number", "required": True, "description": "Order/PO number"},
+                    {"name": "Full Name", "required": True, "description": "Customer full name"},
+                    {"name": "Address 1", "required": False, "description": "Street address"},
+                    {"name": "City", "required": False, "description": "City"},
+                    {"name": "State", "required": False, "description": "State/Province"},
+                    {"name": "Zip", "required": False, "description": "ZIP/Postal code"},
+                    {"name": "Item Number", "required": True, "description": "Product SKU"},
+                    {"name": "Price", "required": False, "description": "Item price"},
+                    {"name": "Qty", "required": False, "description": "Quantity (default 1)"},
+                    {"name": "Order Comments", "required": False, "description": "Order notes"},
+                    {"name": "Order Date", "required": False, "description": "Date of order"},
+                ],
+                "sample_csv": "Order Number,Full Name,Address 1,City,State,Zip,Item Number,Price,Qty,Order Comments,Order Date\nPO-12345,John Smith,123 Main St,New York,NY,10001,FRAME-001,29.99,2,Gift wrap please,2025-02-15"
+            },
+            {
+                "name": "Generic Format",
+                "columns": [
+                    {"name": "order_number", "required": True, "description": "Order or PO number"},
+                    {"name": "customer_name", "required": True, "description": "Customer full name"},
+                    {"name": "sku", "required": True, "description": "Product SKU"},
+                    {"name": "quantity", "required": False, "description": "Quantity (default 1)"},
+                    {"name": "price", "required": False, "description": "Item price"},
+                    {"name": "shipping_address1", "required": False, "description": "Street address"},
+                    {"name": "shipping_city", "required": False, "description": "City"},
+                    {"name": "shipping_state", "required": False, "description": "State/Province"},
+                    {"name": "shipping_zip", "required": False, "description": "ZIP/Postal code"},
+                    {"name": "notes", "required": False, "description": "Order notes"},
+                ],
+                "sample_csv": "order_number,customer_name,sku,quantity,price,shipping_address1,shipping_city,shipping_state,shipping_zip,notes\nPO-12345,John Smith,FRAME-001,2,29.99,123 Main St,New York,NY,10001,Gift wrap please"
+            }
+        ]
     }
