@@ -405,3 +405,141 @@ async def get_fulfillment_overall_kpis(user: User = Depends(get_current_user)):
         "avg_time_per_order": round(avg_time_per_order, 1),
         "session_count": data["session_count"]
     }
+
+
+@router.get("/reports/order-kpis")
+async def get_order_kpis_report(user: User = Depends(get_current_user)):
+    """Get KPI report for individual orders with time breakdown by user and stage."""
+    
+    # Get all time logs with order_id
+    time_logs = await db.fulfillment_time_logs.find(
+        {
+            "order_id": {"$ne": None},
+            "duration_minutes": {"$gt": 0},
+            "completed_at": {"$ne": None}
+        },
+        {"_id": 0}
+    ).to_list(1000)
+    
+    # Group by order_id
+    order_data = {}
+    for log in time_logs:
+        order_id = log["order_id"]
+        if order_id not in order_data:
+            order_data[order_id] = {
+                "order_id": order_id,
+                "order_number": log.get("order_number", order_id[:8] if order_id else "—"),
+                "total_minutes": 0,
+                "total_items": 0,
+                "stages": {},
+                "users": {},
+                "time_entries": []
+            }
+        
+        order_data[order_id]["total_minutes"] += log.get("duration_minutes", 0)
+        order_data[order_id]["total_items"] += log.get("items_processed", 0)
+        
+        # Track by stage
+        stage_id = log["stage_id"]
+        if stage_id not in order_data[order_id]["stages"]:
+            order_data[order_id]["stages"][stage_id] = {
+                "stage_id": stage_id,
+                "stage_name": log["stage_name"],
+                "minutes": 0,
+                "users": []
+            }
+        order_data[order_id]["stages"][stage_id]["minutes"] += log.get("duration_minutes", 0)
+        
+        # Track by user
+        user_id = log["user_id"]
+        if user_id not in order_data[order_id]["users"]:
+            order_data[order_id]["users"][user_id] = {
+                "user_id": user_id,
+                "user_name": log["user_name"],
+                "minutes": 0
+            }
+        order_data[order_id]["users"][user_id]["minutes"] += log.get("duration_minutes", 0)
+        
+        # Add time entry
+        order_data[order_id]["time_entries"].append({
+            "log_id": log["log_id"],
+            "user_name": log["user_name"],
+            "stage_name": log["stage_name"],
+            "duration_minutes": round(log.get("duration_minutes", 0), 1),
+            "items_processed": log.get("items_processed", 0),
+            "completed_at": log.get("completed_at")
+        })
+    
+    # Now get order details and calculate costs
+    result = []
+    for order_id, data in order_data.items():
+        # Get order details
+        order = await db.orders.find_one({"order_id": order_id}, {"_id": 0})
+        
+        total_hours = data["total_minutes"] / 60
+        total_items = data["total_items"] or 1
+        labor_cost = total_hours * 30
+        cost_per_item = labor_cost / total_items if total_items > 0 else 0
+        
+        result.append({
+            "order_id": order_id,
+            "order_number": data["order_number"] or (order.get("order_number") if order else order_id[:8]),
+            "customer_name": order.get("customer_name") if order else "—",
+            "total_minutes": round(data["total_minutes"], 1),
+            "total_hours": round(total_hours, 2),
+            "total_items": total_items,
+            "labor_cost": round(labor_cost, 2),
+            "cost_per_item": round(cost_per_item, 2),
+            "stages": list(data["stages"].values()),
+            "users": list(data["users"].values()),
+            "time_entries": sorted(data["time_entries"], key=lambda x: x.get("completed_at") or "", reverse=True)
+        })
+    
+    # Sort by most recent activity
+    result.sort(key=lambda x: x["time_entries"][0]["completed_at"] if x["time_entries"] else "", reverse=True)
+    
+    return result
+
+
+@router.get("/reports/order/{order_id}/time-entries")
+async def get_order_time_entries(order_id: str, user: User = Depends(get_current_user)):
+    """Get all time entries for a specific order."""
+    
+    time_logs = await db.fulfillment_time_logs.find(
+        {
+            "order_id": order_id,
+            "completed_at": {"$ne": None}
+        },
+        {"_id": 0}
+    ).sort("completed_at", -1).to_list(100)
+    
+    # Get order details
+    order = await db.orders.find_one({"order_id": order_id}, {"_id": 0})
+    
+    total_minutes = sum(log.get("duration_minutes", 0) for log in time_logs)
+    total_items = sum(log.get("items_processed", 0) for log in time_logs) or 1
+    total_hours = total_minutes / 60
+    labor_cost = total_hours * 30
+    
+    return {
+        "order_id": order_id,
+        "order_number": order.get("order_number") if order else order_id[:8],
+        "customer_name": order.get("customer_name") if order else "—",
+        "total_minutes": round(total_minutes, 1),
+        "total_hours": round(total_hours, 2),
+        "total_items": total_items,
+        "labor_cost": round(labor_cost, 2),
+        "cost_per_item": round(labor_cost / total_items, 2) if total_items > 0 else 0,
+        "time_entries": [{
+            "log_id": log["log_id"],
+            "user_id": log["user_id"],
+            "user_name": log["user_name"],
+            "stage_id": log["stage_id"],
+            "stage_name": log["stage_name"],
+            "duration_minutes": round(log.get("duration_minutes", 0), 1),
+            "items_processed": log.get("items_processed", 0),
+            "started_at": log.get("started_at"),
+            "completed_at": log.get("completed_at")
+        } for log in time_logs]
+    }
+
