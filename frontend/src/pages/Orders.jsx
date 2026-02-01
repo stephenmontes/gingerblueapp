@@ -180,6 +180,77 @@ export default function Orders({ user }) {
     setSyncing(null);
   };
 
+  // CSV Upload handlers
+  const handleFileSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.name.endsWith('.csv')) {
+        toast.error("Please select a CSV file");
+        return;
+      }
+      setCsvFile(file);
+    }
+  };
+
+  const handleCsvUpload = async () => {
+    if (!csvFile || !csvStoreId) {
+      toast.error("Please select a store and CSV file");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", csvFile);
+
+      const response = await fetch(`${API}/orders/upload-csv/${csvStoreId}`, {
+        method: "POST",
+        credentials: "include",
+        body: formData,
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        toast.success(
+          `Uploaded ${result.total_orders} orders (${result.created} new, ${result.updated} updated)`
+        );
+        setCsvUploadOpen(false);
+        setCsvFile(null);
+        setCsvStoreId("");
+        if (fileInputRef.current) fileInputRef.current.value = "";
+        fetchOrders();
+        fetchSyncStatus();
+      } else {
+        const error = await response.json();
+        toast.error(error.detail || "Upload failed");
+      }
+    } catch (error) {
+      toast.error("Failed to upload CSV");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const downloadCsvTemplate = () => {
+    const csv = `order_number,customer_name,customer_email,sku,quantity,item_name,price,shipping_address1,shipping_city,shipping_state,shipping_zip,shipping_country,notes
+PO-12345,John Smith,john@example.com,FRAME-8X10-OAK,2,Oak Frame 8x10,29.99,123 Main St,New York,NY,10001,US,Gift wrap
+PO-12345,John Smith,john@example.com,FRAME-11X14-WAL,1,Walnut Frame 11x14,39.99,123 Main St,New York,NY,10001,US,Gift wrap
+PO-12346,Jane Doe,jane@example.com,FRAME-5X7-BLK,3,Black Frame 5x7,19.99,456 Oak Ave,Los Angeles,CA,90001,US,`;
+    
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'order_upload_template.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success("Template downloaded");
+  };
+
+  const dropshipStores = stores.filter(s => s.platform === "dropship" || s.platform === "csv");
+
   const filteredOrders = orders.filter((order) => {
     if (!searchTerm) return true;
     const term = searchTerm.toLowerCase();
