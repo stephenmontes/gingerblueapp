@@ -15,7 +15,8 @@ export function ItemRow({ item, stages, onUpdateQty, onMoveStage }) {
   
   const qtyRequired = item.qty_required || 1;
   const qtyCompleted = item.qty_completed || 0;
-  const progress = (qtyCompleted / qtyRequired) * 100;
+  const progress = Math.min((qtyCompleted / qtyRequired) * 100, 100); // Cap visual at 100%
+  const hasExtras = qtyCompleted > qtyRequired;
   const colorLabel = COLOR_LABELS[item.color] || item.color;
   const isComplete = !nextStage && qtyCompleted >= qtyRequired;
 
