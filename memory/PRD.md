@@ -227,12 +227,23 @@ Build a manufacturing and fulfillment app for Shopify websites with:
   - Items table sorted by size with checkboxes for completion tracking
   - Notes section and printed timestamp footer
   - Opens in new window for clean printing
+- ✅ **Shopify Product Sync** (Feb 2026):
+  - Full product sync from Shopify stores via Admin REST API 2024-10
+  - Syncs: products, variants, images, SKUs, barcodes, inventory quantities
+  - Products page with search, filter by store/vendor/type
+  - Product details modal with variants table and image gallery
+  - Sync status cards showing last sync time per store
+  - Product stats dashboard (total products, variants, inventory)
+  - SkuLink component auto-fetches product images from synced data
+  - API endpoints: `/api/products`, `/api/products/sync/{store_id}`, `/api/products/by-sku/{sku}`, `/api/products/image/{sku}`
+  - Backend service: `shopify_service.py` with pagination support
 
 ## Prioritized Backlog
 
 ### P1 - Important (Next Tasks)
 - [ ] Order Audit Log - Track changes to order status/details
 - [ ] Bulk "Mark All Complete" per stage - One-click completion
+- [ ] Auto-sync products on a schedule (webhooks or polling)
 
 ### P2 - Nice to Have
 - [ ] "Undo" Functionality - Revert major actions like bulk moves
