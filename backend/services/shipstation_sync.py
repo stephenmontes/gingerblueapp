@@ -276,8 +276,8 @@ async def transform_shipstation_order(
         "tax_amount": ss_order.get("taxAmount", 0),
         
         # Weight
-        "weight": ss_order.get("weight", {}),
-        "dimensions": ss_order.get("dimensions", {}),
+        "weight": ss_order.get("weight") or {},
+        "dimensions": ss_order.get("dimensions") or {},
         
         # Dates
         "order_date": ss_order.get("orderDate"),
