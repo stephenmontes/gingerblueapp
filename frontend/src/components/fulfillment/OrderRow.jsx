@@ -134,6 +134,7 @@ export function OrderRow({
           onMarkShipped={onMarkShipped}
           onShowInventory={onShowInventory}
           onOpenWorksheet={onOpenWorksheet}
+          onPrintOrder={onPrintOrder}
         />
       </TableCell>
     </TableRow>
