@@ -31,6 +31,10 @@ export function FulfillmentStageTab({ stage, stages, onRefresh }) {
   const [loading, setLoading] = useState(true);
   const [selectedOrders, setSelectedOrders] = useState([]);
   const [inventoryDialogOrder, setInventoryDialogOrder] = useState(null);
+  const [viewMode, setViewMode] = useState("orders");
+
+  // Show consolidated view for Print List, Mount List, and Finish stages
+  const showConsolidatedView = ["fulfill_print", "fulfill_mount", "fulfill_finish"].includes(stage.stage_id);
 
   useEffect(() => {
     loadOrders();
