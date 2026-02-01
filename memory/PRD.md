@@ -245,6 +245,14 @@ Build a manufacturing and fulfillment app for Shopify websites with:
   - Automatic skipping of already-fulfilled orders
   - Preserves local order status/stage when updating
   - API: `/api/orders/sync/{store_id}`, `/api/orders/sync/status`
+- ✅ **Etsy Order Sync** (Feb 2026):
+  - Full Etsy Open API v3 integration for order syncing
+  - Etsy service with OAuth 2.0 PKCE support ready
+  - Receipt/transaction transformation to unified order format
+  - Support for Etsy-specific fields: variations, gift messages, buyer notes
+  - Same sync UI as Shopify - unified experience
+  - Platform badge differentiation (green for Shopify, orange for Etsy)
+  - API: Uses same `/api/orders/sync/{store_id}` endpoint
 - ✅ **Shopify Product Sync** (Feb 2026):
   - Full product sync from Shopify stores via Admin REST API 2024-10
   - Syncs: products, variants, images, SKUs, barcodes, inventory quantities
