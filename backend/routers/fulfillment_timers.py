@@ -340,3 +340,59 @@ async def get_fulfillment_timer_history(
     ).sort("completed_at", -1).limit(limit).to_list(limit)
     
     return logs
+
+
+
+@router.get("/stats/overall-kpis")
+async def get_fulfillment_overall_kpis(user: User = Depends(get_current_user)):
+    """Get overall KPIs for the fulfillment workflow."""
+    # Aggregate all completed time logs
+    pipeline = [
+        {"$match": {
+            "duration_minutes": {"$gt": 0},
+            "completed_at": {"$ne": None}
+        }},
+        {"$group": {
+            "_id": None,
+            "total_minutes": {"$sum": "$duration_minutes"},
+            "total_orders": {"$sum": "$orders_processed"},
+            "total_items": {"$sum": "$items_processed"},
+            "session_count": {"$sum": 1}
+        }}
+    ]
+    
+    result = await db.fulfillment_time_logs.aggregate(pipeline).to_list(1)
+    
+    if not result:
+        return {
+            "total_hours": 0,
+            "total_orders": 0,
+            "total_items": 0,
+            "labor_cost": 0,
+            "cost_per_order": 0,
+            "cost_per_item": 0,
+            "avg_time_per_order": 0,
+            "session_count": 0
+        }
+    
+    data = result[0]
+    total_hours = data["total_minutes"] / 60
+    total_orders = data["total_orders"]
+    total_items = data["total_items"]
+    
+    # Calculate costs ($30/hour rate)
+    labor_cost = total_hours * 30
+    cost_per_order = labor_cost / total_orders if total_orders > 0 else 0
+    cost_per_item = labor_cost / total_items if total_items > 0 else 0
+    avg_time_per_order = data["total_minutes"] / total_orders if total_orders > 0 else 0
+    
+    return {
+        "total_hours": round(total_hours, 2),
+        "total_orders": total_orders,
+        "total_items": total_items,
+        "labor_cost": round(labor_cost, 2),
+        "cost_per_order": round(cost_per_order, 2),
+        "cost_per_item": round(cost_per_item, 2),
+        "avg_time_per_order": round(avg_time_per_order, 1),
+        "session_count": data["session_count"]
+    }
