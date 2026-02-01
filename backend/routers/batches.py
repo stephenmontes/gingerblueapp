@@ -732,3 +732,258 @@ async def update_cut_list_item(
         "color": color,
         "qty_completed": qty_made
     }
+
+
+@router.post("/{batch_id}/frames/{frame_id}/to-inventory")
+async def move_frame_to_inventory(
+    batch_id: str,
+    frame_id: str,
+    user: User = Depends(get_current_user)
+):
+    """Move a completed frame from Quality Check to inventory
+    
+    - Adds good frames (qty_completed - qty_rejected) to inventory
+    - Adds rejected frames to rejected inventory
+    - Removes the frame from the batch
+    """
+    frame = await db.batch_frames.find_one({"batch_id": batch_id, "frame_id": frame_id})
+    if not frame:
+        raise HTTPException(status_code=404, detail="Frame not found")
+    
+    qty_completed = frame.get("qty_completed", 0)
+    qty_rejected = frame.get("qty_rejected", 0)
+    qty_good = max(0, qty_completed - qty_rejected)
+    
+    if qty_completed == 0:
+        raise HTTPException(status_code=400, detail="No completed items to move to inventory")
+    
+    size = frame.get("size", "UNK")
+    color = frame.get("color", "UNK")
+    now = datetime.now(timezone.utc).isoformat()
+    
+    # Create SKU for inventory
+    sku = f"FRAME-{size}-{color}"
+    sku_match_key = f"{size}-{color}"
+    
+    result = {
+        "frame_id": frame_id,
+        "size": size,
+        "color": color,
+        "good_added": 0,
+        "rejected_added": 0
+    }
+    
+    # Add good frames to inventory
+    if qty_good > 0:
+        existing_good = await db.inventory.find_one({
+            "sku_match_key": sku_match_key,
+            "is_rejected": {"$ne": True}
+        })
+        
+        if existing_good:
+            await db.inventory.update_one(
+                {"item_id": existing_good["item_id"]},
+                {"$inc": {"quantity": qty_good}, "$set": {"updated_at": now}}
+            )
+        else:
+            good_item = {
+                "item_id": f"inv_{uuid.uuid4().hex[:8]}",
+                "sku": sku,
+                "sku_match_key": sku_match_key,
+                "name": f"Frame {size} - {color}",
+                "color": color,
+                "size": size,
+                "quantity": qty_good,
+                "min_stock": 10,
+                "location": "Production",
+                "is_rejected": False,
+                "created_at": now,
+                "updated_at": now
+            }
+            await db.inventory.insert_one(good_item)
+        
+        result["good_added"] = qty_good
+    
+    # Add rejected frames to rejected inventory
+    if qty_rejected > 0:
+        existing_rejected = await db.inventory.find_one({
+            "sku_match_key": sku_match_key,
+            "is_rejected": True
+        })
+        
+        if existing_rejected:
+            await db.inventory.update_one(
+                {"item_id": existing_rejected["item_id"]},
+                {"$inc": {"quantity": qty_rejected}, "$set": {"updated_at": now}}
+            )
+        else:
+            rejected_item = {
+                "item_id": f"inv_{uuid.uuid4().hex[:8]}",
+                "sku": f"{sku}-REJECTED",
+                "sku_match_key": sku_match_key,
+                "name": f"Frame {size} - {color} (REJECTED)",
+                "color": color,
+                "size": size,
+                "quantity": qty_rejected,
+                "min_stock": 0,
+                "location": "Rejected Bin",
+                "is_rejected": True,
+                "created_at": now,
+                "updated_at": now
+            }
+            await db.inventory.insert_one(rejected_item)
+        
+        result["rejected_added"] = qty_rejected
+    
+    # Remove frame from batch_frames
+    await db.batch_frames.delete_one({"frame_id": frame_id})
+    
+    # Log the inventory transfer
+    await db.production_logs.insert_one({
+        "log_id": f"log_{uuid.uuid4().hex[:12]}",
+        "frame_id": frame_id,
+        "batch_id": batch_id,
+        "action": "moved_to_inventory",
+        "size": size,
+        "color": color,
+        "qty_good": qty_good,
+        "qty_rejected": qty_rejected,
+        "moved_by": user.user_id,
+        "moved_by_name": user.name,
+        "created_at": now
+    })
+    
+    return {
+        "message": f"Moved {size}-{color} to inventory: {qty_good} good, {qty_rejected} rejected",
+        **result
+    }
+
+
+@router.post("/{batch_id}/frames/all-to-inventory")
+async def move_all_frames_to_inventory(
+    batch_id: str,
+    user: User = Depends(get_current_user)
+):
+    """Move all completed frames from Quality Check stage to inventory"""
+    batch = await db.production_batches.find_one({"batch_id": batch_id})
+    if not batch:
+        raise HTTPException(status_code=404, detail="Batch not found")
+    
+    # Find Quality Check stage
+    qc_stage = await db.production_stages.find_one({
+        "$or": [
+            {"stage_id": "stage_ready"},
+            {"name": {"$regex": "quality", "$options": "i"}}
+        ]
+    })
+    
+    if not qc_stage:
+        raise HTTPException(status_code=400, detail="Quality Check stage not found")
+    
+    # Get all frames in Quality Check stage that have completed items
+    frames = await db.batch_frames.find({
+        "batch_id": batch_id,
+        "current_stage_id": qc_stage["stage_id"],
+        "qty_completed": {"$gt": 0}
+    }, {"_id": 0}).to_list(1000)
+    
+    if not frames:
+        return {"message": "No completed frames to move", "moved_count": 0}
+    
+    now = datetime.now(timezone.utc).isoformat()
+    total_good = 0
+    total_rejected = 0
+    moved_count = 0
+    
+    for frame in frames:
+        qty_completed = frame.get("qty_completed", 0)
+        qty_rejected = frame.get("qty_rejected", 0)
+        qty_good = max(0, qty_completed - qty_rejected)
+        
+        size = frame.get("size", "UNK")
+        color = frame.get("color", "UNK")
+        sku = f"FRAME-{size}-{color}"
+        sku_match_key = f"{size}-{color}"
+        
+        # Add good frames
+        if qty_good > 0:
+            existing_good = await db.inventory.find_one({
+                "sku_match_key": sku_match_key,
+                "is_rejected": {"$ne": True}
+            })
+            
+            if existing_good:
+                await db.inventory.update_one(
+                    {"item_id": existing_good["item_id"]},
+                    {"$inc": {"quantity": qty_good}, "$set": {"updated_at": now}}
+                )
+            else:
+                await db.inventory.insert_one({
+                    "item_id": f"inv_{uuid.uuid4().hex[:8]}",
+                    "sku": sku,
+                    "sku_match_key": sku_match_key,
+                    "name": f"Frame {size} - {color}",
+                    "color": color,
+                    "size": size,
+                    "quantity": qty_good,
+                    "min_stock": 10,
+                    "location": "Production",
+                    "is_rejected": False,
+                    "created_at": now,
+                    "updated_at": now
+                })
+            total_good += qty_good
+        
+        # Add rejected frames
+        if qty_rejected > 0:
+            existing_rejected = await db.inventory.find_one({
+                "sku_match_key": sku_match_key,
+                "is_rejected": True
+            })
+            
+            if existing_rejected:
+                await db.inventory.update_one(
+                    {"item_id": existing_rejected["item_id"]},
+                    {"$inc": {"quantity": qty_rejected}, "$set": {"updated_at": now}}
+                )
+            else:
+                await db.inventory.insert_one({
+                    "item_id": f"inv_{uuid.uuid4().hex[:8]}",
+                    "sku": f"{sku}-REJECTED",
+                    "sku_match_key": sku_match_key,
+                    "name": f"Frame {size} - {color} (REJECTED)",
+                    "color": color,
+                    "size": size,
+                    "quantity": qty_rejected,
+                    "min_stock": 0,
+                    "location": "Rejected Bin",
+                    "is_rejected": True,
+                    "created_at": now,
+                    "updated_at": now
+                })
+            total_rejected += qty_rejected
+        
+        # Remove frame from batch
+        await db.batch_frames.delete_one({"frame_id": frame["frame_id"]})
+        moved_count += 1
+    
+    # Log the bulk transfer
+    await db.production_logs.insert_one({
+        "log_id": f"log_{uuid.uuid4().hex[:12]}",
+        "batch_id": batch_id,
+        "action": "bulk_moved_to_inventory",
+        "frames_moved": moved_count,
+        "total_good": total_good,
+        "total_rejected": total_rejected,
+        "moved_by": user.user_id,
+        "moved_by_name": user.name,
+        "created_at": now
+    })
+    
+    return {
+        "message": f"Moved {moved_count} frames to inventory: {total_good} good, {total_rejected} rejected",
+        "moved_count": moved_count,
+        "total_good": total_good,
+        "total_rejected": total_rejected
+    }
+
