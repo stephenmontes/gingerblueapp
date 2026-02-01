@@ -509,6 +509,158 @@ export default function Settings({ user }) {
           </div>
         </CardContent>
       </Card>
+
+      {/* ShipStation Integration */}
+      <ShipStationSettings API={API} isManager={isManager} />
     </div>
+  );
+}
+
+function ShipStationSettings({ API, isManager }) {
+  const [connected, setConnected] = useState(null);
+  const [testing, setTesting] = useState(false);
+  const [carriers, setCarriers] = useState([]);
+  const [stores, setStores] = useState([]);
+  const [loadingCarriers, setLoadingCarriers] = useState(false);
+
+  const testConnection = async () => {
+    setTesting(true);
+    try {
+      const res = await fetch(`${API}/shipstation/test-connection`, { credentials: "include" });
+      if (res.ok) {
+        const data = await res.json();
+        setConnected(true);
+        toast.success(data.message || "Connected to ShipStation!");
+        // Load carriers and stores
+        loadCarriersAndStores();
+      } else {
+        setConnected(false);
+        const error = await res.json();
+        toast.error(error.detail || "Connection failed");
+      }
+    } catch (err) {
+      setConnected(false);
+      toast.error("Connection test failed");
+    } finally {
+      setTesting(false);
+    }
+  };
+
+  const loadCarriersAndStores = async () => {
+    setLoadingCarriers(true);
+    try {
+      const [carriersRes, storesRes] = await Promise.all([
+        fetch(`${API}/shipstation/carriers`, { credentials: "include" }),
+        fetch(`${API}/shipstation/stores`, { credentials: "include" })
+      ]);
+      
+      if (carriersRes.ok) {
+        const data = await carriersRes.json();
+        setCarriers(data.carriers || []);
+      }
+      if (storesRes.ok) {
+        const data = await storesRes.json();
+        setStores(data.stores || []);
+      }
+    } catch (err) {
+      console.error("Failed to load ShipStation data:", err);
+    } finally {
+      setLoadingCarriers(false);
+    }
+  };
+
+  return (
+    <Card className="bg-card border-border">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Webhook className="w-5 h-5 text-blue-400" />
+            <CardTitle>ShipStation Integration</CardTitle>
+          </div>
+          {connected === true && (
+            <Badge className="bg-green-500/20 text-green-400 border-green-500/30">Connected</Badge>
+          )}
+          {connected === false && (
+            <Badge className="bg-red-500/20 text-red-400 border-red-500/30">Not Connected</Badge>
+          )}
+        </div>
+        <CardDescription>
+          Connect to ShipStation for shipping rates, labels, and fulfillment tracking
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex items-center gap-4">
+          <Button 
+            onClick={testConnection} 
+            disabled={testing}
+            variant={connected ? "outline" : "default"}
+            className="gap-2"
+          >
+            {testing ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+            {connected ? "Re-test Connection" : "Test Connection"}
+          </Button>
+          
+          {connected && (
+            <Button variant="outline" onClick={loadCarriersAndStores} disabled={loadingCarriers} className="gap-2">
+              {loadingCarriers ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+              Refresh Data
+            </Button>
+          )}
+        </div>
+
+        {connected && (
+          <div className="grid md:grid-cols-2 gap-6 mt-4">
+            {/* ShipStation Stores */}
+            <div>
+              <h3 className="font-semibold mb-3 flex items-center gap-2">
+                <Store className="w-4 h-4" />
+                ShipStation Stores ({stores.length})
+              </h3>
+              {stores.length > 0 ? (
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {stores.map((store) => (
+                    <div key={store.storeId} className="flex items-center justify-between p-2 rounded bg-muted/30 border border-border text-sm">
+                      <span>{store.storeName}</span>
+                      <Badge variant="outline" className="text-xs">{store.marketplaceName || "Manual"}</Badge>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No stores found</p>
+              )}
+            </div>
+
+            {/* Carriers */}
+            <div>
+              <h3 className="font-semibold mb-3 flex items-center gap-2">
+                <ShoppingBag className="w-4 h-4" />
+                Available Carriers ({carriers.length})
+              </h3>
+              {carriers.length > 0 ? (
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {carriers.slice(0, 10).map((carrier, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-2 rounded bg-muted/30 border border-border text-sm">
+                      <span>{carrier.name}</span>
+                      <Badge variant="outline" className="text-xs">{carrier.code}</Badge>
+                    </div>
+                  ))}
+                  {carriers.length > 10 && (
+                    <p className="text-xs text-muted-foreground text-center">+{carriers.length - 10} more carriers</p>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No carriers found</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        <div className="pt-4 border-t border-border">
+          <p className="text-sm text-muted-foreground">
+            ShipStation credentials are configured server-side. Contact your administrator to update API keys.
+          </p>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
