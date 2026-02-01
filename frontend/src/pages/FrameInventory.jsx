@@ -455,6 +455,7 @@ export default function FrameInventory() {
                     item={item}
                     onQuickAdjust={handleQuickAdjust}
                     onOpenAdjust={openAdjustDialog}
+                    onOpenReject={openRejectDialog}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
                   />
