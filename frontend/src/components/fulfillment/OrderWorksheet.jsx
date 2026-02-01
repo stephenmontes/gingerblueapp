@@ -431,7 +431,9 @@ function WorksheetRow({ item, index, onUpdate, onMarkComplete }) {
       <TableCell>
         <Badge variant="outline" className="font-mono font-bold">{size}</Badge>
       </TableCell>
-      <TableCell className="font-mono text-sm">{item.sku}</TableCell>
+      <TableCell>
+        <SkuLink sku={item.sku} imageUrl={item.image_url || item.image} />
+      </TableCell>
       <TableCell className={item.is_complete ? "line-through text-muted-foreground" : ""}>
         {item.name}
       </TableCell>
