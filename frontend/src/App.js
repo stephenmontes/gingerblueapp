@@ -271,6 +271,18 @@ function AppRouter() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/products"
+        element={
+          <ProtectedRoute>
+            {({ user, setUser }) => (
+              <Layout user={user} setUser={setUser}>
+                <Products user={user} />
+              </Layout>
+            )}
+          </ProtectedRoute>
+        }
+      />
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
