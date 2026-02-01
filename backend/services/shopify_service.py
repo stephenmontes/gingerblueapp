@@ -237,6 +237,7 @@ async def sync_products_from_store(store_id: str) -> Dict[str, Any]:
         "synced": 0,
         "created": 0,
         "updated": 0,
+        "skipped_duplicate": 0,
         "failed": 0,
         "errors": [],
         "synced_at": datetime.now(timezone.utc).isoformat()
