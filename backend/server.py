@@ -590,39 +590,33 @@ async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current
         "items_count": len(production_items)
     }
 
-@api_router.post("/batches/{batch_id}/start-timer")
-async def start_batch_timer(batch_id: str, user: User = Depends(get_current_user)):
-    """Start time tracking for a batch - assigns user as responsible"""
-    batch = await db.production_batches.find_one({"batch_id": batch_id}, {"_id": 0})
-    if not batch:
-        raise HTTPException(status_code=404, detail="Batch not found")
+@api_router.post("/stages/{stage_id}/start-timer")
+async def start_stage_timer(stage_id: str, user: User = Depends(get_current_user)):
+    """Start time tracking for a user working on a specific stage.
+    Each user tracks their time per stage independently."""
     
-    if batch.get("time_started"):
-        raise HTTPException(status_code=400, detail="Timer already started")
+    stage = await db.production_stages.find_one({"stage_id": stage_id}, {"_id": 0})
+    if not stage:
+        raise HTTPException(status_code=404, detail="Stage not found")
+    
+    # Check if user already has an active timer for THIS stage
+    active_timer = await db.time_logs.find_one({
+        "user_id": user.user_id,
+        "stage_id": stage_id,
+        "completed_at": None
+    }, {"_id": 0})
+    
+    if active_timer:
+        raise HTTPException(status_code=400, detail="Timer already running for this stage")
     
     now = datetime.now(timezone.utc)
-    
-    # Update batch with timer and assignment
-    await db.production_batches.update_one(
-        {"batch_id": batch_id},
-        {"$set": {
-            "time_started": now.isoformat(),
-            "assigned_to": user.user_id,
-            "assigned_name": user.name
-        }}
-    )
-    
-    # Create time log
-    stage = await db.production_stages.find_one({"stage_id": batch["current_stage_id"]}, {"_id": 0})
-    stage_name = stage["name"] if stage else "Unknown"
     
     time_log = {
         "log_id": f"log_{uuid.uuid4().hex[:12]}",
         "user_id": user.user_id,
         "user_name": user.name,
-        "batch_id": batch_id,
-        "stage_id": batch["current_stage_id"],
-        "stage_name": stage_name,
+        "stage_id": stage_id,
+        "stage_name": stage["name"],
         "action": "started",
         "started_at": now.isoformat(),
         "items_processed": 0,
@@ -631,50 +625,118 @@ async def start_batch_timer(batch_id: str, user: User = Depends(get_current_user
     await db.time_logs.insert_one(time_log)
     
     return {
-        "message": "Timer started",
-        "batch_id": batch_id,
-        "assigned_to": user.name,
+        "message": f"Timer started for {stage['name']}",
+        "stage_id": stage_id,
+        "stage_name": stage["name"],
+        "user_name": user.name,
         "started_at": now.isoformat()
     }
 
-@api_router.post("/batches/{batch_id}/stop-timer")
-async def stop_batch_timer(batch_id: str, user: User = Depends(get_current_user)):
-    """Stop time tracking for a batch"""
-    batch = await db.production_batches.find_one({"batch_id": batch_id}, {"_id": 0})
-    if not batch:
-        raise HTTPException(status_code=404, detail="Batch not found")
+@api_router.post("/stages/{stage_id}/stop-timer")
+async def stop_stage_timer(
+    stage_id: str, 
+    items_processed: int = 0,
+    user: User = Depends(get_current_user)
+):
+    """Stop time tracking for a user's stage work."""
     
-    if not batch.get("time_started"):
-        raise HTTPException(status_code=400, detail="Timer not started")
+    # Find the active timer for this user and stage
+    active_timer = await db.time_logs.find_one({
+        "user_id": user.user_id,
+        "stage_id": stage_id,
+        "completed_at": None
+    }, {"_id": 0})
+    
+    if not active_timer:
+        raise HTTPException(status_code=400, detail="No active timer for this stage")
     
     now = datetime.now(timezone.utc)
-    started_at = datetime.fromisoformat(batch["time_started"])
+    started_at = datetime.fromisoformat(active_timer["started_at"])
     if started_at.tzinfo is None:
         started_at = started_at.replace(tzinfo=timezone.utc)
     
     duration_minutes = (now - started_at).total_seconds() / 60
     
-    # Get completed items count
-    items_completed = await db.production_items.count_documents({
-        "batch_id": batch_id,
-        "status": "completed"
-    })
-    
-    # Update the open time log
+    # Update the time log
     await db.time_logs.update_one(
-        {"batch_id": batch_id, "completed_at": None},
+        {"log_id": active_timer["log_id"]},
         {"$set": {
             "completed_at": now.isoformat(),
             "duration_minutes": round(duration_minutes, 2),
-            "items_processed": items_completed
+            "items_processed": items_processed,
+            "action": "stopped"
         }}
     )
     
     return {
         "message": "Timer stopped",
+        "stage_id": stage_id,
+        "stage_name": active_timer["stage_name"],
         "duration_minutes": round(duration_minutes, 2),
-        "items_completed": items_completed
+        "items_processed": items_processed
     }
+
+@api_router.get("/stages/{stage_id}/active-timer")
+async def get_active_stage_timer(stage_id: str, user: User = Depends(get_current_user)):
+    """Check if user has an active timer for a stage."""
+    active_timer = await db.time_logs.find_one({
+        "user_id": user.user_id,
+        "stage_id": stage_id,
+        "completed_at": None
+    }, {"_id": 0})
+    
+    if not active_timer:
+        return {"active": False}
+    
+    return {
+        "active": True,
+        "started_at": active_timer["started_at"],
+        "stage_name": active_timer["stage_name"]
+    }
+
+@api_router.get("/user/active-timers")
+async def get_user_active_timers(user: User = Depends(get_current_user)):
+    """Get all active timers for the current user across all stages."""
+    active_timers = await db.time_logs.find({
+        "user_id": user.user_id,
+        "completed_at": None
+    }, {"_id": 0}).to_list(100)
+    
+    return active_timers
+
+@api_router.get("/user/time-stats")
+async def get_user_time_stats(user: User = Depends(get_current_user)):
+    """Get time tracking statistics for the current user per stage."""
+    # Get all completed time logs for user
+    logs = await db.time_logs.find({
+        "user_id": user.user_id,
+        "completed_at": {"$ne": None}
+    }, {"_id": 0}).to_list(10000)
+    
+    # Group by stage
+    stage_stats = {}
+    for log in logs:
+        stage_id = log["stage_id"]
+        if stage_id not in stage_stats:
+            stage_stats[stage_id] = {
+                "stage_id": stage_id,
+                "stage_name": log.get("stage_name", "Unknown"),
+                "total_minutes": 0,
+                "total_items": 0,
+                "session_count": 0
+            }
+        stage_stats[stage_id]["total_minutes"] += log.get("duration_minutes", 0)
+        stage_stats[stage_id]["total_items"] += log.get("items_processed", 0)
+        stage_stats[stage_id]["session_count"] += 1
+    
+    # Calculate averages
+    for stats in stage_stats.values():
+        if stats["total_minutes"] > 0 and stats["total_items"] > 0:
+            stats["avg_items_per_hour"] = round((stats["total_items"] / stats["total_minutes"]) * 60, 1)
+        else:
+            stats["avg_items_per_hour"] = 0
+    
+    return list(stage_stats.values())
 
 @api_router.get("/batches/{batch_id}/items-grouped")
 async def get_batch_items_grouped(batch_id: str, user: User = Depends(get_current_user)):
