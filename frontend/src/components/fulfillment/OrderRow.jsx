@@ -193,6 +193,8 @@ function OrderActions({
   onMarkShipped,
   onShowInventory
 }) {
+  const isOrdersStage = stage.stage_id === "fulfill_orders";
+  
   return (
     <div className="flex items-center justify-end gap-1">
       {!isLastStage && nextStage && (
@@ -218,32 +220,34 @@ function OrderActions({
           Ship
         </Button>
       )}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button size="sm" variant="ghost">
-            <MoreVertical className="w-4 h-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={onShowInventory}>
-            <Info className="w-4 h-4 mr-2" />
-            View Inventory Status
-          </DropdownMenuItem>
-          {stages.map((s) => (
-            <DropdownMenuItem
-              key={s.stage_id}
-              onClick={() => onMoveToStage(s.stage_id)}
-              disabled={s.stage_id === stage.stage_id}
-            >
-              <div 
-                className="w-2 h-2 rounded-full mr-2" 
-                style={{ backgroundColor: s.color }}
-              />
-              Move to {s.name}
+      {isOrdersStage && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button size="sm" variant="ghost">
+              <MoreVertical className="w-4 h-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={onShowInventory}>
+              <Info className="w-4 h-4 mr-2" />
+              View Inventory Status
             </DropdownMenuItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
+            {stages.map((s) => (
+              <DropdownMenuItem
+                key={s.stage_id}
+                onClick={() => onMoveToStage(s.stage_id)}
+                disabled={s.stage_id === stage.stage_id}
+              >
+                <div 
+                  className="w-2 h-2 rounded-full mr-2" 
+                  style={{ backgroundColor: s.color }}
+                />
+                Move to {s.name}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
     </div>
   );
 }
