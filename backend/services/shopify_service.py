@@ -318,3 +318,206 @@ async def get_product_image_by_sku(sku: str) -> Optional[str]:
         if images:
             return images[0].get("src")
     return None
+
+
+def transform_shopify_order(shopify_order: Dict, store_id: str, store_name: str) -> Dict[str, Any]:
+    """Transform Shopify order to our format"""
+    order_id = f"ord_{uuid.uuid4().hex[:12]}"
+    now = datetime.now(timezone.utc).isoformat()
+    
+    # Get customer info
+    customer = shopify_order.get("customer", {}) or {}
+    customer_name = f"{customer.get('first_name', '')} {customer.get('last_name', '')}".strip()
+    if not customer_name:
+        customer_name = shopify_order.get("billing_address", {}).get("name", "Unknown Customer")
+    
+    # Transform line items
+    items = []
+    for item in shopify_order.get("line_items", []):
+        items.append({
+            "line_item_id": str(item.get("id", "")),
+            "product_id": str(item.get("product_id", "")),
+            "variant_id": str(item.get("variant_id", "")),
+            "sku": item.get("sku") or "",
+            "name": item.get("name") or item.get("title", "Unknown Item"),
+            "title": item.get("title", ""),
+            "quantity": item.get("quantity", 1),
+            "qty": item.get("quantity", 1),
+            "qty_done": 0,
+            "price": float(item.get("price", 0)),
+            "variant_title": item.get("variant_title", ""),
+            "fulfillment_status": item.get("fulfillment_status"),
+            "requires_shipping": item.get("requires_shipping", True),
+            "taxable": item.get("taxable", True),
+        })
+    
+    # Get shipping address
+    shipping_address = shopify_order.get("shipping_address") or {}
+    
+    return {
+        "order_id": order_id,
+        "external_id": str(shopify_order.get("id", "")),
+        "order_number": str(shopify_order.get("order_number", "")),
+        "store_id": store_id,
+        "store_name": store_name,
+        "platform": "shopify",
+        "customer_name": customer_name,
+        "customer_email": customer.get("email") or shopify_order.get("email"),
+        "customer_phone": customer.get("phone") or shopify_order.get("phone"),
+        "items": items,
+        "line_items": items,  # Alias for compatibility
+        "total_price": float(shopify_order.get("total_price", 0)),
+        "subtotal_price": float(shopify_order.get("subtotal_price", 0)),
+        "total_tax": float(shopify_order.get("total_tax", 0)),
+        "currency": shopify_order.get("currency", "USD"),
+        "financial_status": shopify_order.get("financial_status", ""),
+        "fulfillment_status": shopify_order.get("fulfillment_status", "unfulfilled"),
+        "status": "pending",
+        "current_stage_id": None,
+        "fulfillment_stage_id": "fulfill_orders",  # Default to first fulfillment stage
+        "fulfillment_stage_name": "Orders",
+        "assigned_to": None,
+        "batch_id": None,
+        "note": shopify_order.get("note"),
+        "tags": shopify_order.get("tags", ""),
+        "shipping_address": {
+            "name": shipping_address.get("name", ""),
+            "address1": shipping_address.get("address1", ""),
+            "address2": shipping_address.get("address2", ""),
+            "city": shipping_address.get("city", ""),
+            "province": shipping_address.get("province", ""),
+            "province_code": shipping_address.get("province_code", ""),
+            "country": shipping_address.get("country", ""),
+            "country_code": shipping_address.get("country_code", ""),
+            "zip": shipping_address.get("zip", ""),
+            "phone": shipping_address.get("phone", ""),
+        } if shipping_address else None,
+        "created_at": now,
+        "updated_at": now,
+        "synced_at": now,
+        "external_created_at": shopify_order.get("created_at"),
+        "external_updated_at": shopify_order.get("updated_at"),
+    }
+
+
+async def sync_orders_from_store(store_id: str, status: str = "any", days_back: int = 30) -> Dict[str, Any]:
+    """Sync orders from a Shopify store"""
+    # Get store details
+    store = await db.stores.find_one({"store_id": store_id})
+    if not store:
+        return {"success": False, "error": "Store not found"}
+    
+    if store.get("platform") != "shopify":
+        return {"success": False, "error": "Only Shopify stores are supported for order sync"}
+    
+    access_token = store.get("access_token")
+    shop_url = store.get("shop_url")
+    store_name = store.get("name", "")
+    
+    if not access_token or not shop_url:
+        return {"success": False, "error": "Store credentials not configured"}
+    
+    # Initialize Shopify service
+    service = ShopifyService(shop_url, access_token)
+    
+    # Test connection
+    test_result = await service.test_connection()
+    if not test_result["success"]:
+        return {"success": False, "error": f"Connection failed: {test_result['error']}"}
+    
+    # Fetch orders
+    try:
+        shopify_orders = await service.fetch_orders(status=status)
+    except Exception as e:
+        return {"success": False, "error": f"Failed to fetch orders: {str(e)}"}
+    
+    # Filter orders by date if needed
+    if days_back and days_back > 0:
+        cutoff = datetime.now(timezone.utc) - timedelta(days=days_back)
+        filtered_orders = []
+        for order in shopify_orders:
+            try:
+                created = datetime.fromisoformat(order.get("created_at", "").replace("Z", "+00:00"))
+                if created >= cutoff:
+                    filtered_orders.append(order)
+            except:
+                filtered_orders.append(order)  # Include if date parsing fails
+        shopify_orders = filtered_orders
+    
+    # Sync results
+    result = {
+        "success": True,
+        "store_id": store_id,
+        "store_name": store_name,
+        "platform": "shopify",
+        "total_orders": len(shopify_orders),
+        "synced": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "failed": 0,
+        "errors": [],
+        "synced_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    for so in shopify_orders:
+        try:
+            external_id = str(so.get("id", ""))
+            
+            # Check if order already exists
+            existing = await db.fulfillment_orders.find_one({
+                "store_id": store_id,
+                "external_id": external_id
+            })
+            
+            # Skip if order is already fulfilled/shipped in Shopify
+            shopify_fulfillment = so.get("fulfillment_status")
+            if shopify_fulfillment == "fulfilled":
+                result["skipped"] += 1
+                continue
+            
+            order_doc = transform_shopify_order(so, store_id, store_name)
+            
+            if existing:
+                # Update existing order but preserve local status/stage
+                order_doc["order_id"] = existing["order_id"]
+                order_doc["created_at"] = existing["created_at"]
+                order_doc["status"] = existing.get("status", "pending")
+                order_doc["fulfillment_stage_id"] = existing.get("fulfillment_stage_id", "fulfill_orders")
+                order_doc["fulfillment_stage_name"] = existing.get("fulfillment_stage_name", "Orders")
+                order_doc["assigned_to"] = existing.get("assigned_to")
+                order_doc["batch_id"] = existing.get("batch_id")
+                
+                # Update items while preserving qty_done
+                existing_items = {i.get("sku"): i for i in existing.get("items", [])}
+                for item in order_doc["items"]:
+                    if item["sku"] in existing_items:
+                        item["qty_done"] = existing_items[item["sku"]].get("qty_done", 0)
+                
+                await db.fulfillment_orders.update_one(
+                    {"order_id": existing["order_id"]},
+                    {"$set": order_doc}
+                )
+                result["updated"] += 1
+            else:
+                # Create new order
+                await db.fulfillment_orders.insert_one(order_doc)
+                result["created"] += 1
+            
+            result["synced"] += 1
+            
+        except Exception as e:
+            result["failed"] += 1
+            result["errors"].append(f"Order {so.get('order_number', so.get('id', 'unknown'))}: {str(e)}")
+    
+    # Update store last sync time
+    await db.stores.update_one(
+        {"store_id": store_id},
+        {"$set": {"last_order_sync": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    return result
+
+
+# Need to import timedelta at the top
+from datetime import datetime, timezone, timedelta
