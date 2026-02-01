@@ -367,14 +367,14 @@ function ColorDot({ color }) {
   };
 
   const bgColor = colorMap[color] || "#6B7280";
-  const isLight = ["W", "C", "Y"].includes(color);
+  const needsRing = ["W", "C", "Y", "B"].includes(color);
 
   return (
     <span
-      className="w-4 h-4 rounded-full inline-block border"
+      className="w-4 h-4 rounded-full inline-block border-2"
       style={{
         backgroundColor: bgColor,
-        borderColor: isLight ? "#d1d5db" : bgColor,
+        borderColor: needsRing ? "#9ca3af" : bgColor,
       }}
     />
   );
