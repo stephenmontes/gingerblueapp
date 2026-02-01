@@ -58,6 +58,7 @@ export default function Team({ user }) {
   const [users, setUsers] = useState([]);
   const [userStats, setUserStats] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showTimerHistory, setShowTimerHistory] = useState(false);
 
   const fetchData = async () => {
     try {
