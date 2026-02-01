@@ -76,6 +76,7 @@ export function BatchDetailView({
         activeTimer={activeTimer} 
         currentStageId={activeStageId}
         stages={stages}
+        onRefresh={onRefresh}
       />
     </div>
   );
