@@ -197,6 +197,14 @@ export function FulfillmentStageTab({ stage, stages, onRefresh, onTimerChange })
 
   return (
     <>
+      {/* My Timer Controls - Show if user has any active timer */}
+      {activeTimer && (
+        <MyTimerControls 
+          activeTimer={activeTimer} 
+          onTimerChange={handleTimerChangeInternal} 
+        />
+      )}
+      
       <OrdersView
         orders={orders}
         stage={stage}
