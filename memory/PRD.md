@@ -236,6 +236,15 @@ Build a manufacturing and fulfillment app for Shopify websites with:
   - Filter by store, vendor, search by title/SKU/barcode
   - Product details modal with variants table and image gallery
   - API: `/api/products`, `/api/products/stats`, `/api/products/by-sku/{sku}`, `/api/products/image/{sku}`
+- ✅ **Shopify Order Sync** (Feb 2026):
+  - Auto-sync orders from Shopify stores to Order Fulfillment
+  - Sync controls on Orders page with per-store sync buttons
+  - "Sync All Stores" button for batch syncing
+  - Order sync status cards showing last sync time and order count
+  - Configurable days_back filter (default 30 days)
+  - Automatic skipping of already-fulfilled orders
+  - Preserves local order status/stage when updating
+  - API: `/api/orders/sync/{store_id}`, `/api/orders/sync/status`
 - ✅ **Shopify Product Sync** (Feb 2026):
   - Full product sync from Shopify stores via Admin REST API 2024-10
   - Syncs: products, variants, images, SKUs, barcodes, inventory quantities
