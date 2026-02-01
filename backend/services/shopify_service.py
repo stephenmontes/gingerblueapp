@@ -246,16 +246,31 @@ async def sync_products_from_store(store_id: str) -> Dict[str, Any]:
         try:
             external_id = str(sp.get("id", ""))
             
-            # Check if product already exists
+            # Get all SKUs from this product's variants
+            product_skus = []
+            for variant in sp.get("variants", []):
+                sku = variant.get("sku", "").strip()
+                if sku:
+                    product_skus.append(sku)
+            
+            # Check if product already exists in this store
             existing = await db.products.find_one({
                 "store_id": store_id,
                 "external_id": external_id
             })
             
+            # Check if any SKU already exists in another store
+            existing_sku_product = None
+            if product_skus and not existing:
+                existing_sku_product = await db.products.find_one({
+                    "variants.sku": {"$in": product_skus},
+                    "store_id": {"$ne": store_id}
+                })
+            
             product_doc = transform_shopify_product(sp, store_id)
             
             if existing:
-                # Update existing product
+                # Update existing product from same store
                 product_doc["product_id"] = existing["product_id"]
                 product_doc["created_at"] = existing["created_at"]
                 
@@ -264,8 +279,23 @@ async def sync_products_from_store(store_id: str) -> Dict[str, Any]:
                     {"$set": product_doc}
                 )
                 result["updated"] += 1
+            elif existing_sku_product:
+                # SKU exists in another store - add this store as additional source
+                # Update existing product to include this store's info
+                await db.products.update_one(
+                    {"product_id": existing_sku_product["product_id"]},
+                    {
+                        "$addToSet": {"store_ids": store_id},
+                        "$set": {
+                            "updated_at": datetime.now(timezone.utc).isoformat(),
+                            "last_synced_at": datetime.now(timezone.utc).isoformat()
+                        }
+                    }
+                )
+                result["skipped_duplicate"] = result.get("skipped_duplicate", 0) + 1
             else:
                 # Create new product
+                product_doc["store_ids"] = [store_id]  # Track all stores with this product
                 await db.products.insert_one(product_doc)
                 result["created"] += 1
             
