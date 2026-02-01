@@ -56,6 +56,75 @@ async def get_batches(status: Optional[str] = None, user: User = Depends(get_cur
     batches = await db.production_batches.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
     return batches
 
+@router.post("/{batch_id}/archive")
+async def archive_batch(batch_id: str, user: User = Depends(get_current_user)):
+    """Archive/complete a batch - moves it to history"""
+    batch = await db.production_batches.find_one({"batch_id": batch_id}, {"_id": 0})
+    if not batch:
+        raise HTTPException(status_code=404, detail="Batch not found")
+    
+    if batch.get("status") == "archived":
+        raise HTTPException(status_code=400, detail="Batch is already archived")
+    
+    # Get final stats before archiving
+    items = await db.production_items.find({"batch_id": batch_id}, {"_id": 0}).to_list(10000)
+    total_completed = sum(item.get("qty_completed", 0) for item in items)
+    total_rejected = sum(item.get("qty_rejected", 0) for item in items)
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    await db.production_batches.update_one(
+        {"batch_id": batch_id},
+        {"$set": {
+            "status": "archived",
+            "archived_at": now,
+            "archived_by": user.user_id,
+            "final_stats": {
+                "total_items": len(items),
+                "total_completed": total_completed,
+                "total_rejected": total_rejected,
+                "good_frames": max(0, total_completed - total_rejected)
+            }
+        }}
+    )
+    
+    # Update orders status to completed
+    await db.orders.update_many(
+        {"batch_id": batch_id},
+        {"$set": {"status": "completed", "updated_at": now}}
+    )
+    
+    return {
+        "message": "Batch archived successfully",
+        "batch_id": batch_id,
+        "archived_at": now
+    }
+
+@router.post("/{batch_id}/restore")
+async def restore_batch(batch_id: str, user: User = Depends(get_current_user)):
+    """Restore an archived batch back to active"""
+    batch = await db.production_batches.find_one({"batch_id": batch_id}, {"_id": 0})
+    if not batch:
+        raise HTTPException(status_code=404, detail="Batch not found")
+    
+    if batch.get("status") != "archived":
+        raise HTTPException(status_code=400, detail="Batch is not archived")
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    await db.production_batches.update_one(
+        {"batch_id": batch_id},
+        {"$set": {"status": "active"}, "$unset": {"archived_at": "", "archived_by": "", "final_stats": ""}}
+    )
+    
+    # Update orders status back to in_production
+    await db.orders.update_many(
+        {"batch_id": batch_id},
+        {"$set": {"status": "in_production", "updated_at": now}}
+    )
+    
+    return {"message": "Batch restored successfully", "batch_id": batch_id}
+
 @router.get("/{batch_id}")
 async def get_batch(batch_id: str, user: User = Depends(get_current_user)):
     """Get a single batch with its items"""
