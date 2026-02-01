@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -37,6 +37,22 @@ const COLOR_NAMES = {
 // Get color display name
 function getColorName(code) {
   return COLOR_NAMES[code] || code;
+}
+
+// Custom hook for debouncing
+function useDebounce(callback, delay) {
+  const timeoutRef = useRef(null);
+  
+  const debouncedCallback = useCallback((...args) => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    timeoutRef.current = setTimeout(() => {
+      callback(...args);
+    }, delay);
+  }, [callback, delay]);
+  
+  return debouncedCallback;
 }
 
 export function CutList({ batch }) {
