@@ -280,10 +280,24 @@ export function OrderWorksheet({ order, stages, currentStage, onClose, onMoveToN
     })));
   }
 
+  const stageColor = currentStage?.color || "#6366F1";
+
   return (
     <Dialog open={!!order} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent 
+        className="max-w-4xl max-h-[90vh] overflow-y-auto"
+        style={{ borderTop: `4px solid ${stageColor}` }}
+      >
         <DialogHeader>
+          <div className="flex items-center gap-2 mb-2">
+            <div 
+              className="w-3 h-3 rounded-full" 
+              style={{ backgroundColor: stageColor }}
+            />
+            <span className="text-sm font-medium" style={{ color: stageColor }}>
+              {currentStage?.name || "Worksheet"}
+            </span>
+          </div>
           <DialogTitle className="flex items-center gap-3">
             <Package className="w-5 h-5 text-primary" />
             Order Worksheet
