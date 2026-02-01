@@ -202,6 +202,55 @@ export function CutList({ batchDetails }) {
   );
 }
 
+// Component to render rows for each size group
+function SizeGroupRows({ group, groupIndex, isLast }) {
+  return (
+    <>
+      {/* Items in this size group */}
+      {group.items.map((item, itemIndex) => (
+        <TableRow 
+          key={`${item.size}-${item.color}`}
+          className="border-border hover:bg-muted/30"
+        >
+          <TableCell className="font-medium">
+            {itemIndex === 0 ? (
+              <Badge variant="outline" className="font-mono">
+                {item.size}
+              </Badge>
+            ) : null}
+          </TableCell>
+          <TableCell>
+            <span className="flex items-center gap-2">
+              <ColorDot color={item.color} />
+              {getColorName(item.color)}
+            </span>
+          </TableCell>
+          <TableCell className="text-right font-mono font-semibold">
+            {item.quantity}
+          </TableCell>
+        </TableRow>
+      ))}
+      
+      {/* Subtotal row for this size group */}
+      <TableRow className="bg-muted/50 border-border font-semibold">
+        <TableCell colSpan={2} className="text-right">
+          {group.size} Subtotal:
+        </TableCell>
+        <TableCell className="text-right font-mono text-primary">
+          {group.subtotal}
+        </TableCell>
+      </TableRow>
+      
+      {/* Spacer between groups */}
+      {!isLast && (
+        <TableRow className="h-2 border-0">
+          <TableCell colSpan={3} className="p-0"></TableCell>
+        </TableRow>
+      )}
+    </>
+  );
+}
+
 // Color indicator dot
 function ColorDot({ color }) {
   const colorMap = {
