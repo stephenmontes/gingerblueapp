@@ -157,9 +157,9 @@ async def transform_shipstation_order(
     order_id = f"ord_{uuid.uuid4().hex[:12]}"
     now = datetime.now(timezone.utc).isoformat()
     
-    # Extract shipping address
-    ship_to = ss_order.get("shipTo", {})
-    bill_to = ss_order.get("billTo", {})
+    # Extract shipping address (handle None values)
+    ship_to = ss_order.get("shipTo") or {}
+    bill_to = ss_order.get("billTo") or {}
     
     # Map ShipStation order status to our status
     status_map = {
