@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Query
 from typing import Optional
 from datetime import datetime, timezone
 import uuid
@@ -9,6 +9,7 @@ from models.order import Order, OrderCreate
 from models.production import StageMove
 from models.time_log import TimeLog
 from dependencies import get_current_user
+from services.shopify_service import sync_orders_from_store
 
 router = APIRouter(prefix="/orders", tags=["orders"])
 
