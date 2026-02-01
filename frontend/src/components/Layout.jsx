@@ -30,6 +30,7 @@ const navItems = [
   { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { path: "/orders", label: "Orders", icon: Package },
   { path: "/production", label: "Frame Production", icon: Workflow },
+  { path: "/fulfillment", label: "Order Fulfillment", icon: Truck },
   { path: "/inventory", label: "Frame Inventory", icon: Boxes },
   { path: "/team", label: "Team", icon: Users },
   { path: "/reports", label: "Reports", icon: BarChart3 },
