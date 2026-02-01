@@ -577,13 +577,16 @@ async def move_frame_to_next_stage(
     
     now = datetime.now(timezone.utc).isoformat()
     
-    # Update frame
+    # Update frame - reset qty_completed and qty_rejected for new stage
     await db.batch_frames.update_one(
         {"frame_id": frame_id},
         {
             "$set": {
                 "current_stage_id": next_stage["stage_id"],
                 "current_stage_name": next_stage.get("name", ""),
+                "qty_completed": 0,
+                "qty_rejected": 0,
+                "status": "pending",
                 "stage_updated_at": now,
                 "stage_updated_by": user.user_id,
                 "updated_at": now
