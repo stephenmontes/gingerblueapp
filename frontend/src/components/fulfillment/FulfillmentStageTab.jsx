@@ -113,6 +113,7 @@ export function FulfillmentStageTab({ stage, stages, onRefresh, onTimerChange })
   }
 
   async function moveOrderToStage(orderId, targetStageId) {
+    if (requiresTimer()) return;
     try {
       const res = await fetch(`${API}/fulfillment/orders/${orderId}/assign-stage?stage_id=${targetStageId}`, {
         method: "POST",
@@ -130,6 +131,7 @@ export function FulfillmentStageTab({ stage, stages, onRefresh, onTimerChange })
 
   async function bulkMoveOrders(targetStageId) {
     if (selectedOrders.length === 0) return;
+    if (requiresTimer()) return;
     
     try {
       const res = await fetch(`${API}/fulfillment/orders/bulk-move?target_stage_id=${targetStageId}`, {
