@@ -187,6 +187,7 @@ export default function Production() {
               batchDetails={batchDetails}
               stageSummary={stageSummary}
               stages={stages}
+              stageWorkers={stageWorkers}
               onUpdateQty={handleUpdateQty}
               onMoveStage={handleMoveStage}
               onRefresh={() => loadBatchDetails(selectedBatch.batch_id)}
