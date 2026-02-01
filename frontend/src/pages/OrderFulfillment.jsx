@@ -118,6 +118,32 @@ export default function OrderFulfillment() {
       {/* Summary Cards - Now Clickable */}
       <FulfillmentSummary summary={summary} onStageClick={handleStageCardClick} />
 
+      {/* Stage Tabs - Button Style (matches Frame Production) */}
+      <div className="flex gap-2 overflow-x-auto pb-2">
+        {stages.map((stage) => (
+          <Button
+            key={stage.stage_id}
+            variant={activeTab === stage.stage_id ? "default" : "outline"}
+            size="sm"
+            onClick={() => setActiveTab(stage.stage_id)}
+            className={`flex items-center gap-2 whitespace-nowrap rounded-lg`}
+            data-testid={`tab-${stage.stage_id}`}
+          >
+            <div 
+              className="w-3 h-3 rounded-full" 
+              style={{ backgroundColor: stage.color }}
+            />
+            {stage.name}
+            <Badge 
+              variant="secondary" 
+              className="text-xs"
+            >
+              {getStageCount(stage.stage_id)}
+            </Badge>
+          </Button>
+        ))}
+      </div>
+
       {/* Stage Content */}
       {stages.map((stage) => (
         activeTab === stage.stage_id && (
