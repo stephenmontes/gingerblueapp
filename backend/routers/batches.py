@@ -617,6 +617,9 @@ async def move_cut_list_item_to_assembly(
     user: User = Depends(get_current_user)
 ):
     """Move items from cut list to assembly stage"""
+    import logging
+    logging.info(f"Move to assembly: batch={batch_id}, size={size}, color={color}, qty={quantity}")
+    
     batch = await db.production_batches.find_one({"batch_id": batch_id})
     if not batch:
         raise HTTPException(status_code=404, detail="Batch not found")
@@ -624,7 +627,6 @@ async def move_cut_list_item_to_assembly(
     # Find assembly stage
     assembly_stage = await db.production_stages.find_one({"stage_id": "stage_assembly"})
     if not assembly_stage:
-        # Fallback - find by name
         assembly_stage = await db.production_stages.find_one({"name": {"$regex": "assembly", "$options": "i"}})
     
     if not assembly_stage:
@@ -633,25 +635,26 @@ async def move_cut_list_item_to_assembly(
     now = datetime.now(timezone.utc).isoformat()
     
     # Find production items matching this size/color in the cutting stage
-    cutting_stage = await db.production_stages.find_one({"stage_id": "stage_cutting"})
-    cutting_stage_id = cutting_stage["stage_id"] if cutting_stage else "stage_cutting"
+    cutting_stage_id = "stage_cutting"
     
-    # Get items in the batch that match size/color and are in cutting stage
-    items_to_move = await db.production_items.find({
+    # Query for items - use case-insensitive matching
+    query = {
         "batch_id": batch_id,
-        "size": size.upper(),
-        "color": color.upper(),
         "current_stage_id": cutting_stage_id
-    }, {"_id": 0}).to_list(quantity)
+    }
     
-    if not items_to_move:
-        # If no items found in cutting, check if they're in 'new' stage
-        items_to_move = await db.production_items.find({
-            "batch_id": batch_id,
-            "size": size.upper(),
-            "color": color.upper(),
-            "current_stage_id": "stage_new"
-        }, {"_id": 0}).to_list(quantity)
+    # Add size/color filters with case-insensitive regex for flexibility
+    if size and size != "UNK":
+        query["size"] = {"$regex": f"^{size}$", "$options": "i"}
+    if color and color != "UNK":
+        query["color"] = {"$regex": f"^{color}$", "$options": "i"}
+    
+    logging.info(f"Query: {query}")
+    
+    # Get items to move (up to the requested quantity)
+    items_to_move = await db.production_items.find(query, {"_id": 0}).to_list(quantity)
+    
+    logging.info(f"Found {len(items_to_move)} items to move")
     
     moved_count = 0
     for item in items_to_move[:quantity]:
