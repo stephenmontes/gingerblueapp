@@ -441,63 +441,248 @@ class CutListItemUpdate(BaseModel):
 class CutListUpdate(BaseModel):
     items: List[CutListItemUpdate]
 
-@router.get("/{batch_id}/cut-list")
-async def get_cut_list(batch_id: str, user: User = Depends(get_current_user)):
-    """Get cut list with progress for a batch - aggregated by size and color"""
+@router.get("/{batch_id}/frames")
+async def get_batch_frames(
+    batch_id: str, 
+    stage_id: Optional[str] = None,
+    user: User = Depends(get_current_user)
+):
+    """Get frames for a batch - the main production list. Optionally filter by stage."""
     batch = await db.production_batches.find_one({"batch_id": batch_id}, {"_id": 0})
     if not batch:
         raise HTTPException(status_code=404, detail="Batch not found")
     
-    # Get orders for this batch
-    order_ids = batch.get("order_ids", [])
-    orders = await db.fulfillment_orders.find(
-        {"order_id": {"$in": order_ids}},
-        {"_id": 0}
-    ).to_list(1000)
+    # Get frames from batch_frames collection
+    query = {"batch_id": batch_id}
+    if stage_id:
+        query["current_stage_id"] = stage_id
     
-    # Get existing cut list progress
-    cut_list_progress = await db.cut_list_progress.find_one(
-        {"batch_id": batch_id},
-        {"_id": 0}
-    )
-    progress_map = {}
-    if cut_list_progress:
-        for item in cut_list_progress.get("items", []):
-            key = f"{item['size']}-{item['color']}"
-            progress_map[key] = item
+    frames = await db.batch_frames.find(query, {"_id": 0}).to_list(1000)
     
     # Size order for sorting
     SIZE_ORDER = ["S", "L", "XL", "HS", "HX", "XX", "XXX"]
     
-    # Aggregate items by size and color
-    item_map = {}
-    for order in orders:
-        for item in order.get("items", []):
-            sku = item.get("sku", "")
-            parsed = parse_sku(sku)
-            size = parsed.get("size", "UNK")
-            color = parsed.get("color", "UNK")
-            key = f"{size}-{color}"
-            qty = item.get("quantity") or item.get("qty") or 1
-            
-            if key in item_map:
-                item_map[key]["qty_required"] += qty
-            else:
-                # Get progress if exists
-                progress = progress_map.get(key, {})
-                item_map[key] = {
-                    "size": size,
-                    "color": color,
-                    "qty_required": qty,
-                    "qty_made": progress.get("qty_made", 0),
-                    "completed": progress.get("completed", False)
-                }
-    
-    # Convert to list and sort
     def get_size_index(size):
         try:
             return SIZE_ORDER.index(size)
         except ValueError:
+            return len(SIZE_ORDER)
+    
+    # Sort frames by size order, then color
+    frames.sort(key=lambda x: (get_size_index(x.get("size", "")), x.get("color", "")))
+    
+    # Group by size for subtotals
+    size_groups = {}
+    for frame in frames:
+        size = frame.get("size", "UNK")
+        if size not in size_groups:
+            size_groups[size] = {
+                "size": size,
+                "frames": [],
+                "subtotal_required": 0,
+                "subtotal_completed": 0
+            }
+        size_groups[size]["frames"].append(frame)
+        size_groups[size]["subtotal_required"] += frame.get("qty_required", 0)
+        size_groups[size]["subtotal_completed"] += frame.get("qty_completed", 0)
+    
+    groups = list(size_groups.values())
+    groups.sort(key=lambda x: get_size_index(x["size"]))
+    
+    # Calculate totals
+    grand_total_required = sum(f.get("qty_required", 0) for f in frames)
+    grand_total_completed = sum(f.get("qty_completed", 0) for f in frames)
+    
+    return {
+        "batch_id": batch_id,
+        "batch_name": batch.get("name", ""),
+        "current_stage_id": batch.get("current_stage_id"),
+        "size_groups": groups,
+        "frames": frames,
+        "grand_total_required": grand_total_required,
+        "grand_total_completed": grand_total_completed
+    }
+
+@router.put("/{batch_id}/frames/{frame_id}")
+async def update_frame(
+    batch_id: str,
+    frame_id: str,
+    qty_completed: int = 0,
+    qty_rejected: int = 0,
+    user: User = Depends(get_current_user)
+):
+    """Update a frame's completed/rejected quantities"""
+    frame = await db.batch_frames.find_one({"batch_id": batch_id, "frame_id": frame_id})
+    if not frame:
+        raise HTTPException(status_code=404, detail="Frame not found")
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    update_data = {
+        "qty_completed": qty_completed,
+        "qty_rejected": qty_rejected,
+        "updated_at": now,
+        "updated_by": user.user_id
+    }
+    
+    # Mark as complete if qty_completed >= qty_required
+    if qty_completed >= frame.get("qty_required", 0):
+        update_data["status"] = "completed"
+    
+    await db.batch_frames.update_one(
+        {"frame_id": frame_id},
+        {"$set": update_data}
+    )
+    
+    return {"message": "Frame updated", "frame_id": frame_id, "qty_completed": qty_completed}
+
+@router.post("/{batch_id}/frames/{frame_id}/move")
+async def move_frame_to_next_stage(
+    batch_id: str,
+    frame_id: str,
+    target_stage_id: Optional[str] = None,
+    user: User = Depends(get_current_user)
+):
+    """Move a frame to the next stage (or specified stage)"""
+    frame = await db.batch_frames.find_one({"batch_id": batch_id, "frame_id": frame_id})
+    if not frame:
+        raise HTTPException(status_code=404, detail="Frame not found")
+    
+    current_stage_id = frame.get("current_stage_id")
+    
+    # Get stages in order
+    stages = await db.production_stages.find({}, {"_id": 0}).sort("order", 1).to_list(100)
+    stage_map = {s["stage_id"]: s for s in stages}
+    
+    # Find next stage
+    if target_stage_id:
+        next_stage = stage_map.get(target_stage_id)
+    else:
+        # Find next stage in order
+        current_order = None
+        for s in stages:
+            if s["stage_id"] == current_stage_id:
+                current_order = s.get("order", 0)
+                break
+        
+        next_stage = None
+        if current_order is not None:
+            for s in stages:
+                if s.get("order", 0) == current_order + 1:
+                    next_stage = s
+                    break
+    
+    if not next_stage:
+        raise HTTPException(status_code=400, detail="No next stage available")
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    # Update frame
+    await db.batch_frames.update_one(
+        {"frame_id": frame_id},
+        {
+            "$set": {
+                "current_stage_id": next_stage["stage_id"],
+                "current_stage_name": next_stage.get("name", ""),
+                "stage_updated_at": now,
+                "stage_updated_by": user.user_id,
+                "updated_at": now
+            }
+        }
+    )
+    
+    # Log the transition
+    await db.production_logs.insert_one({
+        "log_id": f"log_{uuid.uuid4().hex[:12]}",
+        "frame_id": frame_id,
+        "batch_id": batch_id,
+        "from_stage": current_stage_id,
+        "to_stage": next_stage["stage_id"],
+        "to_stage_name": next_stage.get("name", ""),
+        "size": frame.get("size"),
+        "color": frame.get("color"),
+        "qty": frame.get("qty_required"),
+        "moved_by": user.user_id,
+        "moved_by_name": user.name,
+        "created_at": now
+    })
+    
+    return {
+        "message": f"Moved {frame.get('size')}-{frame.get('color')} to {next_stage.get('name')}",
+        "frame_id": frame_id,
+        "from_stage": current_stage_id,
+        "to_stage": next_stage["stage_id"],
+        "to_stage_name": next_stage.get("name", "")
+    }
+
+@router.post("/{batch_id}/frames/move-all")
+async def move_all_completed_frames(
+    batch_id: str,
+    from_stage_id: str,
+    user: User = Depends(get_current_user)
+):
+    """Move all completed frames from a stage to the next stage"""
+    batch = await db.production_batches.find_one({"batch_id": batch_id})
+    if not batch:
+        raise HTTPException(status_code=404, detail="Batch not found")
+    
+    # Get stages in order
+    stages = await db.production_stages.find({}, {"_id": 0}).sort("order", 1).to_list(100)
+    
+    # Find next stage
+    current_order = None
+    for s in stages:
+        if s["stage_id"] == from_stage_id:
+            current_order = s.get("order", 0)
+            break
+    
+    next_stage = None
+    if current_order is not None:
+        for s in stages:
+            if s.get("order", 0) == current_order + 1:
+                next_stage = s
+                break
+    
+    if not next_stage:
+        raise HTTPException(status_code=400, detail="No next stage available")
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    # Find frames that are completed in the current stage
+    frames_to_move = await db.batch_frames.find({
+        "batch_id": batch_id,
+        "current_stage_id": from_stage_id,
+        "$expr": {"$gte": ["$qty_completed", "$qty_required"]}
+    }, {"_id": 0}).to_list(1000)
+    
+    moved_count = 0
+    for frame in frames_to_move:
+        await db.batch_frames.update_one(
+            {"frame_id": frame["frame_id"]},
+            {
+                "$set": {
+                    "current_stage_id": next_stage["stage_id"],
+                    "current_stage_name": next_stage.get("name", ""),
+                    "qty_completed": 0,  # Reset for next stage
+                    "stage_updated_at": now,
+                    "updated_at": now
+                }
+            }
+        )
+        moved_count += 1
+    
+    return {
+        "message": f"Moved {moved_count} frames to {next_stage.get('name')}",
+        "moved_count": moved_count,
+        "to_stage": next_stage["stage_id"],
+        "to_stage_name": next_stage.get("name", "")
+    }
+
+# Keep old cut-list endpoint for backwards compatibility but redirect to frames
+@router.get("/{batch_id}/cut-list")
+async def get_cut_list(batch_id: str, user: User = Depends(get_current_user)):
+    """Get cut list with progress for a batch - redirects to frames endpoint"""
+    return await get_batch_frames(batch_id, None, user)
             return len(SIZE_ORDER)
     
     items = list(item_map.values())
