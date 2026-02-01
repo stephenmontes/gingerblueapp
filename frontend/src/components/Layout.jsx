@@ -41,6 +41,22 @@ export default function Layout({ children, user, setUser }) {
 
   const handleLogout = async () => {
     try {
+      // Auto-stop any active timer before logout
+      const timerRes = await fetch(`${API}/user/active-timers`, {
+        credentials: "include",
+      });
+      if (timerRes.ok) {
+        const timers = await timerRes.json();
+        if (timers.length > 0) {
+          // Stop the active timer
+          await fetch(`${API}/stages/${timers[0].stage_id}/stop-timer?items_processed=0`, {
+            method: "POST",
+            credentials: "include",
+          });
+          toast.info("Timer stopped automatically");
+        }
+      }
+      
       await fetch(`${API}/auth/logout`, {
         method: "POST",
         credentials: "include",
