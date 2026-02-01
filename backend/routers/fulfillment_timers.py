@@ -354,12 +354,17 @@ async def get_fulfillment_timer_history(
 
 @router.get("/stats/overall-kpis")
 async def get_fulfillment_overall_kpis(user: User = Depends(get_current_user)):
-    """Get overall KPIs for the fulfillment workflow."""
-    # Aggregate all completed time logs
+    """Get weekly KPIs for the fulfillment workflow."""
+    # Calculate start of current week (Monday)
+    now = datetime.now(timezone.utc)
+    days_since_monday = now.weekday()
+    week_start = (now - timedelta(days=days_since_monday)).replace(hour=0, minute=0, second=0, microsecond=0)
+    
+    # Aggregate completed time logs for this week
     pipeline = [
         {"$match": {
             "duration_minutes": {"$gt": 0},
-            "completed_at": {"$ne": None}
+            "completed_at": {"$ne": None, "$gte": week_start.isoformat()}
         }},
         {"$group": {
             "_id": None,
@@ -381,7 +386,9 @@ async def get_fulfillment_overall_kpis(user: User = Depends(get_current_user)):
             "cost_per_order": 0,
             "cost_per_item": 0,
             "avg_time_per_order": 0,
-            "session_count": 0
+            "session_count": 0,
+            "week_start": week_start.strftime("%b %d"),
+            "week_end": (week_start + timedelta(days=6)).strftime("%b %d")
         }
     
     data = result[0]
@@ -403,7 +410,9 @@ async def get_fulfillment_overall_kpis(user: User = Depends(get_current_user)):
         "cost_per_order": round(cost_per_order, 2),
         "cost_per_item": round(cost_per_item, 2),
         "avg_time_per_order": round(avg_time_per_order, 1),
-        "session_count": data["session_count"]
+        "session_count": data["session_count"],
+        "week_start": week_start.strftime("%b %d"),
+        "week_end": (week_start + timedelta(days=6)).strftime("%b %d")
     }
 
 
