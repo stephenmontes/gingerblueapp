@@ -239,6 +239,8 @@ function OrdersView({
   outOfStockCount,
   nextStage,
   isLastStage,
+  hasActiveTimerForStage,
+  timerRequired,
   onToggleOrderSelection,
   onToggleAllOrders,
   onMoveOrderToNext,
@@ -251,6 +253,16 @@ function OrdersView({
 }) {
   return (
     <Card className="bg-card border-border">
+      {/* Timer Required Warning Banner */}
+      {timerRequired && !hasActiveTimerForStage && (
+        <div className="px-4 py-3 bg-yellow-500/10 border-b border-yellow-500/30 flex items-center gap-3">
+          <Clock className="w-5 h-5 text-yellow-400" />
+          <div className="flex-1">
+            <p className="text-sm font-medium text-yellow-400">Timer Required</p>
+            <p className="text-xs text-muted-foreground">Start a timer to complete tasks in this stage</p>
+          </div>
+        </div>
+      )}
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -265,7 +277,7 @@ function OrdersView({
                 </Badge>
               )}
             </CardTitle>
-{stage.stage_id !== "fulfill_orders" && (
+            {stage.stage_id !== "fulfill_orders" && (
               <FulfillmentStageTimer stage={stage} onTimerChange={onTimerChange} />
             )}
           </div>
