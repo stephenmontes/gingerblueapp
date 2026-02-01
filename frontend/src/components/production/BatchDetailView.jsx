@@ -10,8 +10,6 @@ export function BatchDetailView({
   batchDetails,
   stageSummary,
   stages,
-  onStartTimer,
-  onStopTimer,
   onUpdateQty,
   onMoveStage,
 }) {
@@ -33,8 +31,9 @@ export function BatchDetailView({
       <BatchHeader
         batch={batch}
         batchDetails={batchDetails}
-        onStartTimer={onStartTimer}
-        onStopTimer={onStopTimer}
+        activeStageId={activeStageId}
+        stageName={currentStageData?.stage_name}
+        stageColor={currentStageData?.color}
       />
 
       <StageTabs
@@ -60,7 +59,7 @@ export function NoBatchSelected() {
         <Layers className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
         <h2 className="text-xl font-semibold mb-2">Select a Batch</h2>
         <p className="text-muted-foreground">
-          Choose a production batch from the list
+          Choose a production batch from the list to view items by stage
         </p>
       </CardContent>
     </Card>
