@@ -20,7 +20,8 @@ from routers import (
     orders_router,
     inventory_router,
     reports_router,
-    exports_router
+    exports_router,
+    fulfillment_router
 )
 
 # Configure logging
