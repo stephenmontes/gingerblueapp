@@ -735,16 +735,27 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Dialog>
+                      <div className="flex items-center gap-1">
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => setSelectedOrder(order)}
                           data-testid={`view-order-${order.order_id}`}
+                          title="View details"
                         >
                           <Eye className="w-4 h-4" />
                         </Button>
-                      </Dialog>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleArchiveOrder(order.order_id)}
+                          data-testid={`archive-order-${order.order_id}`}
+                          title="Archive order"
+                          className="text-muted-foreground hover:text-destructive"
+                        >
+                          <Archive className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
