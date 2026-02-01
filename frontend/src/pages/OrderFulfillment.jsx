@@ -112,42 +112,44 @@ export default function OrderFulfillment() {
       {/* Summary Cards - Now Clickable */}
       <FulfillmentSummary summary={summary} onStageClick={handleStageCardClick} />
 
-      {/* Stage Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="bg-muted/50 flex-wrap h-auto gap-1 p-1">
-          {stages.map((stage) => (
-            <TabsTrigger
-              key={stage.stage_id}
-              value={stage.stage_id}
-              className="gap-2 data-[state=active]:bg-background"
-              data-testid={`tab-${stage.stage_id}`}
-            >
-              <div 
-                className="w-2 h-2 rounded-full" 
-                style={{ backgroundColor: stage.color }}
-              />
-              {stage.name}
-              <Badge 
-                variant="secondary" 
-                className="ml-1 text-xs h-5 px-1.5"
-              >
-                {getStageCount(stage.stage_id)}
-              </Badge>
-            </TabsTrigger>
-          ))}
-        </TabsList>
-
+      {/* Stage Tabs - Button Style (matches Frame Production) */}
+      <div className="flex gap-2 overflow-x-auto pb-2">
         {stages.map((stage) => (
-          <TabsContent key={stage.stage_id} value={stage.stage_id}>
-            <FulfillmentStageTab
-              stage={stage}
-              stages={stages}
-              onRefresh={loadData}
-              onTimerChange={handleTimerChange}
+          <Button
+            key={stage.stage_id}
+            variant={activeTab === stage.stage_id ? "default" : "outline"}
+            size="sm"
+            onClick={() => setActiveTab(stage.stage_id)}
+            className={`flex items-center gap-2 whitespace-nowrap rounded-lg`}
+            data-testid={`tab-${stage.stage_id}`}
+          >
+            <div 
+              className="w-3 h-3 rounded-full" 
+              style={{ backgroundColor: stage.color }}
             />
-          </TabsContent>
+            {stage.name}
+            <Badge 
+              variant="secondary" 
+              className="text-xs"
+            >
+              {getStageCount(stage.stage_id)}
+            </Badge>
+          </Button>
         ))}
-      </Tabs>
+      </div>
+
+      {/* Stage Content */}
+      {stages.map((stage) => (
+        activeTab === stage.stage_id && (
+          <FulfillmentStageTab
+            key={stage.stage_id}
+            stage={stage}
+            stages={stages}
+            onRefresh={loadData}
+            onTimerChange={handleTimerChange}
+          />
+        )
+      ))}
 
       {/* Stage Orders Popup */}
       <StageOrdersPopup 
