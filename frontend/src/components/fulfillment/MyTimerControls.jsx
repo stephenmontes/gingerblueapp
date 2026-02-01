@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Clock, Pause, Play, StopCircle } from "lucide-react";
+import { Clock, Pause, Play, StopCircle, FileText } from "lucide-react";
 import { toast } from "sonner";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-export function MyTimerControls({ activeTimer, onTimerChange }) {
+export function MyTimerControls({ activeTimer, onTimerChange, onOpenWorksheet }) {
   const [elapsed, setElapsed] = useState(0);
   const [loading, setLoading] = useState(false);
 
