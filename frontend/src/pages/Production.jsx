@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { toast } from "sonner";
 import { BatchList } from "../components/production/BatchList";
 import { BatchDetailView, NoBatchSelected } from "../components/production/BatchDetailView";
@@ -14,9 +14,14 @@ export default function Production() {
   const [stageSummary, setStageSummary] = useState([]);
   const [stages, setStages] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // Track active timer at page level - this is the source of truth
+  const [activeTimer, setActiveTimer] = useState(null);
+  const [timerVersion, setTimerVersion] = useState(0); // Used to force child re-renders
 
   useEffect(() => {
     loadInitialData();
+    checkActiveTimer();
   }, []);
 
   useEffect(() => {
@@ -24,6 +29,28 @@ export default function Production() {
       loadBatchDetails(selectedBatch.batch_id);
     }
   }, [selectedBatch]);
+
+  // Check for active timer
+  const checkActiveTimer = useCallback(async () => {
+    try {
+      const res = await fetch(API + "/user/active-timers", {
+        credentials: "include",
+      });
+      if (res.ok) {
+        const timers = await res.json();
+        setActiveTimer(timers.length > 0 ? timers[0] : null);
+      }
+    } catch (err) {
+      console.error("Failed to check active timer:", err);
+    }
+  }, []);
+
+  // Called when timer is started or stopped
+  const handleTimerChange = useCallback(() => {
+    checkActiveTimer();
+    setTimerVersion(v => v + 1); // Force child components to re-check
+    loadInitialData();
+  }, [checkActiveTimer]);
 
   async function loadInitialData() {
     try {
@@ -120,7 +147,7 @@ export default function Production() {
       </div>
 
       {/* Active Timer Banner - shows which stage user is tracking */}
-      <ActiveTimerBanner onTimerChange={loadInitialData} />
+      <ActiveTimerBanner onTimerChange={handleTimerChange} />
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <div className="lg:col-span-1">
@@ -141,6 +168,9 @@ export default function Production() {
               onUpdateQty={handleUpdateQty}
               onMoveStage={handleMoveStage}
               onRefresh={() => loadBatchDetails(selectedBatch.batch_id)}
+              onTimerChange={handleTimerChange}
+              activeTimer={activeTimer}
+              timerVersion={timerVersion}
             />
           ) : (
             <NoBatchSelected />
