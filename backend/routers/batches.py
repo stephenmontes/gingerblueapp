@@ -238,7 +238,8 @@ async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current
         update_data["fulfillment_updated_at"] = now
         update_data["fulfillment_updated_by"] = user.user_id
     
-    await db.orders.update_many(
+    # Update orders in fulfillment_orders collection
+    await db.fulfillment_orders.update_many(
         {"order_id": {"$in": batch_data.order_ids}},
         {"$set": update_data}
     )
