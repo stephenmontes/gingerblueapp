@@ -115,9 +115,6 @@ export default function OrderFulfillment() {
       {/* KPI Banner */}
       <FulfillmentKpiBanner />
 
-      {/* Summary Cards - Now Clickable */}
-      <FulfillmentSummary summary={summary} onStageClick={handleStageCardClick} />
-
       {/* Stage Tabs - Button Style (matches Frame Production) */}
       <div className="flex gap-2 overflow-x-auto pb-2">
         {stages.map((stage) => (
