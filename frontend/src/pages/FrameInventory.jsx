@@ -476,6 +476,15 @@ export default function FrameInventory() {
         onConfirm={handleCustomAdjust}
         onClose={closeAdjustDialog}
       />
+
+      {/* Rejection Dialog */}
+      <RejectionDialog
+        item={rejectItem}
+        amount={rejectAmount}
+        onAmountChange={setRejectAmount}
+        onConfirm={handleReject}
+        onClose={closeRejectDialog}
+      />
     </div>
   );
 }
