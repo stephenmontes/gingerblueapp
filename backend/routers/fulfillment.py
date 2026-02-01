@@ -335,14 +335,20 @@ async def get_stage_items_consolidated(
 async def get_fulfillment_orders(
     status: Optional[str] = None,
     stage_id: Optional[str] = None,
+    unassigned: bool = False,
     user: User = Depends(get_current_user)
 ):
     """Get orders for fulfillment with optional filtering"""
     query = {}
+    if unassigned:
+        query["$or"] = [
+            {"fulfillment_stage_id": {"$exists": False}},
+            {"fulfillment_stage_id": None}
+        ]
+    elif stage_id:
+        query["fulfillment_stage_id"] = stage_id
     if status:
         query["fulfillment_status"] = status
-    if stage_id:
-        query["fulfillment_stage_id"] = stage_id
     
     orders = await db.orders.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
     return orders
