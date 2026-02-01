@@ -158,18 +158,12 @@ class TimeLog(BaseModel):
     items_processed: int = 0
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
-class TimeLogCreate(BaseModel):
-    order_id: Optional[str] = None
-    batch_id: Optional[str] = None
+class StageTimerStart(BaseModel):
     stage_id: str
-    stage_name: str
-    action: str
-    items_processed: int = 1
 
-class StageMove(BaseModel):
-    order_id: str
-    new_stage_id: str
-    items_processed: int = 1
+class StageTimerStop(BaseModel):
+    stage_id: str
+    items_processed: int = 0
 
 class BatchCreate(BaseModel):
     name: str
