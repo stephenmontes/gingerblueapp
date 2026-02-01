@@ -153,6 +153,7 @@ export function FulfillmentStageTab({ stage, stages, onRefresh, onTimerChange })
   }
 
   async function markShipped(orderId) {
+    if (requiresTimer()) return;
     try {
       const res = await fetch(`${API}/fulfillment/orders/${orderId}/mark-shipped`, {
         method: "POST",
