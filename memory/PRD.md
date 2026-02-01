@@ -27,27 +27,52 @@ Build a manufacturing and fulfillment app for Shopify websites with:
 - **Authentication:** Emergent-managed Google OAuth
 - **Integrations:** Shopify API, Etsy API
 
-### File Structure
+### Backend Structure (Refactored Feb 2026)
 ```
-/app/
-├── backend/
-│   └── server.py
-└── frontend/
-    └── src/
-        ├── App.js
-        ├── components/
-        │   ├── Layout.jsx
-        │   └── production/
-        │       ├── BatchCard.jsx
-        │       ├── BatchList.jsx
-        │       ├── StageTabs.jsx
-        │       ├── ItemRow.jsx        # Includes rejected qty + add to inventory
-        │       ├── StageContent.jsx
-        │       ├── BatchHeader.jsx
-        │       ├── BatchDetailView.jsx
-        │       ├── BatchStats.jsx     # KPIs: hours, costs, rejection rate
-        │       ├── StageTimer.jsx
-        │       └── index.js
+/app/backend/
+├── server.py          # Entry point (65 lines) - imports all routers
+├── config.py          # Environment configuration
+├── database.py        # MongoDB connection
+├── dependencies.py    # Auth helpers (get_current_user)
+├── models/
+│   ├── user.py        # User, UserSession
+│   ├── store.py       # Store, StoreCreate
+│   ├── order.py       # Order, OrderCreate
+│   ├── production.py  # ProductionStage, ProductionBatch, ProductionItem
+│   ├── time_log.py    # TimeLog
+│   └── inventory.py   # InventoryItem, InventoryCreate
+├── routers/
+│   ├── auth.py        # /api/auth/* - login, logout, session
+│   ├── users.py       # /api/users/*
+│   ├── stores.py      # /api/stores/*
+│   ├── stages.py      # /api/stages/*
+│   ├── timers.py      # Timer start/stop/pause/resume
+│   ├── batches.py     # /api/batches/* - create, stats, items
+│   ├── items.py       # /api/items/* - update, move, add to inventory
+│   ├── orders.py      # /api/orders/*
+│   ├── inventory.py   # /api/inventory/* - CRUD, adjust, reject
+│   └── reports.py     # /api/stats/*, /api/time-logs
+└── services/
+    └── sku_parser.py  # SKU parsing utilities
+```
+
+### Frontend Structure
+```
+/app/frontend/src/
+├── App.js
+├── components/
+│   ├── Layout.jsx
+│   ├── production/
+│   │   ├── BatchCard.jsx
+│   │   ├── BatchList.jsx
+│   │   ├── StageTabs.jsx
+│   │   ├── ItemRow.jsx        # Includes rejected qty + add to inventory
+│   │   ├── StageContent.jsx
+│   │   ├── BatchHeader.jsx
+│   │   ├── BatchDetailView.jsx
+│   │   ├── BatchStats.jsx     # KPIs: hours, costs, rejection rate
+│   │   ├── StageTimer.jsx
+│   │   └── index.js
         └── pages/
             ├── Dashboard.jsx
             ├── Login.jsx
