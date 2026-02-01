@@ -71,22 +71,22 @@ async def get_orders(
     sort_direction = 1 if sort_order == "asc" else -1
     
     # Map sort_by to actual field names
+    # Use created_at as primary since many orders don't have order_date
     sort_field_map = {
-        "order_date": "order_date",
-        "created_at": "order_date",  # Use order_date as primary date field
+        "order_date": "created_at",
+        "created_at": "created_at",
         "order_number": "order_number",
         "store_name": "store_name",
         "customer_name": "customer_name",
         "total_price": "total_price",
         "status": "status"
     }
-    primary_sort_field = sort_field_map.get(sort_by, "order_date")
+    primary_sort_field = sort_field_map.get(sort_by, "created_at")
     
     # Fetch from fulfillment_orders with pagination
-    # Sort by requested field, with created_at as secondary sort for consistency
+    # Sort by requested field - created_at is the most reliable date field
     orders = await db.fulfillment_orders.find(query, {"_id": 0}).sort([
-        (primary_sort_field, sort_direction),
-        ("created_at", sort_direction)
+        (primary_sort_field, sort_direction)
     ]).skip(skip).limit(page_size).to_list(page_size)
     
     return {
