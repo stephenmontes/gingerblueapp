@@ -132,6 +132,9 @@ export function OrderWorksheet({ order, stages, currentStage, onClose, onMoveToN
         toast.success("Timer stopped");
         setActiveTimer(null);
         onTimerChange?.();
+      } else {
+        const err = await res.json();
+        toast.error(err.detail || "Failed to stop timer");
       }
     } catch (err) {
       toast.error("Failed to stop timer");
