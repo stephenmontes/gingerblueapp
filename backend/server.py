@@ -404,8 +404,8 @@ async def get_stages(user: User = Depends(get_current_user)):
             {"stage_id": "stage_new", "name": "New Orders", "order": 0, "color": "#6366F1"},
             {"stage_id": "stage_cutting", "name": "Cutting", "order": 1, "color": "#F59E0B"},
             {"stage_id": "stage_assembly", "name": "Assembly", "order": 2, "color": "#3B82F6"},
-            {"stage_id": "stage_qc", "name": "Quality Check", "order": 3, "color": "#8B5CF6"},
-            {"stage_id": "stage_packing", "name": "Packing", "order": 4, "color": "#22C55E"},
+            {"stage_id": "stage_qc", "name": "Sand", "order": 3, "color": "#8B5CF6"},
+            {"stage_id": "stage_packing", "name": "Paint", "order": 4, "color": "#22C55E"},
             {"stage_id": "stage_ready", "name": "Ready to Ship", "order": 5, "color": "#10B981"},
         ]
         for stage in default_stages:
