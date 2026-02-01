@@ -1,7 +1,12 @@
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Layers } from "lucide-react";
+import { Layers, ArrowRight } from "lucide-react";
 import { ItemRow } from "./ItemRow";
+import { toast } from "sonner";
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const API = BACKEND_URL + "/api";
 
 export function StageContent({ stageData, stages, onUpdateQty, onMoveStage, onRefresh }) {
   if (!stageData) {
@@ -16,12 +21,29 @@ export function StageContent({ stageData, stages, onUpdateQty, onMoveStage, onRe
     );
   }
 
+  // Find next stage
+  const currentIdx = stages.findIndex((s) => s.stage_id === stageData.stage_id);
+  const nextStage = currentIdx >= 0 && currentIdx < stages.length - 1 ? stages[currentIdx + 1] : null;
+
+  // Count completed items
+  const items = stageData.items || [];
+  const completedCount = items.filter((item) => {
+    const qtyCompleted = item.qty_completed || 0;
+    const qtyRequired = item.qty_required || 1;
+    return qtyCompleted >= qtyRequired;
+  }).length;
+
   return (
     <Card className="bg-card border-border">
       <CardContent className="p-4">
-        <StageHeader stageData={stageData} />
+        <StageHeader 
+          stageData={stageData} 
+          nextStage={nextStage}
+          completedCount={completedCount}
+          onRefresh={onRefresh}
+        />
         <StageItems
-          items={stageData.items}
+          items={items}
           stages={stages}
           currentStageId={stageData.stage_id}
           onUpdateQty={onUpdateQty}
@@ -33,20 +55,71 @@ export function StageContent({ stageData, stages, onUpdateQty, onMoveStage, onRe
   );
 }
 
-function StageHeader({ stageData }) {
+function StageHeader({ stageData, nextStage, completedCount, onRefresh }) {
   const totalRequired = stageData.total_required || 1;
   const totalCompleted = stageData.total_completed || 0;
   const progress = (totalCompleted / totalRequired) * 100;
+  const totalItems = stageData.total_items || 0;
+
+  async function handleBulkMove() {
+    if (!nextStage) return;
+    
+    try {
+      const res = await fetch(API + "/items/bulk-move", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          stage_id: stageData.stage_id,
+          next_stage_id: nextStage.stage_id
+        })
+      });
+      
+      if (res.ok) {
+        const result = await res.json();
+        if (result.moved_count > 0) {
+          toast.success(result.message);
+          if (onRefresh) onRefresh();
+        } else {
+          toast.info("No completed items to move");
+        }
+      } else {
+        const err = await res.json();
+        toast.error(err.detail || "Failed to move items");
+      }
+    } catch (err) {
+      toast.error("Failed to move items");
+    }
+  }
 
   return (
-    <div className="mb-4 p-4 bg-muted/30 rounded-lg flex items-center justify-between">
-      <div>
-        <h3 className="font-semibold text-lg">{stageData.stage_name}</h3>
-        <p className="text-sm text-muted-foreground">
-          {stageData.total_items} items • {totalCompleted}/{totalRequired} completed
-        </p>
+    <div className="mb-4 p-4 bg-muted/30 rounded-lg">
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <h3 className="font-semibold text-lg">{stageData.stage_name}</h3>
+          <p className="text-sm text-muted-foreground">
+            {totalItems} items • {totalCompleted}/{totalRequired} completed
+          </p>
+        </div>
+        <Progress value={progress} className="w-48" />
       </div>
-      <Progress value={progress} className="w-48" />
+      
+      {/* Bulk Move Button */}
+      {nextStage && completedCount > 0 && (
+        <div className="flex items-center justify-between pt-3 border-t border-border/50">
+          <p className="text-sm text-muted-foreground">
+            <span className="font-medium text-green-400">{completedCount}</span> item{completedCount !== 1 ? "s" : ""} ready to move
+          </p>
+          <Button
+            onClick={handleBulkMove}
+            className="gap-2"
+            data-testid="bulk-move-btn"
+          >
+            <ArrowRight className="w-4 h-4" />
+            Move All to {nextStage.name}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
