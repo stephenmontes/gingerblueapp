@@ -188,6 +188,7 @@ Build a manufacturing and fulfillment app for Shopify websites with:
   - Expandable rows showing order breakdown
   - Print-friendly layout with grand total
 - ✅ **Batch Number in Order Fulfillment** (Feb 2026): Orders display their associated batch name/ID in the fulfillment view
+- ✅ **Batch Click-Through** (Feb 2026): Clicking batch badge navigates to Frame Production with that batch auto-selected
 
 ## Prioritized Backlog
 
