@@ -636,13 +636,17 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
                     shopify: "text-green-400",
                     etsy: "text-orange-400",
                     dropship: "text-purple-400",
+                    shipstation: "text-blue-400",
                   };
+                  const platformLabel = store.platform === "dropship" ? "CSV" : 
+                    store.platform === "shipstation" ? (store.shipstation_marketplace || "ShipStation") : 
+                    store.platform;
                   return (
                     <SelectItem key={store.store_id} value={store.store_id}>
                       <span className="flex items-center gap-2">
                         {store.name}
                         <span className={`text-xs ${platformColors[store.platform] || "text-muted-foreground"}`}>
-                          ({store.platform === "dropship" ? "CSV" : store.platform})
+                          ({platformLabel})
                         </span>
                       </span>
                     </SelectItem>
