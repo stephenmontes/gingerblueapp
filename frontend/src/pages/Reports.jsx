@@ -91,6 +91,30 @@ export default function Reports({ user }) {
     fetchData();
   }, []);
 
+  const handleExport = (type) => {
+    let url = "";
+    switch (type) {
+      case "orders-csv":
+        url = `${API}/export/orders`;
+        break;
+      case "time-logs-csv":
+        url = `${API}/export/time-logs`;
+        break;
+      case "user-stats-csv":
+        url = `${API}/export/user-stats`;
+        break;
+      case "report-pdf":
+        url = `${API}/export/report-pdf`;
+        break;
+      default:
+        return;
+    }
+    
+    // Open in new tab for download
+    window.open(url, "_blank");
+    toast.success("Export started");
+  };
+
   if (loading) {
     return (
       <div className="space-y-6" data-testid="reports-loading">
@@ -119,10 +143,38 @@ export default function Reports({ user }) {
             Production analytics and performance metrics
           </p>
         </div>
-        <Button variant="outline" onClick={fetchData} className="gap-2" data-testid="refresh-reports-btn">
-          <RefreshCw className="w-4 h-4" />
-          Refresh
-        </Button>
+        <div className="flex items-center gap-3">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="gap-2" data-testid="export-dropdown-btn">
+                <Download className="w-4 h-4" />
+                Export
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleExport("orders-csv")} data-testid="export-orders-csv">
+                <FileSpreadsheet className="w-4 h-4 mr-2" />
+                Orders (CSV)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport("time-logs-csv")} data-testid="export-timelogs-csv">
+                <FileSpreadsheet className="w-4 h-4 mr-2" />
+                Time Logs (CSV)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport("user-stats-csv")} data-testid="export-userstats-csv">
+                <FileSpreadsheet className="w-4 h-4 mr-2" />
+                User Stats (CSV)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport("report-pdf")} data-testid="export-report-pdf">
+                <FileText className="w-4 h-4 mr-2" />
+                Full Report (PDF)
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button variant="outline" onClick={fetchData} className="gap-2" data-testid="refresh-reports-btn">
+            <RefreshCw className="w-4 h-4" />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {/* Summary Cards */}
