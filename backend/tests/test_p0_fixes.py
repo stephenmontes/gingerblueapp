@@ -11,7 +11,7 @@ import os
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 SESSION_TOKEN = "test_session_1769977085456"
 
-@pytest.fixture
+@pytest.fixture(scope="class")
 def api_client():
     """Shared requests session with auth cookie"""
     session = requests.Session()
