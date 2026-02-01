@@ -1,22 +1,40 @@
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Clock, DollarSign, Package, TrendingUp, Calendar } from "lucide-react";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
+const PERIOD_OPTIONS = [
+  { value: "today", label: "Today" },
+  { value: "yesterday", label: "Yesterday" },
+  { value: "this_week", label: "This Week" },
+  { value: "last_week", label: "Last Week" },
+  { value: "this_month", label: "This Month" },
+  { value: "last_month", label: "Last Month" },
+  { value: "all_time", label: "All Time" },
+];
+
 export function FulfillmentKpiBanner() {
   const [kpis, setKpis] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [period, setPeriod] = useState("this_week");
 
   useEffect(() => {
-    fetchKpis();
-  }, []);
+    fetchKpis(period);
+  }, [period]);
 
-  async function fetchKpis() {
+  async function fetchKpis(selectedPeriod) {
+    setLoading(true);
     try {
-      const res = await fetch(`${API}/fulfillment/stats/overall-kpis`, {
+      const res = await fetch(`${API}/fulfillment/stats/overall-kpis?period=${selectedPeriod}`, {
         credentials: "include"
       });
       if (res.ok) {
@@ -29,30 +47,34 @@ export function FulfillmentKpiBanner() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[...Array(4)].map((_, i) => (
-          <div key={i} className="h-24 bg-muted/30 animate-pulse rounded-lg" />
-        ))}
-      </div>
-    );
+  if (loading && !kpis) {
+    return <LoadingState />;
   }
 
   if (!kpis) return null;
 
-  const weekLabel = kpis.week_start && kpis.week_end 
-    ? `${kpis.week_start} - ${kpis.week_end}` 
-    : "This Week";
-
   return (
     <div data-testid="fulfillment-kpi-banner">
-      <div className="flex items-center gap-2 mb-3">
-        <Calendar className="w-4 h-4 text-muted-foreground" />
-        <span className="text-sm text-muted-foreground">Weekly Summary:</span>
-        <Badge variant="outline" className="text-xs">{weekLabel}</Badge>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <Calendar className="w-4 h-4 text-muted-foreground" />
+          <span className="text-sm text-muted-foreground">Summary:</span>
+          <span className="text-sm font-medium">{kpis.date_range}</span>
+        </div>
+        <Select value={period} onValueChange={setPeriod}>
+          <SelectTrigger className="w-40 h-8" data-testid="kpi-period-select">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {PERIOD_OPTIONS.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>
+                {opt.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className={`grid grid-cols-2 md:grid-cols-4 gap-4 ${loading ? 'opacity-50' : ''}`}>
         <KpiCard
           icon={Clock}
           label="Total Time"
@@ -86,6 +108,16 @@ export function FulfillmentKpiBanner() {
   );
 }
 
+function LoadingState() {
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {[...Array(4)].map((_, i) => (
+        <div key={i} className="h-24 bg-muted/30 animate-pulse rounded-lg" />
+      ))}
+    </div>
+  );
+}
+
 function KpiCard({ icon: Icon, label, value, subValue, color }) {
   const colorClasses = {
     blue: "bg-blue-500/10 border-blue-500/30 text-blue-400",
@@ -109,7 +141,7 @@ function KpiCard({ icon: Icon, label, value, subValue, color }) {
           <p className="text-2xl font-bold">{value}</p>
           <p className="text-xs text-muted-foreground mt-1">{subValue}</p>
         </div>
-        <div className={`p-2 rounded-lg bg-background/50`}>
+        <div className="p-2 rounded-lg bg-background/50">
           <Icon className={`w-5 h-5 ${iconColors[color]}`} />
         </div>
       </div>
