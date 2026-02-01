@@ -34,6 +34,7 @@ export function FulfillmentStageTab({ stage, stages, onRefresh, onTimerChange })
   const [selectedOrders, setSelectedOrders] = useState([]);
   const [inventoryDialogOrder, setInventoryDialogOrder] = useState(null);
   const [worksheetOrder, setWorksheetOrder] = useState(null);
+  const [printOrder, setPrintOrder] = useState(null);
   const [activeTimer, setActiveTimer] = useState(null);
 
   useEffect(() => {
