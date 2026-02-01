@@ -289,3 +289,65 @@ async def get_stage_user_kpis(
         }
     }
 
+
+@router.get("/stats/my-stage-kpis")
+async def get_my_stage_kpis(
+    stage_id: Optional[str] = None,
+    user: User = Depends(get_current_user)
+):
+    """Get the current user's KPIs for stages they've worked on"""
+    # Build match query for current user
+    match_query = {
+        "user_id": user.user_id,
+        "duration_minutes": {"$gt": 0},
+        "completed_at": {"$ne": None}
+    }
+    if stage_id:
+        match_query["stage_id"] = stage_id
+    
+    # Aggregate time logs for this user by stage
+    pipeline = [
+        {"$match": match_query},
+        {"$group": {
+            "_id": {"stage_id": "$stage_id", "stage_name": "$stage_name"},
+            "total_minutes": {"$sum": "$duration_minutes"},
+            "total_items": {"$sum": "$items_processed"},
+            "session_count": {"$sum": 1}
+        }},
+        {"$project": {
+            "_id": 0,
+            "stage_id": "$_id.stage_id",
+            "stage_name": "$_id.stage_name",
+            "total_hours": {"$round": [{"$divide": ["$total_minutes", 60]}, 2]},
+            "total_minutes": {"$round": ["$total_minutes", 1]},
+            "total_items": 1,
+            "session_count": 1,
+            "items_per_hour": {"$cond": {
+                "if": {"$gt": ["$total_minutes", 0]},
+                "then": {"$round": [{"$multiply": [{"$divide": ["$total_items", "$total_minutes"]}, 60]}, 1]},
+                "else": 0
+            }}
+        }},
+        {"$sort": {"total_items": -1}}
+    ]
+    
+    user_stats = await db.time_logs.aggregate(pipeline).to_list(100)
+    
+    # Calculate totals across all stages
+    total_hours = sum(s["total_hours"] for s in user_stats)
+    total_items = sum(s["total_items"] for s in user_stats)
+    total_sessions = sum(s["session_count"] for s in user_stats)
+    overall_items_per_hour = round((total_items / (total_hours * 60) * 60), 1) if total_hours > 0 else 0
+    
+    return {
+        "user_id": user.user_id,
+        "user_name": user.name,
+        "stages": user_stats,
+        "totals": {
+            "total_hours": round(total_hours, 2),
+            "total_items": total_items,
+            "total_sessions": total_sessions,
+            "overall_items_per_hour": overall_items_per_hour
+        }
+    }
+
