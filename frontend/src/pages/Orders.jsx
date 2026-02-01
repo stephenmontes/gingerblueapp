@@ -416,7 +416,7 @@ PO-12346,Jane Doe,jane@example.com,FRAME-5X7-BLK,3,Black Frame 5x7,19.99,456 Oak
         <div>
           <h1 className="text-3xl font-heading font-bold">Orders</h1>
           <p className="text-muted-foreground mt-1">
-            Sync from Shopify & Etsy and send orders to Frame Production
+            Sync from Shopify & Etsy, or upload CSV for dropship orders
           </p>
         </div>
         <div className="flex items-center gap-2">
