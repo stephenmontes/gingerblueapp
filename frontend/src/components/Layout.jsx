@@ -34,9 +34,9 @@ const navItems = [
   { path: "/production", label: "Frame Production", icon: Workflow },
   { path: "/fulfillment", label: "Order Fulfillment", icon: Truck },
   { path: "/inventory", label: "Frame Inventory", icon: Boxes },
-  { path: "/team", label: "Team", icon: Users },
-  { path: "/reports", label: "Reports", icon: BarChart3 },
-  { path: "/settings", label: "Settings", icon: Settings },
+  { path: "/team", label: "Team", icon: Users, roles: ["admin", "manager"] },
+  { path: "/reports", label: "Reports", icon: BarChart3, roles: ["admin", "manager"] },
+  { path: "/settings", label: "Settings", icon: Settings, roles: ["admin", "manager"] },
 ];
 
 export default function Layout({ children, user, setUser }) {
