@@ -248,8 +248,49 @@ async def get_fulfillment_stages(user: User = Depends(get_current_user)):
             stage["created_at"] = datetime.now(timezone.utc).isoformat()
         await db.fulfillment_stages.insert_many(DEFAULT_FULFILLMENT_STAGES)
         stages = DEFAULT_FULFILLMENT_STAGES
+    else:
+        # Update stage name if it's the old "Orders" name
+        for stage in stages:
+            if stage["stage_id"] == "fulfill_orders" and stage.get("name") == "Orders":
+                await db.fulfillment_stages.update_one(
+                    {"stage_id": "fulfill_orders"},
+                    {"$set": {"name": "In Production"}}
+                )
+                stage["name"] = "In Production"
     
     return stages
+
+
+@router.post("/stages/cleanup-unbatched")
+async def cleanup_unbatched_orders(user: User = Depends(get_current_user)):
+    """Remove orders without a batch from fulfillment stages
+    
+    Orders should only appear in fulfillment when sent via 'Send to Production'
+    """
+    if user.role not in ["admin", "manager"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    # Find and clear fulfillment_stage_id for orders without a batch_id
+    result = await db.fulfillment_orders.update_many(
+        {
+            "fulfillment_stage_id": {"$exists": True, "$ne": None},
+            "$or": [
+                {"batch_id": {"$exists": False}},
+                {"batch_id": None}
+            ]
+        },
+        {
+            "$unset": {
+                "fulfillment_stage_id": "",
+                "fulfillment_stage_name": ""
+            }
+        }
+    )
+    
+    return {
+        "message": f"Cleared {result.modified_count} orders without batches from fulfillment",
+        "cleared_count": result.modified_count
+    }
 
 
 @router.get("/stages/{stage_id}/items-consolidated")
