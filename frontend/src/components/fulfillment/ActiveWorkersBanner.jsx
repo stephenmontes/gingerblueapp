@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Users, Clock, Pause } from "lucide-react";
 
@@ -8,13 +8,7 @@ const API = `${BACKEND_URL}/api`;
 export function ActiveWorkersBanner({ stageId, stageName }) {
   const [workers, setWorkers] = useState([]);
 
-  useEffect(() => {
-    fetchWorkers();
-    const interval = setInterval(fetchWorkers, 30000); // Refresh every 30s
-    return () => clearInterval(interval);
-  }, [stageId]);
-
-  async function fetchWorkers() {
+  const fetchWorkers = useCallback(async () => {
     try {
       const res = await fetch(`${API}/fulfillment/stages/${stageId}/active-workers`, {
         credentials: "include"
@@ -25,7 +19,13 @@ export function ActiveWorkersBanner({ stageId, stageName }) {
     } catch (err) {
       console.error("Failed to fetch active workers:", err);
     }
-  }
+  }, [stageId]);
+
+  useEffect(() => {
+    fetchWorkers();
+    const interval = setInterval(fetchWorkers, 30000); // Refresh every 30s
+    return () => clearInterval(interval);
+  }, [fetchWorkers]);
 
   if (workers.length === 0) return null;
 
