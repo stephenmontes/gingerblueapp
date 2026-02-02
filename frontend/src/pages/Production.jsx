@@ -4,9 +4,7 @@ import { toast } from "sonner";
 import { BatchList } from "../components/production/BatchList";
 import { BatchDetailView, NoBatchSelected } from "../components/production/BatchDetailView";
 import { ActiveTimerBanner } from "../components/production/ActiveTimerBanner";
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = BACKEND_URL + "/api";
+import { API } from "@/utils/api";
 
 export default function Production() {
   const [searchParams, setSearchParams] = useSearchParams();

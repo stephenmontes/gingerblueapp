@@ -25,9 +25,7 @@ import {
   Pie,
   Cell,
 } from "recharts";
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+import { API } from "@/utils/api";
 
 const KPICard = ({ title, value, subtitle, icon: Icon, color, trend }) => (
   <Card className="bg-card border-border card-hover" data-testid={`kpi-${title.toLowerCase().replace(/\s/g, '-')}`}>
