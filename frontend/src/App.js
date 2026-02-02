@@ -319,13 +319,15 @@ function AppRouter() {
 
 function App() {
   return (
-    <div className="App">
-      <div className="noise-overlay"></div>
-      <BrowserRouter>
-        <AppRouter />
-      </BrowserRouter>
-      <Toaster position="top-right" richColors />
-    </div>
+    <ThemeProvider>
+      <div className="App">
+        <div className="noise-overlay"></div>
+        <BrowserRouter>
+          <AppRouter />
+        </BrowserRouter>
+        <Toaster position="top-right" richColors />
+      </div>
+    </ThemeProvider>
   );
 }
 
