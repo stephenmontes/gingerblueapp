@@ -353,8 +353,9 @@ async def get_batch_items_grouped(batch_id: str, user: User = Depends(get_curren
 
 @router.get("/{batch_id}/stage-summary")
 async def get_batch_stage_summary(batch_id: str, user: User = Depends(get_current_user)):
-    """Get summary of items by stage for a batch"""
-    items = await db.production_items.find({"batch_id": batch_id}, {"_id": 0}).to_list(10000)
+    """Get summary of frames by stage for a batch"""
+    # Query the batch_frames collection (new frame-centric model)
+    frames = await db.batch_frames.find({"batch_id": batch_id}, {"_id": 0}).to_list(10000)
     stages = await db.production_stages.find({}, {"_id": 0}).sort("order", 1).to_list(100)
     
     stage_summary = {}
@@ -370,13 +371,13 @@ async def get_batch_stage_summary(batch_id: str, user: User = Depends(get_curren
             "items": []
         }
     
-    for item in items:
-        stage_id = item.get("current_stage_id", "stage_new")
+    for frame in frames:
+        stage_id = frame.get("current_stage_id", "stage_cutting")
         if stage_id in stage_summary:
-            stage_summary[stage_id]["items"].append(item)
+            stage_summary[stage_id]["items"].append(frame)
             stage_summary[stage_id]["total_items"] += 1
-            stage_summary[stage_id]["total_required"] += item.get("qty_required", 1)
-            stage_summary[stage_id]["total_completed"] += item.get("qty_completed", 0)
+            stage_summary[stage_id]["total_required"] += frame.get("qty_required", 1)
+            stage_summary[stage_id]["total_completed"] += frame.get("qty_completed", 0)
     
     result = list(stage_summary.values())
     result.sort(key=lambda x: x["order"])
