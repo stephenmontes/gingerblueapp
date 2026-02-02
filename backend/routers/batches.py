@@ -536,6 +536,49 @@ async def update_frame(
     
     return {"message": "Frame updated", "frame_id": frame_id, "qty_completed": qty_completed}
 
+
+@router.delete("/{batch_id}/frames/{frame_id}")
+async def delete_frame(
+    batch_id: str,
+    frame_id: str,
+    user: User = Depends(get_current_user)
+):
+    """Delete a frame from a batch (only allowed in Cutting stage)"""
+    frame = await db.batch_frames.find_one({"batch_id": batch_id, "frame_id": frame_id})
+    if not frame:
+        raise HTTPException(status_code=404, detail="Frame not found")
+    
+    # Only allow deletion from Cutting stage
+    current_stage = frame.get("current_stage_id", "")
+    if current_stage != "stage_cutting" and "cutting" not in current_stage.lower():
+        raise HTTPException(status_code=400, detail="Frames can only be removed from the Cutting stage")
+    
+    # Delete the frame
+    await db.batch_frames.delete_one({"frame_id": frame_id})
+    
+    # Log the deletion
+    now = datetime.now(timezone.utc).isoformat()
+    await db.production_logs.insert_one({
+        "log_id": f"log_{uuid.uuid4().hex[:12]}",
+        "frame_id": frame_id,
+        "batch_id": batch_id,
+        "action": "frame_deleted",
+        "size": frame.get("size"),
+        "color": frame.get("color"),
+        "qty_required": frame.get("qty_required"),
+        "deleted_by": user.user_id,
+        "deleted_by_name": user.name,
+        "created_at": now
+    })
+    
+    return {
+        "message": "Frame removed from batch",
+        "frame_id": frame_id,
+        "size": frame.get("size"),
+        "color": frame.get("color")
+    }
+
+
 @router.post("/{batch_id}/frames/{frame_id}/move")
 async def move_frame_to_next_stage(
     batch_id: str,
