@@ -21,11 +21,15 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = BACKEND_URL + "/api";
 
 export function BatchCard({ batch, isSelected, onSelect, onRefresh, isArchived }) {
+  const [undoDialogOpen, setUndoDialogOpen] = useState(false);
   const totalItems = batch.total_items || 0;
   const itemsCompleted = batch.items_completed || 0;
   const progress = totalItems > 0 ? (itemsCompleted / totalItems) * 100 : 0;
   const isRunning = batch.time_started && !batch.time_completed;
   const orderCount = batch.order_ids ? batch.order_ids.length : 0;
+  
+  // Check if production has started (any items completed)
+  const productionStarted = itemsCompleted > 0;
 
   const handleArchive = async (e) => {
     e.stopPropagation();
@@ -62,6 +66,26 @@ export function BatchCard({ batch, isSelected, onSelect, onRefresh, isArchived }
       }
     } catch (err) {
       toast.error("Failed to restore batch");
+    }
+  };
+
+  const handleUndo = async (e) => {
+    e?.stopPropagation();
+    try {
+      const res = await fetch(`${API}/batches/${batch.batch_id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (res.ok) {
+        toast.success("Batch undone - orders returned to Orders page");
+        setUndoDialogOpen(false);
+        if (onRefresh) onRefresh();
+      } else {
+        const err = await res.json();
+        toast.error(err.detail || "Failed to undo batch");
+      }
+    } catch (err) {
+      toast.error("Failed to undo batch");
     }
   };
 
