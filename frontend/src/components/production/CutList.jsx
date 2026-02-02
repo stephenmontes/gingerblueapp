@@ -295,6 +295,39 @@ export function FrameList({ batch, activeTimer, currentStageId, stages, onRefres
     }
   };
 
+  const handleRemoveFrame = async () => {
+    if (!frameToRemove) return;
+    
+    setUpdating(prev => ({ ...prev, [frameToRemove]: true }));
+    
+    try {
+      const res = await fetch(
+        `${API}/batches/${batch.batch_id}/frames/${frameToRemove}`,
+        { method: "DELETE", credentials: "include" }
+      );
+      
+      if (res.ok) {
+        toast.success("Frame removed from batch");
+        fetchFrames();
+        onRefresh?.();
+      } else {
+        const err = await res.json();
+        toast.error(err.detail || "Failed to remove frame");
+      }
+    } catch (err) {
+      toast.error("Failed to remove frame");
+    } finally {
+      setUpdating(prev => ({ ...prev, [frameToRemove]: false }));
+      setRemoveDialogOpen(false);
+      setFrameToRemove(null);
+    }
+  };
+
+  const openRemoveDialog = (frameId) => {
+    setFrameToRemove(frameId);
+    setRemoveDialogOpen(true);
+  };
+
   if (loading) {
     return (
       <Card className="bg-card border-border">
