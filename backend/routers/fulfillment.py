@@ -535,6 +535,12 @@ async def move_order_to_next_stage(
             pass
         deduction_result = await deduct_inventory_for_order(order, user)
     
+    # Reset worksheet progress for items when moving to new stage
+    items = order.get("items", []) or order.get("line_items", [])
+    for item in items:
+        item["qty_done"] = 0
+        item["is_complete"] = False
+    
     await db.fulfillment_orders.update_one(
         {"order_id": order_id},
         {"$set": {
@@ -542,7 +548,9 @@ async def move_order_to_next_stage(
             "fulfillment_stage_name": next_stage["name"],
             "fulfillment_updated_at": now,
             "fulfillment_updated_by": user.user_id,
-            "inventory_deducted": next_stage["stage_id"] == "fulfill_pack"
+            "inventory_deducted": next_stage["stage_id"] == "fulfill_pack",
+            "items": items,
+            "all_items_complete": False
         }}
     )
     
