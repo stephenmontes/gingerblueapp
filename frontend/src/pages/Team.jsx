@@ -41,9 +41,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { TimerHistory } from "@/components/TimerHistory";
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+import { API } from "@/utils/api";
 
 const RoleBadge = ({ role }) => {
   const styles = {

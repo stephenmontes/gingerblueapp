@@ -21,9 +21,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { KpiCards, QualityTab, UsersTab, StagesTab, OverviewTab, StageUserKpis } from "@/components/reports";
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+import { API } from "@/utils/api";
 
 export default function Reports() {
   const [dashboardStats, setDashboardStats] = useState(null);

@@ -37,9 +37,7 @@ import { toast } from "sonner";
 import { ProductDetails } from "@/components/products/ProductDetails";
 import { SyncStatus } from "@/components/products/SyncStatus";
 import { ProductStats } from "@/components/products/ProductStats";
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+import { API } from "@/utils/api";
 
 export default function Products() {
   const [products, setProducts] = useState([]);
