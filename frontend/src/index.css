@@ -20,7 +20,38 @@ h1, h2, h3, h4, .font-heading {
 }
 
 @layer base {
+    /* Light mode (default) */
     :root {
+        --background: 0 0% 100%;
+        --foreground: 240 10% 10%;
+        --card: 0 0% 98%;
+        --card-foreground: 240 10% 10%;
+        --popover: 0 0% 100%;
+        --popover-foreground: 240 10% 10%;
+        --primary: 217 91% 50%;
+        --primary-foreground: 0 0% 100%;
+        --secondary: 142 71% 40%;
+        --secondary-foreground: 0 0% 100%;
+        --muted: 240 5% 92%;
+        --muted-foreground: 240 5% 45%;
+        --accent: 38 92% 50%;
+        --accent-foreground: 0 0% 100%;
+        --destructive: 0 84% 55%;
+        --destructive-foreground: 0 0% 100%;
+        --border: 240 6% 85%;
+        --input: 240 6% 90%;
+        --ring: 217 91% 50%;
+        --chart-1: 217 91% 50%;
+        --chart-2: 142 71% 40%;
+        --chart-3: 38 92% 50%;
+        --chart-4: 262 83% 58%;
+        --chart-5: 0 84% 55%;
+        --radius: 0.5rem;
+        --sidebar-bg: 240 6% 97%;
+    }
+
+    /* Dark mode */
+    .dark {
         --background: 240 6% 4%;
         --foreground: 240 5% 96%;
         --card: 240 6% 10%;
@@ -45,7 +76,7 @@ h1, h2, h3, h4, .font-heading {
         --chart-3: 38 92% 50%;
         --chart-4: 262 83% 58%;
         --chart-5: 0 84% 60%;
-        --radius: 0.5rem;
+        --sidebar-bg: 240 6% 7%;
     }
 }
 
