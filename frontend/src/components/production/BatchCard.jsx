@@ -100,16 +100,6 @@ export function BatchCard({ batch, isSelected, onSelect, onRefresh, isArchived }
       toast.error("Failed to undo batch");
     }
   };
-        setUndoDialogOpen(false);
-        if (onRefresh) onRefresh();
-      } else {
-        const err = await res.json();
-        toast.error(err.detail || "Failed to undo batch");
-      }
-    } catch (err) {
-      toast.error("Failed to undo batch");
-    }
-  };
 
   // Show final stats for archived batches
   const finalStats = batch.final_stats;
