@@ -73,10 +73,10 @@ export function OrderRow({
             onClick={onOpenWorksheet}
             className="hover:text-primary hover:underline cursor-pointer"
           >
-            {order.order_number || order.order_id?.slice(-8)}
+            #{order.order_number || order.order_id?.slice(-8)}
           </button>
         ) : (
-          <span>{order.order_number || order.order_id?.slice(-8)}</span>
+          <span>#{order.order_number || order.order_id?.slice(-8)}</span>
         )}
       </TableCell>
       <TableCell>
