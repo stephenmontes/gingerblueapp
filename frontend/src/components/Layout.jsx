@@ -199,7 +199,7 @@ export default function Layout({ children, user, setUser }) {
       )}
 
       {/* Main content */}
-      <main className="flex-1 overflow-auto">
+      <main className={`flex-1 overflow-auto ${user?.training_mode ? 'pt-8' : ''}`}>
         <div className="p-6 md:p-8 lg:pl-8">{children}</div>
       </main>
     </div>
