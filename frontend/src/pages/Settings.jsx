@@ -43,7 +43,7 @@ export default function Settings({ user }) {
       }
     };
     fetchData();
-  }, [API]);
+  }, []);
 
   const resetForm = () => {
     setFormName("");
