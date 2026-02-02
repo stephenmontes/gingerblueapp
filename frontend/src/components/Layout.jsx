@@ -153,6 +153,10 @@ export default function Layout({ children, user, setUser }) {
 
           {/* User section */}
           <div className="p-4 border-t border-border">
+            <div className="flex items-center justify-between mb-3 px-3">
+              <span className="text-xs text-muted-foreground">Theme</span>
+              <ThemeToggle />
+            </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
