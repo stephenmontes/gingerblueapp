@@ -13,8 +13,15 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useState } from "react";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -69,15 +76,30 @@ export function BatchCard({ batch, isSelected, onSelect, onRefresh, isArchived }
     }
   };
 
-  const handleUndo = async (e) => {
-    e?.stopPropagation();
+  const handleUndo = async (removeFrames) => {
     try {
-      const res = await fetch(`${API}/batches/${batch.batch_id}`, {
+      const url = `${API}/batches/${batch.batch_id}?remove_frames=${removeFrames}`;
+      const res = await fetch(url, {
         method: "DELETE",
         credentials: "include",
       });
       if (res.ok) {
-        toast.success("Batch undone - orders returned to Orders page");
+        const result = await res.json();
+        if (removeFrames) {
+          toast.success("Batch undone - orders returned and frames removed from all stages");
+        } else {
+          toast.success("Batch undone - orders returned, frames remain in production queue");
+        }
+        setUndoDialogOpen(false);
+        if (onRefresh) onRefresh();
+      } else {
+        const err = await res.json();
+        toast.error(err.detail || "Failed to undo batch");
+      }
+    } catch (err) {
+      toast.error("Failed to undo batch");
+    }
+  };
         setUndoDialogOpen(false);
         if (onRefresh) onRefresh();
       } else {
