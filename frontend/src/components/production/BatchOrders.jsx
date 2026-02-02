@@ -99,6 +99,13 @@ function OrderDetailDialog({ order, open, onClose }) {
 
   const items = order.items || [];
   const totalQty = items.reduce((sum, item) => sum + (item.qty || 1), 0);
+  
+  // Use order_number with # prefix, fallback to external_id or order_id
+  const displayOrderNumber = order.order_number 
+    ? `#${order.order_number}` 
+    : order.external_id 
+      ? `#${order.external_id}` 
+      : order.order_id;
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -106,7 +113,7 @@ function OrderDetailDialog({ order, open, onClose }) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Package className="w-5 h-5" />
-            Order: {order.external_id || order.order_id}
+            Order: {displayOrderNumber}
           </DialogTitle>
         </DialogHeader>
 
