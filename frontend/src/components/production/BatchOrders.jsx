@@ -73,6 +73,12 @@ export function BatchOrders({ orders }) {
 
 function OrderBadge({ order, onClick }) {
   const itemCount = order.items ? order.items.length : 0;
+  // Use order_number with # prefix, fallback to external_id or order_id
+  const displayOrderNumber = order.order_number 
+    ? `#${order.order_number}` 
+    : order.external_id 
+      ? `#${order.external_id}` 
+      : order.order_id;
 
   return (
     <button
@@ -80,7 +86,7 @@ function OrderBadge({ order, onClick }) {
       className="px-3 py-1.5 bg-muted/50 rounded-md border border-border text-sm text-left hover:bg-muted hover:border-primary/50 transition-colors cursor-pointer"
       data-testid={`view-order-${order.order_id}`}
     >
-      <div className="font-medium">{order.external_id || order.order_id}</div>
+      <div className="font-medium">{displayOrderNumber}</div>
       <div className="text-xs text-muted-foreground">
         {order.customer_name} • {itemCount} item{itemCount !== 1 ? "s" : ""}
       </div>
