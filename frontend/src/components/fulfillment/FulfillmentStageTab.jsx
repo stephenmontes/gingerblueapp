@@ -78,11 +78,14 @@ export function FulfillmentStageTab({ stage, stages, onRefresh, onTimerChange })
 
   async function loadOrders() {
     try {
-      const res = await fetch(`${API}/fulfillment/stages/${stage.stage_id}/orders?include_inventory_status=true`, {
+      // Don't include inventory status for faster loading
+      const res = await fetch(`${API}/fulfillment/stages/${stage.stage_id}/orders?include_inventory_status=false&page_size=100`, {
         credentials: "include",
       });
       if (res.ok) {
-        setOrders(await res.json());
+        const data = await res.json();
+        // Handle both paginated and non-paginated response
+        setOrders(data.orders || data);
       }
     } catch (err) {
       toast.error("Failed to load orders");
