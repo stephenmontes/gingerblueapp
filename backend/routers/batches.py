@@ -391,12 +391,13 @@ async def get_batch_stats(batch_id: str, user: User = Depends(get_current_user))
     if not batch:
         raise HTTPException(status_code=404, detail="Batch not found")
     
-    items = await db.production_items.find({"batch_id": batch_id}, {"_id": 0}).to_list(10000)
+    # Query batch_frames collection (new frame-centric model)
+    frames = await db.batch_frames.find({"batch_id": batch_id}, {"_id": 0}).to_list(10000)
     time_logs = await db.time_logs.find({"completed_at": {"$ne": None}}, {"_id": 0}).to_list(10000)
     
-    total_required = sum(item.get("qty_required", 0) for item in items)
-    total_completed = sum(item.get("qty_completed", 0) for item in items)
-    total_rejected = sum(item.get("qty_rejected", 0) for item in items)
+    total_required = sum(frame.get("qty_required", 0) for frame in frames)
+    total_completed = sum(frame.get("qty_completed", 0) for frame in frames)
+    total_rejected = sum(frame.get("qty_rejected", 0) for frame in frames)
     total_good = total_completed - total_rejected
     
     total_minutes = sum(log.get("duration_minutes", 0) for log in time_logs)
