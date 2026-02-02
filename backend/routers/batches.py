@@ -128,15 +128,16 @@ async def restore_batch(batch_id: str, user: User = Depends(get_current_user)):
 
 @router.get("/{batch_id}")
 async def get_batch(batch_id: str, user: User = Depends(get_current_user)):
-    """Get a single batch with its items"""
+    """Get a single batch with its frames"""
     batch = await db.production_batches.find_one({"batch_id": batch_id}, {"_id": 0})
     if not batch:
         raise HTTPException(status_code=404, detail="Batch not found")
     
-    items = await db.production_items.find({"batch_id": batch_id}, {"_id": 0}).to_list(1000)
+    # Get frames from batch_frames collection
+    frames = await db.batch_frames.find({"batch_id": batch_id}, {"_id": 0}).to_list(1000)
     orders = await db.fulfillment_orders.find({"order_id": {"$in": batch.get("order_ids", [])}}, {"_id": 0}).to_list(1000)
     
-    return {**batch, "items": items, "orders": orders}
+    return {**batch, "items": frames, "frames": frames, "orders": orders}
 
 @router.post("")
 async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current_user)):
