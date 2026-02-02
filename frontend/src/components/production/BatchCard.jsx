@@ -198,47 +198,24 @@ export function BatchCard({ batch, isSelected, onSelect, onRefresh, isArchived }
             </Button>
           ) : (
             <>
-              {/* Undo button - only show if production hasn't started */}
-              {!productionStarted && (
-                <AlertDialog open={undoDialogOpen} onOpenChange={setUndoDialogOpen}>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="flex-1 text-xs text-orange-400 border-orange-400/30 hover:bg-orange-500/10"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setUndoDialogOpen(true);
-                      }}
-                      data-testid={`undo-batch-${batch.batch_id}`}
-                    >
-                      <Undo2 className="w-3 h-3 mr-1" />
-                      Undo
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Undo Batch</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This will return all {orderCount} orders back to the Orders page and delete this batch. This action cannot be undone.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction 
-                        onClick={handleUndo}
-                        className="bg-orange-600 hover:bg-orange-700"
-                      >
-                        Undo Batch
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              )}
+              {/* Undo button - always available */}
               <Button
                 size="sm"
                 variant="outline"
-                className={`${productionStarted ? 'w-full' : 'flex-1'} text-xs`}
+                className="flex-1 text-xs text-orange-400 border-orange-400/30 hover:bg-orange-500/10"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setUndoDialogOpen(true);
+                }}
+                data-testid={`undo-batch-${batch.batch_id}`}
+              >
+                <Undo2 className="w-3 h-3 mr-1" />
+                Undo
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="flex-1 text-xs"
                 onClick={handleArchive}
                 data-testid={`archive-batch-${batch.batch_id}`}
               >
@@ -248,6 +225,59 @@ export function BatchCard({ batch, isSelected, onSelect, onRefresh, isArchived }
             </>
           )}
         </div>
+
+        {/* Undo Dialog with options */}
+        <Dialog open={undoDialogOpen} onOpenChange={setUndoDialogOpen}>
+          <DialogContent onClick={(e) => e.stopPropagation()}>
+            <DialogHeader>
+              <DialogTitle>Undo Batch: {batch.name}</DialogTitle>
+              <DialogDescription>
+                This will return all {orderCount} orders back to the Orders page.
+                {productionStarted && (
+                  <span className="block mt-2 text-orange-400">
+                    ⚠️ Production has already started on this batch ({itemsCompleted} items completed).
+                  </span>
+                )}
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="py-4 space-y-3">
+              <p className="text-sm font-medium">What should happen to frames in production?</p>
+              
+              <Button
+                variant="outline"
+                className="w-full justify-start text-left h-auto py-3 px-4"
+                onClick={() => handleUndo(true)}
+              >
+                <div>
+                  <p className="font-medium text-red-400">Remove all frames</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Delete frames from all production stages. Orders return to Orders page.
+                  </p>
+                </div>
+              </Button>
+              
+              <Button
+                variant="outline"
+                className="w-full justify-start text-left h-auto py-3 px-4"
+                onClick={() => handleUndo(false)}
+              >
+                <div>
+                  <p className="font-medium text-blue-400">Keep frames in queue</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Frames remain in their current production stages. Orders return to Orders page.
+                  </p>
+                </div>
+              </Button>
+            </div>
+
+            <DialogFooter>
+              <Button variant="ghost" onClick={() => setUndoDialogOpen(false)}>
+                Cancel
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );
