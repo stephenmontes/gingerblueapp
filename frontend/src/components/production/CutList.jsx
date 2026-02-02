@@ -504,15 +504,37 @@ export function FrameList({ batch, activeTimer, currentStageId, stages, onRefres
                 )}
               </TableCell>
               {(nextStage || isQualityCheckStage) && <TableCell></TableCell>}
+              {isCuttingStage && <TableCell></TableCell>}
             </TableRow>
           </TableBody>
         </Table>
       </CardContent>
+
+      {/* Remove Confirmation Dialog */}
+      <AlertDialog open={removeDialogOpen} onOpenChange={setRemoveDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Item</AlertDialogTitle>
+            <AlertDialogDescription>
+              You are about to remove an item. Are you sure?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleRemoveFrame}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }
 
-function SizeGroupRows({ group, isLast, updating, localValues, localRejected, onQtyChange, onRejectedChange, onCompletedChange, onMoveToNextStage, onMoveToInventory, hasActiveTimer, nextStage, isQualityCheckStage }) {
+function SizeGroupRows({ group, isLast, updating, localValues, localRejected, onQtyChange, onRejectedChange, onCompletedChange, onMoveToNextStage, onMoveToInventory, onRemove, hasActiveTimer, nextStage, isQualityCheckStage, isCuttingStage }) {
   return (
     <>
       {group.frames.map((frame, frameIndex) => {
