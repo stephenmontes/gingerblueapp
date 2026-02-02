@@ -635,6 +635,20 @@ function SizeGroupRows({ group, isLast, updating, localValues, localRejected, on
                 </Button>
               </TableCell>
             )}
+            {isCuttingStage && (
+              <TableCell className="text-center">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => onRemove(frame.frame_id)}
+                  disabled={isUpdating}
+                  className="gap-1 text-xs h-7 text-red-400 hover:text-red-500 hover:bg-red-500/10"
+                  data-testid={`remove-${frame.frame_id}`}
+                >
+                  <Trash2 className="w-3 h-3" />
+                </Button>
+              </TableCell>
+            )}
           </TableRow>
         );
       })}
