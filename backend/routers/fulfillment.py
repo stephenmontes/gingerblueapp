@@ -627,14 +627,14 @@ async def bulk_move_orders(
         "to_stage_name": stage["name"],
         "user_id": user.user_id,
         "user_name": user.name,
-        "count": result.modified_count,
+        "count": len(order_ids),
         "inventory_deducted": target_stage_id == "fulfill_pack",
         "created_at": now
     })
     
     response = {
-        "message": f"Moved {result.modified_count} orders to {stage['name']}",
-        "modified_count": result.modified_count
+        "message": f"Moved {len(order_ids)} orders to {stage['name']}",
+        "modified_count": len(order_ids)
     }
     
     if deduction_results:
