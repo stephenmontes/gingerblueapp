@@ -65,8 +65,11 @@ Build a manufacturing and fulfillment app for Shopify websites with:
 ```
 /app/frontend/src/
 ├── App.js
+├── utils/
+│   └── api.js           # Dynamic backend URL configuration (NEW Feb 2026)
 ├── components/
 │   ├── Layout.jsx
+│   ├── ThemeToggle.jsx  # Light/Dark theme toggle (NEW Feb 2026)
 │   ├── production/   # Production page components
 │   │   ├── BatchCard.jsx, BatchList.jsx, StageTabs.jsx
 │   │   ├── ItemRow.jsx, StageContent.jsx, BatchHeader.jsx
@@ -86,6 +89,8 @@ Build a manufacturing and fulfillment app for Shopify websites with:
 │   │   ├── RejectionDialog.jsx   # Reject dialog (147 lines)
 │   │   └── index.js
 │   └── ui/           # Shadcn UI components
+├── contexts/
+│   └── ThemeContext.jsx  # Theme provider (NEW Feb 2026)
 └── pages/
     ├── Dashboard.jsx
     ├── Login.jsx
