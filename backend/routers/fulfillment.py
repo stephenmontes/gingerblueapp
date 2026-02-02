@@ -11,7 +11,7 @@ router = APIRouter(prefix="/fulfillment", tags=["fulfillment"])
 
 # Default fulfillment stages
 DEFAULT_FULFILLMENT_STAGES = [
-    {"stage_id": "fulfill_orders", "name": "Orders", "order": 0, "color": "#6366F1"},  # Indigo
+    {"stage_id": "fulfill_orders", "name": "In Production", "order": 0, "color": "#6366F1"},  # Indigo
     {"stage_id": "fulfill_print", "name": "Print List", "order": 1, "color": "#F59E0B"},  # Amber
     {"stage_id": "fulfill_mount", "name": "Mount List", "order": 2, "color": "#EC4899"},  # Pink
     {"stage_id": "fulfill_finish", "name": "Finish", "order": 3, "color": "#14B8A6"},  # Teal
