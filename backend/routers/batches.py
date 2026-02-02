@@ -306,7 +306,8 @@ async def delete_batch(batch_id: str, user: User = Depends(get_current_user)):
     if not batch:
         raise HTTPException(status_code=404, detail="Batch not found")
     
-    await db.production_items.delete_many({"batch_id": batch_id})
+    # Delete frames from batch_frames collection
+    await db.batch_frames.delete_many({"batch_id": batch_id})
     
     first_stage = await db.production_stages.find_one(sort=[("order", 1)])
     first_stage_id = first_stage["stage_id"] if first_stage else "stage_new"
@@ -329,15 +330,15 @@ async def delete_batch(batch_id: str, user: User = Depends(get_current_user)):
 
 @router.get("/{batch_id}/items-grouped")
 async def get_batch_items_grouped(batch_id: str, user: User = Depends(get_current_user)):
-    """Get batch items grouped by color and size with subtotals"""
-    items = await db.production_items.find({"batch_id": batch_id}, {"_id": 0}).to_list(10000)
+    """Get batch frames grouped by color and size with subtotals"""
+    frames = await db.batch_frames.find({"batch_id": batch_id}, {"_id": 0}).to_list(10000)
     
     grouped = {}
-    for item in items:
-        key = f"{item['color']}-{item['size']}"
+    for frame in frames:
+        key = f"{frame['color']}-{frame['size']}"
         if key not in grouped:
             grouped[key] = {
-                "color": item["color"],
+                "color": frame["color"],
                 "size": item["size"],
                 "items": [],
                 "total_required": 0,
