@@ -4,9 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Play, Pause, Square, Clock } from "lucide-react";
 import { toast } from "sonner";
+import { API } from "@/utils/api";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = BACKEND_URL + "/api";
 
 export function BatchHeader({ batch, batchDetails, activeStageId, stageName, stageColor, onTimerChange, activeTimer }) {
   const totalItems = batchDetails ? batchDetails.total_items : 0;

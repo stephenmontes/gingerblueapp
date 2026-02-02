@@ -6,9 +6,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ChevronDown, ChevronRight, Printer, ArrowDownAZ } from "lucide-react";
 import { toast } from "sonner";
 import { SkuLink } from "./SkuLink";
+import { API } from "@/utils/api";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
 
 // Extract size from SKU (second-to-last group)
 function getSizeFromSku(sku) {

@@ -4,9 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Clock, StopCircle, Play, Pause } from "lucide-react";
 import { toast } from "sonner";
 import { UserStageStats } from "./UserStageStats";
+import { API } from "@/utils/api";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = BACKEND_URL + "/api";
 
 export function ActiveTimerBanner({ activeTimer: propTimer, onTimerChange }) {
   // Use prop timer if provided, otherwise fetch locally

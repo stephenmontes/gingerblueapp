@@ -10,9 +10,8 @@ import { ArrowRight, Check, Printer, X, Package, User, Clock, Play, Pause, StopC
 import { toast } from "sonner";
 import { SkuLink } from "./SkuLink";
 import { PrintOrderDialog } from "./PrintOrderDialog";
+import { API } from "@/utils/api";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
 
 // Size sort order
 const SIZE_ORDER = { 'S': 0, 'L': 1, 'XL': 2, 'HS': 3, 'HX': 4, 'XX': 5, 'XXX': 6 };

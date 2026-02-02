@@ -6,10 +6,9 @@ import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowRight, CheckCircle2, PackagePlus, XCircle, Clock } from "lucide-react";
 import { toast } from "sonner";
+import { API } from "@/utils/api";
 
 const COLOR_LABELS = { B: "Black", W: "White", N: "Natural" };
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = BACKEND_URL + "/api";
 
 export function ItemRow({ item, stages, currentStageId, onUpdateQty, onMoveStage, onRefresh, hasActiveTimer }) {
   const [qty, setQty] = useState(item.qty_completed || 0);

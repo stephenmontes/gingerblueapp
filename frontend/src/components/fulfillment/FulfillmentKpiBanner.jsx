@@ -8,9 +8,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Clock, DollarSign, Package, TrendingUp, Calendar } from "lucide-react";
+import { API } from "@/utils/api";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
 
 const PERIOD_OPTIONS = [
   { value: "today", label: "Today" },

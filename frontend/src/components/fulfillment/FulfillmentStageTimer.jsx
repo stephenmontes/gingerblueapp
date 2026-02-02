@@ -3,9 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Play, Users } from "lucide-react";
 import { toast } from "sonner";
+import { API } from "@/utils/api";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
 
 export function FulfillmentStageTimer({ stage, onTimerChange }) {
   const [workers, setWorkers] = useState([]);

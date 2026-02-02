@@ -5,9 +5,8 @@ import { Progress } from "@/components/ui/progress";
 import { Layers, ArrowRight, Clock, Users, User, Pause } from "lucide-react";
 import { ItemRow } from "./ItemRow";
 import { toast } from "sonner";
+import { API } from "@/utils/api";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = BACKEND_URL + "/api";
 
 export function StageContent({ stageData, stages, stageWorkers, onUpdateQty, onMoveStage, onRefresh, hasActiveTimer, timerVersion }) {
   if (!stageData) {

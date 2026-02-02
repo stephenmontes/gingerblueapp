@@ -9,9 +9,8 @@ import {
 } from "@/components/ui/select";
 import { Clock, Users } from "lucide-react";
 import { DateGroup } from "./DateGroup";
+import { API } from "@/utils/api";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
 
 export function UserDateReport() {
   const [data, setData] = useState([]);

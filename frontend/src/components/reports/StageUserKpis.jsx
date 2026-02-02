@@ -3,9 +3,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Clock, TrendingUp, Users, Layers } from "lucide-react";
 import { toast } from "sonner";
 import { StageKpiCard } from "./StageKpiCard";
+import { API } from "@/utils/api";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = BACKEND_URL + "/api";
 
 export function StageUserKpis() {
   const [data, setData] = useState(null);

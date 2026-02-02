@@ -7,9 +7,8 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Clock, DollarSign, XCircle, Users, ChevronDown, ChevronUp, BarChart3 } from "lucide-react";
+import { API } from "@/utils/api";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = BACKEND_URL + "/api";
 
 export function BatchStats({ batchId }) {
   const [stats, setStats] = useState(null);

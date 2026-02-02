@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { ImageIcon, X, Loader2 } from "lucide-react";
+import { API } from "@/utils/api";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
 
 export function SkuLink({ sku, imageUrl, className = "" }) {
   const [showImage, setShowImage] = useState(false);

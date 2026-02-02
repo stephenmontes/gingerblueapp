@@ -11,9 +11,8 @@ import {
 import { Clock, DollarSign, Search, FileText, Package } from "lucide-react";
 import { OrderReportRow } from "./OrderReportRow";
 import { OrderDetailsDialog } from "./OrderDetailsDialog";
+import { API } from "@/utils/api";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
 
 export function OrderKpiReport() {
   const [orders, setOrders] = useState([]);

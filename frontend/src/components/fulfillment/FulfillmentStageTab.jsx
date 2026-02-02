@@ -24,9 +24,8 @@ import { OrderWorksheet } from "./OrderWorksheet";
 import { ActiveWorkersBanner } from "./ActiveWorkersBanner";
 import { MyTimerControls } from "./MyTimerControls";
 import { PrintOrderDialog } from "./PrintOrderDialog";
+import { API } from "@/utils/api";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
 
 export function FulfillmentStageTab({ stage, stages, onRefresh, onTimerChange }) {
   const [orders, setOrders] = useState([]);

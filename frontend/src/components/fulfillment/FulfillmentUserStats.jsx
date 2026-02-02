@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Zap, TrendingUp, Award } from "lucide-react";
+import { API } from "@/utils/api";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
 
 export function FulfillmentUserStats({ stageId, stageName }) {
   const [stats, setStats] = useState(null);

@@ -3,9 +3,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, Clock, LogOut } from "lucide-react";
 import { toast } from "sonner";
+import { API } from "@/utils/api";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
 
 const AUTO_LOGOUT_TIMEOUT = 15 * 60 * 1000; // 15 minutes in milliseconds
 

@@ -29,9 +29,8 @@ import {
 } from "@/components/ui/select";
 import { Clock, Edit, Plus, Trash2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
+import { API } from "@/utils/api";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
 
 const STAGES = [
   { id: "fulfill_print", name: "Print List" },
