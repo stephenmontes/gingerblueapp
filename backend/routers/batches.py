@@ -339,14 +339,14 @@ async def get_batch_items_grouped(batch_id: str, user: User = Depends(get_curren
         if key not in grouped:
             grouped[key] = {
                 "color": frame["color"],
-                "size": item["size"],
+                "size": frame["size"],
                 "items": [],
                 "total_required": 0,
                 "total_completed": 0
             }
-        grouped[key]["items"].append(item)
-        grouped[key]["total_required"] += item.get("qty_required", 1)
-        grouped[key]["total_completed"] += item.get("qty_completed", 0)
+        grouped[key]["items"].append(frame)
+        grouped[key]["total_required"] += frame.get("qty_required", 1)
+        grouped[key]["total_completed"] += frame.get("qty_completed", 0)
     
     result = list(grouped.values())
     result.sort(key=lambda x: (x["color"], x["size"]))
