@@ -655,33 +655,22 @@ async def get_stage_order_count(
 
 @router.get("/summary")
 async def get_fulfillment_summary(user: User = Depends(get_current_user)):
-    """Get summary of orders across all fulfillment stages with stock alerts"""
+    """Get summary of orders across all fulfillment stages (optimized)"""
     stages = await db.fulfillment_stages.find({}, {"_id": 0}).sort("order", 1).to_list(100)
     
     summary = []
-    total_out_of_stock = 0
     
+    # Use aggregation for faster counting
     for stage in stages:
-        orders = await db.fulfillment_orders.find(
-            {"fulfillment_stage_id": stage["stage_id"]},
-            {"_id": 0}
-        ).to_list(1000)
-        
-        out_of_stock_orders = 0
-        for order in orders:
-            inv_status = await check_inventory_for_order(order)
-            if not inv_status["all_in_stock"]:
-                out_of_stock_orders += 1
-        
-        total_out_of_stock += out_of_stock_orders
+        count = await db.fulfillment_orders.count_documents({"fulfillment_stage_id": stage["stage_id"]})
         
         summary.append({
             "stage_id": stage["stage_id"],
             "stage_name": stage["name"],
             "color": stage.get("color", "#6366F1"),
             "order": stage["order"],
-            "count": len(orders),
-            "out_of_stock_count": out_of_stock_orders
+            "count": count,
+            "out_of_stock_count": 0  # Skip expensive inventory check for summary
         })
     
     unassigned = await db.fulfillment_orders.count_documents({
@@ -697,7 +686,7 @@ async def get_fulfillment_summary(user: User = Depends(get_current_user)):
         "stages": summary,
         "unassigned_count": unassigned,
         "total_orders": total,
-        "total_out_of_stock": total_out_of_stock
+        "total_out_of_stock": 0  # Use /inventory-alerts endpoint for this
     }
 
 
