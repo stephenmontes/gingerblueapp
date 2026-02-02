@@ -596,17 +596,27 @@ async def bulk_move_orders(
                 result = await deduct_inventory_for_order(order, user)
                 deduction_results.append(result)
     
-    # Update all orders
-    result = await db.fulfillment_orders.update_many(
-        {"order_id": {"$in": order_ids}},
-        {"$set": {
-            "fulfillment_stage_id": target_stage_id,
-            "fulfillment_stage_name": stage["name"],
-            "fulfillment_updated_at": now,
-            "fulfillment_updated_by": user.user_id,
-            "inventory_deducted": target_stage_id == "fulfill_pack"
-        }}
-    )
+    # Reset worksheet progress for each order when moving to new stage
+    for oid in order_ids:
+        order = await db.fulfillment_orders.find_one({"order_id": oid})
+        if order:
+            items = order.get("items", []) or order.get("line_items", [])
+            for item in items:
+                item["qty_done"] = 0
+                item["is_complete"] = False
+            
+            await db.fulfillment_orders.update_one(
+                {"order_id": oid},
+                {"$set": {
+                    "fulfillment_stage_id": target_stage_id,
+                    "fulfillment_stage_name": stage["name"],
+                    "fulfillment_updated_at": now,
+                    "fulfillment_updated_by": user.user_id,
+                    "inventory_deducted": target_stage_id == "fulfill_pack",
+                    "items": items,
+                    "all_items_complete": False
+                }}
+            )
     
     # Log bulk move
     await db.fulfillment_logs.insert_one({
