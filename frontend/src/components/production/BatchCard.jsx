@@ -175,16 +175,55 @@ export function BatchCard({ batch, isSelected, onSelect, onRefresh, isArchived }
               Restore
             </Button>
           ) : (
-            <Button
-              size="sm"
-              variant="outline"
-              className="w-full text-xs"
-              onClick={handleArchive}
-              data-testid={`archive-batch-${batch.batch_id}`}
-            >
-              <Archive className="w-3 h-3 mr-1" />
-              Archive
-            </Button>
+            <>
+              {/* Undo button - only show if production hasn't started */}
+              {!productionStarted && (
+                <AlertDialog open={undoDialogOpen} onOpenChange={setUndoDialogOpen}>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="flex-1 text-xs text-orange-400 border-orange-400/30 hover:bg-orange-500/10"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setUndoDialogOpen(true);
+                      }}
+                      data-testid={`undo-batch-${batch.batch_id}`}
+                    >
+                      <Undo2 className="w-3 h-3 mr-1" />
+                      Undo
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Undo Batch</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will return all {orderCount} orders back to the Orders page and delete this batch. This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction 
+                        onClick={handleUndo}
+                        className="bg-orange-600 hover:bg-orange-700"
+                      >
+                        Undo Batch
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+              <Button
+                size="sm"
+                variant="outline"
+                className={`${productionStarted ? 'w-full' : 'flex-1'} text-xs`}
+                onClick={handleArchive}
+                data-testid={`archive-batch-${batch.batch_id}`}
+              >
+                <Archive className="w-3 h-3 mr-1" />
+                Archive
+              </Button>
+            </>
           )}
         </div>
       </CardContent>
