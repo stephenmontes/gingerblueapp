@@ -56,6 +56,8 @@ export function FrameList({ batch, activeTimer, currentStageId, stages, onRefres
   const [updating, setUpdating] = useState({});
   const [localValues, setLocalValues] = useState({});
   const [localRejected, setLocalRejected] = useState({});
+  const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
+  const [frameToRemove, setFrameToRemove] = useState(null);
   const debounceTimers = useRef({});
   const rejectedTimers = useRef({});
 
@@ -72,6 +74,10 @@ export function FrameList({ batch, activeTimer, currentStageId, stages, onRefres
   // Check if this is the Quality Check stage (last stage, usually "stage_ready" or contains "quality")
   const isQualityCheckStage = currentStageId === "stage_ready" || 
     currentStage?.name?.toLowerCase().includes("quality");
+  
+  // Check if this is the Cutting stage (first production stage)
+  const isCuttingStage = currentStageId === "stage_cutting" || 
+    currentStage?.name?.toLowerCase().includes("cutting");
 
   const fetchFrames = useCallback(async () => {
     if (!batch?.batch_id) return;
