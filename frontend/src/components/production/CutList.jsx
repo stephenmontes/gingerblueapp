@@ -675,11 +675,12 @@ function SizeGroupRows({ group, isLast, updating, localValues, localRejected, on
           )}
         </TableCell>
         {(nextStage || isQualityCheckStage) && <TableCell></TableCell>}
+        {isCuttingStage && <TableCell></TableCell>}
       </TableRow>
 
       {!isLast && (
         <TableRow className="h-2 border-0">
-          <TableCell colSpan={isQualityCheckStage ? 7 : (nextStage ? 6 : 5)} className="p-0" />
+          <TableCell colSpan={isCuttingStage ? 7 : (isQualityCheckStage ? 7 : (nextStage ? 6 : 5))} className="p-0" />
         </TableRow>
       )}
     </>
