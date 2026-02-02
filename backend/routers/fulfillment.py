@@ -414,15 +414,23 @@ async def save_worksheet_progress(
 @router.get("/stages/{stage_id}/orders")
 async def get_orders_by_stage(
     stage_id: str,
-    include_inventory_status: bool = True,
+    include_inventory_status: bool = False,
+    page: int = 1,
+    page_size: int = 50,
     user: User = Depends(get_current_user)
 ):
-    """Get all orders in a specific fulfillment stage with inventory status"""
+    """Get orders in a specific fulfillment stage with pagination"""
+    skip = (page - 1) * page_size
+    
+    # Get total count for pagination
+    total = await db.fulfillment_orders.count_documents({"fulfillment_stage_id": stage_id})
+    
     orders = await db.fulfillment_orders.find(
         {"fulfillment_stage_id": stage_id},
         {"_id": 0}
-    ).sort("created_at", -1).to_list(1000)
+    ).sort("created_at", -1).skip(skip).limit(page_size).to_list(page_size)
     
+    # Only check inventory if explicitly requested (expensive operation)
     if include_inventory_status:
         for order in orders:
             inv_status = await check_inventory_for_order(order)
@@ -433,7 +441,15 @@ async def get_orders_by_stage(
                 "items": inv_status["items"]
             }
     
-    return orders
+    return {
+        "orders": orders,
+        "pagination": {
+            "page": page,
+            "page_size": page_size,
+            "total": total,
+            "total_pages": (total + page_size - 1) // page_size
+        }
+    }
 
 
 @router.post("/orders/{order_id}/assign-stage")
