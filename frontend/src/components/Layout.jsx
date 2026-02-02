@@ -89,10 +89,17 @@ export default function Layout({ children, user, setUser }) {
 
   return (
     <div className="min-h-screen bg-[#09090B] flex" data-testid="app-layout">
+      {/* Training Mode Banner */}
+      {user?.training_mode && (
+        <div className="fixed top-0 left-0 right-0 z-[60] bg-yellow-500 text-black text-center py-1 px-4 text-sm font-bold">
+          ⚠️ TRAINING MODE - Data will not affect production
+        </div>
+      )}
+      
       {/* Mobile menu button */}
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-card border border-border"
+        className={`lg:hidden fixed ${user?.training_mode ? 'top-12' : 'top-4'} left-4 z-50 p-2 rounded-lg bg-card border border-border`}
         data-testid="mobile-menu-btn"
       >
         {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
@@ -100,7 +107,7 @@ export default function Layout({ children, user, setUser }) {
 
       {/* Sidebar */}
       <aside
-        className={`fixed lg:static inset-y-0 left-0 z-40 w-64 bg-[#18181B] border-r border-border transform transition-transform duration-200 ${
+        className={`fixed lg:static inset-y-0 left-0 z-40 w-64 bg-[#18181B] border-r border-border transform transition-transform duration-200 ${user?.training_mode ? 'pt-8' : ''} ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
         data-testid="sidebar"
