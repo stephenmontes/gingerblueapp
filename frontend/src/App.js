@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import "@/App.css";
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 
 // Pages
 import Login from "@/pages/Login";
