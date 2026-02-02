@@ -103,7 +103,10 @@ async def create_session(request: Request, response: Response):
 @router.get("/me")
 async def get_me(user: User = Depends(get_current_user)):
     """Get current authenticated user"""
-    return user.model_dump()
+    from database import TRAINING_MODE
+    user_data = user.model_dump()
+    user_data["training_mode"] = TRAINING_MODE
+    return user_data
 
 @router.post("/logout")
 async def logout(request: Request, response: Response):
