@@ -261,6 +261,21 @@ async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current
     # Get first fulfillment stage for Order Fulfillment workflow
     fulfillment_stages = await db.fulfillment_stages.find({}, {"_id": 0}).sort("order", 1).to_list(100)
     first_fulfill_stage = None
+    
+    if not fulfillment_stages:
+        # Initialize default fulfillment stages if empty
+        default_fulfill_stages = [
+            {"stage_id": "fulfill_orders", "name": "In Production", "order": 0, "color": "#6366F1"},
+            {"stage_id": "fulfill_print", "name": "Print List", "order": 1, "color": "#F59E0B"},
+            {"stage_id": "fulfill_mount", "name": "Mount List", "order": 2, "color": "#EC4899"},
+            {"stage_id": "fulfill_finish", "name": "Finish", "order": 3, "color": "#14B8A6"},
+            {"stage_id": "fulfill_pack", "name": "Pack and Ship", "order": 4, "color": "#22C55E"},
+        ]
+        for stage in default_fulfill_stages:
+            stage["created_at"] = datetime.now(timezone.utc).isoformat()
+        await db.fulfillment_stages.insert_many(default_fulfill_stages)
+        fulfillment_stages = default_fulfill_stages
+    
     if fulfillment_stages:
         first_fulfill_stage = fulfillment_stages[0]
     
