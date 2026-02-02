@@ -457,6 +457,7 @@ export function FrameList({ batch, activeTimer, currentStageId, stages, onRefres
               <TableHead className="text-center w-24">Done</TableHead>
               {nextStage && !isQualityCheckStage && <TableHead className="text-center w-36">Action</TableHead>}
               {isQualityCheckStage && <TableHead className="text-center w-36">To Inventory</TableHead>}
+              {isCuttingStage && <TableHead className="text-center w-24">Remove</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -473,9 +474,11 @@ export function FrameList({ batch, activeTimer, currentStageId, stages, onRefres
                 onCompletedChange={handleCompletedChange}
                 onMoveToNextStage={handleMoveToNextStage}
                 onMoveToInventory={handleMoveToInventory}
+                onRemove={openRemoveDialog}
                 hasActiveTimer={hasActiveTimer}
                 nextStage={nextStage}
                 isQualityCheckStage={isQualityCheckStage}
+                isCuttingStage={isCuttingStage}
               />
             ))}
             
