@@ -17,7 +17,22 @@ import Reports from "@/pages/Reports";
 import Settings from "@/pages/Settings";
 import Layout from "@/components/Layout";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+// Dynamic backend URL: Use env variable for preview, or same origin for custom domain deployments
+const getBackendUrl = () => {
+  const envUrl = process.env.REACT_APP_BACKEND_URL;
+  // If we're on a preview domain, use the env variable
+  if (window.location.hostname.includes('preview.emergentagent.com')) {
+    return envUrl;
+  }
+  // For custom domains (deployed), use same origin since backend is served from same domain
+  if (!window.location.hostname.includes('localhost')) {
+    return window.location.origin;
+  }
+  // Fallback to env variable
+  return envUrl;
+};
+
+const BACKEND_URL = getBackendUrl();
 const API = `${BACKEND_URL}/api`;
 
 // REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
