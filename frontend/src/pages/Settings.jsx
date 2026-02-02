@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Store, Plus, Trash2, Settings2, Workflow, ExternalLink, ShoppingBag, RefreshCw, CheckCircle2, Webhook, Copy, Edit, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { API, BACKEND_URL } from "@/utils/api";
+import { API } from "@/utils/api";
 
 export default function Settings({ user }) {
   const [stores, setStores] = useState([]);
@@ -26,8 +26,6 @@ export default function Settings({ user }) {
   const [formShopId, setFormShopId] = useState("");
   const [formToken, setFormToken] = useState("");
   const [formApiKey, setFormApiKey] = useState("");
-
-  const API = BACKEND_URL + "/api";
 
   useEffect(() => {
     const fetchData = async () => {
