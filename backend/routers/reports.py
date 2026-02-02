@@ -59,39 +59,95 @@ async def get_dashboard_stats(user: User = Depends(get_current_user)):
 @router.get("/stats/production-kpis")
 async def get_production_kpis(user: User = Depends(get_current_user)):
     """Get production KPIs including rejection rates and costs"""
-    # Get all production items
-    items = await db.production_items.find({}, {"_id": 0}).to_list(10000)
+    # Use aggregation for efficient KPI calculation
+    pipeline = [
+        {"$group": {
+            "_id": None,
+            "total_required": {"$sum": "$qty_required"},
+            "total_completed": {"$sum": "$qty_completed"},
+            "total_rejected": {"$sum": {"$ifNull": ["$qty_rejected", 0]}}
+        }}
+    ]
     
-    total_required = sum(item.get("qty_required", 0) for item in items)
-    total_completed = sum(item.get("qty_completed", 0) for item in items)
-    total_rejected = sum(item.get("qty_rejected", 0) for item in items)
+    # Get frame stats from batch_frames (new model)
+    frame_stats = await db.batch_frames.aggregate(pipeline).to_list(1)
+    if frame_stats:
+        stats = frame_stats[0]
+        total_required = stats.get("total_required", 0)
+        total_completed = stats.get("total_completed", 0)
+        total_rejected = stats.get("total_rejected", 0)
+    else:
+        total_required = total_completed = total_rejected = 0
+    
     good_frames = max(0, total_completed - total_rejected)
     
-    # Time and cost calculations
-    time_logs = await db.time_logs.find({"completed_at": {"$ne": None}}, {"_id": 0}).to_list(10000)
-    total_minutes = sum(log.get("duration_minutes", 0) for log in time_logs)
+    # Time and cost calculations with aggregation
+    time_pipeline = [
+        {"$match": {"completed_at": {"$ne": None}}},
+        {"$group": {
+            "_id": None,
+            "total_minutes": {"$sum": "$duration_minutes"},
+            "total_items": {"$sum": "$items_processed"}
+        }}
+    ]
+    time_stats = await db.time_logs.aggregate(time_pipeline).to_list(1)
+    
+    if time_stats:
+        total_minutes = time_stats[0].get("total_minutes", 0)
+        total_items_processed = time_stats[0].get("total_items", 0)
+    else:
+        total_minutes = total_items_processed = 0
+    
     total_hours = total_minutes / 60
-    total_items_processed = sum(log.get("items_processed", 0) for log in time_logs)
     
     hourly_rate = 22.0
     labor_cost = total_hours * hourly_rate
     avg_cost_per_frame = labor_cost / good_frames if good_frames > 0 else 0
     rejection_rate = (total_rejected / total_completed * 100) if total_completed > 0 else 0
     
-    # Inventory stats
-    inventory = await db.inventory.find({}, {"_id": 0}).to_list(10000)
-    good_inventory = sum(1 for i in inventory if not i.get("is_rejected"))
-    rejected_inventory = sum(1 for i in inventory if i.get("is_rejected"))
-    total_good_stock = sum(i.get("quantity", 0) for i in inventory if not i.get("is_rejected"))
-    total_rejected_stock = sum(i.get("quantity", 0) for i in inventory if i.get("is_rejected"))
+    # Inventory stats with aggregation
+    inv_pipeline = [
+        {"$group": {
+            "_id": "$is_rejected",
+            "count": {"$sum": 1},
+            "total_qty": {"$sum": "$quantity"}
+        }}
+    ]
+    inv_stats = await db.inventory.aggregate(inv_pipeline).to_list(10)
     
-    # Batch-level breakdown
-    batches = await db.production_batches.find({}, {"_id": 0}).to_list(100)
+    good_inventory = rejected_inventory = total_good_stock = total_rejected_stock = 0
+    for stat in inv_stats:
+        if stat["_id"]:  # is_rejected = True
+            rejected_inventory = stat["count"]
+            total_rejected_stock = stat["total_qty"]
+        else:
+            good_inventory = stat["count"]
+            total_good_stock = stat["total_qty"]
+    
+    # Batch-level breakdown (limited to recent 50 batches)
+    batches = await db.production_batches.find(
+        {}, 
+        {"_id": 0, "batch_id": 1, "name": 1, "status": 1}
+    ).sort("created_at", -1).limit(50).to_list(50)
+    
     batch_kpis = []
     for batch in batches:
-        batch_items = [i for i in items if i.get("batch_id") == batch.get("batch_id")]
-        b_completed = sum(i.get("qty_completed", 0) for i in batch_items)
-        b_rejected = sum(i.get("qty_rejected", 0) for i in batch_items)
+        # Get batch frame stats
+        b_stats = await db.batch_frames.aggregate([
+            {"$match": {"batch_id": batch.get("batch_id")}},
+            {"$group": {
+                "_id": None,
+                "completed": {"$sum": "$qty_completed"},
+                "rejected": {"$sum": {"$ifNull": ["$qty_rejected", 0]}}
+            }}
+        ]).to_list(1)
+        
+        if b_stats:
+            b_completed = b_stats[0].get("completed", 0)
+            b_rejected = b_stats[0].get("rejected", 0)
+        else:
+            b_completed = b_rejected = 0
+        
         b_good = max(0, b_completed - b_rejected)
         b_rejection_rate = (b_rejected / b_completed * 100) if b_completed > 0 else 0
         
