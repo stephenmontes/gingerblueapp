@@ -165,11 +165,24 @@ async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current
         raise HTTPException(status_code=404, detail="No orders found")
     
     # Find the Cutting stage - first production stage
-    cutting_stage = await db.production_stages.find_one({"stage_id": "stage_cutting"})
+    cutting_stage = await db.production_stages.find_one({"stage_id": "stage_cutting"}, {"_id": 0})
     if not cutting_stage:
-        cutting_stage = await db.production_stages.find_one({"name": {"$regex": "cut", "$options": "i"}})
+        cutting_stage = await db.production_stages.find_one({"name": {"$regex": "cut", "$options": "i"}}, {"_id": 0})
     if not cutting_stage:
         stages = await db.production_stages.find({}, {"_id": 0}).sort("order", 1).to_list(100)
+        if not stages:
+            # Initialize default stages if empty
+            default_stages = [
+                {"stage_id": "stage_cutting", "name": "Cutting", "order": 1, "color": "#F59E0B"},
+                {"stage_id": "stage_assembly", "name": "Assembly", "order": 2, "color": "#3B82F6"},
+                {"stage_id": "stage_qc", "name": "Sand", "order": 3, "color": "#8B5CF6"},
+                {"stage_id": "stage_packing", "name": "Paint", "order": 4, "color": "#22C55E"},
+                {"stage_id": "stage_ready", "name": "Quality Check", "order": 5, "color": "#10B981"},
+            ]
+            for stage in default_stages:
+                stage["created_at"] = datetime.now(timezone.utc).isoformat()
+            await db.production_stages.insert_many(default_stages)
+            stages = default_stages
         cutting_stage = stages[0] if stages else {"stage_id": "stage_cutting", "name": "Cutting"}
     
     batch_id = f"batch_{uuid.uuid4().hex[:8]}"
