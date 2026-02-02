@@ -67,10 +67,10 @@ async def archive_batch(batch_id: str, user: User = Depends(get_current_user)):
     if batch.get("status") == "archived":
         raise HTTPException(status_code=400, detail="Batch is already archived")
     
-    # Get final stats before archiving
-    items = await db.production_items.find({"batch_id": batch_id}, {"_id": 0}).to_list(10000)
-    total_completed = sum(item.get("qty_completed", 0) for item in items)
-    total_rejected = sum(item.get("qty_rejected", 0) for item in items)
+    # Get final stats before archiving (from batch_frames)
+    frames = await db.batch_frames.find({"batch_id": batch_id}, {"_id": 0}).to_list(10000)
+    total_completed = sum(frame.get("qty_completed", 0) for frame in frames)
+    total_rejected = sum(frame.get("qty_rejected", 0) for frame in frames)
     
     now = datetime.now(timezone.utc).isoformat()
     
@@ -81,7 +81,7 @@ async def archive_batch(batch_id: str, user: User = Depends(get_current_user)):
             "archived_at": now,
             "archived_by": user.user_id,
             "final_stats": {
-                "total_items": len(items),
+                "total_items": len(frames),
                 "total_completed": total_completed,
                 "total_rejected": total_rejected,
                 "good_frames": max(0, total_completed - total_rejected)
