@@ -3,6 +3,7 @@ from datetime import datetime, timezone, timedelta
 import uuid
 import httpx
 import logging
+import os
 
 from database import db
 from models.user import User
@@ -10,6 +11,9 @@ from dependencies import get_current_user
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 logger = logging.getLogger(__name__)
+
+# Auth service URL from environment
+AUTH_SERVICE_URL = os.environ.get("AUTH_SERVICE_URL", "https://demobackend.emergentagent.com")
 
 @router.post("/session")
 async def create_session(request: Request, response: Response):
@@ -24,7 +28,7 @@ async def create_session(request: Request, response: Response):
     async with httpx.AsyncClient() as client:
         try:
             auth_response = await client.get(
-                "https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data",
+                f"{AUTH_SERVICE_URL}/auth/v1/env/oauth/session-data",
                 headers={"X-Session-ID": session_id},
                 timeout=10.0
             )
