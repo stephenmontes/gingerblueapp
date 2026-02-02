@@ -303,6 +303,20 @@ Build a manufacturing and fulfillment app for Shopify websites with:
   - Includes: User Name, Email, Role, Items Processed, Hours, Sessions, Items/Hour, Stages Worked, Labor Cost
   - Totals row at bottom of export
   - Endpoint: `/api/export/team-stats?period=day|week|month` or `?start_date=&end_date=`
+- ✅ **Training Mode** (Feb 2026):
+  - Separate database (`test_database_training`) for training sessions
+  - Activated by `TRAINING_MODE=true` in backend/.env
+  - Yellow UI banner indicates when training mode is active
+  - Prevents test data from appearing in production
+- ✅ **Light/Dark Theme Toggle** (Feb 2026):
+  - Theme toggle switch in user sidebar
+  - CSS variables for theming in index.css
+  - ThemeContext for managing theme state
+- ✅ **Dynamic Backend URL for Custom Domains** (Feb 2026):
+  - Centralized API URL utility (`/app/frontend/src/utils/api.js`)
+  - Auto-detects environment: preview, custom domain, or localhost
+  - Resolves "unsupported protocol error" on custom domain deployments
+  - All components import from centralized utility
 
 ## Prioritized Backlog
 
