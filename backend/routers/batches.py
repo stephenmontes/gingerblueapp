@@ -129,6 +129,7 @@ async def create_on_demand_batch(data: OnDemandBatchCreate, user: User = Depends
             "size": frame_data.size.upper(),
             "color": frame_data.color.upper(),
             "qty": frame_data.qty,
+            "qty_required": frame_data.qty,  # Used by UI to show total required
             "qty_completed": 0,
             "qty_rejected": 0,
             "current_stage_id": first_stage["stage_id"],
