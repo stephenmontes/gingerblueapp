@@ -149,6 +149,10 @@ export default function Reports() {
             <BarChart3 className="w-4 h-4" />
             Overview
           </TabsTrigger>
+          <TabsTrigger value="batch-reports" className="gap-2" data-testid="tab-batch-reports">
+            <Package className="w-4 h-4" />
+            Batch Reports
+          </TabsTrigger>
           <TabsTrigger value="stage-kpis" className="gap-2" data-testid="tab-stage-kpis">
             <Layers className="w-4 h-4" />
             Stage KPIs
@@ -169,6 +173,10 @@ export default function Reports() {
 
         <TabsContent value="overview" className="space-y-6">
           <OverviewTab dashboardStats={dashboardStats} />
+        </TabsContent>
+
+        <TabsContent value="batch-reports" className="space-y-6">
+          <BatchReports />
         </TabsContent>
 
         <TabsContent value="stage-kpis" className="space-y-6">
