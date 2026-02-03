@@ -9,8 +9,17 @@ from dependencies import get_current_user
 router = APIRouter(tags=["timers"])
 
 @router.post("/stages/{stage_id}/start-timer")
-async def start_stage_timer(stage_id: str, user: User = Depends(get_current_user)):
-    """Start time tracking for a user working on a specific stage."""
+async def start_stage_timer(
+    stage_id: str, 
+    batch_id: str = None,
+    user: User = Depends(get_current_user)
+):
+    """Start time tracking for a user working on a specific stage.
+    
+    Args:
+        stage_id: The production stage ID
+        batch_id: Optional batch ID to associate this time with a specific batch
+    """
     stage = await db.production_stages.find_one({"stage_id": stage_id}, {"_id": 0})
     if not stage:
         raise HTTPException(status_code=404, detail="Stage not found")
@@ -34,6 +43,8 @@ async def start_stage_timer(stage_id: str, user: User = Depends(get_current_user
         "user_name": user.name,
         "stage_id": stage_id,
         "stage_name": stage["name"],
+        "batch_id": batch_id,
+        "workflow_type": "production",
         "action": "started",
         "started_at": now.isoformat(),
         "items_processed": 0,
@@ -45,6 +56,7 @@ async def start_stage_timer(stage_id: str, user: User = Depends(get_current_user
         "message": f"Timer started for {stage['name']}",
         "stage_id": stage_id,
         "stage_name": stage["name"],
+        "batch_id": batch_id,
         "user_name": user.name,
         "started_at": now.isoformat()
     }
