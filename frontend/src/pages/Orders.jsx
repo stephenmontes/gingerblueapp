@@ -856,7 +856,14 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
                       </span>
                     </TableCell>
                     <TableCell>
-                      <StatusBadge status={order.status} />
+                      <div className="flex items-center gap-1">
+                        <StatusBadge status={order.status} />
+                        {order.archived && (
+                          <Badge variant="outline" className="text-gray-400 bg-gray-400/10 border-gray-400/20 text-xs">
+                            Archived
+                          </Badge>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       {editingShipDate === order.order_id ? (
