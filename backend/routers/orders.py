@@ -281,7 +281,7 @@ async def sync_store_orders(
 async def get_sync_status(user: User = Depends(get_current_user)):
     """Get order sync status for all stores"""
     stores = await db.stores.find(
-        {"platform": {"$in": ["shopify", "etsy"]}}, 
+        {"platform": {"$in": ["shopify", "etsy", "shipstation"]}}, 
         {"_id": 0}
     ).to_list(100)
     
@@ -293,8 +293,10 @@ async def get_sync_status(user: User = Depends(get_current_user)):
             "store_name": store.get("name", ""),
             "platform": store.get("platform"),
             "last_order_sync": store.get("last_order_sync"),
+            "last_sync": store.get("last_sync"),
             "order_count": order_count,
-            "is_active": store.get("is_active", True)
+            "is_active": store.get("is_active", True),
+            "shipstation_store_id": store.get("shipstation_store_id")
         })
     
     return result
