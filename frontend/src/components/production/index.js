@@ -10,3 +10,4 @@ export { BatchStats } from "./BatchStats";
 export { ActiveTimerBanner } from "./ActiveTimerBanner";
 export { BatchOrders } from "./BatchOrders";
 export { UserStageStats } from "./UserStageStats";
+export { OnDemandBatchBanner } from "./OnDemandBatchBanner";
