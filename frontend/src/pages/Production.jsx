@@ -7,7 +7,7 @@ import { ActiveTimerBanner } from "../components/production/ActiveTimerBanner";
 import { OnDemandBatchBanner } from "../components/production/OnDemandBatchBanner";
 import { API } from "@/utils/api";
 
-export default function Production() {
+export default function Production({ user }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const [batches, setBatches] = useState([]);
   const [selectedBatch, setSelectedBatch] = useState(null);
