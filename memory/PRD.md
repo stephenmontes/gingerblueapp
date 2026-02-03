@@ -317,6 +317,17 @@ Build a manufacturing and fulfillment app for Shopify websites with:
   - Auto-detects environment: preview, custom domain, or localhost
   - Resolves "unsupported protocol error" on custom domain deployments
   - All components import from centralized utility
+- ✅ **ShipStation Order Sync** (Feb 2026):
+  - Added ShipStation platform support to `/api/orders/sync/{store_id}` endpoint
+  - Stores with `platform: "shipstation"` can now sync orders via ShipStation API
+  - Syncs orders from Antique Farmhouse (dropship) and GingerBlueCo (Etsy via ShipStation)
+- ✅ **Shopify Order Webhooks** (Feb 2026):
+  - Real-time order notifications from Shopify stores
+  - Webhook endpoints: `/api/webhooks/shopify/orders/create`, `/updated`, `/cancelled`
+  - Webhook management API: `/api/webhooks/shopify/register/{store_id}`, `/list/{store_id}`
+  - UI in Settings page to register webhooks with one click
+  - Supports multiple Shopify stores with individual webhook management
+  - Webhooks registered for: GB Decor, GB Home → https://gingerblueapp.com
 
 ## Prioritized Backlog
 
