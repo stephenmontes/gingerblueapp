@@ -420,9 +420,10 @@ async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current
     
     await db.production_batches.insert_one(batch_doc)
     
-    # Get first fulfillment stage for Order Fulfillment workflow
+    # Get Print List stage for Order Fulfillment workflow
+    # Orders from batch creation should go directly to Print List, not In Production
     fulfillment_stages = await db.fulfillment_stages.find({}, {"_id": 0}).sort("order", 1).to_list(100)
-    first_fulfill_stage = None
+    print_list_stage = None
     
     if not fulfillment_stages:
         # Initialize default fulfillment stages if empty
@@ -438,8 +439,15 @@ async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current
         await db.fulfillment_stages.insert_many(default_fulfill_stages)
         fulfillment_stages = default_fulfill_stages
     
-    if fulfillment_stages:
-        first_fulfill_stage = fulfillment_stages[0]
+    # Find "Print List" stage (fulfill_print) - this is where batched orders should go
+    for stage in fulfillment_stages:
+        if stage["stage_id"] == "fulfill_print":
+            print_list_stage = stage
+            break
+    
+    # Fallback to first stage if Print List not found (shouldn't happen)
+    if not print_list_stage and fulfillment_stages:
+        print_list_stage = fulfillment_stages[0]
     
     now = datetime.now(timezone.utc).isoformat()
     
