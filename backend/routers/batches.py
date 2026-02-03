@@ -339,7 +339,17 @@ async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current
         )
     
     # Get orders from fulfillment_orders collection
-    orders = await db.fulfillment_orders.find({"order_id": {"$in": batch_data.order_ids}}, {"_id": 0}).to_list(1000)
+    # Optimized: Only fetch fields needed for batch creation (items for frame aggregation)
+    order_projection = {
+        "_id": 0,
+        "order_id": 1,
+        "items": 1,
+        "store_name": 1
+    }
+    orders = await db.fulfillment_orders.find(
+        {"order_id": {"$in": batch_data.order_ids}}, 
+        order_projection
+    ).to_list(1000)
     
     if not orders:
         raise HTTPException(status_code=404, detail="No orders found")
