@@ -806,9 +806,18 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
                       <StatusBadge status={order.status} />
                     </TableCell>
                     <TableCell>
+                      {order.requested_ship_date ? (
+                        <span className="text-sm font-medium text-orange-400">
+                          {order.requested_ship_date}
+                        </span>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
                       <div className="flex items-center gap-1 text-sm text-muted-foreground">
                         <Calendar className="w-3 h-3" />
-                        {formatDate(order.order_date || order.created_at)}
+                        {formatDate(order.external_created_at || order.created_at)}
                       </div>
                     </TableCell>
                     <TableCell>
