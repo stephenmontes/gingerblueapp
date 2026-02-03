@@ -402,21 +402,9 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
 
   const dropshipStores = stores.filter(s => s.platform === "dropship" || s.platform === "csv");
 
-  // Orders are already sorted by backend, just apply search filter
-  const sortedOrders = useMemo(() => {
-    // If no search term, use orders as-is (already sorted by backend)
-    if (!searchTerm) return orders;
-    
-    // Apply local search filter
-    const term = searchTerm.toLowerCase();
-    return orders.filter((order) => 
-      order.order_id?.toLowerCase().includes(term) ||
-      order.external_id?.toLowerCase().includes(term) ||
-      order.order_number?.toLowerCase().includes(term) ||
-      order.customer_name?.toLowerCase().includes(term) ||
-      order.customer_email?.toLowerCase().includes(term)
-    );
-  }, [orders, searchTerm]);
+  // Orders are fetched from backend with search applied server-side
+  // No need for local filtering - server includes archived orders when searching
+  const sortedOrders = orders;
 
   // Handle column sort
   // Handle column sort - fetch from backend with new sort order
