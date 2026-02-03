@@ -18,7 +18,7 @@ export default function OrderFulfillment() {
   const [stages, setStages] = useState([]);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("fulfill_orders");
+  const [activeTab, setActiveTab] = useState("fulfill_print"); // Default to Print List
   const [popupStage, setPopupStage] = useState(null);
   const [timerVersion, setTimerVersion] = useState(0);
   const [showReport, setShowReport] = useState(false);
