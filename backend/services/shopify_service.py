@@ -503,6 +503,18 @@ def transform_shopify_order(shopify_order: Dict, store_id: str, store_name: str)
     # Get shipping address
     shipping_address = shopify_order.get("shipping_address") or {}
     
+    # Extract requested ship date from note_attributes
+    requested_ship_date = None
+    note_attributes = shopify_order.get("note_attributes", [])
+    for attr in note_attributes:
+        attr_name = attr.get("name", "").lower()
+        if "ship" in attr_name and "date" in attr_name:
+            requested_ship_date = attr.get("value")
+            break
+        elif attr_name in ["requested_ship_date", "ship_date", "shipping_date", "deliver_by"]:
+            requested_ship_date = attr.get("value")
+            break
+    
     return {
         "order_id": order_id,
         "external_id": str(shopify_order.get("id", "")),
@@ -528,6 +540,8 @@ def transform_shopify_order(shopify_order: Dict, store_id: str, store_name: str)
         "assigned_to": None,
         "batch_id": None,
         "note": shopify_order.get("note"),
+        "note_attributes": note_attributes,
+        "requested_ship_date": requested_ship_date,
         "tags": shopify_order.get("tags", ""),
         "shipping_address": {
             "name": shipping_address.get("name", ""),
