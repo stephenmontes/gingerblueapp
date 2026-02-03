@@ -59,6 +59,7 @@ api_router.include_router(fulfillment_timers_router)
 api_router.include_router(products_router)
 api_router.include_router(webhooks_router)
 api_router.include_router(shipstation_router, prefix="/shipstation", tags=["shipstation"])
+api_router.include_router(calendar_router)
 
 # Root endpoint
 @api_router.get("/")
