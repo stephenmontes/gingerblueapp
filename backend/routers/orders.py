@@ -257,6 +257,17 @@ async def sync_store_orders(
         result = await sync_orders_from_store(store_id, status=status, days_back=days_back)
     elif platform == "etsy":
         result = await sync_orders_from_etsy_store(store_id, days_back=days_back)
+    elif platform == "shipstation":
+        # Get ShipStation store ID from the store config
+        shipstation_store_id = store.get("shipstation_store_id")
+        if not shipstation_store_id:
+            raise HTTPException(status_code=400, detail="Store is missing ShipStation store ID configuration")
+        result = await sync_orders_from_shipstation(store_id=shipstation_store_id, days_back=days_back)
+        # Update last_sync on the store
+        await db.stores.update_one(
+            {"store_id": store_id},
+            {"$set": {"last_sync": datetime.now(timezone.utc).isoformat()}}
+        )
     else:
         raise HTTPException(status_code=400, detail=f"Platform '{platform}' does not support order sync")
     
