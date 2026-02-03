@@ -193,6 +193,11 @@ export default function Production() {
       {/* Active Timer Banner - shows which stage user is tracking */}
       <ActiveTimerBanner activeTimer={activeTimer} onTimerChange={handleTimerChange} />
 
+      {/* On-Demand Batch Creation Banner */}
+      {(user?.role === "admin" || user?.role === "manager") && (
+        <OnDemandBatchBanner onBatchCreated={loadInitialData} />
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <div className="lg:col-span-1">
           <BatchList
