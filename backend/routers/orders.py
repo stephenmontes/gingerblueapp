@@ -50,21 +50,7 @@ async def get_orders(
     if store_id:
         query["store_id"] = store_id
     
-    # Handle status filtering - "active" means exclude shipped/cancelled/completed
-    inactive_statuses = ["shipped", "cancelled", "completed"]
-    if status == "active":
-        query["status"] = {"$nin": inactive_statuses}
-    elif status and status != "all":
-        query["status"] = status
-    # If status is "all" or None, no status filter is applied
-    
-    if stage_id:
-        query["current_stage_id"] = stage_id
-    if unbatched:
-        query["$or"] = [{"batch_id": None}, {"batch_id": {"$exists": False}}]
-    
-    # When searching, automatically include archived orders so users can find them
-    # Otherwise exclude archived orders by default
+    # When searching, bypass status filters to include ALL orders (archived, shipped, completed, etc.)
     if search and search.strip():
         # Search across multiple fields using regex (case-insensitive)
         search_regex = {"$regex": search.strip(), "$options": "i"}
@@ -75,11 +61,26 @@ async def get_orders(
             {"external_id": search_regex},
             {"order_id": search_regex}
         ]
-        # Include archived when searching
-        include_archived = True
-    
-    if not include_archived:
-        query["archived"] = {"$ne": True}
+        # When searching: include ALL orders - archived, shipped, completed, etc.
+        # Don't apply status filter or archived filter
+    else:
+        # Normal filtering when not searching
+        # Handle status filtering - "active" means exclude shipped/cancelled/completed
+        inactive_statuses = ["shipped", "cancelled", "completed"]
+        if status == "active":
+            query["status"] = {"$nin": inactive_statuses}
+        elif status and status != "all":
+            query["status"] = status
+        # If status is "all" or None, no status filter is applied
+        
+        if stage_id:
+            query["current_stage_id"] = stage_id
+        if unbatched:
+            query["$or"] = [{"batch_id": None}, {"batch_id": {"$exists": False}}]
+        
+        # Exclude archived orders by default (when not searching)
+        if not include_archived:
+            query["archived"] = {"$ne": True}
     
     # Get total count for pagination info
     total_count = await db.fulfillment_orders.count_documents(query)
