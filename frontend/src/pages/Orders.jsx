@@ -172,6 +172,33 @@ export default function Orders({ user }) {
     }
   };
 
+  const handleUpdateShipDate = async (orderId, newDate) => {
+    try {
+      const response = await fetch(`${API}/orders/${orderId}/ship-date?requested_ship_date=${encodeURIComponent(newDate || "")}`, {
+        method: "PUT",
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        // Update local state
+        setOrders(prev => prev.map(o => 
+          o.order_id === orderId 
+            ? { ...o, requested_ship_date: newDate || null }
+            : o
+        ));
+        toast.success(newDate ? "Ship date updated" : "Ship date cleared");
+      } else {
+        const error = await response.json();
+        toast.error(error.detail || "Failed to update ship date");
+      }
+    } catch (error) {
+      toast.error("Failed to update ship date");
+    } finally {
+      setEditingShipDate(null);
+      setShipDateValue("");
+    }
+  };
+
   const handleSyncOrders = async (storeId) => {
     setSyncing(storeId);
     try {
