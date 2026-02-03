@@ -33,6 +33,16 @@ async def start_fulfillment_timer(
             detail=f"You already have an active timer for {any_active.get('stage_name', 'another stage')}. Stop it first."
         )
     
+    # Get batch_id from the order if order_id is provided
+    batch_id = None
+    if order_id:
+        order = await db.fulfillment_orders.find_one(
+            {"order_id": order_id}, 
+            {"_id": 0, "batch_id": 1}
+        )
+        if order:
+            batch_id = order.get("batch_id")
+    
     now = datetime.now(timezone.utc)
     
     time_log = {
@@ -43,6 +53,8 @@ async def start_fulfillment_timer(
         "stage_name": stage["name"],
         "order_id": order_id,
         "order_number": order_number,
+        "batch_id": batch_id,
+        "workflow_type": "fulfillment",
         "action": "started",
         "started_at": now.isoformat(),
         "orders_processed": 0,
@@ -61,6 +73,7 @@ async def start_fulfillment_timer(
         "stage_name": stage["name"],
         "order_id": order_id,
         "order_number": order_number,
+        "batch_id": batch_id,
         "user_name": user.name,
         "started_at": now.isoformat()
     }
