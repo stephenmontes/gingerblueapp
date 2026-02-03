@@ -11,6 +11,18 @@ from dependencies import get_current_user
 
 router = APIRouter(prefix="/batches", tags=["batches"])
 
+
+class OnDemandFrame(BaseModel):
+    size: str
+    color: str
+    qty: int
+
+
+class OnDemandBatchCreate(BaseModel):
+    name: Optional[str] = None
+    frames: List[OnDemandFrame]
+
+
 def parse_sku(sku: str) -> dict:
     """Parse SKU to extract size and color
     
