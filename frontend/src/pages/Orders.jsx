@@ -957,12 +957,34 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
                         : "N/A"}
                   </p>
                 </div>
-                {selectedOrder.requested_ship_date && (
-                  <div className="col-span-2">
-                    <p className="label-caps mb-1">Requested Ship Date</p>
-                    <p className="text-sm font-medium text-orange-400">{selectedOrder.requested_ship_date}</p>
+                <div className="col-span-2">
+                  <p className="label-caps mb-1">Requested Ship Date</p>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="date"
+                      value={selectedOrder.requested_ship_date || ""}
+                      onChange={async (e) => {
+                        const newDate = e.target.value;
+                        await handleUpdateShipDate(selectedOrder.order_id, newDate);
+                        setSelectedOrder(prev => prev ? { ...prev, requested_ship_date: newDate || null } : null);
+                      }}
+                      className="h-8 w-40"
+                    />
+                    {selectedOrder.requested_ship_date && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 text-xs text-muted-foreground hover:text-destructive"
+                        onClick={async () => {
+                          await handleUpdateShipDate(selectedOrder.order_id, "");
+                          setSelectedOrder(prev => prev ? { ...prev, requested_ship_date: null } : null);
+                        }}
+                      >
+                        Clear
+                      </Button>
+                    )}
                   </div>
-                )}
+                </div>
               </div>
 
               {/* Order Note */}
