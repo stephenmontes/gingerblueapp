@@ -678,3 +678,245 @@ function ShipStationSettings({ API, isManager }) {
     </Card>
   );
 }
+
+function WebhooksSettings({ API, stores, isManager }) {
+  const [webhookStatus, setWebhookStatus] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [registering, setRegistering] = useState({});
+  const [webhookUrl, setWebhookUrl] = useState("");
+
+  // Get Shopify stores only
+  const shopifyStores = stores.filter(s => s.platform === "shopify");
+
+  useEffect(() => {
+    // Auto-detect webhook URL from current domain
+    const currentUrl = window.location.origin;
+    setWebhookUrl(currentUrl);
+    fetchWebhookStatus();
+  }, []);
+
+  const fetchWebhookStatus = async () => {
+    try {
+      const res = await fetch(`${API}/webhooks/status`, { credentials: "include" });
+      if (res.ok) {
+        const data = await res.json();
+        setWebhookStatus(data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch webhook status");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchStoreWebhooks = async (storeId) => {
+    try {
+      const res = await fetch(`${API}/webhooks/shopify/list/${storeId}`, { credentials: "include" });
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch (err) {
+      console.error("Failed to fetch webhooks for store");
+    }
+    return null;
+  };
+
+  const registerWebhooks = async (storeId, storeName) => {
+    if (!webhookUrl) {
+      toast.error("Please enter webhook URL");
+      return;
+    }
+
+    setRegistering(prev => ({ ...prev, [storeId]: true }));
+    try {
+      const res = await fetch(
+        `${API}/webhooks/shopify/register/${storeId}?webhook_base_url=${encodeURIComponent(webhookUrl)}`,
+        { method: "POST", credentials: "include" }
+      );
+
+      if (res.ok) {
+        const result = await res.json();
+        if (result.success) {
+          const registered = result.registered?.length || 0;
+          const existing = result.already_exists?.length || 0;
+          toast.success(`${storeName}: ${registered} webhooks registered${existing > 0 ? `, ${existing} already existed` : ""}`);
+          fetchWebhookStatus();
+        } else {
+          toast.error(`${storeName}: Some webhooks failed to register`);
+        }
+      } else {
+        const error = await res.json();
+        toast.error(error.detail || "Failed to register webhooks");
+      }
+    } catch (err) {
+      toast.error("Failed to register webhooks");
+    } finally {
+      setRegistering(prev => ({ ...prev, [storeId]: false }));
+    }
+  };
+
+  const registerAllWebhooks = async () => {
+    for (const store of shopifyStores) {
+      await registerWebhooks(store.store_id, store.name);
+    }
+  };
+
+  if (loading) {
+    return (
+      <Card className="bg-card border-border">
+        <CardContent className="py-8">
+          <div className="flex items-center justify-center">
+            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="bg-card border-border">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Bell className="w-5 h-5" />
+              Order Webhooks
+            </CardTitle>
+            <CardDescription>
+              Receive real-time order notifications from Shopify
+            </CardDescription>
+          </div>
+          {isManager && shopifyStores.length > 1 && (
+            <Button 
+              onClick={registerAllWebhooks}
+              disabled={Object.values(registering).some(v => v)}
+              className="gap-2"
+              data-testid="register-all-webhooks-btn"
+            >
+              <Webhook className="w-4 h-4" />
+              Register All
+            </Button>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Webhook URL Configuration */}
+        <div className="p-4 rounded-lg bg-muted/30 border border-border">
+          <Label className="text-sm font-medium">Webhook Callback URL</Label>
+          <div className="flex gap-2 mt-2">
+            <Input
+              value={webhookUrl}
+              onChange={(e) => setWebhookUrl(e.target.value)}
+              placeholder="https://yourdomain.com"
+              className="flex-1"
+              data-testid="webhook-url-input"
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                navigator.clipboard.writeText(webhookUrl);
+                toast.success("Copied to clipboard");
+              }}
+            >
+              <Copy className="w-4 h-4" />
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            This URL will receive order notifications. Use your custom domain for production.
+          </p>
+        </div>
+
+        {/* Shopify Stores with Webhook Status */}
+        {shopifyStores.length === 0 ? (
+          <div className="text-center py-6">
+            <AlertCircle className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+            <p className="text-muted-foreground">No Shopify stores configured</p>
+            <p className="text-sm text-muted-foreground">Add a Shopify store above to enable webhooks</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {shopifyStores.map((store) => (
+              <div
+                key={store.store_id}
+                className="flex items-center justify-between p-4 rounded-lg bg-muted/30 border border-border"
+                data-testid={`webhook-store-${store.store_id}`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-green-400/10 flex items-center justify-center">
+                    <ShoppingBag className="w-5 h-5 text-green-400" />
+                  </div>
+                  <div>
+                    <p className="font-semibold">{store.name}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      {store.webhooks_registered ? (
+                        <Badge variant="outline" className="text-green-400 bg-green-400/10 border-green-400/20">
+                          <CheckCircle2 className="w-3 h-3 mr-1" />
+                          Webhooks Active
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-yellow-400 bg-yellow-400/10 border-yellow-400/20">
+                          <AlertCircle className="w-3 h-3 mr-1" />
+                          Not Configured
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                {isManager && (
+                  <Button
+                    onClick={() => registerWebhooks(store.store_id, store.name)}
+                    disabled={registering[store.store_id]}
+                    variant={store.webhooks_registered ? "outline" : "default"}
+                    size="sm"
+                    className="gap-2"
+                    data-testid={`register-webhook-${store.store_id}`}
+                  >
+                    {registering[store.store_id] ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Webhook className="w-4 h-4" />
+                    )}
+                    {store.webhooks_registered ? "Update" : "Register"}
+                  </Button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Webhook Topics Info */}
+        <div className="pt-4 border-t border-border">
+          <p className="text-sm font-medium mb-2">Webhook Topics:</p>
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="secondary">orders/create</Badge>
+            <Badge variant="secondary">orders/updated</Badge>
+            <Badge variant="secondary">orders/cancelled</Badge>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            When registered, Shopify will automatically send order updates to your app in real-time.
+          </p>
+        </div>
+
+        {/* Recent Webhook Activity */}
+        {webhookStatus?.recent_activity?.length > 0 && (
+          <div className="pt-4 border-t border-border">
+            <p className="text-sm font-medium mb-2">Recent Activity:</p>
+            <div className="space-y-2 max-h-32 overflow-y-auto">
+              {webhookStatus.recent_activity.slice(0, 5).map((log, idx) => (
+                <div key={idx} className="flex items-center justify-between text-xs p-2 rounded bg-muted/20">
+                  <span className="text-muted-foreground">
+                    {log.event} - {log.status}
+                  </span>
+                  <span className="text-muted-foreground">
+                    {new Date(log.created_at).toLocaleString()}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
