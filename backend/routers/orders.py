@@ -104,9 +104,37 @@ async def get_orders(
     }
     primary_sort_field = sort_field_map.get(sort_by, "created_at")
     
+    # Optimized: Only fetch fields needed for the orders list view
+    # Excludes large nested data like full shipping_address details
+    order_projection = {
+        "_id": 0,
+        "order_id": 1,
+        "external_id": 1,
+        "order_number": 1,
+        "store_id": 1,
+        "store_name": 1,
+        "customer_name": 1,
+        "customer_email": 1,
+        "customer_phone": 1,
+        "status": 1,
+        "total_price": 1,
+        "items": 1,
+        "batch_id": 1,
+        "batch_name": 1,
+        "current_stage_id": 1,
+        "fulfillment_stage_id": 1,
+        "archived": 1,
+        "requested_ship_date": 1,
+        "shipping_address": 1,
+        "note_attributes": 1,
+        "created_at": 1,
+        "order_date": 1,
+        "updated_at": 1
+    }
+    
     # Fetch from fulfillment_orders with pagination
     # Sort by requested field - created_at is the most reliable date field
-    orders = await db.fulfillment_orders.find(query, {"_id": 0}).sort([
+    orders = await db.fulfillment_orders.find(query, order_projection).sort([
         (primary_sort_field, sort_direction)
     ]).skip(skip).limit(page_size).to_list(page_size)
     
