@@ -101,10 +101,12 @@ export function OnDemandBatchBanner({ onBatchCreated }) {
         }
       } else {
         const error = await response.json();
+        console.error("On-demand batch error:", error);
         toast.error(error.detail || "Failed to create batch");
       }
     } catch (err) {
-      toast.error("Failed to create batch");
+      console.error("On-demand batch network error:", err);
+      toast.error("Failed to create batch - check console for details");
     } finally {
       setCreating(false);
     }
