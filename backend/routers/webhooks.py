@@ -322,3 +322,106 @@ async def webhook_status():
             "etsy_order_create": "/api/webhooks/etsy/orders/create"
         }
     }
+
+
+@router.post("/shopify/register/{store_id}")
+async def register_shopify_webhooks(store_id: str, webhook_base_url: str):
+    """Register order webhooks for a Shopify store
+    
+    Args:
+        store_id: The local store ID
+        webhook_base_url: The base URL for webhook callbacks (e.g., https://gingerblueapp.com)
+    
+    This will register webhooks for:
+    - orders/create
+    - orders/updated  
+    - orders/cancelled
+    """
+    from services.shopify_service import ShopifyService
+    
+    # Get store from database
+    store = await db.stores.find_one({"store_id": store_id, "platform": "shopify"})
+    if not store:
+        raise HTTPException(status_code=404, detail="Shopify store not found")
+    
+    shop_url = store.get("shop_url") or store.get("api_url")
+    access_token = store.get("access_token")
+    
+    if not shop_url or not access_token:
+        raise HTTPException(status_code=400, detail="Store missing shop_url or access_token")
+    
+    # Clean webhook_base_url
+    webhook_base_url = webhook_base_url.rstrip("/")
+    
+    # Initialize Shopify service and register webhooks
+    service = ShopifyService(shop_url, access_token)
+    result = await service.register_order_webhooks(webhook_base_url)
+    
+    # Log the registration
+    await db.webhook_logs.insert_one({
+        "log_id": f"wlog_{uuid.uuid4().hex[:12]}",
+        "source": "shopify",
+        "event": "webhooks/register",
+        "store_id": store_id,
+        "webhook_base_url": webhook_base_url,
+        "result": result,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    # Update store with webhook info
+    await db.stores.update_one(
+        {"store_id": store_id},
+        {"$set": {
+            "webhooks_registered": result.get("success", False),
+            "webhook_base_url": webhook_base_url,
+            "webhooks_updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return result
+
+
+@router.get("/shopify/list/{store_id}")
+async def list_shopify_webhooks(store_id: str):
+    """List all registered webhooks for a Shopify store"""
+    from services.shopify_service import ShopifyService
+    
+    store = await db.stores.find_one({"store_id": store_id, "platform": "shopify"})
+    if not store:
+        raise HTTPException(status_code=404, detail="Shopify store not found")
+    
+    shop_url = store.get("shop_url") or store.get("api_url")
+    access_token = store.get("access_token")
+    
+    if not shop_url or not access_token:
+        raise HTTPException(status_code=400, detail="Store missing shop_url or access_token")
+    
+    service = ShopifyService(shop_url, access_token)
+    webhooks = await service.get_webhooks()
+    
+    return {
+        "store_id": store_id,
+        "store_name": store.get("name"),
+        "webhooks": webhooks
+    }
+
+
+@router.delete("/shopify/{store_id}/{webhook_id}")
+async def delete_shopify_webhook(store_id: str, webhook_id: str):
+    """Delete a specific webhook from a Shopify store"""
+    from services.shopify_service import ShopifyService
+    
+    store = await db.stores.find_one({"store_id": store_id, "platform": "shopify"})
+    if not store:
+        raise HTTPException(status_code=404, detail="Shopify store not found")
+    
+    shop_url = store.get("shop_url") or store.get("api_url")
+    access_token = store.get("access_token")
+    
+    if not shop_url or not access_token:
+        raise HTTPException(status_code=400, detail="Store missing shop_url or access_token")
+    
+    service = ShopifyService(shop_url, access_token)
+    result = await service.delete_webhook(webhook_id)
+    
+    return result
