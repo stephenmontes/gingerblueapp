@@ -24,6 +24,7 @@ async def get_orders(
     stage_id: Optional[str] = None,
     unbatched: Optional[bool] = None,
     include_archived: Optional[bool] = False,
+    search: Optional[str] = Query(None, description="Search term for order number, customer name, or email"),
     page: int = Query(1, ge=1, description="Page number"),
     page_size: int = Query(100, ge=1, le=500, description="Items per page"),
     sort_by: str = Query("order_date", description="Field to sort by"),
@@ -36,6 +37,10 @@ async def get_orders(
     - "active": Shows orders that are NOT shipped, cancelled, or completed (default for UI)
     - "all": Shows all orders
     - Specific status (e.g., "pending", "shipped"): Shows only that status
+    
+    Search:
+    - When search term is provided, archived orders are automatically included
+    - Searches order_number, customer_name, customer_email, external_id
     
     Pagination:
     - page: Page number (default 1)
@@ -58,7 +63,21 @@ async def get_orders(
     if unbatched:
         query["$or"] = [{"batch_id": None}, {"batch_id": {"$exists": False}}]
     
-    # Exclude archived orders by default
+    # When searching, automatically include archived orders so users can find them
+    # Otherwise exclude archived orders by default
+    if search and search.strip():
+        # Search across multiple fields using regex (case-insensitive)
+        search_regex = {"$regex": search.strip(), "$options": "i"}
+        query["$or"] = [
+            {"order_number": search_regex},
+            {"customer_name": search_regex},
+            {"customer_email": search_regex},
+            {"external_id": search_regex},
+            {"order_id": search_regex}
+        ]
+        # Include archived when searching
+        include_archived = True
+    
     if not include_archived:
         query["archived"] = {"$ne": True}
     
