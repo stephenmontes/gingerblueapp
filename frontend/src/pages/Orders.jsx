@@ -65,6 +65,10 @@ export default function Orders({ user }) {
   const [syncStatus, setSyncStatus] = useState([]);
   const [shipstationSyncing, setShipstationSyncing] = useState(false);
   
+  // Editable ship date state
+  const [editingShipDate, setEditingShipDate] = useState(null);
+  const [shipDateValue, setShipDateValue] = useState("");
+  
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
