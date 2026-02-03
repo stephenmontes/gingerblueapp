@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { BatchList } from "../components/production/BatchList";
 import { BatchDetailView, NoBatchSelected } from "../components/production/BatchDetailView";
 import { ActiveTimerBanner } from "../components/production/ActiveTimerBanner";
+import { OnDemandBatchBanner } from "../components/production/OnDemandBatchBanner";
 import { API } from "@/utils/api";
 
 export default function Production() {
