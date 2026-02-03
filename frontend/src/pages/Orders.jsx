@@ -770,12 +770,7 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
                       />
                     </TableCell>
                     <TableCell>
-                      <div>
-                        <p className="font-mono text-sm font-medium">#{order.order_number || order.order_id}</p>
-                        <p className="text-xs text-muted-foreground font-mono">
-                          {order.external_id}
-                        </p>
-                      </div>
+                      <p className="font-mono text-sm font-medium">#{order.order_number || order.order_id}</p>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
