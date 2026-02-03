@@ -770,7 +770,12 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
                       />
                     </TableCell>
                     <TableCell>
-                      <p className="font-mono text-sm font-medium">#{order.order_number || order.order_id}</p>
+                      <button 
+                        onClick={() => setSelectedOrder(order)}
+                        className="font-mono text-sm font-medium hover:text-primary hover:underline cursor-pointer"
+                      >
+                        #{order.order_number || order.order_id}
+                      </button>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
