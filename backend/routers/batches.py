@@ -406,6 +406,7 @@ async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current
         "batch_id": batch_id,
         "name": batch_data.name,
         "order_ids": batch_data.order_ids,
+        "batch_type": "order_based",  # Distinguish from on_demand batches
         "current_stage_id": cutting_stage["stage_id"],
         "assigned_to": None,
         "assigned_name": None,
