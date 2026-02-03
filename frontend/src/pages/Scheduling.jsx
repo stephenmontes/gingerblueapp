@@ -227,6 +227,9 @@ export default function Scheduling({ user }) {
         <div className="flex items-center gap-2">
           {calendarStatus.connected ? (
             <>
+              <div className="text-sm text-muted-foreground mr-2">
+                Connected: <span className="text-foreground">{calendarStatus.connected_email}</span>
+              </div>
               <Button
                 onClick={handleSyncToCalendar}
                 disabled={syncing}
@@ -254,7 +257,7 @@ export default function Scheduling({ user }) {
               data-testid="connect-calendar-btn"
             >
               {connecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Link2 className="w-4 h-4" />}
-              Connect Google Calendar
+              Connect Company Calendar
             </Button>
           )}
         </div>
