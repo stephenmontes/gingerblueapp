@@ -59,6 +59,94 @@ def parse_sku(sku: str) -> dict:
     
     return {"color": color, "size": size}
 
+
+@router.post("/on-demand")
+async def create_on_demand_batch(data: OnDemandBatchCreate, user: User = Depends(get_current_user)):
+    """Create an on-demand batch with manually specified frames (not from orders)"""
+    if not data.frames:
+        raise HTTPException(status_code=400, detail="At least one frame is required")
+    
+    # Get the first production stage (Cutting)
+    stages = await db.stages.find({"type": "production"}, {"_id": 0}).sort("order", 1).to_list(100)
+    if not stages:
+        raise HTTPException(status_code=500, detail="No production stages configured")
+    first_stage = stages[0]
+    
+    now = datetime.now(timezone.utc).isoformat()
+    batch_id = f"batch_{uuid.uuid4().hex[:12]}"
+    
+    # Generate batch name if not provided
+    if data.name:
+        batch_name = data.name
+    else:
+        # Count existing on-demand batches today
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        existing_count = await db.production_batches.count_documents({
+            "batch_type": "on_demand",
+            "created_at": {"$regex": f"^{today}"}
+        })
+        batch_name = f"On-Demand #{existing_count + 1} - {datetime.now(timezone.utc).strftime('%b %d')}"
+    
+    # Calculate totals
+    total_qty = sum(f.qty for f in data.frames)
+    
+    # Create the batch
+    batch = {
+        "batch_id": batch_id,
+        "name": batch_name,
+        "status": "active",
+        "batch_type": "on_demand",
+        "order_count": 0,
+        "item_count": len(data.frames),
+        "total_qty": total_qty,
+        "current_stage_id": first_stage["stage_id"],
+        "current_stage_name": first_stage["name"],
+        "created_at": now,
+        "created_by": user.user_id,
+        "created_by_name": user.name or user.email
+    }
+    
+    await db.production_batches.insert_one(batch)
+    
+    # Create frames
+    frames_to_insert = []
+    for i, frame_data in enumerate(data.frames):
+        frame_id = f"frame_{uuid.uuid4().hex[:12]}"
+        frame = {
+            "frame_id": frame_id,
+            "batch_id": batch_id,
+            "size": frame_data.size.upper(),
+            "color": frame_data.color.upper(),
+            "qty": frame_data.qty,
+            "qty_completed": 0,
+            "qty_rejected": 0,
+            "current_stage_id": first_stage["stage_id"],
+            "current_stage_name": first_stage["name"],
+            "stage_history": [{
+                "stage_id": first_stage["stage_id"],
+                "stage_name": first_stage["name"],
+                "entered_at": now,
+                "entered_by": user.user_id
+            }],
+            "created_at": now,
+            "source": "on_demand",
+            "order_ids": [],
+            "sku": f"OD-{frame_data.size.upper()}-{frame_data.color.upper()}"
+        }
+        frames_to_insert.append(frame)
+    
+    if frames_to_insert:
+        await db.batch_frames.insert_many(frames_to_insert)
+    
+    return {
+        "message": "On-demand batch created successfully",
+        "batch_id": batch_id,
+        "batch_name": batch_name,
+        "frame_count": len(frames_to_insert),
+        "total_qty": total_qty
+    }
+
+
 @router.get("")
 async def get_batches(status: Optional[str] = None, user: User = Depends(get_current_user)):
     """Get all production batches"""
