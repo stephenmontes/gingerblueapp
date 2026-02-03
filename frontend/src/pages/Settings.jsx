@@ -491,6 +491,9 @@ export default function Settings({ user }) {
         </CardContent>
       </Card>
 
+      {/* Webhooks Section */}
+      <WebhooksSettings API={API} stores={stores} isManager={isManager} />
+
       <Card className="bg-card border-border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><Settings2 className="w-5 h-5" />Integration Guide</CardTitle>
