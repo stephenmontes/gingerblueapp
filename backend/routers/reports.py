@@ -11,10 +11,21 @@ router = APIRouter(tags=["reports"])
 @router.get("/stats/dashboard")
 async def get_dashboard_stats(user: User = Depends(get_current_user)):
     """Get dashboard statistics"""
-    total_orders = await db.orders.count_documents({})
-    pending = await db.orders.count_documents({"status": "pending"})
-    in_production = await db.orders.count_documents({"status": "in_production"})
-    completed = await db.orders.count_documents({"status": "completed"})
+    # Optimized: Use single aggregation for order counts instead of multiple count_documents
+    order_stats_pipeline = [
+        {"$group": {
+            "_id": "$status",
+            "count": {"$sum": 1}
+        }}
+    ]
+    order_stats = await db.orders.aggregate(order_stats_pipeline).to_list(20)
+    
+    # Convert to dict for easy lookup
+    status_counts = {s["_id"]: s["count"] for s in order_stats}
+    total_orders = sum(status_counts.values())
+    pending = status_counts.get("pending", 0)
+    in_production = status_counts.get("in_production", 0)
+    completed = status_counts.get("completed", 0)
     
     pipeline = [
         {"$match": {"duration_minutes": {"$gt": 0}}},
