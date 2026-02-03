@@ -460,10 +460,10 @@ async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current
         "updated_at": now
     }
     
-    # Also assign to Order Fulfillment first stage
-    if first_fulfill_stage:
-        update_data["fulfillment_stage_id"] = first_fulfill_stage["stage_id"]
-        update_data["fulfillment_stage_name"] = first_fulfill_stage["name"]
+    # Assign orders to Print List stage in Order Fulfillment
+    if print_list_stage:
+        update_data["fulfillment_stage_id"] = print_list_stage["stage_id"]
+        update_data["fulfillment_stage_name"] = print_list_stage["name"]
         update_data["fulfillment_updated_at"] = now
         update_data["fulfillment_updated_by"] = user.user_id
     
@@ -474,15 +474,15 @@ async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current
     )
     
     # Log the fulfillment assignment for each order
-    if first_fulfill_stage:
+    if print_list_stage:
         fulfillment_logs = []
         for order_id in batch_data.order_ids:
             fulfillment_logs.append({
                 "log_id": f"flog_{uuid.uuid4().hex[:12]}",
                 "order_id": order_id,
                 "from_stage": None,
-                "to_stage": first_fulfill_stage["stage_id"],
-                "to_stage_name": first_fulfill_stage["name"],
+                "to_stage": print_list_stage["stage_id"],
+                "to_stage_name": print_list_stage["name"],
                 "user_id": user.user_id,
                 "user_name": user.name,
                 "action": "batch_created",
