@@ -1,0 +1,174 @@
+<analysis>**original_problem_statement:**
+Initial Request: build me a manufacturing and fulfillment app for my shopify websites
+
+PRODUCT REQUIREMENTS:
+- **Core Functionality:** A manufacturing workflow app with detailed tracking including time tracking, reporting, average products per hour, and tracking per user for moving parts through production stages.
+- **Integrations:** Connect to Shopify stores, an Etsy store, and later ShipStation for live order syncing and fulfillment management. A dropship store (Antique Farmhouse) was also added, initially for CSV uploads, but now integrated via ShipStation.
+- **Authentication:** Users must log in with their company Google email.
+- **Production & Fulfillment Workflows:** Manage production batches and fulfill orders. The production workflow is frame-centric, where items from orders are aggregated by size and color into frames that move through production stages as a single unit. A new on-demand batch type was added to create frames directly for inventory.
+- **Reporting & Management:** Export reports, manage inventory, sync products from e-commerce platforms, and control user access with roles and permissions.
+- **Scheduling:** A company-wide Google Calendar to visualize orders based on their requested ship date.
+
+**User's preferred language**: English
+
+**what currently exists?**
+A full-stack manufacturing application using React, FastAPI, and MongoDB. It features Google OAuth and integrates with ShipStation, Shopify (including real-time webhooks), and Google Calendar.
+
+In this session, the application was significantly enhanced. Key accomplishments include: fixing a critical custom domain login loop by implementing a dynamic backend URL strategy; adding full support for Shopify webhooks with a UI for management; implementing an On-Demand Batch feature to create frames for inventory; integrating Google Calendar to display orders on a shared schedule; and numerous UI/UX improvements on the Orders page, such as making ship dates editable, improving the order details popup, and cleaning up data presentation.
+
+**Last working item**:
+- **Last item agent was working:** The user reported a critical regression: creating a batch from orders on the Orders page no longer sends those orders to the Order Fulfillment page. This breaks the primary workflow.
+- **Status:** IN PROGRESS
+- **Agent Testing Done:** N
+- **Which testing method agent to use?** both
+- **User Testing Done:** N
+
+**All Pending/In progress Issue list**:
+- **Issue 1: (P0) Order-based batches do not appear in Order Fulfillment.**
+  - **Issues Detail:**
+    - **Attempted fixes:** The agent confirmed the backend logic in  to update the fulfillment stage exists and the frontend code in  to call the batch creation endpoint seems correct. Direct backend script tests were successful, suggesting the issue is in the end-to-end flow.
+    - **Next debug checklist:**
+        1. On the  page, select several orders and click Create Batch.
+        2. Use browser developer tools to inspect the  network request payload and response. Check the console for errors.
+        3. Immediately check backend logs for this request to see if any errors are thrown.
+        4. Query the  collection in the database for one of the batched order IDs to verify if the  field was correctly updated to .
+    - **Why fix this issue and what will be achieved with the fix?** This is a critical regression that breaks the core manufacturing workflow. Fixing it will restore the connection between batching an order and being able to fulfill it.
+    - **Status:** IN PROGRESS
+    - **Is recurring issue?** N
+    - **Should Test frontend/backend/both after fix?** both
+    - **Blocked on other issue:** no
+- **Issue 2: (P1) Custom domain login breaks after every redeployment.**
+  - **Issues Detail:**
+    - **Attempted fixes:** The agent confirmed the app code uses dynamic URLs and correct cookie settings. The  identified this as a platform-level issue with how custom domain configurations persist.
+    - **Next debug checklist:** This is blocked on external support. The user needs to contact Emergent support with their Job ID and domain name () to resolve the platform-level domain binding issue.
+    - **Why fix this issue and what will be achieved with the fix?** This will remove the need for a manual workaround (re-linking the domain) after every deployment, stabilizing the production environment.
+    - **Status:** BLOCKED
+    - **Is recurring issue?** Y
+    - **Should Test frontend/backend/both after fix?** backend
+    - **Blocked on other issue:** Blocked on Emergent Platform Support.
+- **Issue 3: (P1) 9 critical database query optimization issues.**
+  - **Issues Detail:**
+    - **Attempted fixes:** None in this session. This task was carried over from a previous fork and was superseded by user-reported bugs.
+    - **Next debug checklist:** Review the deployer agent's report from the previous session (message #714 in that job) to get the list of unoptimized queries and refactor them in  and .
+    - **Why fix this issue and what will be achieved with the fix?** To prevent performance degradation and timeouts under load, ensuring the app is production-ready and scalable.
+    - **Status:** NOT STARTED
+    - **Is recurring issue?** N
+    - **Should Test frontend/backend/both after fix?** backend
+    - **Blocked on other issue:** no
+
+**In progress Task List**:
+- None.
+
+**Upcoming and Future Tasks**
+- **Upcoming Tasks (P1):**
+    - **ShipStation Fulfillment UI:** Build the UI on the Order Fulfillment page to get shipping rates and create labels via the ShipStation API.
+    - **Order Audit Log:** Implement a history log for tracking all changes to orders.
+    - **Etsy Webhooks:** Implement webhook handlers for real-time Etsy order synchronization.
+- **Future Tasks (P2):**
+    - **Bulk Print:** Allow printing a combined packing slip for multiple orders.
+    - **UI State Persistence:** Remember user's filter and sorting settings across sessions.
+
+**Completed work in this session**
+- **Critical Bugfix: Custom Domain Login Loop:** Refactored the entire frontend to use a dynamic backend URL, resolving a login issue on the custom domain.
+- **Feature: On-Demand Batches for Inventory:** Implemented a full feature to create batches manually on the Production page. These batches are tagged as Inventory and, upon completion, add frames to  instead of moving to Order Fulfillment.
+- **Feature: Google Calendar Integration:** Added a Scheduling page that connects to a single company-wide Google Calendar. It requires a one-time admin authorization and will sync orders with a .
+- **Feature: Shopify Webhooks:** Implemented backend endpoints and a UI in Settings to register, list, and manage webhooks for , , and , enabling real-time order sync.
+- **Feature: Editable Ship Dates:** Added a Requested Ship Date column to the Orders page. This date can be edited inline from the table or from the order details popup.
+- **UI/UX: Orders Page & Popup Overhaul:**
+    - The Order Details popup is now highly detailed, scrollable, and includes customer phone, store name, full shipping address, order date, and Shopify notes.
+    - The main order number in the table is now a clickable link that opens this popup.
+    - Removed the long 13-digit Shopify ID from the main table view for clarity.
+- **UI/UX: Company Favicon:** Added the user's provided logo as the favicon for the application.
+- **Bugfix: Store Sync Failure:** Fixed a bug where stores configured with  could not be synced.
+- **Bugfix: On-Demand Batch Errors:** Resolved multiple issues with the new on-demand batch feature, including a failed to create error (due to missing DB stages) and incorrect quantity display (due to a field name mismatch).
+
+**Earlier issues found/mentioned but not fixed**
+- **Technical Debt:** The root cause of a recurring  build error remains. It is currently bypassed with the  environment variable.
+
+**Known issue recurrence from previous fork**
+- **Issue recurrence in previous fork:**  when compiling large JSX files.
+- **Recurrence count:** 5+
+- **Status:** RESOLVED (via a workaround: ).
+
+**Code Architecture**
+
+
+**Key Technical Concepts**
+- **Dynamic Frontend API URL:** The frontend now uses a central utility () that determines the backend URL from  at runtime. This is crucial for supporting both preview and custom domain deployments without configuration changes.
+- **Conditional Business Logic:** The application now distinguishes between  and  batches ( field). The batch archival logic in  routes completed frames to either fulfillment or inventory based on this type.
+- **Server-Side OAuth 2.0 Flow:** Implemented the full authorization code flow for the Google Calendar API. The backend handles user consent redirection, exchanges the code for tokens, and securely stores the refresh token for future use.
+- **Defensive Endpoint Design:** The batch creation endpoints now automatically create default production/fulfillment stages if they are missing in the database, making the system more resilient to setup issues.
+
+**key DB schema**
+- ****: Added  (values: 'on_demand', 'order_based').
+- ****: Added  to align with the existing  field for consistent UI display.
+- ****: Added  and .
+- ****: Added  and  for Shopify stores.
+- **New Collection**:  (stores the single encrypted refresh token for the company calendar).
+
+**All files of reference**
+- **/app/backend/routers/batches.py**: Contains the logic for the new on-demand batches and the updated archive flow.
+- **/app/backend/routers/orders.py**: Contains the editable ship date endpoint and ShipStation sync fix.
+- **/app/frontend/src/pages/Orders.jsx**: Contains the heavily updated UI for the order list and details popup.
+- **/app/frontend/src/utils/api.js**: The critical new utility for handling dynamic backend URLs.
+- **/app/backend/routers/calendar.py**: The new backend service for Google Calendar integration.
+- **/app/frontend/src/pages/Scheduling.jsx**: The new frontend page for calendar management.
+- **/app/backend/routers/webhooks.py**: The backend for managing Shopify webhooks.
+- **/app/frontend/src/pages/Settings.jsx**: The frontend for managing Shopify webhooks.
+
+**Areas that need refactoring**:
+- **Performance:**  and  still contain unoptimized queries flagged in a previous session.
+- **Database Consistency:** There appear to be two collections for stages ( and ). This should be consolidated to avoid confusion.
+
+**key api endpoints**
+- : (NEW) Creates a batch of frames for inventory.
+- : (NEW) Updates the requested ship date for an order.
+- : (NEW) Registers all necessary webhooks for a Shopify store.
+- : (NEW) Lists registered webhooks for a store.
+- : (NEW) Initiates the Google OAuth flow for calendar access.
+- : (NEW) Handles the redirect from Google to complete authorization.
+- : (NEW) Syncs orders with ship dates to the Google Calendar.
+
+**Critical Info for New Agent**
+- **Core Workflow is Broken:** The most urgent task is to fix the regression where creating an order-based batch no longer sends it to the fulfillment page. This is a P0 issue.
+- **Custom Domain Issue is Platform-Level:** The recurring login issue on the custom domain () is not a code problem. Advise the user to contact Emergent support as this requires a platform-side fix. Do not spend time trying to debug this in the code.
+- **Google Calendar is for a SINGLE Company Calendar:** The integration is designed to use one central calendar, not per-user calendars. The first admin to connect authorizes the app, and that token is used for all subsequent operations.
+
+**documents and test reports created in this job**
+- None.
+
+**Last 10 User Messages and any pending HUMAN messages**
+1.  **User:** Order fulfillment batches are no longer created when an order batch is made. (CURRENT P0 BUG)
+2.  **User:** On-demand batch quantities are wrong. (Agent fixed field mismatch)
+3.  **User:** On-demand batch is for inventory, not fulfillment. (Agent updated logic)
+4.  **User:** The on-demand batch feature was already created, check for duplicates. (Agent investigated, found missing DB stages)
+5.  **User:** failed to create batch error message. (User reporting error)
+6.  **User:** Provided detailed requirements for the on-demand batch feature.
+7.  **User:** i dont see the on demand batch feature in frame production. (Feature request)
+8.  **User:** Why do I need to relink the custom domain after every redeploy? (Platform issue)
+9.  **User:** I don't see the favicon on the deployed app. (Agent explained redeploy is needed)
+10. **User:** How do I add a favicon? (Agent provided options, user uploaded file)
+
+**Project Health Check:**
+- **Broken:** Yes. The primary workflow of creating order-based batches is non-functional, which is a critical regression. The deployment is also unstable due to the platform-level custom domain issue.
+- **Mocked:** N/A
+
+**3rd Party Integrations**
+- **Emergent-managed Google Auth:** For user login.
+- **ShipStation API:** For order sync and future fulfillment.
+- **Shopify API:** For order sync (now with real-time webhooks).
+- **Etsy API:** For order sync (webhooks not yet implemented).
+- **Google Calendar API:** For scheduling orders. Uses a separate, user-provided OAuth Client ID/Secret.
+
+**Testing status**
+- **Testing agent used after significant changes:** NO
+- **Troubleshoot agent used after agent stuck in loop:** NO
+- **Test files created:** None.
+- **Known regressions:** Creating an order-based batch no longer correctly updates the order's fulfillment status.
+
+**Credentials to test flow:**
+- User login is via Google OAuth.
+- ShipStation and Google Calendar API keys are in .
+
+**What agent forgot to execute**
+- The agent did not address the 9 critical database optimization issues identified in the previous session's handoff summary. These remain as significant technical debt.</analysis>
