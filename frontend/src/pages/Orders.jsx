@@ -867,10 +867,26 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
                   <StatusBadge status={selectedOrder.status} />
                 </div>
                 <div>
-                  <p className="label-caps mb-1">Date</p>
-                  <p className="text-sm">{selectedOrder.created_at ? new Date(selectedOrder.created_at).toLocaleDateString() : "N/A"}</p>
+                  <p className="label-caps mb-1">Order Date</p>
+                  <p className="text-sm">
+                    {selectedOrder.external_created_at 
+                      ? new Date(selectedOrder.external_created_at).toLocaleString() 
+                      : selectedOrder.created_at 
+                        ? new Date(selectedOrder.created_at).toLocaleString()
+                        : "N/A"}
+                  </p>
                 </div>
               </div>
+
+              {/* Order Note */}
+              {selectedOrder.note && (
+                <div className="border-t border-border pt-4">
+                  <p className="label-caps mb-2">Order Note</p>
+                  <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3">
+                    <p className="text-sm whitespace-pre-wrap">{selectedOrder.note}</p>
+                  </div>
+                </div>
+              )}
 
               {/* Customer Info */}
               <div className="border-t border-border pt-4">
@@ -880,8 +896,8 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
                   {selectedOrder.customer_email && (
                     <p className="text-sm text-muted-foreground">{selectedOrder.customer_email}</p>
                   )}
-                  {selectedOrder.customer_phone && (
-                    <p className="text-sm text-muted-foreground">📞 {selectedOrder.customer_phone}</p>
+                  {(selectedOrder.customer_phone || selectedOrder.shipping_address?.phone) && (
+                    <p className="text-sm text-muted-foreground">📞 {selectedOrder.customer_phone || selectedOrder.shipping_address?.phone}</p>
                   )}
                   {(selectedOrder.shipping_address || selectedOrder.ship_to) && (
                     <div className="text-sm text-muted-foreground pt-2 border-t border-border mt-2">
@@ -890,11 +906,12 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
                         const addr = selectedOrder.shipping_address || selectedOrder.ship_to || {};
                         return (
                           <>
+                            {addr.name && addr.name !== selectedOrder.customer_name && <p>{addr.name}</p>}
                             {addr.street && <p>{addr.street}</p>}
                             {addr.address1 && <p>{addr.address1}</p>}
                             {addr.address2 && <p>{addr.address2}</p>}
                             <p>
-                              {[addr.city, addr.state, addr.zip || addr.postal_code].filter(Boolean).join(", ")}
+                              {[addr.city, addr.state || addr.province, addr.zip || addr.postal_code].filter(Boolean).join(", ")}
                             </p>
                             {addr.country && <p>{addr.country}</p>}
                           </>
