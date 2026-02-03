@@ -18,9 +18,10 @@ import {
   AlertTriangle,
   RefreshCw,
   Layers,
+  Package,
 } from "lucide-react";
 import { toast } from "sonner";
-import { KpiCards, QualityTab, UsersTab, StagesTab, OverviewTab, StageUserKpis } from "@/components/reports";
+import { KpiCards, QualityTab, UsersTab, StagesTab, OverviewTab, StageUserKpis, BatchReports } from "@/components/reports";
 import { API } from "@/utils/api";
 
 export default function Reports() {
