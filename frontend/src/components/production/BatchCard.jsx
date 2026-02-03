@@ -113,16 +113,28 @@ export function BatchCard({ batch, isSelected, onSelect, onRefresh, isArchived }
       <CardContent className="p-4">
         <div className="flex items-center justify-between mb-2">
           <h3 className="font-semibold">{batch.name}</h3>
-          <Badge 
-            variant="outline" 
-            className={isArchived ? "text-muted-foreground border-muted-foreground" : "text-green-400 border-green-400/30"}
-          >
-            {isArchived ? "Archived" : "Active"}
-          </Badge>
+          <div className="flex items-center gap-1">
+            {isOnDemand && (
+              <Badge variant="outline" className="text-orange-400 border-orange-400/30 text-xs">
+                <Package className="w-3 h-3 mr-1" />
+                Inventory
+              </Badge>
+            )}
+            <Badge 
+              variant="outline" 
+              className={isArchived ? "text-muted-foreground border-muted-foreground" : "text-green-400 border-green-400/30"}
+            >
+              {isArchived ? "Archived" : "Active"}
+            </Badge>
+          </div>
         </div>
         
         <div className="text-sm text-muted-foreground mb-2">
-          {orderCount} orders • {totalItems} items
+          {isOnDemand ? (
+            <>{totalItems} frame types • {batch.total_qty || 0} total qty</>
+          ) : (
+            <>{orderCount} orders • {totalItems} items</>
+          )}
         </div>
         
         {batch.assigned_name && (
