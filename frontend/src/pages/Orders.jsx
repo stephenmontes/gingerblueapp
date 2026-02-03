@@ -837,12 +837,52 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
                       <StatusBadge status={order.status} />
                     </TableCell>
                     <TableCell>
-                      {order.requested_ship_date ? (
-                        <span className="text-sm font-medium text-orange-400">
-                          {order.requested_ship_date}
-                        </span>
+                      {editingShipDate === order.order_id ? (
+                        <div className="flex items-center gap-1">
+                          <Input
+                            type="date"
+                            value={shipDateValue}
+                            onChange={(e) => setShipDateValue(e.target.value)}
+                            className="h-7 w-32 text-xs"
+                            autoFocus
+                          />
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0 text-green-500 hover:text-green-600"
+                            onClick={() => handleUpdateShipDate(order.order_id, shipDateValue)}
+                          >
+                            <Check className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0 text-red-500 hover:text-red-600"
+                            onClick={() => {
+                              setEditingShipDate(null);
+                              setShipDateValue("");
+                            }}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
                       ) : (
-                        <span className="text-sm text-muted-foreground">—</span>
+                        <div 
+                          className="flex items-center gap-1 cursor-pointer group"
+                          onClick={() => {
+                            setEditingShipDate(order.order_id);
+                            setShipDateValue(order.requested_ship_date || "");
+                          }}
+                        >
+                          {order.requested_ship_date ? (
+                            <span className="text-sm font-medium text-orange-400">
+                              {order.requested_ship_date}
+                            </span>
+                          ) : (
+                            <span className="text-sm text-muted-foreground">—</span>
+                          )}
+                          <Pencil className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </div>
                       )}
                     </TableCell>
                     <TableCell>
