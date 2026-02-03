@@ -328,6 +328,21 @@ Build a manufacturing and fulfillment app for Shopify websites with:
   - UI in Settings page to register webhooks with one click
   - Supports multiple Shopify stores with individual webhook management
   - Webhooks registered for: GB Decor, GB Home → https://gingerblueapp.com
+- ✅ **Editable Ship Date** (Feb 2026):
+  - Ship date column added to Orders page (sortable)
+  - Inline editing with date picker in table
+  - Date picker in order details popup
+  - Backend endpoint: `PUT /api/orders/{order_id}/ship-date`
+- ✅ **Scheduling Page with Google Calendar** (Feb 2026):
+  - New Scheduling page accessible from sidebar (admin/manager only)
+  - Visual calendar showing orders by requested ship date
+  - Color-coded: orange = not synced, green = synced to Google Calendar
+  - Click date to view orders scheduled for that day
+  - Table view of all orders with ship dates
+  - Google Calendar OAuth integration for syncing orders
+  - Sync orders to Google Calendar as all-day events
+  - Backend: `/api/calendar/*` endpoints for OAuth, events, and sync
+  - **REQUIRES:** Google OAuth credentials (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET)
 
 ## Prioritized Backlog
 
