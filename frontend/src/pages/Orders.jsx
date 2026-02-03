@@ -155,15 +155,28 @@ export default function Orders({ user }) {
     setCurrentPage(1);
     setSortColumn("created_at");
     setSortDirection("desc");
-    fetchOrders(1, "created_at", "desc");
+    fetchOrders(1, "created_at", "desc", "");
     fetchStores();
     fetchSyncStatus();
   }, [storeFilter, statusFilter, showOnlyUnbatched]);
 
+  // Debounced search - triggers server-side search including archived orders
+  useEffect(() => {
+    const debounceTimer = setTimeout(() => {
+      if (searchTerm !== undefined) {
+        setCurrentPage(1);
+        setLoading(true);
+        fetchOrders(1, sortColumn, sortDirection, searchTerm);
+      }
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(debounceTimer);
+  }, [searchTerm]);
+
   // Fetch orders when page changes (but not when filters change - that's handled above)
   useEffect(() => {
     if (currentPage > 1) {
-      fetchOrders(currentPage, sortColumn, sortDirection);
+      fetchOrders(currentPage, sortColumn, sortDirection, searchTerm);
     }
   }, [currentPage]);
 
