@@ -297,7 +297,25 @@ async def get_batch(batch_id: str, user: User = Depends(get_current_user)):
     
     # Get frames from batch_frames collection
     frames = await db.batch_frames.find({"batch_id": batch_id}, {"_id": 0}).to_list(1000)
-    orders = await db.fulfillment_orders.find({"order_id": {"$in": batch.get("order_ids", [])}}, {"_id": 0}).to_list(1000)
+    
+    # Optimized: Only fetch order fields needed for display
+    order_projection = {
+        "_id": 0,
+        "order_id": 1,
+        "order_number": 1,
+        "external_id": 1,
+        "customer_name": 1,
+        "customer_email": 1,
+        "store_name": 1,
+        "status": 1,
+        "total_price": 1,
+        "items": 1,
+        "requested_ship_date": 1
+    }
+    orders = await db.fulfillment_orders.find(
+        {"order_id": {"$in": batch.get("order_ids", [])}}, 
+        order_projection
+    ).to_list(1000)
     
     return {**batch, "items": frames, "frames": frames, "orders": orders}
 
