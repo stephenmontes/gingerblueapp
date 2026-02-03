@@ -1,5 +1,6 @@
 """
 Google Calendar Integration for Order Scheduling
+Company-wide shared calendar - one connection for all users
 """
 from fastapi import APIRouter, HTTPException, Depends, Query
 from fastapi.responses import RedirectResponse
@@ -23,19 +24,26 @@ GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
 GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "")
 CALENDAR_SCOPES = ["https://www.googleapis.com/auth/calendar"]
 
+# Collection name for company-wide settings
+COMPANY_SETTINGS_COLLECTION = "company_settings"
+COMPANY_CALENDAR_ID = "company_calendar"
+
 
 def get_redirect_uri():
     """Get the OAuth redirect URI based on environment"""
-    # Use AUTH_SERVICE_URL if available, otherwise construct from request
     auth_url = os.environ.get("AUTH_SERVICE_URL", "")
     if auth_url:
-        return f"{auth_url}/api/calendar/oauth/callback"
+        # For deployed environment, use the custom domain
+        return "https://gingerblueapp.com/api/calendar/oauth/callback"
     return "http://localhost:8001/api/calendar/oauth/callback"
 
 
 @router.get("/oauth/connect")
 async def connect_calendar(user: User = Depends(get_current_user)):
-    """Initiate Google Calendar OAuth flow"""
+    """Initiate Google Calendar OAuth flow (admin/manager only)"""
+    if user.role not in ["admin", "manager"]:
+        raise HTTPException(status_code=403, detail="Only admins and managers can connect the company calendar")
+    
     if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
         raise HTTPException(status_code=500, detail="Google Calendar not configured")
     
@@ -58,7 +66,7 @@ async def connect_calendar(user: User = Depends(get_current_user)):
 
 @router.get("/oauth/callback")
 async def calendar_oauth_callback(code: str, state: str):
-    """Handle Google Calendar OAuth callback"""
+    """Handle Google Calendar OAuth callback - stores company-wide credentials"""
     redirect_uri = get_redirect_uri()
     
     # Exchange code for tokens
@@ -78,39 +86,41 @@ async def calendar_oauth_callback(code: str, state: str):
     
     tokens = token_response.json()
     
-    # Save tokens to user record
-    await db.users.update_one(
-        {"user_id": state},
+    # Get the user's email for reference
+    user_info = requests.get(
+        "https://www.googleapis.com/oauth2/v2/userinfo",
+        headers={"Authorization": f"Bearer {tokens.get('access_token')}"}
+    ).json()
+    
+    # Save tokens to company-wide settings (not per-user)
+    await db[COMPANY_SETTINGS_COLLECTION].update_one(
+        {"setting_id": COMPANY_CALENDAR_ID},
         {"$set": {
+            "setting_id": COMPANY_CALENDAR_ID,
             "calendar_tokens": {
                 "access_token": tokens.get("access_token"),
                 "refresh_token": tokens.get("refresh_token"),
                 "expires_at": (datetime.now(timezone.utc) + timedelta(seconds=tokens.get("expires_in", 3600))).isoformat()
             },
-            "calendar_connected": True
-        }}
+            "calendar_connected": True,
+            "connected_by": state,
+            "connected_email": user_info.get("email"),
+            "connected_at": datetime.now(timezone.utc).isoformat()
+        }},
+        upsert=True
     )
     
     # Redirect back to the scheduling page
-    frontend_url = os.environ.get("FRONTEND_URL", "")
-    if not frontend_url:
-        # Try to construct from AUTH_SERVICE_URL
-        auth_url = os.environ.get("AUTH_SERVICE_URL", "")
-        if auth_url:
-            frontend_url = auth_url.replace("/api", "").replace(":8001", ":3000")
-        else:
-            frontend_url = "http://localhost:3000"
-    
-    return RedirectResponse(f"{frontend_url}/scheduling?connected=true")
+    return RedirectResponse("https://gingerblueapp.com/scheduling?connected=true")
 
 
-async def get_calendar_credentials(user_id: str) -> Optional[Credentials]:
-    """Get valid Google Calendar credentials for a user"""
-    user = await db.users.find_one({"user_id": user_id})
-    if not user or not user.get("calendar_tokens"):
+async def get_company_calendar_credentials() -> Optional[Credentials]:
+    """Get valid Google Calendar credentials for the company calendar"""
+    settings = await db[COMPANY_SETTINGS_COLLECTION].find_one({"setting_id": COMPANY_CALENDAR_ID})
+    if not settings or not settings.get("calendar_tokens"):
         return None
     
-    tokens = user["calendar_tokens"]
+    tokens = settings["calendar_tokens"]
     
     creds = Credentials(
         token=tokens.get("access_token"),
@@ -125,17 +135,17 @@ async def get_calendar_credentials(user_id: str) -> Optional[Credentials]:
         try:
             creds.refresh(GoogleRequest())
             # Update stored tokens
-            await db.users.update_one(
-                {"user_id": user_id},
+            await db[COMPANY_SETTINGS_COLLECTION].update_one(
+                {"setting_id": COMPANY_CALENDAR_ID},
                 {"$set": {
                     "calendar_tokens.access_token": creds.token,
                     "calendar_tokens.expires_at": (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat()
                 }}
             )
         except Exception as e:
-            # Token refresh failed, user needs to re-authenticate
-            await db.users.update_one(
-                {"user_id": user_id},
+            # Token refresh failed, needs to re-authenticate
+            await db[COMPANY_SETTINGS_COLLECTION].update_one(
+                {"setting_id": COMPANY_CALENDAR_ID},
                 {"$set": {"calendar_connected": False}}
             )
             return None
@@ -145,22 +155,37 @@ async def get_calendar_credentials(user_id: str) -> Optional[Credentials]:
 
 @router.get("/status")
 async def get_calendar_status(user: User = Depends(get_current_user)):
-    """Check if user has connected Google Calendar"""
-    user_data = await db.users.find_one({"user_id": user.user_id})
+    """Check if company Google Calendar is connected"""
+    settings = await db[COMPANY_SETTINGS_COLLECTION].find_one({"setting_id": COMPANY_CALENDAR_ID})
+    
+    if not settings:
+        return {
+            "connected": False,
+            "has_tokens": False,
+            "connected_by": None,
+            "connected_email": None
+        }
+    
     return {
-        "connected": user_data.get("calendar_connected", False) if user_data else False,
-        "has_tokens": bool(user_data.get("calendar_tokens")) if user_data else False
+        "connected": settings.get("calendar_connected", False),
+        "has_tokens": bool(settings.get("calendar_tokens")),
+        "connected_by": settings.get("connected_by"),
+        "connected_email": settings.get("connected_email"),
+        "connected_at": settings.get("connected_at")
     }
 
 
 @router.post("/disconnect")
 async def disconnect_calendar(user: User = Depends(get_current_user)):
-    """Disconnect Google Calendar"""
-    await db.users.update_one(
-        {"user_id": user.user_id},
+    """Disconnect company Google Calendar (admin/manager only)"""
+    if user.role not in ["admin", "manager"]:
+        raise HTTPException(status_code=403, detail="Only admins and managers can disconnect the company calendar")
+    
+    await db[COMPANY_SETTINGS_COLLECTION].update_one(
+        {"setting_id": COMPANY_CALENDAR_ID},
         {"$unset": {"calendar_tokens": ""}, "$set": {"calendar_connected": False}}
     )
-    return {"message": "Calendar disconnected"}
+    return {"message": "Company calendar disconnected"}
 
 
 @router.get("/events")
@@ -169,10 +194,10 @@ async def get_calendar_events(
     end_date: Optional[str] = None,
     user: User = Depends(get_current_user)
 ):
-    """Get calendar events"""
-    creds = await get_calendar_credentials(user.user_id)
+    """Get calendar events from company calendar"""
+    creds = await get_company_calendar_credentials()
     if not creds:
-        raise HTTPException(status_code=401, detail="Calendar not connected")
+        raise HTTPException(status_code=401, detail="Company calendar not connected")
     
     try:
         service = build("calendar", "v3", credentials=creds)
@@ -212,10 +237,10 @@ async def create_calendar_event(
     all_day: bool = True,
     user: User = Depends(get_current_user)
 ):
-    """Create a calendar event"""
-    creds = await get_calendar_credentials(user.user_id)
+    """Create a calendar event on company calendar"""
+    creds = await get_company_calendar_credentials()
     if not creds:
-        raise HTTPException(status_code=401, detail="Calendar not connected")
+        raise HTTPException(status_code=401, detail="Company calendar not connected")
     
     try:
         service = build("calendar", "v3", credentials=creds)
@@ -244,10 +269,10 @@ async def create_calendar_event(
 
 @router.delete("/events/{event_id}")
 async def delete_calendar_event(event_id: str, user: User = Depends(get_current_user)):
-    """Delete a calendar event"""
-    creds = await get_calendar_credentials(user.user_id)
+    """Delete a calendar event from company calendar"""
+    creds = await get_company_calendar_credentials()
     if not creds:
-        raise HTTPException(status_code=401, detail="Calendar not connected")
+        raise HTTPException(status_code=401, detail="Company calendar not connected")
     
     try:
         service = build("calendar", "v3", credentials=creds)
@@ -262,16 +287,16 @@ async def sync_orders_to_calendar(
     order_ids: Optional[List[str]] = None,
     user: User = Depends(get_current_user)
 ):
-    """Sync orders with requested ship dates to Google Calendar"""
-    creds = await get_calendar_credentials(user.user_id)
+    """Sync orders with requested ship dates to company Google Calendar"""
+    creds = await get_company_calendar_credentials()
     if not creds:
-        raise HTTPException(status_code=401, detail="Calendar not connected")
+        raise HTTPException(status_code=401, detail="Company calendar not connected")
     
     try:
         service = build("calendar", "v3", credentials=creds)
         
         # Get orders with ship dates
-        query = {"requested_ship_date": {"$exists": True, "$ne": None}}
+        query = {"requested_ship_date": {"$exists": True, "$ne": None, "$ne": ""}}
         if order_ids:
             query["order_id"] = {"$in": order_ids}
         
@@ -292,13 +317,15 @@ async def sync_orders_to_calendar(
             items_count = len(order.get("items", []))
             store_name = order.get("store_name", "")
             
-            event_title = f"Ship Order #{order_number} - {customer}"
+            event_title = f"🚚 Ship #{order_number} - {customer}"
             event_description = (
                 f"Order: #{order_number}\n"
                 f"Customer: {customer}\n"
                 f"Store: {store_name}\n"
                 f"Items: {items_count}\n"
-                f"Total: ${order.get('total_price', 0):.2f}"
+                f"Total: ${order.get('total_price', 0):.2f}\n"
+                f"---\n"
+                f"Synced by: {user.name or user.email}"
             )
             
             # Check if event already exists for this order
@@ -309,6 +336,7 @@ async def sync_orders_to_calendar(
                 "description": event_description,
                 "start": {"date": ship_date},
                 "end": {"date": ship_date},
+                "colorId": "6",  # Orange color
                 "extendedProperties": {
                     "private": {
                         "order_id": order.get("order_id"),
@@ -351,6 +379,37 @@ async def sync_orders_to_calendar(
         raise HTTPException(status_code=500, detail=f"Failed to sync orders: {str(e)}")
 
 
+@router.post("/remove-order-event/{order_id}")
+async def remove_order_from_calendar(order_id: str, user: User = Depends(get_current_user)):
+    """Remove a specific order's event from the calendar"""
+    creds = await get_company_calendar_credentials()
+    if not creds:
+        raise HTTPException(status_code=401, detail="Company calendar not connected")
+    
+    # Get the order to find the event ID
+    order = await db.fulfillment_orders.find_one({"order_id": order_id})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    event_id = order.get("calendar_event_id")
+    if not event_id:
+        return {"message": "Order has no calendar event"}
+    
+    try:
+        service = build("calendar", "v3", credentials=creds)
+        service.events().delete(calendarId="primary", eventId=event_id).execute()
+        
+        # Clear the event ID from the order
+        await db.fulfillment_orders.update_one(
+            {"order_id": order_id},
+            {"$unset": {"calendar_event_id": ""}}
+        )
+        
+        return {"message": "Event removed from calendar"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to remove event: {str(e)}")
+
+
 @router.get("/orders-with-dates")
 async def get_orders_with_ship_dates(
     start_date: Optional[str] = None,
@@ -358,7 +417,7 @@ async def get_orders_with_ship_dates(
     user: User = Depends(get_current_user)
 ):
     """Get orders with requested ship dates for calendar display"""
-    query = {"requested_ship_date": {"$exists": True, "$ne": None}}
+    query = {"requested_ship_date": {"$exists": True, "$ne": None, "$ne": ""}}
     
     if start_date and end_date:
         query["requested_ship_date"] = {"$gte": start_date, "$lte": end_date}
@@ -377,6 +436,6 @@ async def get_orders_with_ship_dates(
             "status": 1,
             "calendar_event_id": 1
         }
-    ).to_list(500)
+    ).sort("requested_ship_date", 1).to_list(500)
     
     return {"orders": orders}
