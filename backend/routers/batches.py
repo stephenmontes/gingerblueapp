@@ -159,7 +159,11 @@ async def get_batches(status: Optional[str] = None, user: User = Depends(get_cur
 
 @router.post("/{batch_id}/archive")
 async def archive_batch(batch_id: str, user: User = Depends(get_current_user)):
-    """Archive/complete a batch - moves it to history"""
+    """Archive/complete a batch - moves it to history
+    
+    For order-based batches: Updates orders in fulfillment
+    For on-demand batches: Moves completed frames to inventory
+    """
     batch = await db.production_batches.find_one({"batch_id": batch_id}, {"_id": 0})
     if not batch:
         raise HTTPException(status_code=404, detail="Batch not found")
@@ -189,17 +193,63 @@ async def archive_batch(batch_id: str, user: User = Depends(get_current_user)):
         }}
     )
     
-    # Update orders status to completed in fulfillment_orders
-    await db.fulfillment_orders.update_many(
-        {"batch_id": batch_id},
-        {"$set": {"status": "completed", "updated_at": now}}
-    )
-    
-    return {
-        "message": "Batch archived successfully",
-        "batch_id": batch_id,
-        "archived_at": now
-    }
+    # Handle differently based on batch type
+    if batch.get("batch_type") == "on_demand":
+        # On-demand batches: Move completed frames to inventory
+        inventory_added = 0
+        for frame in frames:
+            good_qty = frame.get("qty_completed", 0) - frame.get("qty_rejected", 0)
+            if good_qty > 0:
+                # Check if inventory item exists for this size/color
+                existing = await db.frame_inventory.find_one({
+                    "size": frame.get("size"),
+                    "color": frame.get("color")
+                })
+                
+                if existing:
+                    # Update existing inventory
+                    await db.frame_inventory.update_one(
+                        {"inventory_id": existing["inventory_id"]},
+                        {
+                            "$inc": {"quantity": good_qty},
+                            "$set": {"updated_at": now}
+                        }
+                    )
+                else:
+                    # Create new inventory item
+                    inventory_id = f"inv_{uuid.uuid4().hex[:12]}"
+                    await db.frame_inventory.insert_one({
+                        "inventory_id": inventory_id,
+                        "sku": f"FRAME-{frame.get('size', 'UNK')}-{frame.get('color', 'UNK')}",
+                        "name": f"{frame.get('size', '')} {frame.get('color', '')} Frame",
+                        "size": frame.get("size"),
+                        "color": frame.get("color"),
+                        "quantity": good_qty,
+                        "min_stock": 10,
+                        "location": "Production",
+                        "created_at": now,
+                        "updated_at": now
+                    })
+                inventory_added += good_qty
+        
+        return {
+            "message": "On-demand batch archived - frames added to inventory",
+            "batch_id": batch_id,
+            "archived_at": now,
+            "inventory_added": inventory_added
+        }
+    else:
+        # Order-based batches: Update orders status to completed in fulfillment_orders
+        await db.fulfillment_orders.update_many(
+            {"batch_id": batch_id},
+            {"$set": {"status": "completed", "updated_at": now}}
+        )
+        
+        return {
+            "message": "Batch archived successfully",
+            "batch_id": batch_id,
+            "archived_at": now
+        }
 
 @router.post("/{batch_id}/restore")
 async def restore_batch(batch_id: str, user: User = Depends(get_current_user)):
