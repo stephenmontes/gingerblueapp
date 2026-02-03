@@ -342,7 +342,15 @@ Build a manufacturing and fulfillment app for Shopify websites with:
   - Google Calendar OAuth integration for syncing orders
   - Sync orders to Google Calendar as all-day events
   - Backend: `/api/calendar/*` endpoints for OAuth, events, and sync
-  - **REQUIRES:** Google OAuth credentials (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET)
+  - Company-wide calendar (one connection shared by all users)
+- ✅ **On-Demand Batch for Inventory** (Feb 2026):
+  - Create batches without orders for building frame inventory
+  - Collapsible banner on Frame Production page (admin/manager only)
+  - Select frame size, color, and quantity
+  - Add multiple frame types per batch
+  - On-demand batches marked with "Inventory" badge
+  - When archived: frames automatically added to Frame Inventory (not fulfillment)
+  - Backend: `POST /api/batches/on-demand` endpoint
 
 ## Prioritized Backlog
 
