@@ -310,6 +310,18 @@ function AppRouter() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/scheduling"
+        element={
+          <RoleProtectedRoute allowedRoles={["admin", "manager"]}>
+            {({ user, setUser }) => (
+              <Layout user={user} setUser={setUser}>
+                <Scheduling user={user} />
+              </Layout>
+            )}
+          </RoleProtectedRoute>
+        }
+      />
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
