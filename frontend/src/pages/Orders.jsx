@@ -679,12 +679,17 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
-                placeholder="Search orders, customers..."
+                placeholder="Search orders, customers... (includes archived)"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 bg-background"
                 data-testid="search-orders-input"
               />
+              {searchTerm && (
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                  includes archived
+                </span>
+              )}
             </div>
             <Select value={storeFilter} onValueChange={setStoreFilter}>
               <SelectTrigger className="w-full md:w-[200px] bg-background" data-testid="store-filter">
