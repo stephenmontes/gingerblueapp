@@ -924,16 +924,29 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
                         >
                           <Eye className="w-4 h-4" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleArchiveOrder(order.order_id)}
-                          data-testid={`archive-order-${order.order_id}`}
-                          title="Archive order"
-                          className="text-muted-foreground hover:text-destructive"
-                        >
-                          <Archive className="w-4 h-4" />
-                        </Button>
+                        {order.archived ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleUnarchiveOrder(order.order_id)}
+                            data-testid={`unarchive-order-${order.order_id}`}
+                            title="Restore order"
+                            className="text-muted-foreground hover:text-green-500"
+                          >
+                            <ArchiveRestore className="w-4 h-4" />
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleArchiveOrder(order.order_id)}
+                            data-testid={`archive-order-${order.order_id}`}
+                            title="Archive order"
+                            className="text-muted-foreground hover:text-destructive"
+                          >
+                            <Archive className="w-4 h-4" />
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
