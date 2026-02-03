@@ -27,6 +27,7 @@ from routers import (
     webhooks_router
 )
 from routers.shipstation import router as shipstation_router
+from routers.calendar import router as calendar_router
 
 # Configure logging
 logging.basicConfig(
