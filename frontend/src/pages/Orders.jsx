@@ -390,13 +390,32 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
 
       if (response.ok) {
         toast.success("Order archived");
-        fetchOrders();
+        fetchOrders(currentPage, sortColumn, sortDirection, searchTerm);
       } else {
         const error = await response.json();
         toast.error(error.detail || "Failed to archive order");
       }
     } catch (error) {
       toast.error("Failed to archive order");
+    }
+  };
+
+  const handleUnarchiveOrder = async (orderId) => {
+    try {
+      const response = await fetch(`${API}/orders/${orderId}/unarchive`, {
+        method: "PUT",
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        toast.success("Order restored");
+        fetchOrders(currentPage, sortColumn, sortDirection, searchTerm);
+      } else {
+        const error = await response.json();
+        toast.error(error.detail || "Failed to restore order");
+      }
+    } catch (error) {
+      toast.error("Failed to restore order");
     }
   };
 
