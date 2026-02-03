@@ -109,6 +109,124 @@ class ShopifyService:
         
         return orders
 
+    async def get_webhooks(self) -> List[Dict[str, Any]]:
+        """Get all registered webhooks for this store"""
+        async with httpx.AsyncClient() as client:
+            try:
+                response = await client.get(
+                    f"{self.base_url}/webhooks.json",
+                    headers=self.headers,
+                    timeout=30.0
+                )
+                response.raise_for_status()
+                return response.json().get("webhooks", [])
+            except Exception as e:
+                return []
+
+    async def create_webhook(self, topic: str, address: str) -> Dict[str, Any]:
+        """Create a new webhook subscription
+        
+        Args:
+            topic: Webhook topic (e.g., 'orders/create', 'orders/updated')
+            address: URL to receive webhook notifications
+        
+        Returns:
+            Created webhook data or error
+        """
+        async with httpx.AsyncClient() as client:
+            try:
+                response = await client.post(
+                    f"{self.base_url}/webhooks.json",
+                    headers=self.headers,
+                    json={
+                        "webhook": {
+                            "topic": topic,
+                            "address": address,
+                            "format": "json"
+                        }
+                    },
+                    timeout=30.0
+                )
+                response.raise_for_status()
+                return {"success": True, "webhook": response.json().get("webhook")}
+            except httpx.HTTPStatusError as e:
+                return {"success": False, "error": f"HTTP {e.response.status_code}: {e.response.text}"}
+            except Exception as e:
+                return {"success": False, "error": str(e)}
+
+    async def delete_webhook(self, webhook_id: str) -> Dict[str, Any]:
+        """Delete a webhook by ID"""
+        async with httpx.AsyncClient() as client:
+            try:
+                response = await client.delete(
+                    f"{self.base_url}/webhooks/{webhook_id}.json",
+                    headers=self.headers,
+                    timeout=30.0
+                )
+                response.raise_for_status()
+                return {"success": True}
+            except httpx.HTTPStatusError as e:
+                return {"success": False, "error": f"HTTP {e.response.status_code}: {e.response.text}"}
+            except Exception as e:
+                return {"success": False, "error": str(e)}
+
+    async def register_order_webhooks(self, base_url: str) -> Dict[str, Any]:
+        """Register all order-related webhooks for this store
+        
+        Args:
+            base_url: The base URL of your application (e.g., https://gingerblueapp.com)
+        
+        Returns:
+            Summary of registered webhooks
+        """
+        webhooks_to_register = [
+            ("orders/create", f"{base_url}/api/webhooks/shopify/orders/create"),
+            ("orders/updated", f"{base_url}/api/webhooks/shopify/orders/updated"),
+            ("orders/cancelled", f"{base_url}/api/webhooks/shopify/orders/cancelled"),
+        ]
+        
+        results = {
+            "success": True,
+            "registered": [],
+            "failed": [],
+            "already_exists": []
+        }
+        
+        # Get existing webhooks
+        existing = await self.get_webhooks()
+        existing_topics = {w.get("topic"): w for w in existing}
+        
+        for topic, address in webhooks_to_register:
+            if topic in existing_topics:
+                existing_webhook = existing_topics[topic]
+                if existing_webhook.get("address") == address:
+                    results["already_exists"].append({
+                        "topic": topic,
+                        "id": existing_webhook.get("id"),
+                        "address": address
+                    })
+                    continue
+                else:
+                    # Delete old webhook with different address
+                    await self.delete_webhook(str(existing_webhook.get("id")))
+            
+            # Create new webhook
+            result = await self.create_webhook(topic, address)
+            if result.get("success"):
+                results["registered"].append({
+                    "topic": topic,
+                    "id": result["webhook"].get("id"),
+                    "address": address
+                })
+            else:
+                results["failed"].append({
+                    "topic": topic,
+                    "error": result.get("error")
+                })
+                results["success"] = False
+        
+        return results
+
 
 def transform_shopify_product(shopify_product: Dict, store_id: str) -> Dict[str, Any]:
     """Transform Shopify product to our format"""
