@@ -61,9 +61,11 @@ export default function OrderFulfillment() {
 
       if (stagesRes.ok) {
         const stagesData = await stagesRes.json();
-        setStages(stagesData);
-        if (stagesData.length > 0 && !activeTab) {
-          setActiveTab(stagesData[0].stage_id);
+        // Filter out "In Production" stage - it's not used in Order Fulfillment workflow
+        const filteredStages = stagesData.filter(s => s.stage_id !== "fulfill_orders");
+        setStages(filteredStages);
+        if (filteredStages.length > 0 && !activeTab) {
+          setActiveTab(filteredStages[0].stage_id);
         }
       }
       if (summaryRes.ok) {
