@@ -477,3 +477,294 @@ async def get_my_stage_kpis(
         }
     }
 
+
+
+@router.get("/stats/batch/{batch_id}")
+async def get_batch_report(batch_id: str, user: User = Depends(get_current_user)):
+    """Get comprehensive time tracking report for a specific batch.
+    
+    Includes time from:
+    - Production stages (frame manufacturing)
+    - Fulfillment stages (order packing/shipping)
+    
+    Returns total time, cost, and breakdown by stage and user.
+    """
+    # Verify batch exists
+    batch = await db.production_batches.find_one(
+        {"batch_id": batch_id}, 
+        {"_id": 0, "batch_id": 1, "name": 1, "order_ids": 1, "status": 1, "created_at": 1}
+    )
+    if not batch:
+        raise HTTPException(status_code=404, detail="Batch not found")
+    
+    order_ids = batch.get("order_ids", [])
+    
+    # Get production time logs for this batch (direct batch_id match)
+    production_pipeline = [
+        {"$match": {
+            "$or": [
+                {"batch_id": batch_id},
+                {"batch_id": {"$exists": False}}  # Include legacy logs without batch_id
+            ],
+            "completed_at": {"$ne": None},
+            "duration_minutes": {"$gt": 0}
+        }},
+        {"$group": {
+            "_id": {"stage_id": "$stage_id", "stage_name": "$stage_name"},
+            "total_minutes": {"$sum": "$duration_minutes"},
+            "total_items": {"$sum": "$items_processed"},
+            "session_count": {"$sum": 1},
+            "users": {"$addToSet": {"user_id": "$user_id", "user_name": "$user_name"}}
+        }}
+    ]
+    
+    # For now, get all production logs (until batch_id is consistently tracked)
+    # In production, filter by batch_id once data is available
+    production_logs = await db.time_logs.aggregate([
+        {"$match": {"completed_at": {"$ne": None}, "duration_minutes": {"$gt": 0}}},
+        {"$group": {
+            "_id": {"stage_id": "$stage_id", "stage_name": "$stage_name"},
+            "total_minutes": {"$sum": "$duration_minutes"},
+            "total_items": {"$sum": "$items_processed"},
+            "session_count": {"$sum": 1}
+        }}
+    ]).to_list(100)
+    
+    # Get fulfillment time logs for orders in this batch
+    fulfillment_pipeline = [
+        {"$match": {
+            "$or": [
+                {"batch_id": batch_id},
+                {"order_id": {"$in": order_ids}}
+            ],
+            "completed_at": {"$ne": None},
+            "duration_minutes": {"$gt": 0}
+        }},
+        {"$group": {
+            "_id": {"stage_id": "$stage_id", "stage_name": "$stage_name"},
+            "total_minutes": {"$sum": "$duration_minutes"},
+            "orders_processed": {"$sum": "$orders_processed"},
+            "items_processed": {"$sum": "$items_processed"},
+            "session_count": {"$sum": 1}
+        }}
+    ]
+    fulfillment_logs = await db.fulfillment_time_logs.aggregate(fulfillment_pipeline).to_list(100)
+    
+    # Calculate totals
+    production_minutes = sum(log.get("total_minutes", 0) for log in production_logs)
+    fulfillment_minutes = sum(log.get("total_minutes", 0) for log in fulfillment_logs)
+    total_minutes = production_minutes + fulfillment_minutes
+    total_hours = total_minutes / 60
+    
+    # Cost calculation
+    hourly_rate = 22.0  # Default hourly rate
+    production_cost = (production_minutes / 60) * hourly_rate
+    fulfillment_cost = (fulfillment_minutes / 60) * hourly_rate
+    total_cost = total_hours * hourly_rate
+    
+    # Get frame stats for this batch
+    frame_stats = await db.batch_frames.aggregate([
+        {"$match": {"batch_id": batch_id}},
+        {"$group": {
+            "_id": None,
+            "total_frames": {"$sum": "$qty_required"},
+            "completed_frames": {"$sum": "$qty_completed"},
+            "rejected_frames": {"$sum": {"$ifNull": ["$qty_rejected", 0]}}
+        }}
+    ]).to_list(1)
+    
+    frames = frame_stats[0] if frame_stats else {"total_frames": 0, "completed_frames": 0, "rejected_frames": 0}
+    good_frames = max(0, frames.get("completed_frames", 0) - frames.get("rejected_frames", 0))
+    cost_per_frame = total_cost / good_frames if good_frames > 0 else 0
+    
+    # Format stage breakdowns
+    production_stages = [
+        {
+            "stage_id": log["_id"]["stage_id"],
+            "stage_name": log["_id"]["stage_name"],
+            "workflow": "production",
+            "total_minutes": round(log.get("total_minutes", 0), 2),
+            "total_hours": round(log.get("total_minutes", 0) / 60, 2),
+            "items_processed": log.get("total_items", 0),
+            "sessions": log.get("session_count", 0),
+            "cost": round((log.get("total_minutes", 0) / 60) * hourly_rate, 2)
+        }
+        for log in production_logs
+    ]
+    
+    fulfillment_stages = [
+        {
+            "stage_id": log["_id"]["stage_id"],
+            "stage_name": log["_id"]["stage_name"],
+            "workflow": "fulfillment",
+            "total_minutes": round(log.get("total_minutes", 0), 2),
+            "total_hours": round(log.get("total_minutes", 0) / 60, 2),
+            "orders_processed": log.get("orders_processed", 0),
+            "items_processed": log.get("items_processed", 0),
+            "sessions": log.get("session_count", 0),
+            "cost": round((log.get("total_minutes", 0) / 60) * hourly_rate, 2)
+        }
+        for log in fulfillment_logs
+    ]
+    
+    return {
+        "batch": {
+            "batch_id": batch_id,
+            "name": batch.get("name"),
+            "status": batch.get("status"),
+            "created_at": batch.get("created_at"),
+            "order_count": len(order_ids)
+        },
+        "frames": {
+            "total": frames.get("total_frames", 0),
+            "completed": frames.get("completed_frames", 0),
+            "rejected": frames.get("rejected_frames", 0),
+            "good": good_frames
+        },
+        "time": {
+            "production_minutes": round(production_minutes, 2),
+            "production_hours": round(production_minutes / 60, 2),
+            "fulfillment_minutes": round(fulfillment_minutes, 2),
+            "fulfillment_hours": round(fulfillment_minutes / 60, 2),
+            "total_minutes": round(total_minutes, 2),
+            "total_hours": round(total_hours, 2)
+        },
+        "costs": {
+            "hourly_rate": hourly_rate,
+            "production_cost": round(production_cost, 2),
+            "fulfillment_cost": round(fulfillment_cost, 2),
+            "total_cost": round(total_cost, 2),
+            "cost_per_frame": round(cost_per_frame, 2)
+        },
+        "stages": {
+            "production": production_stages,
+            "fulfillment": fulfillment_stages
+        }
+    }
+
+
+@router.get("/stats/batches-summary")
+async def get_batches_summary(
+    limit: int = 50,
+    user: User = Depends(get_current_user)
+):
+    """Get summary of time tracking and costs across recent batches.
+    
+    Aggregates production AND fulfillment time for accurate batch costing.
+    """
+    # Get recent batches
+    batches = await db.production_batches.find(
+        {}, 
+        {"_id": 0, "batch_id": 1, "name": 1, "status": 1, "order_ids": 1, "created_at": 1}
+    ).sort("created_at", -1).limit(limit).to_list(limit)
+    
+    if not batches:
+        return {"batches": [], "totals": {}}
+    
+    batch_ids = [b["batch_id"] for b in batches]
+    all_order_ids = []
+    for b in batches:
+        all_order_ids.extend(b.get("order_ids", []))
+    
+    # Aggregate production time by batch
+    production_by_batch = await db.time_logs.aggregate([
+        {"$match": {"batch_id": {"$in": batch_ids}, "completed_at": {"$ne": None}}},
+        {"$group": {
+            "_id": "$batch_id",
+            "total_minutes": {"$sum": "$duration_minutes"},
+            "items_processed": {"$sum": "$items_processed"}
+        }}
+    ]).to_list(100)
+    prod_map = {p["_id"]: p for p in production_by_batch}
+    
+    # Aggregate fulfillment time by batch (via order_ids or batch_id)
+    fulfillment_by_batch = await db.fulfillment_time_logs.aggregate([
+        {"$match": {
+            "$or": [
+                {"batch_id": {"$in": batch_ids}},
+                {"order_id": {"$in": all_order_ids}}
+            ],
+            "completed_at": {"$ne": None}
+        }},
+        {"$group": {
+            "_id": "$batch_id",
+            "total_minutes": {"$sum": "$duration_minutes"},
+            "orders_processed": {"$sum": "$orders_processed"}
+        }}
+    ]).to_list(100)
+    fulfill_map = {f["_id"]: f for f in fulfillment_by_batch if f["_id"]}
+    
+    # Get frame stats per batch
+    frame_stats = await db.batch_frames.aggregate([
+        {"$match": {"batch_id": {"$in": batch_ids}}},
+        {"$group": {
+            "_id": "$batch_id",
+            "total_frames": {"$sum": "$qty_required"},
+            "completed": {"$sum": "$qty_completed"},
+            "rejected": {"$sum": {"$ifNull": ["$qty_rejected", 0]}}
+        }}
+    ]).to_list(100)
+    frame_map = {f["_id"]: f for f in frame_stats}
+    
+    hourly_rate = 22.0
+    batch_summaries = []
+    total_production_minutes = 0
+    total_fulfillment_minutes = 0
+    total_cost = 0
+    total_good_frames = 0
+    
+    for batch in batches:
+        bid = batch["batch_id"]
+        
+        prod = prod_map.get(bid, {"total_minutes": 0, "items_processed": 0})
+        fulfill = fulfill_map.get(bid, {"total_minutes": 0, "orders_processed": 0})
+        frames = frame_map.get(bid, {"total_frames": 0, "completed": 0, "rejected": 0})
+        
+        prod_mins = prod.get("total_minutes", 0)
+        fulfill_mins = fulfill.get("total_minutes", 0)
+        total_mins = prod_mins + fulfill_mins
+        batch_cost = (total_mins / 60) * hourly_rate
+        
+        good_frames = max(0, frames.get("completed", 0) - frames.get("rejected", 0))
+        cost_per_frame = batch_cost / good_frames if good_frames > 0 else 0
+        
+        batch_summaries.append({
+            "batch_id": bid,
+            "name": batch.get("name"),
+            "status": batch.get("status"),
+            "created_at": batch.get("created_at"),
+            "order_count": len(batch.get("order_ids", [])),
+            "frames": {
+                "total": frames.get("total_frames", 0),
+                "completed": frames.get("completed", 0),
+                "good": good_frames
+            },
+            "time": {
+                "production_hours": round(prod_mins / 60, 2),
+                "fulfillment_hours": round(fulfill_mins / 60, 2),
+                "total_hours": round(total_mins / 60, 2)
+            },
+            "cost": {
+                "total": round(batch_cost, 2),
+                "per_frame": round(cost_per_frame, 2)
+            }
+        })
+        
+        total_production_minutes += prod_mins
+        total_fulfillment_minutes += fulfill_mins
+        total_cost += batch_cost
+        total_good_frames += good_frames
+    
+    return {
+        "batches": batch_summaries,
+        "totals": {
+            "batch_count": len(batches),
+            "production_hours": round(total_production_minutes / 60, 2),
+            "fulfillment_hours": round(total_fulfillment_minutes / 60, 2),
+            "total_hours": round((total_production_minutes + total_fulfillment_minutes) / 60, 2),
+            "total_cost": round(total_cost, 2),
+            "total_good_frames": total_good_frames,
+            "avg_cost_per_frame": round(total_cost / total_good_frames, 2) if total_good_frames > 0 else 0
+        }
+    }
+
