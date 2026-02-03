@@ -128,6 +128,37 @@ async def unarchive_order(order_id: str, user: User = Depends(get_current_user))
     
     return {"message": "Order restored"}
 
+
+@router.put("/{order_id}/ship-date")
+async def update_ship_date(order_id: str, requested_ship_date: Optional[str] = None, user: User = Depends(get_current_user)):
+    """Update the requested ship date for an order"""
+    update_data = {
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    if requested_ship_date:
+        update_data["requested_ship_date"] = requested_ship_date
+    else:
+        # If empty/null, remove the field
+        result = await db.fulfillment_orders.update_one(
+            {"order_id": order_id},
+            {"$unset": {"requested_ship_date": ""}, "$set": {"updated_at": datetime.now(timezone.utc).isoformat()}}
+        )
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Order not found")
+        return {"message": "Ship date cleared", "requested_ship_date": None}
+    
+    result = await db.fulfillment_orders.update_one(
+        {"order_id": order_id},
+        {"$set": update_data}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    return {"message": "Ship date updated", "requested_ship_date": requested_ship_date}
+
+
 @router.post("")
 async def create_order(order_data: OrderCreate, user: User = Depends(get_current_user)):
     """Create a new order"""
