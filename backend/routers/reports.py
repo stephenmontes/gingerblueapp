@@ -304,7 +304,23 @@ async def get_time_logs(
     if stage_id:
         query["stage_id"] = stage_id
     
-    logs = await db.time_logs.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    # Optimized: Only fetch fields that are actually needed
+    projection = {
+        "_id": 0,
+        "log_id": 1,
+        "user_id": 1,
+        "user_name": 1,
+        "order_id": 1,
+        "batch_id": 1,
+        "stage_id": 1,
+        "stage_name": 1,
+        "items_processed": 1,
+        "duration_minutes": 1,
+        "started_at": 1,
+        "completed_at": 1,
+        "created_at": 1
+    }
+    logs = await db.time_logs.find(query, projection).sort("created_at", -1).limit(1000).to_list(1000)
     return logs
 
 @router.get("/stats/stage-user-kpis")
