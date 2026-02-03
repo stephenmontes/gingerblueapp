@@ -86,7 +86,7 @@ export default function Orders({ user }) {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
 
-  const fetchOrders = async (page = currentPage, sortCol = sortColumn, sortDir = sortDirection) => {
+  const fetchOrders = async (page = currentPage, sortCol = sortColumn, sortDir = sortDirection, search = searchTerm) => {
     try {
       let url = API + "/orders";
       const params = new URLSearchParams();
@@ -94,6 +94,8 @@ export default function Orders({ user }) {
       // Send status filter to backend - backend now handles "active" filtering
       if (statusFilter !== "all") params.append("status", statusFilter);
       if (showOnlyUnbatched) params.append("unbatched", "true");
+      // Add search param - when searching, backend includes archived orders automatically
+      if (search && search.trim()) params.append("search", search.trim());
       // Add pagination params
       params.append("page", page.toString());
       params.append("page_size", pageSize.toString());
