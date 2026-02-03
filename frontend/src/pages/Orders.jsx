@@ -886,6 +886,12 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
                         : "N/A"}
                   </p>
                 </div>
+                {selectedOrder.requested_ship_date && (
+                  <div className="col-span-2">
+                    <p className="label-caps mb-1">Requested Ship Date</p>
+                    <p className="text-sm font-medium text-orange-400">{selectedOrder.requested_ship_date}</p>
+                  </div>
+                )}
               </div>
 
               {/* Order Note */}
