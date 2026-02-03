@@ -2,7 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { User, Timer, Archive, RotateCcw, CheckCircle, Undo2 } from "lucide-react";
+import { User, Timer, Archive, RotateCcw, CheckCircle, Undo2, Package } from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -33,6 +33,7 @@ export function BatchCard({ batch, isSelected, onSelect, onRefresh, isArchived }
   const progress = totalItems > 0 ? (itemsCompleted / totalItems) * 100 : 0;
   const isRunning = batch.time_started && !batch.time_completed;
   const orderCount = batch.order_ids ? batch.order_ids.length : 0;
+  const isOnDemand = batch.batch_type === "on_demand";
   
   // Check if production has started (any items completed)
   const productionStarted = itemsCompleted > 0;
