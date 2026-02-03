@@ -6,6 +6,7 @@ All logic is organized in separate modules under routers/, models/, services/
 
 from fastapi import FastAPI, APIRouter
 from starlette.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
 import logging
 
 # Import all routers
@@ -28,6 +29,7 @@ from routers import (
 )
 from routers.shipstation import router as shipstation_router
 from routers.calendar import router as calendar_router
+from database import create_indexes
 
 # Configure logging
 logging.basicConfig(
@@ -36,8 +38,16 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Create the main app
-app = FastAPI(title="ShopFactory API", version="2.0.0")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Startup and shutdown events"""
+    # Startup: Create database indexes
+    await create_indexes()
+    yield
+    # Shutdown: cleanup if needed
+
+# Create the main app with lifespan
+app = FastAPI(title="ShopFactory API", version="2.0.0", lifespan=lifespan)
 
 # Create main API router with /api prefix
 api_router = APIRouter(prefix="/api")
