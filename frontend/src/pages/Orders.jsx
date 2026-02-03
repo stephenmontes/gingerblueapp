@@ -838,59 +838,100 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
 
       {/* Order Details Dialog */}
       <Dialog open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Package className="w-5 h-5" />
-              Order Details
+              Order #{selectedOrder?.order_number || selectedOrder?.order_id?.slice(-8)}
             </DialogTitle>
           </DialogHeader>
           {selectedOrder && (
-            <div className="space-y-4">
+            <div className="space-y-4 overflow-y-auto flex-1 pr-2">
+              {/* Order Info */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="label-caps mb-1">Order ID</p>
-                  <p className="font-mono">{selectedOrder.order_id}</p>
-                </div>
-                <div>
-                  <p className="label-caps mb-1">External ID</p>
-                  <p className="font-mono">{selectedOrder.external_id}</p>
-                </div>
-                <div>
                   <p className="label-caps mb-1">Store</p>
-                  <p>{selectedOrder.store_name}</p>
+                  <p className="font-medium">{selectedOrder.store_name}</p>
                 </div>
                 <div>
                   <p className="label-caps mb-1">Platform</p>
                   <PlatformBadge platform={selectedOrder.platform} />
                 </div>
+                <div>
+                  <p className="label-caps mb-1">Status</p>
+                  <StatusBadge status={selectedOrder.status} />
+                </div>
+                <div>
+                  <p className="label-caps mb-1">Date</p>
+                  <p className="text-sm">{selectedOrder.created_at ? new Date(selectedOrder.created_at).toLocaleDateString() : "N/A"}</p>
+                </div>
               </div>
+
+              {/* Customer Info */}
               <div className="border-t border-border pt-4">
                 <p className="label-caps mb-2">Customer</p>
-                <p className="font-medium">{selectedOrder.customer_name}</p>
-                <p className="text-sm text-muted-foreground">{selectedOrder.customer_email}</p>
+                <div className="bg-muted/30 rounded-lg p-3 space-y-2">
+                  <p className="font-medium">{selectedOrder.customer_name || "N/A"}</p>
+                  {selectedOrder.customer_email && (
+                    <p className="text-sm text-muted-foreground">{selectedOrder.customer_email}</p>
+                  )}
+                  {selectedOrder.customer_phone && (
+                    <p className="text-sm text-muted-foreground">📞 {selectedOrder.customer_phone}</p>
+                  )}
+                  {(selectedOrder.shipping_address || selectedOrder.ship_to) && (
+                    <div className="text-sm text-muted-foreground pt-2 border-t border-border mt-2">
+                      <p className="label-caps mb-1 text-xs">Shipping Address</p>
+                      {(() => {
+                        const addr = selectedOrder.shipping_address || selectedOrder.ship_to || {};
+                        return (
+                          <>
+                            {addr.street && <p>{addr.street}</p>}
+                            {addr.address1 && <p>{addr.address1}</p>}
+                            {addr.address2 && <p>{addr.address2}</p>}
+                            <p>
+                              {[addr.city, addr.state, addr.zip || addr.postal_code].filter(Boolean).join(", ")}
+                            </p>
+                            {addr.country && <p>{addr.country}</p>}
+                          </>
+                        );
+                      })()}
+                    </div>
+                  )}
+                </div>
               </div>
+
+              {/* Items - Scrollable */}
               <div className="border-t border-border pt-4">
-                <p className="label-caps mb-2">Items</p>
-                <div className="space-y-2">
+                <p className="label-caps mb-2">Items ({selectedOrder.items?.length || 0})</p>
+                <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
                   {selectedOrder.items?.map((item, idx) => (
                     <div key={idx} className="flex justify-between items-center p-2 bg-muted/30 rounded">
-                      <div>
-                        <p className="font-medium">{item.name}</p>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{item.name}</p>
                         <p className="text-xs text-muted-foreground font-mono">SKU: {item.sku}</p>
                       </div>
-                      <Badge variant="outline">x{item.qty}</Badge>
+                      <Badge variant="outline" className="ml-2 shrink-0">x{item.qty}</Badge>
                     </div>
                   ))}
                 </div>
               </div>
+
+              {/* Total */}
               <div className="border-t border-border pt-4 flex justify-between items-center">
                 <div>
                   <p className="label-caps mb-1">Total</p>
-                  <p className="text-2xl font-heading font-bold">${selectedOrder.total_price?.toFixed(2)}</p>
+                  <p className="text-2xl font-heading font-bold">${selectedOrder.total_price?.toFixed(2) || "0.00"}</p>
                 </div>
-                <StatusBadge status={selectedOrder.status} />
               </div>
+
+              {/* Reference IDs - Collapsed */}
+              <details className="border-t border-border pt-4">
+                <summary className="label-caps cursor-pointer hover:text-primary">Reference IDs</summary>
+                <div className="mt-2 text-xs font-mono text-muted-foreground space-y-1">
+                  <p>Order ID: {selectedOrder.order_id}</p>
+                  <p>External ID: {selectedOrder.external_id}</p>
+                </div>
+              </details>
             </div>
           )}
         </DialogContent>
