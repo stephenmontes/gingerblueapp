@@ -12,6 +12,7 @@ import {
   LogOut,
   Truck,
   ShoppingBag,
+  Calendar,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -33,6 +34,7 @@ const navItems = [
   { path: "/production", label: "Frame Production", icon: Workflow },
   { path: "/fulfillment", label: "Order Fulfillment", icon: Truck },
   { path: "/inventory", label: "Frame Inventory", icon: Boxes },
+  { path: "/scheduling", label: "Scheduling", icon: Calendar, roles: ["admin", "manager"] },
   { path: "/team", label: "Team", icon: Users, roles: ["admin", "manager"] },
   { path: "/reports", label: "Reports", icon: BarChart3, roles: ["admin", "manager"] },
   { path: "/settings", label: "Settings", icon: Settings, roles: ["admin", "manager"] },
