@@ -135,35 +135,41 @@ async def get_production_kpis(user: User = Depends(get_current_user)):
             good_inventory = stat["count"]
             total_good_stock = stat["total_qty"]
     
-    # Batch-level breakdown (limited to recent 50 batches)
+    # Batch-level breakdown - Optimized: Single aggregation instead of N+1 queries
+    # Get recent batches with their IDs
     batches = await db.production_batches.find(
         {}, 
         {"_id": 0, "batch_id": 1, "name": 1, "status": 1}
     ).sort("created_at", -1).limit(50).to_list(50)
     
+    batch_ids = [b["batch_id"] for b in batches]
+    
+    # Single aggregation to get all batch frame stats at once
+    batch_frame_pipeline = [
+        {"$match": {"batch_id": {"$in": batch_ids}}},
+        {"$group": {
+            "_id": "$batch_id",
+            "completed": {"$sum": "$qty_completed"},
+            "rejected": {"$sum": {"$ifNull": ["$qty_rejected", 0]}}
+        }}
+    ]
+    batch_frame_stats = await db.batch_frames.aggregate(batch_frame_pipeline).to_list(100)
+    
+    # Convert to dict for O(1) lookup
+    batch_stats_map = {s["_id"]: s for s in batch_frame_stats}
+    
     batch_kpis = []
     for batch in batches:
-        # Get batch frame stats
-        b_stats = await db.batch_frames.aggregate([
-            {"$match": {"batch_id": batch.get("batch_id")}},
-            {"$group": {
-                "_id": None,
-                "completed": {"$sum": "$qty_completed"},
-                "rejected": {"$sum": {"$ifNull": ["$qty_rejected", 0]}}
-            }}
-        ]).to_list(1)
+        bid = batch.get("batch_id")
+        b_stats = batch_stats_map.get(bid, {"completed": 0, "rejected": 0})
         
-        if b_stats:
-            b_completed = b_stats[0].get("completed", 0)
-            b_rejected = b_stats[0].get("rejected", 0)
-        else:
-            b_completed = b_rejected = 0
-        
+        b_completed = b_stats.get("completed", 0)
+        b_rejected = b_stats.get("rejected", 0)
         b_good = max(0, b_completed - b_rejected)
         b_rejection_rate = (b_rejected / b_completed * 100) if b_completed > 0 else 0
         
         batch_kpis.append({
-            "batch_id": batch.get("batch_id"),
+            "batch_id": bid,
             "name": batch.get("name"),
             "status": batch.get("status"),
             "completed": b_completed,
