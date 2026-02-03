@@ -46,7 +46,12 @@ export function BatchCard({ batch, isSelected, onSelect, onRefresh, isArchived }
         credentials: "include",
       });
       if (res.ok) {
-        toast.success("Batch archived successfully");
+        const result = await res.json();
+        if (isOnDemand && result.inventory_added) {
+          toast.success(`Batch archived - ${result.inventory_added} frames added to inventory`);
+        } else {
+          toast.success("Batch archived successfully");
+        }
         if (onRefresh) onRefresh();
       } else {
         const err = await res.json();
