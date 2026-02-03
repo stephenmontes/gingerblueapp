@@ -66,13 +66,24 @@ async def create_on_demand_batch(data: OnDemandBatchCreate, user: User = Depends
     if not data.frames:
         raise HTTPException(status_code=400, detail="At least one frame is required")
     
+    now = datetime.now(timezone.utc).isoformat()
+    
     # Get the first production stage (Cutting)
     stages = await db.stages.find({"type": "production"}, {"_id": 0}).sort("order", 1).to_list(100)
     if not stages:
-        raise HTTPException(status_code=500, detail="No production stages configured")
+        # Auto-create default production stages
+        default_stages = [
+            {"stage_id": "stage_cutting", "name": "Cutting", "type": "production", "order": 1, "color": "#EF4444", "created_at": now},
+            {"stage_id": "stage_assembly", "name": "Assembly", "type": "production", "order": 2, "color": "#F59E0B", "created_at": now},
+            {"stage_id": "stage_finishing", "name": "Finishing", "type": "production", "order": 3, "color": "#10B981", "created_at": now},
+            {"stage_id": "stage_qc", "name": "Quality Check", "type": "production", "order": 4, "color": "#3B82F6", "created_at": now},
+            {"stage_id": "stage_complete", "name": "Complete", "type": "production", "order": 5, "color": "#8B5CF6", "created_at": now},
+        ]
+        await db.stages.insert_many(default_stages)
+        stages = default_stages
+    
     first_stage = stages[0]
     
-    now = datetime.now(timezone.utc).isoformat()
     batch_id = f"batch_{uuid.uuid4().hex[:12]}"
     
     # Generate batch name if not provided
