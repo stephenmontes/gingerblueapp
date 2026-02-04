@@ -593,7 +593,7 @@ export default function Customers({ user }) {
             <div className="text-center py-12 text-muted-foreground">
               <Users className="w-12 h-12 mx-auto mb-3 opacity-50" />
               <p>No customers found</p>
-              <p className="text-sm mt-1">Click "Sync from Shopify" to import customers</p>
+              <p className="text-sm mt-1">Click &quot;Sync from Shopify&quot; to import customers</p>
             </div>
           ) : (
             <>
