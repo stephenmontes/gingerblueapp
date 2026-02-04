@@ -287,7 +287,9 @@ export function TaskCreateButton({
             </Button>
           </DialogFooter>
         </DialogContent>
-      </Dialog>
+      </Dialog>,
+      document.body
+      )}
     </>
   );
 }
