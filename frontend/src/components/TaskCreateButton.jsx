@@ -86,6 +86,8 @@ export function TaskCreateButton({
         setShowDialog(false);
         resetTask();
         onTaskCreated?.();
+        // Trigger notification refresh for all listeners
+        notificationEvents.emit();
       } else {
         const error = await response.json();
         toast.error(error.detail || "Failed to create task");
