@@ -214,6 +214,60 @@ async def update_ship_date(order_id: str, requested_ship_date: Optional[str] = N
     return {"message": "Ship date updated", "requested_ship_date": requested_ship_date}
 
 
+@router.post("/{order_id}/enrich-images")
+async def enrich_order_images(order_id: str, user: User = Depends(get_current_user)):
+    """Enrich order items with product images from synced products"""
+    order = await db.fulfillment_orders.find_one({"order_id": order_id})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    items = order.get("items", [])
+    updated = False
+    
+    for item in items:
+        # Skip if already has image
+        if item.get("image_url"):
+            continue
+            
+        # Try to find image by SKU or product_id
+        sku = item.get("sku")
+        product_id = item.get("product_id")
+        
+        product = None
+        if sku:
+            product = await db.products.find_one(
+                {"variants.sku": sku},
+                {"_id": 0, "images": 1, "variants": 1}
+            )
+        
+        if not product and product_id:
+            product = await db.products.find_one(
+                {"external_id": product_id},
+                {"_id": 0, "images": 1, "variants": 1}
+            )
+        
+        if product:
+            # First try to get variant-specific image
+            for variant in product.get("variants", []):
+                if variant.get("sku") == sku and variant.get("image_url"):
+                    item["image_url"] = variant["image_url"]
+                    updated = True
+                    break
+            
+            # Fall back to first product image
+            if not item.get("image_url") and product.get("images"):
+                item["image_url"] = product["images"][0].get("src")
+                updated = True
+    
+    if updated:
+        await db.fulfillment_orders.update_one(
+            {"order_id": order_id},
+            {"$set": {"items": items}}
+        )
+    
+    return {"success": True, "items_updated": updated}
+
+
 @router.post("")
 async def create_order(order_data: OrderCreate, user: User = Depends(get_current_user)):
     """Create a new order"""
