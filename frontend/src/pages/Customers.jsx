@@ -117,9 +117,9 @@ export default function Customers() {
     } catch (error) {
       toast.error("Failed to load customers");
     } finally {
-      setLoading(false));
+      setLoading(false);
     }
-  }, [searchTerm, storeFilter, tagFilter, segmentFilter]);
+  }, [searchTerm, storeFilter, tagFilter, segmentFilter, sortColumn, sortDirection]);
 
   const fetchStats = async () => {
     try {
