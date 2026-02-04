@@ -755,10 +755,24 @@ export default function Customers({ user }) {
       <Dialog open={!!selectedCustomer} onOpenChange={() => setSelectedCustomer(null)}>
         <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <User className="w-5 h-5" />
-              {customerDetail?.full_name || "Customer Details"}
-            </DialogTitle>
+            <div className="flex items-center justify-between">
+              <DialogTitle className="flex items-center gap-2">
+                <User className="w-5 h-5" />
+                {customerDetail?.full_name || "Customer Details"}
+              </DialogTitle>
+              {customerDetail && (
+                <TaskCreateButton
+                  customerId={customerDetail.customer_id}
+                  customerName={customerDetail.full_name}
+                  variant="outline"
+                  size="sm"
+                  data-testid="create-task-from-customer"
+                >
+                  <ListTodo className="w-4 h-4 mr-1" />
+                  Create Task
+                </TaskCreateButton>
+              )}
+            </div>
           </DialogHeader>
 
           {detailLoading ? (
