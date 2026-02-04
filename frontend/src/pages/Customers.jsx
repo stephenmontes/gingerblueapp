@@ -68,6 +68,10 @@ export default function Customers() {
   const [totalCount, setTotalCount] = useState(0);
   const [stores, setStores] = useState([]);
   
+  // Sorting
+  const [sortColumn, setSortColumn] = useState("created_at");
+  const [sortDirection, setSortDirection] = useState("desc");
+  
   // Bulk selection
   const [selectedIds, setSelectedIds] = useState([]);
   const [showBulkTag, setShowBulkTag] = useState(false);
