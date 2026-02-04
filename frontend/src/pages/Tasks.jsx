@@ -73,9 +73,13 @@ export default function Tasks({ user }) {
   const [loading, setLoading] = useState(true);
   const [teamMembers, setTeamMembers] = useState([]);
   
+  // View toggles
+  const [viewMode, setViewMode] = useState("kanban"); // "kanban" or "list"
+  const [showMyTasksOnly, setShowMyTasksOnly] = useState(true);
+  
   // Filters
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("open");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [assigneeFilter, setAssigneeFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
@@ -86,6 +90,9 @@ export default function Tasks({ user }) {
   const [selectedTask, setSelectedTask] = useState(null);
   const [taskDetail, setTaskDetail] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  
+  // Drag state for Kanban
+  const [draggedTask, setDraggedTask] = useState(null);
   
   // Create form
   const [newTask, setNewTask] = useState({
