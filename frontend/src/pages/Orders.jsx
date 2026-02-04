@@ -1113,12 +1113,41 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
                 <p className="label-caps mb-2">Items ({selectedOrder.items?.length || 0})</p>
                 <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
                   {selectedOrder.items?.map((item, idx) => (
-                    <div key={idx} className="flex justify-between items-center p-2 bg-muted/30 rounded">
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">{item.name}</p>
-                        <p className="text-xs text-muted-foreground font-mono">SKU: {item.sku}</p>
+                    <div key={idx} className="flex items-center gap-3 p-2 bg-muted/30 rounded">
+                      {/* Thumbnail */}
+                      <div className="w-12 h-12 rounded-md overflow-hidden bg-muted flex-shrink-0">
+                        {item.image_url ? (
+                          <img 
+                            src={item.image_url} 
+                            alt={item.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                              e.target.nextSibling.style.display = 'flex';
+                            }}
+                          />
+                        ) : null}
+                        <div 
+                          className={`w-full h-full items-center justify-center text-muted-foreground ${item.image_url ? 'hidden' : 'flex'}`}
+                        >
+                          <Package className="w-5 h-5" />
+                        </div>
                       </div>
-                      <Badge variant="outline" className="ml-2 shrink-0">x{item.qty}</Badge>
+                      {/* Item Details */}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate text-sm">{item.name}</p>
+                        {item.variant_title && (
+                          <p className="text-xs text-muted-foreground">{item.variant_title}</p>
+                        )}
+                        <p className="text-xs text-muted-foreground font-mono">SKU: {item.sku || 'N/A'}</p>
+                      </div>
+                      {/* Quantity & Price */}
+                      <div className="text-right flex-shrink-0">
+                        <Badge variant="outline">x{item.qty}</Badge>
+                        {item.price > 0 && (
+                          <p className="text-xs text-muted-foreground mt-1">${item.price?.toFixed(2)}</p>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
