@@ -385,7 +385,20 @@ async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current
     frame_aggregation = {}
     total_frames = 0
     
+    # Track stores for this batch
+    store_ids = set()
+    store_names = set()
+    platforms = set()
+    
     for order in orders:
+        # Track store info
+        if order.get("store_id"):
+            store_ids.add(order["store_id"])
+        if order.get("store_name"):
+            store_names.add(order["store_name"])
+        if order.get("platform"):
+            platforms.add(order["platform"])
+        
         for item in order.get("items", []):
             sku = item.get("sku", "UNKNOWN")
             parsed = parse_sku(sku)
@@ -406,6 +419,24 @@ async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current
             frame_aggregation[key]["order_ids"].append(order["order_id"])
             frame_aggregation[key]["skus"].add(sku)
             total_frames += qty
+    
+    # Determine batch store type
+    # single_store: all orders from one store
+    # mixed: orders from multiple stores
+    # shipstation: all orders from shipstation platform
+    store_type = "mixed"
+    primary_store_id = None
+    primary_store_name = None
+    
+    if len(store_ids) == 1:
+        primary_store_id = list(store_ids)[0]
+        primary_store_name = list(store_names)[0] if store_names else None
+        if "shipstation" in platforms:
+            store_type = "shipstation"
+        else:
+            store_type = "single_store"
+    elif len(platforms) == 1 and "shipstation" in platforms:
+        store_type = "shipstation"
     
     # Create aggregated frame items - these move through stages as units
     frame_items = []
