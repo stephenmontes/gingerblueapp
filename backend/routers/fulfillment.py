@@ -252,6 +252,26 @@ async def deduct_inventory_for_order(order: dict, user: User) -> dict:
                 "created_at": now
             }
             allocations.append(allocation)
+            
+            # Log frame inventory deductions specifically
+            if inv_collection == "frame_inventory":
+                frame_inventory_logs.append({
+                    "log_id": f"finvlog_{uuid.uuid4().hex[:12]}",
+                    "inventory_id": item_id,
+                    "order_id": order_id,
+                    "order_number": order_number,
+                    "sku": sku,
+                    "color": inv_item.get("color", color),
+                    "size": inv_item.get("size", size),
+                    "quantity_before": current_qty,
+                    "quantity_deducted": actual_deduct,
+                    "quantity_after": new_qty,
+                    "action": "order_fulfillment",
+                    "deducted_by": user.user_id,
+                    "deducted_by_name": user.name,
+                    "deducted_at": now,
+                    "created_at": now
+                })
         
         if actual_deduct < qty_needed:
             errors.append({
