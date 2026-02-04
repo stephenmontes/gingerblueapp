@@ -380,11 +380,6 @@ async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current
     batch_id = f"batch_{uuid.uuid4().hex[:8]}"
     now = datetime.now(timezone.utc).isoformat()
     
-    # Aggregate frames by size/color - THIS IS THE PRODUCTION LIST
-    # Each unique size/color combination becomes ONE production frame item
-    frame_aggregation = {}
-    total_frames = 0
-    
     # Track stores for this batch
     store_ids = set()
     store_names = set()
@@ -398,9 +393,26 @@ async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current
             store_names.add(order["store_name"])
         if order.get("platform"):
             platforms.add(order["platform"])
-        
+    
+    # Determine if this is a ShipStation (Etsy) batch
+    is_shipstation_batch = "shipstation" in platforms
+    
+    # Aggregate frames by size/color - THIS IS THE PRODUCTION LIST
+    # Each unique size/color combination becomes ONE production frame item
+    # For ShipStation batches: Only include items with SKU starting with "BWF"
+    frame_aggregation = {}
+    total_frames = 0
+    
+    for order in orders:
         for item in order.get("items", []):
             sku = item.get("sku", "UNKNOWN")
+            
+            # For ShipStation batches, only process BWF items for frame production
+            if is_shipstation_batch:
+                sku_prefix = sku.split("-")[0] if "-" in sku else sku[:3]
+                if not sku_prefix.upper().startswith("BWF"):
+                    continue  # Skip non-BWF items for frame production
+            
             parsed = parse_sku(sku)
             size = parsed["size"]
             color = parsed["color"]
@@ -431,11 +443,11 @@ async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current
     if len(store_ids) == 1:
         primary_store_id = list(store_ids)[0]
         primary_store_name = list(store_names)[0] if store_names else None
-        if "shipstation" in platforms:
+        if is_shipstation_batch:
             store_type = "shipstation"
         else:
             store_type = "single_store"
-    elif len(platforms) == 1 and "shipstation" in platforms:
+    elif is_shipstation_batch:
         store_type = "shipstation"
     
     # Create aggregated frame items - these move through stages as units
