@@ -771,11 +771,25 @@ export default function Customers() {
                         <CardTitle className="text-sm">Contact Information</CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-2 text-sm">
-                        <div className="flex items-center gap-2">
-                          <Mail className="w-4 h-4 text-muted-foreground" />
-                          <span>{customerDetail.email || "—"}</span>
-                          {customerDetail.verified_email && (
-                            <CheckCircle className="w-3 h-3 text-green-500" />
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Mail className="w-4 h-4 text-muted-foreground" />
+                            <span>{customerDetail.email || "—"}</span>
+                            {customerDetail.verified_email && (
+                              <CheckCircle className="w-3 h-3 text-green-500" />
+                            )}
+                          </div>
+                          {customerDetail.email && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 gap-1"
+                              onClick={() => openGmailCompose(customerDetail.email, customerDetail.full_name)}
+                              data-testid="email-customer-btn"
+                            >
+                              <Mail className="w-3 h-3" />
+                              Email
+                            </Button>
                           )}
                         </div>
                         <div className="flex items-center gap-2">
