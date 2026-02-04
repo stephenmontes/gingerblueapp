@@ -13,6 +13,7 @@ import {
   Truck,
   ShoppingBag,
   Calendar,
+  UserCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -30,6 +31,7 @@ import { API } from "@/utils/api";
 const navItems = [
   { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { path: "/orders", label: "Orders", icon: Package },
+  { path: "/customers", label: "Customers", icon: UserCircle, roles: ["admin", "manager"] },
   { path: "/products", label: "Products", icon: ShoppingBag },
   { path: "/production", label: "Frame Production", icon: Workflow },
   { path: "/fulfillment", label: "Order Fulfillment", icon: Truck },
