@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, Query, UploadFile, File
 from typing import Optional, List
 from datetime import datetime, timezone
+from pydantic import BaseModel
 import uuid
 import csv
 import io
@@ -16,6 +17,12 @@ from services.etsy_service import sync_orders_from_etsy_store
 from services.shipstation_sync import sync_orders_from_shipstation
 
 router = APIRouter(prefix="/orders", tags=["orders"])
+
+
+# Pydantic models for order notes
+class OrderNote(BaseModel):
+    content: str
+    note_type: str = "general"  # general, task, issue, update
 
 @router.get("")
 async def get_orders(
