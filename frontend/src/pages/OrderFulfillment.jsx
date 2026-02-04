@@ -12,6 +12,7 @@ import { OrderKpiReport } from "@/components/fulfillment/OrderKpiReport";
 import { TimeEntryManager } from "@/components/fulfillment/TimeEntryManager";
 import { DailyLimitWarning } from "@/components/fulfillment/DailyLimitWarning";
 import { UserDateReport } from "@/components/fulfillment/UserDateReport/index";
+import { FulfillmentBatchWorksheet } from "@/components/fulfillment/FulfillmentBatchWorksheet";
 import { API } from "@/utils/api";
 
 export default function OrderFulfillment() {
@@ -24,6 +25,7 @@ export default function OrderFulfillment() {
   const [showReport, setShowReport] = useState(false);
   const [showTimeManager, setShowTimeManager] = useState(false);
   const [showUserDateReport, setShowUserDateReport] = useState(false);
+  const [fulfillmentBatches, setFulfillmentBatches] = useState([]);
 
   useEffect(() => {
     loadData();
