@@ -510,6 +510,13 @@ def transform_shopify_order(shopify_order: Dict, store_id: str, store_name: str)
     # Transform line items
     items = []
     for item in shopify_order.get("line_items", []):
+        # Try to get image URL from the item or look it up from products
+        image_url = None
+        
+        # Check if there's an image directly on the line item (some Shopify versions include this)
+        if item.get("image"):
+            image_url = item.get("image", {}).get("src") if isinstance(item.get("image"), dict) else item.get("image")
+        
         items.append({
             "line_item_id": str(item.get("id", "")),
             "product_id": str(item.get("product_id", "")),
@@ -525,6 +532,7 @@ def transform_shopify_order(shopify_order: Dict, store_id: str, store_name: str)
             "fulfillment_status": item.get("fulfillment_status"),
             "requires_shipping": item.get("requires_shipping", True),
             "taxable": item.get("taxable", True),
+            "image_url": image_url,
         })
     
     # Get shipping address
