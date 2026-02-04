@@ -171,10 +171,37 @@ export default function Orders({ user }) {
     }
   };
 
-  // Fetch activities when order is selected
+  const enrichOrderImages = async (order) => {
+    // Check if any items are missing images
+    const needsEnrichment = order.items?.some(item => !item.image_url);
+    if (!needsEnrichment) return;
+    
+    try {
+      const response = await fetch(`${API}/orders/${order.order_id}/enrich-images`, {
+        method: "POST",
+        credentials: "include"
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.items_updated) {
+          // Refresh the order data
+          const orderResponse = await fetch(`${API}/orders/${order.order_id}`, { credentials: "include" });
+          if (orderResponse.ok) {
+            const updatedOrder = await orderResponse.json();
+            setSelectedOrder(updatedOrder);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Failed to enrich order images:", error);
+    }
+  };
+
+  // Fetch activities and enrich images when order is selected
   useEffect(() => {
     if (selectedOrder?.order_id) {
       fetchOrderActivities(selectedOrder.order_id);
+      enrichOrderImages(selectedOrder);
     } else {
       setOrderActivities([]);
     }
