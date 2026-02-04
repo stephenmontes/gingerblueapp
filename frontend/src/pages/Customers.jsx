@@ -695,7 +695,7 @@ export default function Customers() {
                     disabled={currentPage <= 1}
                     onClick={() => {
                       setCurrentPage(p => p - 1);
-                      fetchCustomers(currentPage - 1);
+                      fetchCustomers(currentPage - 1, sortColumn, sortDirection);
                     }}
                   >
                     <ChevronLeft className="w-4 h-4" />
@@ -706,7 +706,7 @@ export default function Customers() {
                     disabled={currentPage >= totalPages}
                     onClick={() => {
                       setCurrentPage(p => p + 1);
-                      fetchCustomers(currentPage + 1);
+                      fetchCustomers(currentPage + 1, sortColumn, sortDirection);
                     }}
                   >
                     <ChevronRight className="w-4 h-4" />
