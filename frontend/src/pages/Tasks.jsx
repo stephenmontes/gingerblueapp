@@ -116,11 +116,17 @@ export default function Tasks({ user }) {
       setLoading(true);
       const params = new URLSearchParams();
       params.append("page", page.toString());
-      params.append("page_size", "50");
+      params.append("page_size", "100"); // Get more for Kanban view
       if (searchTerm) params.append("search", searchTerm);
       if (statusFilter !== "all") params.append("status", statusFilter);
       if (priorityFilter !== "all") params.append("priority", priorityFilter);
-      if (assigneeFilter !== "all") params.append("assigned_to", assigneeFilter);
+      
+      // Handle "My Tasks" filter
+      if (showMyTasksOnly && user?.user_id) {
+        params.append("assigned_to", user.user_id);
+      } else if (assigneeFilter !== "all") {
+        params.append("assigned_to", assigneeFilter);
+      }
       
       const response = await fetch(`${API}/tasks?${params.toString()}`, {
         credentials: "include",
