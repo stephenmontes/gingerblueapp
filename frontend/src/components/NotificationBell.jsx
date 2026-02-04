@@ -45,8 +45,11 @@ export function NotificationBell() {
       });
       if (response.ok) {
         const data = await response.json();
+        console.log("Notifications fetched:", data);
         setNotifications(data.notifications || []);
         setUnreadCount(data.unread_count || 0);
+      } else {
+        console.error("Failed to fetch notifications:", response.status);
       }
     } catch (error) {
       console.error("Failed to fetch notifications:", error);
