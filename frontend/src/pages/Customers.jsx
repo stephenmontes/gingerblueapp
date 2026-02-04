@@ -461,28 +461,33 @@ export default function Customers({ user }) {
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-card/50 border-border/50">
-            <CardContent className="pt-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground">Total Revenue</p>
-                  <p className="text-2xl font-bold">{formatCurrency(stats.totals?.revenue)}</p>
-                </div>
-                <DollarSign className="w-6 h-6 text-primary/60" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="bg-card/50 border-border/50">
-            <CardContent className="pt-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground">Avg LTV</p>
-                  <p className="text-2xl font-bold">{formatCurrency(stats.totals?.avg_lifetime_value)}</p>
-                </div>
-                <TrendingUp className="w-6 h-6 text-primary/60" />
-              </div>
-            </CardContent>
-          </Card>
+          {/* Hide revenue stats from workers */}
+          {user?.role !== "worker" && (
+            <>
+              <Card className="bg-card/50 border-border/50">
+                <CardContent className="pt-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Total Revenue</p>
+                      <p className="text-2xl font-bold">{formatCurrency(stats.totals?.revenue)}</p>
+                    </div>
+                    <DollarSign className="w-6 h-6 text-primary/60" />
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="bg-card/50 border-border/50">
+                <CardContent className="pt-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Avg LTV</p>
+                      <p className="text-2xl font-bold">{formatCurrency(stats.totals?.avg_lifetime_value)}</p>
+                    </div>
+                    <TrendingUp className="w-6 h-6 text-primary/60" />
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          )}
           <Card className="bg-card/50 border-border/50">
             <CardContent className="pt-4">
               <div className="flex items-center justify-between">
