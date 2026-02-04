@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,7 +22,8 @@ export function TaskCreateButton({
   size = "sm",
   className = "",
   children = null,
-  onTaskCreated = null
+  onTaskCreated = null,
+  ...restProps
 }) {
   const [showDialog, setShowDialog] = useState(false);
   const [teamMembers, setTeamMembers] = useState([]);
