@@ -275,14 +275,25 @@ export default function FrameInventory() {
             Manage frame stock and materials
           </p>
         </div>
-        <Button 
-          onClick={() => setShowAddForm(true)} 
-          className="gap-2"
-          data-testid="add-inventory-btn"
-        >
-          <Plus className="w-4 h-4" />
-          Add Item
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline"
+            onClick={openLogDialog} 
+            className="gap-2"
+            data-testid="view-logs-btn"
+          >
+            <History className="w-4 h-4" />
+            Deduction Logs
+          </Button>
+          <Button 
+            onClick={() => setShowAddForm(true)} 
+            className="gap-2"
+            data-testid="add-inventory-btn"
+          >
+            <Plus className="w-4 h-4" />
+            Add Item
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}
