@@ -43,6 +43,15 @@ export default function FrameInventory() {
   const [rejectItem, setRejectItem] = useState(null);
   const [rejectAmount, setRejectAmount] = useState(1);
   
+  // Deduction log state
+  const [showLogDialog, setShowLogDialog] = useState(false);
+  const [logs, setLogs] = useState([]);
+  const [logSummary, setLogSummary] = useState(null);
+  const [logsLoading, setLogsLoading] = useState(false);
+  const [logPage, setLogPage] = useState(1);
+  const [logTotalPages, setLogTotalPages] = useState(1);
+  const [logDateFilter, setLogDateFilter] = useState("");
+  
   // Form state
   const [formData, setFormData] = useState(INITIAL_FORM_DATA);
 
