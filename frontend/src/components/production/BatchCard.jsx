@@ -139,7 +139,7 @@ export function BatchCard({ batch, isSelected, onSelect, onRefresh, isArchived }
 
   return (
     <Card
-      className={`cursor-pointer transition-all ${isSelected ? "ring-2 ring-primary" : "hover:border-primary/50"} ${isArchived ? "opacity-80" : ""}`}
+      className={`cursor-pointer transition-all ${storeColor} ${isSelected ? "ring-2 ring-primary" : "hover:border-primary/50"} ${isArchived ? "opacity-80" : ""}`}
       onClick={() => onSelect(batch)}
       data-testid={`batch-card-${batch.batch_id}`}
     >
@@ -151,6 +151,12 @@ export function BatchCard({ batch, isSelected, onSelect, onRefresh, isArchived }
               <Badge variant="outline" className="text-orange-400 border-orange-400/30 text-xs">
                 <Package className="w-3 h-3 mr-1" />
                 Inventory
+              </Badge>
+            )}
+            {/* Store indicator for order-based batches */}
+            {!isOnDemand && batch.store_name && (
+              <Badge variant="outline" className="text-xs truncate max-w-[100px]" title={batch.store_names?.join(", ") || batch.store_name}>
+                {batch.store_type === "mixed" ? "Mixed" : batch.store_name}
               </Badge>
             )}
             <Badge 
