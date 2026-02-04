@@ -401,6 +401,13 @@ export default function Customers() {
     }).format(value || 0);
   };
 
+  const openGmailCompose = (email, customerName) => {
+    // Open Gmail compose in a new tab with pre-filled recipient
+    const subject = encodeURIComponent(`Hello from ${customerName ? customerName.split(' ')[0] : 'there'}`);
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}&su=${subject}`;
+    window.open(gmailUrl, '_blank');
+  };
+
   return (
     <div className="space-y-6" data-testid="customers-page">
       {/* Header */}
