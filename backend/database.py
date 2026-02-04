@@ -97,6 +97,12 @@ async def create_indexes():
         await db.notifications.create_index([("user_id", 1), ("read", 1)])
         await db.notifications.create_index("created_at")
         
+        # fulfillment_batches indexes
+        await db.fulfillment_batches.create_index("fulfillment_batch_id", unique=True)
+        await db.fulfillment_batches.create_index("production_batch_id")
+        await db.fulfillment_batches.create_index("status")
+        await db.fulfillment_batches.create_index("created_at")
+        
         print("[Database] Indexes created successfully")
     except Exception as e:
         print(f"[Database] Index creation error (may already exist): {e}")
