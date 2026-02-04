@@ -161,7 +161,10 @@ async def check_inventory_for_order(order: dict) -> dict:
 
 
 async def deduct_inventory_for_order(order: dict, user: User) -> dict:
-    """Deduct inventory items for an order and create allocation records"""
+    """Deduct inventory items for an order and create allocation records
+    
+    Checks both 'inventory' and 'frame_inventory' collections for matching items.
+    """
     items = order.get("items", []) or order.get("line_items", [])
     order_id = order.get("order_id")
     now = datetime.now(timezone.utc).isoformat()
@@ -175,18 +178,43 @@ async def deduct_inventory_for_order(order: dict, user: User) -> dict:
         qty_needed = item.get("qty", 1) or item.get("quantity", 1)
         match_key = get_sku_match_key(sku)
         
-        # Find matching inventory
+        # Parse color and size from match_key
+        parts = match_key.split("-")
+        color = parts[0] if len(parts) > 0 else ""
+        size = parts[1] if len(parts) > 1 else ""
+        
+        inv_item = None
+        inv_collection = "inventory"
+        
+        # First, try to find in main inventory collection
         inv_item = await db.inventory.find_one({
             "$or": [
                 {"sku": sku, "is_rejected": {"$ne": True}},
                 {"sku_match_key": match_key, "is_rejected": {"$ne": True}},
-                {"color": match_key.split("-")[0], "size": match_key.split("-")[1], "is_rejected": {"$ne": True}}
-            ]
+                {"color": color, "size": size, "is_rejected": {"$ne": True}}
+            ],
+            "quantity": {"$gt": 0}
         }, {"_id": 0})
+        
+        # If not found in inventory, check frame_inventory (from on-demand production)
+        if not inv_item:
+            inv_item = await db.frame_inventory.find_one({
+                "$or": [
+                    {"sku": sku},
+                    {"color": color, "size": size}
+                ],
+                "quantity": {"$gt": 0}
+            }, {"_id": 0})
+            if inv_item:
+                inv_collection = "frame_inventory"
         
         if not inv_item:
             errors.append({"sku": sku, "error": "No matching inventory found"})
             continue
+        
+        # Get the item ID field (different field names in different collections)
+        item_id_field = "inventory_id" if inv_collection == "frame_inventory" else "item_id"
+        item_id = inv_item.get(item_id_field) or inv_item.get("item_id") or inv_item.get("inventory_id")
         
         current_qty = inv_item.get("quantity", 0)
         actual_deduct = min(qty_needed, current_qty)
@@ -194,14 +222,15 @@ async def deduct_inventory_for_order(order: dict, user: User) -> dict:
         if actual_deduct > 0:
             # Deduct from inventory
             new_qty = current_qty - actual_deduct
-            await db.inventory.update_one(
-                {"item_id": inv_item["item_id"]},
+            await db[inv_collection].update_one(
+                {item_id_field: item_id},
                 {"$set": {"quantity": new_qty, "updated_at": now}}
             )
             
             deductions.append({
                 "sku": sku,
-                "inventory_item_id": inv_item["item_id"],
+                "inventory_item_id": item_id,
+                "inventory_collection": inv_collection,
                 "qty_deducted": actual_deduct,
                 "new_quantity": new_qty
             })
@@ -210,7 +239,8 @@ async def deduct_inventory_for_order(order: dict, user: User) -> dict:
             allocation = {
                 "allocation_id": f"alloc_{uuid.uuid4().hex[:12]}",
                 "order_id": order_id,
-                "inventory_item_id": inv_item["item_id"],
+                "inventory_item_id": item_id,
+                "inventory_collection": inv_collection,
                 "inventory_sku": inv_item.get("sku"),
                 "order_item_sku": sku,
                 "quantity_allocated": actual_deduct,
