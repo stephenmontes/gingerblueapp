@@ -103,6 +103,13 @@ async def create_indexes():
         await db.fulfillment_batches.create_index("status")
         await db.fulfillment_batches.create_index("created_at")
         
+        # frame_inventory_log indexes
+        await db.frame_inventory_log.create_index("log_id", unique=True)
+        await db.frame_inventory_log.create_index("order_id")
+        await db.frame_inventory_log.create_index("inventory_id")
+        await db.frame_inventory_log.create_index("deducted_at")
+        await db.frame_inventory_log.create_index([("color", 1), ("size", 1)])
+        
         print("[Database] Indexes created successfully")
     except Exception as e:
         print(f"[Database] Index creation error (may already exist): {e}")
