@@ -1140,10 +1140,44 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
                   variant="outline"
                   size="sm"
                   data-testid="create-task-from-order"
+                  onTaskCreated={() => fetchOrderActivities(selectedOrder.order_id)}
                 >
                   <ListTodo className="w-4 h-4 mr-1" />
                   Create Task
                 </TaskCreateButton>
+              </div>
+
+              {/* Activities/Notes */}
+              <div className="border-t border-border pt-4">
+                <p className="label-caps mb-2">Activity & Tasks</p>
+                {activitiesLoading ? (
+                  <div className="flex items-center justify-center py-4">
+                    <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : orderActivities.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">No activities yet</p>
+                ) : (
+                  <div className="space-y-2 max-h-40 overflow-y-auto">
+                    {orderActivities.map((activity) => (
+                      <div 
+                        key={activity.activity_id} 
+                        className={`p-2 rounded-lg text-sm ${
+                          activity.note_type === 'task' 
+                            ? 'bg-blue-500/10 border border-blue-500/20' 
+                            : 'bg-muted/30'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          {activity.note_type === 'task' && <ListTodo className="w-3 h-3 text-blue-400" />}
+                          <span className="text-xs text-muted-foreground">
+                            {activity.user_name} · {new Date(activity.created_at).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <p className="whitespace-pre-wrap">{activity.content}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Reference IDs - Collapsed */}
