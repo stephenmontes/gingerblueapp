@@ -666,9 +666,11 @@ export default function Customers({ user }) {
                       <TableCell className="text-center">
                         <span className="font-medium">{customer.orders_count || 0}</span>
                       </TableCell>
-                      <TableCell className="text-right font-medium">
-                        {formatCurrency(customer.total_spent, customer.currency)}
-                      </TableCell>
+                      {user?.role !== "worker" && (
+                        <TableCell className="text-right font-medium">
+                          {formatCurrency(customer.total_spent, customer.currency)}
+                        </TableCell>
+                      )}
                       <TableCell>
                         <div className="flex flex-wrap gap-1 max-w-[150px]">
                           {customer.shopify_tags?.slice(0, 2).map(tag => (
