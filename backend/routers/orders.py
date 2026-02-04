@@ -287,7 +287,11 @@ async def create_order(order_data: OrderCreate, user: User = Depends(get_current
 @router.get("/{order_id}")
 async def get_order(order_id: str, user: User = Depends(get_current_user)):
     """Get single order"""
-    order = await db.orders.find_one({"order_id": order_id}, {"_id": 0})
+    # Try fulfillment_orders first (main orders collection)
+    order = await db.fulfillment_orders.find_one({"order_id": order_id}, {"_id": 0})
+    if not order:
+        # Fall back to orders collection
+        order = await db.orders.find_one({"order_id": order_id}, {"_id": 0})
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
     return order
