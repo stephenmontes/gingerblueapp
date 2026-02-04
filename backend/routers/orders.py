@@ -631,3 +631,68 @@ async def get_csv_template(user: User = Depends(get_current_user)):
             }
         ]
     }
+
+
+# Order Notes/Activities
+@router.get("/{order_id}/activities")
+async def get_order_activities(
+    order_id: str,
+    user: User = Depends(get_current_user)
+):
+    """Get all activities/notes for an order"""
+    order = await db.fulfillment_orders.find_one({"order_id": order_id})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    activities = await db.order_activities.find(
+        {"order_id": order_id},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(100)
+    
+    return {"activities": activities}
+
+
+@router.post("/{order_id}/notes")
+async def add_order_note(
+    order_id: str,
+    note: OrderNote,
+    user: User = Depends(get_current_user)
+):
+    """Add a note to an order"""
+    order = await db.fulfillment_orders.find_one({"order_id": order_id})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    activity = {
+        "activity_id": f"oact_{uuid.uuid4().hex[:12]}",
+        "order_id": order_id,
+        "type": "note",
+        "note_type": note.note_type,
+        "content": note.content,
+        "user_id": user.user_id,
+        "user_name": user.name,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.order_activities.insert_one(activity)
+    
+    return {"success": True, "activity": {k: v for k, v in activity.items() if k != "_id"}}
+
+
+@router.delete("/{order_id}/notes/{activity_id}")
+async def delete_order_note(
+    order_id: str,
+    activity_id: str,
+    user: User = Depends(get_current_user)
+):
+    """Delete an order note"""
+    result = await db.order_activities.delete_one({
+        "activity_id": activity_id,
+        "order_id": order_id
+    })
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Note not found")
+    
+    return {"success": True, "message": "Note deleted"}
+
