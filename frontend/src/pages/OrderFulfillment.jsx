@@ -56,9 +56,10 @@ export default function OrderFulfillment() {
 
   async function loadData() {
     try {
-      const [stagesRes, summaryRes] = await Promise.all([
+      const [stagesRes, summaryRes, batchesRes] = await Promise.all([
         fetch(`${API}/fulfillment/stages`, { credentials: "include" }),
         fetch(`${API}/fulfillment/summary`, { credentials: "include" }),
+        fetch(`${API}/fulfillment-batches?status=active`, { credentials: "include" }),
       ]);
 
       if (stagesRes.ok) {
@@ -72,6 +73,26 @@ export default function OrderFulfillment() {
       }
       if (summaryRes.ok) {
         setSummary(await summaryRes.json());
+      }
+      if (batchesRes.ok) {
+        const batchData = await batchesRes.json();
+        // Fetch orders for each batch
+        const batchesWithOrders = await Promise.all(
+          (batchData.batches || []).map(async (batch) => {
+            try {
+              const detailRes = await fetch(`${API}/fulfillment-batches/${batch.fulfillment_batch_id}`, {
+                credentials: "include"
+              });
+              if (detailRes.ok) {
+                return await detailRes.json();
+              }
+            } catch (e) {
+              console.error("Failed to load batch details:", e);
+            }
+            return batch;
+          })
+        );
+        setFulfillmentBatches(batchesWithOrders);
       }
     } catch (err) {
       toast.error("Failed to load fulfillment data");
