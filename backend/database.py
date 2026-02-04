@@ -70,6 +70,10 @@ async def create_indexes():
         await db.customer_activities.create_index("customer_id")
         await db.customer_activities.create_index("created_at")
         
+        # order_activities indexes
+        await db.order_activities.create_index("order_id")
+        await db.order_activities.create_index("created_at")
+        
         # tasks indexes
         await db.tasks.create_index("task_id", unique=True)
         await db.tasks.create_index("assigned_to")
