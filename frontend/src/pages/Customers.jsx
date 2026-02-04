@@ -698,18 +698,30 @@ export default function Customers({ user }) {
                         </span>
                       </TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
-                        {customer.email && (
-                          <Button
+                        <div className="flex items-center gap-1">
+                          {customer.email && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              onClick={() => openGmailCompose(customer.email, customer.full_name)}
+                              title="Send email"
+                              data-testid={`email-btn-${customer.customer_id}`}
+                            >
+                              <Mail className="w-4 h-4" />
+                            </Button>
+                          )}
+                          <TaskCreateButton
+                            customerId={customer.customer_id}
+                            customerName={customer.full_name}
                             variant="ghost"
                             size="sm"
                             className="h-8 w-8 p-0"
-                            onClick={() => openGmailCompose(customer.email, customer.full_name)}
-                            title="Send email"
-                            data-testid={`email-btn-${customer.customer_id}`}
+                            data-testid={`task-btn-${customer.customer_id}`}
                           >
-                            <Mail className="w-4 h-4" />
-                          </Button>
-                        )}
+                            <ListTodo className="w-4 h-4" />
+                          </TaskCreateButton>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
