@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Plus, History, Loader2, Package, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import {
   InventoryStats,
