@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { RefreshCw, Truck, Users, Clock, FileText, ChevronDown, ChevronUp, Settings } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { RefreshCw, Truck, Users, Clock, FileText, ChevronDown, ChevronUp, Settings, Package } from "lucide-react";
 import { toast } from "sonner";
 import { FulfillmentStageTab } from "@/components/fulfillment/FulfillmentStageTab";
 import { FulfillmentSummary } from "@/components/fulfillment/FulfillmentSummary";
@@ -12,7 +13,8 @@ import { OrderKpiReport } from "@/components/fulfillment/OrderKpiReport";
 import { TimeEntryManager } from "@/components/fulfillment/TimeEntryManager";
 import { DailyLimitWarning } from "@/components/fulfillment/DailyLimitWarning";
 import { UserDateReport } from "@/components/fulfillment/UserDateReport/index";
-import { FulfillmentBatchWorksheet } from "@/components/fulfillment/FulfillmentBatchWorksheet";
+import { FulfillmentBatchCard } from "@/components/fulfillment/FulfillmentBatchCard";
+import { FulfillmentBatchDetail } from "@/components/fulfillment/FulfillmentBatchDetail";
 import { API } from "@/utils/api";
 
 export default function OrderFulfillment() {
@@ -26,6 +28,8 @@ export default function OrderFulfillment() {
   const [showTimeManager, setShowTimeManager] = useState(false);
   const [showUserDateReport, setShowUserDateReport] = useState(false);
   const [fulfillmentBatches, setFulfillmentBatches] = useState([]);
+  const [selectedBatch, setSelectedBatch] = useState(null);
+  const [batchDetail, setBatchDetail] = useState(null);
 
   useEffect(() => {
     loadData();
