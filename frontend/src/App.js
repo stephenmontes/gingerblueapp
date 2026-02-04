@@ -17,6 +17,7 @@ import Team from "@/pages/Team";
 import Reports from "@/pages/Reports";
 import Settings from "@/pages/Settings";
 import Scheduling from "@/pages/Scheduling";
+import Customers from "@/pages/Customers";
 import Layout from "@/components/Layout";
 
 // REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
