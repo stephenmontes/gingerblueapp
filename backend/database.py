@@ -70,6 +70,29 @@ async def create_indexes():
         await db.customer_activities.create_index("customer_id")
         await db.customer_activities.create_index("created_at")
         
+        # tasks indexes
+        await db.tasks.create_index("task_id", unique=True)
+        await db.tasks.create_index("assigned_to")
+        await db.tasks.create_index("created_by")
+        await db.tasks.create_index("customer_id")
+        await db.tasks.create_index("order_id")
+        await db.tasks.create_index("status")
+        await db.tasks.create_index("due_date")
+        await db.tasks.create_index("shared_with")
+        
+        # task_activities indexes
+        await db.task_activities.create_index("task_id")
+        await db.task_activities.create_index("created_at")
+        
+        # task_comments indexes
+        await db.task_comments.create_index("task_id")
+        
+        # notifications indexes
+        await db.notifications.create_index("notification_id", unique=True)
+        await db.notifications.create_index("user_id")
+        await db.notifications.create_index([("user_id", 1), ("read", 1)])
+        await db.notifications.create_index("created_at")
+        
         print("[Database] Indexes created successfully")
     except Exception as e:
         print(f"[Database] Index creation error (may already exist): {e}")
