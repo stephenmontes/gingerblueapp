@@ -14,6 +14,7 @@ import {
   ShoppingBag,
   Calendar,
   UserCircle,
+  ListTodo,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -26,12 +27,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { NotificationBell } from "@/components/NotificationBell";
 import { API } from "@/utils/api";
 
 const navItems = [
   { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { path: "/orders", label: "Orders", icon: Package },
   { path: "/customers", label: "Customers", icon: UserCircle, roles: ["admin", "manager"] },
+  { path: "/tasks", label: "Tasks", icon: ListTodo },
   { path: "/products", label: "Products", icon: ShoppingBag },
   { path: "/production", label: "Frame Production", icon: Workflow },
   { path: "/fulfillment", label: "Order Fulfillment", icon: Truck },
