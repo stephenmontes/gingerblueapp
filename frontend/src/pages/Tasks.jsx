@@ -13,6 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Switch } from "@/components/ui/switch";
 import {
   ListTodo,
   Plus,
@@ -36,7 +37,10 @@ import {
   Loader2,
   Flag,
   RefreshCw,
-  History
+  History,
+  LayoutGrid,
+  List,
+  GripVertical
 } from "lucide-react";
 import { toast } from "sonner";
 import { API } from "@/utils/api";
@@ -51,11 +55,17 @@ const PRIORITY_CONFIG = {
 };
 
 const STATUS_CONFIG = {
-  pending: { label: "Pending", color: "bg-gray-500/20 text-gray-400 border-gray-500/30" },
+  pending: { label: "To Do", color: "bg-gray-500/20 text-gray-400 border-gray-500/30" },
   in_progress: { label: "In Progress", color: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
   completed: { label: "Completed", color: "bg-green-500/20 text-green-400 border-green-500/30" },
   cancelled: { label: "Cancelled", color: "bg-red-500/20 text-red-400 border-red-500/30" },
 };
+
+const KANBAN_COLUMNS = [
+  { id: "pending", title: "To Do", color: "border-gray-500/50" },
+  { id: "in_progress", title: "In Progress", color: "border-blue-500/50" },
+  { id: "completed", title: "Completed", color: "border-green-500/50" },
+];
 
 export default function Tasks({ user }) {
   const [tasks, setTasks] = useState([]);
