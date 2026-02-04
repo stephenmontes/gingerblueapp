@@ -23,8 +23,14 @@ export function BatchDetailView({
   const [activeStageId, setActiveStageId] = useState(null);
 
   useEffect(() => {
-    if (stageSummary && stageSummary.length > 1 && !activeStageId) {
-      setActiveStageId(stageSummary[1].stage_id);
+    // Set the first available stage (skip index 0 if it's "New Orders" stage, otherwise use index 0)
+    if (stageSummary && stageSummary.length > 0 && !activeStageId) {
+      // If first stage is "New Orders" or "stage_new", start from index 1
+      if (stageSummary.length > 1 && (stageSummary[0].stage_id === "stage_new" || stageSummary[0].stage_name === "New Orders")) {
+        setActiveStageId(stageSummary[1].stage_id);
+      } else {
+        setActiveStageId(stageSummary[0].stage_id);
+      }
     }
   }, [stageSummary, activeStageId]);
 
