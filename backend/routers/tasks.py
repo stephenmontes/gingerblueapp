@@ -368,6 +368,36 @@ async def create_task(task_data: TaskCreate, user: User = Depends(get_current_us
         "title": task_data.title
     })
     
+    # Add note to associated order if task was created from an order
+    if task_data.order_id:
+        order_activity = {
+            "activity_id": f"oact_{uuid.uuid4().hex[:12]}",
+            "order_id": task_data.order_id,
+            "type": "note",
+            "note_type": "task",
+            "content": f"Task created: {task_data.title}" + (f"\n{task_data.description}" if task_data.description else ""),
+            "task_id": task_id,
+            "user_id": user.user_id,
+            "user_name": user.name,
+            "created_at": now
+        }
+        await db.order_activities.insert_one(order_activity)
+    
+    # Add note to associated customer if task was created from a customer
+    if task_data.customer_id:
+        customer_activity = {
+            "activity_id": f"act_{uuid.uuid4().hex[:12]}",
+            "customer_id": task_data.customer_id,
+            "type": "note",
+            "note_type": "task",
+            "content": f"Task created: {task_data.title}" + (f"\n{task_data.description}" if task_data.description else ""),
+            "task_id": task_id,
+            "user_id": user.user_id,
+            "user_name": user.name,
+            "created_at": now
+        }
+        await db.customer_activities.insert_one(customer_activity)
+    
     # Send notification to assigned user
     if task_data.assigned_to and task_data.assigned_to != user.user_id:
         await create_notification(
