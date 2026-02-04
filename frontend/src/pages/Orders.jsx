@@ -155,6 +155,31 @@ export default function Orders({ user }) {
     }
   };
 
+  const fetchOrderActivities = async (orderId) => {
+    try {
+      setActivitiesLoading(true);
+      const response = await fetch(`${API}/orders/${orderId}/activities`, { credentials: "include" });
+      if (response.ok) {
+        const data = await response.json();
+        setOrderActivities(data.activities || []);
+      }
+    } catch (error) {
+      console.error("Failed to fetch order activities:", error);
+      setOrderActivities([]);
+    } finally {
+      setActivitiesLoading(false);
+    }
+  };
+
+  // Fetch activities when order is selected
+  useEffect(() => {
+    if (selectedOrder?.order_id) {
+      fetchOrderActivities(selectedOrder.order_id);
+    } else {
+      setOrderActivities([]);
+    }
+  }, [selectedOrder?.order_id]);
+
   useEffect(() => {
     // Reset to page 1 and default sort (newest first) when filters change
     setCurrentPage(1);
