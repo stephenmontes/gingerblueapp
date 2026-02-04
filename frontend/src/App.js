@@ -336,6 +336,18 @@ function AppRouter() {
           </RoleProtectedRoute>
         }
       />
+      <Route
+        path="/tasks"
+        element={
+          <ProtectedRoute>
+            {({ user, setUser }) => (
+              <Layout user={user} setUser={setUser}>
+                <Tasks user={user} />
+              </Layout>
+            )}
+          </ProtectedRoute>
+        }
+      />
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
