@@ -227,6 +227,28 @@ export default function OrderFulfillment() {
         )}
       </div>
 
+      {/* ShipStation/Etsy Fulfillment Batches */}
+      {fulfillmentBatches.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <Truck className="w-5 h-5 text-yellow-500" />
+            Etsy Batch Fulfillment
+            <Badge variant="outline" className="text-yellow-400 border-yellow-400/30">
+              {fulfillmentBatches.length} active
+            </Badge>
+          </h2>
+          {fulfillmentBatches.map((batch) => (
+            <FulfillmentBatchWorksheet
+              key={batch.fulfillment_batch_id}
+              batch={batch}
+              stages={stages}
+              onRefresh={loadData}
+              onTimerChange={handleTimerChange}
+            />
+          ))}
+        </div>
+      )}
+
       {/* Stage Tabs - Button Style with Stage Colors */}
       <div className="flex gap-2 overflow-x-auto pb-2">
         {stages.map((stage) => (
