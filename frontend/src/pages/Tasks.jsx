@@ -477,8 +477,42 @@ export default function Tasks({ user }) {
         </div>
       )}
 
-      {/* Filters */}
+      {/* Filters & View Controls */}
       <div className="flex flex-wrap items-center gap-3">
+        {/* View Toggle */}
+        <div className="flex items-center gap-2 bg-muted/30 rounded-lg p-1">
+          <Button
+            variant={viewMode === "kanban" ? "secondary" : "ghost"}
+            size="sm"
+            onClick={() => setViewMode("kanban")}
+            className="gap-1"
+          >
+            <LayoutGrid className="w-4 h-4" />
+            Kanban
+          </Button>
+          <Button
+            variant={viewMode === "list" ? "secondary" : "ghost"}
+            size="sm"
+            onClick={() => setViewMode("list")}
+            className="gap-1"
+          >
+            <List className="w-4 h-4" />
+            List
+          </Button>
+        </div>
+        
+        {/* My Tasks Toggle */}
+        <div className="flex items-center gap-2 px-3 py-2 bg-muted/30 rounded-lg">
+          <Switch
+            id="my-tasks"
+            checked={showMyTasksOnly}
+            onCheckedChange={setShowMyTasksOnly}
+          />
+          <Label htmlFor="my-tasks" className="text-sm cursor-pointer">
+            My Tasks
+          </Label>
+        </div>
+        
         <div className="relative flex-1 min-w-[200px] max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
@@ -490,19 +524,20 @@ export default function Tasks({ user }) {
           />
         </div>
         
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[140px] bg-background">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="open">Open</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="in_progress">In Progress</SelectItem>
-            <SelectItem value="completed">Completed</SelectItem>
-            <SelectItem value="cancelled">Cancelled</SelectItem>
-          </SelectContent>
-        </Select>
+        {viewMode === "list" && (
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[140px] bg-background">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="pending">To Do</SelectItem>
+              <SelectItem value="in_progress">In Progress</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+              <SelectItem value="cancelled">Cancelled</SelectItem>
+            </SelectContent>
+          </Select>
+        )}
         
         <Select value={priorityFilter} onValueChange={setPriorityFilter}>
           <SelectTrigger className="w-[140px] bg-background">
@@ -517,45 +552,169 @@ export default function Tasks({ user }) {
           </SelectContent>
         </Select>
         
-        <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-          <SelectTrigger className="w-[160px] bg-background">
-            <User className="w-4 h-4 mr-2" />
-            <SelectValue placeholder="Assignee" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Assignees</SelectItem>
-            <SelectItem value={user?.user_id}>My Tasks</SelectItem>
-            {teamMembers.filter(m => m.user_id !== user?.user_id).map(member => (
-              <SelectItem key={member.user_id} value={member.user_id}>
-                {member.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {!showMyTasksOnly && (
+          <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
+            <SelectTrigger className="w-[160px] bg-background">
+              <User className="w-4 h-4 mr-2" />
+              <SelectValue placeholder="Assignee" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Assignees</SelectItem>
+              {teamMembers.map(member => (
+                <SelectItem key={member.user_id} value={member.user_id}>
+                  {member.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
         
         <Button variant="ghost" size="sm" onClick={() => fetchTasks(currentPage)}>
           <RefreshCw className="w-4 h-4" />
         </Button>
       </div>
 
-      {/* Task List */}
-      <Card className="bg-card/50 border-border/50">
-        <CardContent className="p-0">
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      {/* Kanban View */}
+      {viewMode === "kanban" && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {KANBAN_COLUMNS.map((column) => (
+            <div
+              key={column.id}
+              className={`bg-card/30 rounded-lg border-2 border-dashed ${column.color} min-h-[500px] flex flex-col`}
+              onDragOver={handleDragOver}
+              onDrop={(e) => handleDrop(e, column.id)}
+            >
+              {/* Column Header */}
+              <div className="p-3 border-b border-border/50 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-semibold">{column.title}</h3>
+                  <Badge variant="outline" className="text-xs">
+                    {getTasksByStatus(column.id).length}
+                  </Badge>
+                </div>
+                {column.id === "pending" && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setShowCreateDialog(true)}
+                    className="h-7 w-7 p-0"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+              
+              {/* Column Content */}
+              <ScrollArea className="flex-1 p-2">
+                <div className="space-y-2">
+                  {loading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : getTasksByStatus(column.id).length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground text-sm">
+                      <p>No tasks</p>
+                    </div>
+                  ) : (
+                    getTasksByStatus(column.id).map((task) => (
+                      <div
+                        key={task.task_id}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, task)}
+                        onDragEnd={handleDragEnd}
+                        onClick={() => setSelectedTask(task.task_id)}
+                        className={`
+                          p-3 rounded-lg bg-card border border-border/50 cursor-pointer
+                          hover:border-primary/50 hover:shadow-md transition-all
+                          ${draggedTask?.task_id === task.task_id ? 'opacity-50 scale-95' : ''}
+                          ${isOverdue(task.due_date) && task.status !== 'completed' ? 'border-red-500/50' : ''}
+                        `}
+                        data-testid={`kanban-task-${task.task_id}`}
+                      >
+                        {/* Task Card Header */}
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm truncate">{task.title}</p>
+                          </div>
+                          <GripVertical className="w-4 h-4 text-muted-foreground flex-shrink-0 cursor-grab" />
+                        </div>
+                        
+                        {/* Task Description */}
+                        {task.description && (
+                          <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
+                            {task.description}
+                          </p>
+                        )}
+                        
+                        {/* Task Meta */}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {/* Priority */}
+                          <Badge 
+                            variant="outline" 
+                            className={`text-xs ${PRIORITY_CONFIG[task.priority]?.color}`}
+                          >
+                            {PRIORITY_CONFIG[task.priority]?.icon}
+                          </Badge>
+                          
+                          {/* Due Date */}
+                          {task.due_date && (
+                            <span className={`text-xs flex items-center gap-1 ${
+                              isOverdue(task.due_date) && task.status !== 'completed' 
+                                ? 'text-red-400' 
+                                : 'text-muted-foreground'
+                            }`}>
+                              <CalendarIcon className="w-3 h-3" />
+                              {formatDate(task.due_date)}
+                            </span>
+                          )}
+                          
+                          {/* Checklist Progress */}
+                          {task.checklist?.length > 0 && (
+                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                              <CheckCircle2 className="w-3 h-3" />
+                              {task.checklist.filter(c => c.completed).length}/{task.checklist.length}
+                            </span>
+                          )}
+                        </div>
+                        
+                        {/* Assignee */}
+                        {task.assigned_to_name && (
+                          <div className="mt-2 pt-2 border-t border-border/50 flex items-center gap-1">
+                            <UserCircle className="w-3 h-3 text-muted-foreground" />
+                            <span className="text-xs text-muted-foreground truncate">
+                              {task.assigned_to_name}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </ScrollArea>
             </div>
-          ) : tasks.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <ListTodo className="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p>No tasks found</p>
-              <Button variant="outline" className="mt-4" onClick={() => setShowCreateDialog(true)}>
-                Create your first task
-              </Button>
-            </div>
-          ) : (
-            <div className="divide-y divide-border">
-              {tasks.map((task) => (
+          ))}
+        </div>
+      )}
+
+      {/* List View */}
+      {viewMode === "list" && (
+        <Card className="bg-card/50 border-border/50">
+          <CardContent className="p-0">
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : tasks.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <ListTodo className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p>No tasks found</p>
+                <Button variant="outline" className="mt-4" onClick={() => setShowCreateDialog(true)}>
+                  Create your first task
+                </Button>
+              </div>
+            ) : (
+              <div className="divide-y divide-border">
+                {tasks.map((task) => (
                 <div
                   key={task.task_id}
                   className="flex items-center gap-4 p-4 hover:bg-muted/30 cursor-pointer transition-colors"
