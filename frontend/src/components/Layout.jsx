@@ -33,7 +33,7 @@ import { API } from "@/utils/api";
 const navItems = [
   { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { path: "/orders", label: "Orders", icon: Package },
-  { path: "/customers", label: "Customers", icon: UserCircle, roles: ["admin", "manager"] },
+  { path: "/customers", label: "Customers", icon: UserCircle },
   { path: "/tasks", label: "Tasks", icon: ListTodo },
   { path: "/products", label: "Products", icon: ShoppingBag },
   { path: "/production", label: "Frame Production", icon: Workflow },
