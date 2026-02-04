@@ -678,7 +678,7 @@ export default function Tasks({ user }) {
                   <SelectValue placeholder="Select team member..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Unassigned</SelectItem>
+                  <SelectItem value="unassigned">Unassigned</SelectItem>
                   {teamMembers.map(member => (
                     <SelectItem key={member.user_id} value={member.user_id}>
                       {member.name}
