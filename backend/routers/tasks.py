@@ -398,8 +398,8 @@ async def create_task(task_data: TaskCreate, user: User = Depends(get_current_us
         }
         await db.customer_activities.insert_one(customer_activity)
     
-    # Send notification to assigned user
-    if task_data.assigned_to and task_data.assigned_to != user.user_id:
+    # Send notification to assigned user (including self for testing - TODO: remove in production)
+    if task_data.assigned_to:
         await create_notification(
             user_id=task_data.assigned_to,
             title="New Task Assigned",
