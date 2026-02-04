@@ -679,6 +679,20 @@ export default function Customers() {
                           {customer.store_name}
                         </span>
                       </TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        {customer.email && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            onClick={() => openGmailCompose(customer.email, customer.full_name)}
+                            title="Send email"
+                            data-testid={`email-btn-${customer.customer_id}`}
+                          >
+                            <Mail className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
