@@ -592,11 +592,11 @@ export default function Customers() {
                         onCheckedChange={toggleSelectAll}
                       />
                     </TableHead>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Contact</TableHead>
+                    <SortableHeader column="name">Customer</SortableHeader>
+                    <SortableHeader column="email">Contact</SortableHeader>
                     <TableHead>Location</TableHead>
-                    <TableHead className="text-center">Orders</TableHead>
-                    <TableHead className="text-right">Spent</TableHead>
+                    <SortableHeader column="orders_count">Orders</SortableHeader>
+                    <SortableHeader column="total_spent">Spent</SortableHeader>
                     <TableHead>Tags</TableHead>
                     <TableHead>Store</TableHead>
                   </TableRow>
