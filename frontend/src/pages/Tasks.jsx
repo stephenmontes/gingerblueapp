@@ -187,6 +187,8 @@ export default function Tasks({ user }) {
         resetNewTask();
         fetchTasks(1);
         fetchStats();
+        // Trigger notification refresh
+        notificationEvents.emit();
       } else {
         const error = await response.json();
         toast.error(error.detail || "Failed to create task");
