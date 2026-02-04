@@ -839,21 +839,25 @@ export default function Customers({ user }) {
                           <span className="text-muted-foreground">Orders</span>
                           <span className="font-medium">{customerDetail.orders_count || 0}</span>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Total Spent</span>
-                          <span className="font-medium">{formatCurrency(customerDetail.total_spent, customerDetail.currency)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Avg Order</span>
-                          <span className="font-medium">
-                            {formatCurrency(
-                              customerDetail.orders_count > 0 
-                                ? customerDetail.total_spent / customerDetail.orders_count 
-                                : 0,
-                              customerDetail.currency
-                            )}
-                          </span>
-                        </div>
+                        {user?.role !== "worker" && (
+                          <>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Total Spent</span>
+                              <span className="font-medium">{formatCurrency(customerDetail.total_spent, customerDetail.currency)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Avg Order</span>
+                              <span className="font-medium">
+                                {formatCurrency(
+                                  customerDetail.orders_count > 0 
+                                    ? customerDetail.total_spent / customerDetail.orders_count 
+                                    : 0,
+                                  customerDetail.currency
+                                )}
+                              </span>
+                            </div>
+                          </>
+                        )}
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Last Order</span>
                           <span className="font-medium">{customerDetail.last_order_name || "—"}</span>
