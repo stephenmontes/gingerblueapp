@@ -343,7 +343,7 @@ function GroupedBatchWorksheet({ batch, stages, onRefresh, onClose }) {
       </div>
 
       {/* Stage Progress */}
-      <div className="flex items-center gap-2 px-4">
+      <div className="flex items-center gap-2 px-4 flex-shrink-0 overflow-x-auto">
         {stages?.map((stage, idx) => (
           <div key={stage.stage_id} className="flex items-center">
             <div 
