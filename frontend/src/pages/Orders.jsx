@@ -70,6 +70,10 @@ export default function Orders({ user }) {
   const [editingShipDate, setEditingShipDate] = useState(null);
   const [shipDateValue, setShipDateValue] = useState("");
   
+  // Order activities state
+  const [orderActivities, setOrderActivities] = useState([]);
+  const [activitiesLoading, setActivitiesLoading] = useState(false);
+  
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
