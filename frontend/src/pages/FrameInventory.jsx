@@ -343,6 +343,151 @@ export default function FrameInventory() {
         onConfirm={handleReject}
         onClose={closeRejectDialog}
       />
+
+      {/* Deduction Logs Dialog */}
+      <Dialog open={showLogDialog} onOpenChange={setShowLogDialog}>
+        <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <History className="w-5 h-5" />
+              Frame Inventory Deduction Logs
+            </DialogTitle>
+          </DialogHeader>
+          
+          {/* Summary Stats */}
+          {logSummary && (
+            <div className="flex items-center gap-4 p-3 bg-muted/30 rounded-lg">
+              <div className="flex items-center gap-2">
+                <Package className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm">
+                  <strong>{logSummary.total_frames_deducted}</strong> frames deducted
+                </span>
+              </div>
+              <div className="text-sm text-muted-foreground">
+                across <strong>{logSummary.total_orders}</strong> orders
+              </div>
+            </div>
+          )}
+          
+          {/* Date Filter */}
+          <div className="flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-muted-foreground" />
+            <Input
+              type="date"
+              value={logDateFilter}
+              onChange={(e) => {
+                setLogDateFilter(e.target.value);
+                setTimeout(() => fetchDeductionLogs(1), 100);
+              }}
+              className="w-48"
+              placeholder="Filter by date"
+            />
+            {logDateFilter && (
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => {
+                  setLogDateFilter("");
+                  fetchDeductionLogs(1);
+                }}
+              >
+                Clear
+              </Button>
+            )}
+          </div>
+          
+          {/* Logs Table */}
+          <ScrollArea className="flex-1 min-h-[300px]">
+            {logsLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : logs.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <History className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p>No deduction logs found</p>
+                <p className="text-sm mt-1">Logs are created when orders are shipped</p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-border">
+                    <TableHead>Date</TableHead>
+                    <TableHead>Order #</TableHead>
+                    <TableHead>Color</TableHead>
+                    <TableHead>Size</TableHead>
+                    <TableHead className="text-center">Qty Deducted</TableHead>
+                    <TableHead>Before → After</TableHead>
+                    <TableHead>By</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {logs.map((log) => (
+                    <TableRow key={log.log_id} className="border-border">
+                      <TableCell className="text-sm">
+                        {new Date(log.deducted_at).toLocaleDateString()}
+                        <br />
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(log.deducted_at).toLocaleTimeString()}
+                        </span>
+                      </TableCell>
+                      <TableCell className="font-mono text-sm">
+                        {log.order_number || log.order_id?.slice(-8)}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{log.color || "—"}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{log.size || "—"}</Badge>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Badge className="bg-red-500/20 text-red-400 border-red-500/30">
+                          -{log.quantity_deducted}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {log.quantity_before} → {log.quantity_after}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {log.deducted_by_name}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </ScrollArea>
+          
+          {/* Pagination */}
+          {logTotalPages > 1 && (
+            <div className="flex items-center justify-between pt-4 border-t border-border">
+              <p className="text-sm text-muted-foreground">
+                Page {logPage} of {logTotalPages}
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={logPage <= 1 || logsLoading}
+                  onClick={() => fetchDeductionLogs(logPage - 1)}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={logPage >= logTotalPages || logsLoading}
+                  onClick={() => fetchDeductionLogs(logPage + 1)}
+                >
+                  Next
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
