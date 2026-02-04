@@ -109,6 +109,33 @@ class ShopifyService:
         
         return orders
 
+    async def fetch_customers(self, limit: int = 250) -> List[Dict[str, Any]]:
+        """Fetch all customers from Shopify with pagination"""
+        customers = []
+        url = f"{self.base_url}/customers.json?limit={limit}"
+        
+        async with httpx.AsyncClient() as client:
+            while url:
+                response = await client.get(url, headers=self.headers, timeout=60.0)
+                response.raise_for_status()
+                
+                data = response.json()
+                customers.extend(data.get("customers", []))
+                
+                # Handle pagination via Link header
+                link_header = response.headers.get("Link", "")
+                url = None
+                if 'rel="next"' in link_header:
+                    for link in link_header.split(","):
+                        if 'rel="next"' in link:
+                            url = link.split(";")[0].strip("<> ")
+                            break
+                
+                # Rate limiting - 2 req/sec
+                await asyncio.sleep(0.5)
+        
+        return customers
+
     async def get_webhooks(self) -> List[Dict[str, Any]]:
         """Get all registered webhooks for this store"""
         async with httpx.AsyncClient() as client:
