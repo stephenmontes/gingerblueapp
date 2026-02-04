@@ -56,6 +56,20 @@ async def create_indexes():
         await db.production_stages.create_index("stage_id", unique=True)
         await db.fulfillment_stages.create_index("stage_id", unique=True)
         
+        # customers indexes (CRM)
+        await db.customers.create_index("customer_id", unique=True)
+        await db.customers.create_index("external_id")
+        await db.customers.create_index("store_id")
+        await db.customers.create_index("email")
+        await db.customers.create_index("segment")
+        await db.customers.create_index("shopify_tags")
+        await db.customers.create_index("custom_tags")
+        await db.customers.create_index([("full_name", "text"), ("email", "text")])
+        
+        # customer_activities indexes
+        await db.customer_activities.create_index("customer_id")
+        await db.customer_activities.create_index("created_at")
+        
         print("[Database] Indexes created successfully")
     except Exception as e:
         print(f"[Database] Index creation error (may already exist): {e}")
