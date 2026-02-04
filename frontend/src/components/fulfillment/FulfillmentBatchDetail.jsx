@@ -299,9 +299,9 @@ function GroupedBatchWorksheet({ batch, stages, onRefresh, onClose }) {
   }, 0) || 0;
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col h-full space-y-4 overflow-hidden">
       {/* Header with Timer */}
-      <div className="flex items-center justify-between p-4 bg-card rounded-lg border border-border">
+      <div className="flex items-center justify-between p-4 bg-card rounded-lg border border-border flex-shrink-0">
         <div>
           <h3 className="text-lg font-semibold">{batch.name}</h3>
           <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
