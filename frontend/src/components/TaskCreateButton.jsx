@@ -12,6 +12,7 @@ import { ListTodo, Plus, Calendar as CalendarIcon, Circle, Trash2 } from "lucide
 import { toast } from "sonner";
 import { API } from "@/utils/api";
 import { format } from "date-fns";
+import { notificationEvents } from "./NotificationBell";
 
 export function TaskCreateButton({ 
   customerId = null, 
