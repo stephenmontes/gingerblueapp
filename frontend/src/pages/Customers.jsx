@@ -599,6 +599,7 @@ export default function Customers() {
                     <SortableHeader column="total_spent">Spent</SortableHeader>
                     <TableHead>Tags</TableHead>
                     <TableHead>Store</TableHead>
+                    <TableHead className="w-10"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
