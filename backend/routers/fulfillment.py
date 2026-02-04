@@ -164,14 +164,17 @@ async def deduct_inventory_for_order(order: dict, user: User) -> dict:
     """Deduct inventory items for an order and create allocation records
     
     Checks both 'inventory' and 'frame_inventory' collections for matching items.
+    Logs all frame_inventory deductions to frame_inventory_log collection.
     """
     items = order.get("items", []) or order.get("line_items", [])
     order_id = order.get("order_id")
+    order_number = order.get("order_number", order_id)
     now = datetime.now(timezone.utc).isoformat()
     
     deductions = []
     allocations = []
     errors = []
+    frame_inventory_logs = []  # Track frame inventory deductions
     
     for item in items:
         sku = item.get("sku", "UNKNOWN")
