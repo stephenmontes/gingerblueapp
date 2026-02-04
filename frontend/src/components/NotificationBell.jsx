@@ -105,7 +105,12 @@ export function NotificationBell() {
     fetchNotifications();
     // Poll for new notifications every 30 seconds
     const interval = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(interval);
+    // Subscribe to notification events
+    const unsubscribe = notificationEvents.subscribe(fetchNotifications);
+    return () => {
+      clearInterval(interval);
+      unsubscribe();
+    };
   }, [fetchNotifications]);
 
   // Also fetch when popover opens
