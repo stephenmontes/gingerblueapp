@@ -350,6 +350,43 @@ export default function Tasks({ user }) {
     }));
   };
 
+  // Drag and drop handlers for Kanban
+  const handleDragStart = (e, task) => {
+    setDraggedTask(task);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDrop = async (e, newStatus) => {
+    e.preventDefault();
+    if (!draggedTask || draggedTask.status === newStatus) {
+      setDraggedTask(null);
+      return;
+    }
+    
+    // Optimistically update UI
+    setTasks(prev => prev.map(t => 
+      t.task_id === draggedTask.task_id ? { ...t, status: newStatus } : t
+    ));
+    
+    // Update on server
+    await updateTaskStatus(draggedTask.task_id, newStatus);
+    setDraggedTask(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedTask(null);
+  };
+
+  // Get tasks grouped by status for Kanban view
+  const getTasksByStatus = (status) => {
+    return tasks.filter(t => t.status === status);
+  };
+
   useEffect(() => {
     fetchTeamMembers();
     fetchStats();
@@ -361,7 +398,7 @@ export default function Tasks({ user }) {
       fetchTasks(1);
     }, 300);
     return () => clearTimeout(debounce);
-  }, [searchTerm, statusFilter, priorityFilter, assigneeFilter]);
+  }, [searchTerm, statusFilter, priorityFilter, assigneeFilter, showMyTasksOnly]);
 
   useEffect(() => {
     if (selectedTask) {
