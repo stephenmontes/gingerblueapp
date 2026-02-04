@@ -38,6 +38,34 @@ export function BatchCard({ batch, isSelected, onSelect, onRefresh, isArchived }
   // Check if production has started (any items completed)
   const productionStarted = itemsCompleted > 0;
 
+  // Determine card background color based on store
+  const getStoreColor = () => {
+    if (isOnDemand) return ""; // No special color for on-demand batches
+    
+    const storeId = batch.store_id;
+    const storeType = batch.store_type;
+    
+    // Mixed stores or ShipStation orders = yellow
+    if (storeType === "mixed" || storeType === "shipstation") {
+      return "bg-yellow-500/10 border-yellow-500/30";
+    }
+    
+    // GB Home (wholesale) = light blue
+    if (storeId === "store_gb_wholesale" || batch.store_name?.toLowerCase().includes("home")) {
+      return "bg-blue-500/10 border-blue-500/30";
+    }
+    
+    // GB Decor (retail) = light green
+    if (storeId === "store_gb_retail" || batch.store_name?.toLowerCase().includes("decor")) {
+      return "bg-green-500/10 border-green-500/30";
+    }
+    
+    // Default - no special color
+    return "";
+  };
+
+  const storeColor = getStoreColor();
+
   const handleArchive = async (e) => {
     e.stopPropagation();
     try {
