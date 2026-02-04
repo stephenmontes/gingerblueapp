@@ -481,6 +481,7 @@ async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current
         "order_ids": batch_data.order_ids,
         "batch_type": "order_based",  # Distinguish from on_demand batches
         "store_type": store_type,  # "single_store", "mixed", or "shipstation"
+        "is_shipstation_batch": is_shipstation_batch,  # Flag for special ShipStation/Etsy handling
         "store_id": primary_store_id,
         "store_name": primary_store_name,
         "store_ids": list(store_ids),
