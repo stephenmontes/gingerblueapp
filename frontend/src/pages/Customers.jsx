@@ -38,10 +38,12 @@ import {
   Globe,
   ArrowUp,
   ArrowDown,
-  ArrowUpDown
+  ArrowUpDown,
+  ListTodo
 } from "lucide-react";
 import { toast } from "sonner";
 import { API } from "@/utils/api";
+import { TaskCreateButton } from "@/components/TaskCreateButton";
 
 const NOTE_TYPES = [
   { value: "general", label: "General Note", icon: FileText },
