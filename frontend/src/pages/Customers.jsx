@@ -1068,14 +1068,19 @@ export default function Customers({ user }) {
                       customerDetail.activities?.map(activity => {
                         const noteTypeInfo = NOTE_TYPES.find(t => t.value === activity.note_type) || NOTE_TYPES[0];
                         const Icon = noteTypeInfo.icon;
+                        const isTask = activity.note_type === 'task';
                         
                         return (
                           <div 
                             key={activity.activity_id} 
-                            className="flex gap-3 p-3 bg-muted/30 rounded-lg"
+                            className={`flex gap-3 p-3 rounded-lg ${
+                              isTask ? 'bg-blue-500/10 border border-blue-500/20' : 'bg-muted/30'
+                            }`}
                           >
-                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                              <Icon className="w-4 h-4" />
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                              isTask ? 'bg-blue-500/20' : 'bg-primary/10'
+                            }`}>
+                              <Icon className={`w-4 h-4 ${isTask ? 'text-blue-400' : ''}`} />
                             </div>
                             <div className="flex-1">
                               <div className="flex items-center justify-between">
@@ -1086,7 +1091,7 @@ export default function Customers({ user }) {
                                   {new Date(activity.created_at).toLocaleDateString()}
                                 </span>
                               </div>
-                              <p className="text-sm mt-1">{activity.content}</p>
+                              <p className="text-sm mt-1 whitespace-pre-wrap">{activity.content}</p>
                             </div>
                           </div>
                         );
