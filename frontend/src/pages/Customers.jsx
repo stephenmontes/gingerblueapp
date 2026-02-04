@@ -780,6 +780,7 @@ export default function Customers({ user }) {
                   variant="outline"
                   size="sm"
                   data-testid="create-task-from-customer"
+                  onTaskCreated={() => fetchCustomerDetail(customerDetail.customer_id)}
                 >
                   <ListTodo className="w-4 h-4 mr-1" />
                   Create Task
