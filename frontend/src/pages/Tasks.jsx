@@ -41,6 +41,7 @@ import {
 import { toast } from "sonner";
 import { API } from "@/utils/api";
 import { format } from "date-fns";
+import { notificationEvents } from "@/components/NotificationBell";
 
 const PRIORITY_CONFIG = {
   urgent: { label: "Urgent", color: "bg-red-500/20 text-red-400 border-red-500/30", icon: "🔴" },
