@@ -407,23 +407,23 @@ function GroupedBatchWorksheet({ batch, stages, onRefresh, onClose }) {
                       return (
                         <div 
                           key={itemIdx} 
-                          className="flex items-center justify-between p-3 bg-muted/30 rounded-lg"
+                          className="flex items-start gap-3 p-3 bg-muted/30 rounded-lg"
                         >
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium truncate">{item.name}</p>
+                            <p className="font-medium text-sm leading-relaxed break-words">{item.name}</p>
                             {item.sku && (
-                              <p className="text-xs text-muted-foreground font-mono">SKU: {item.sku}</p>
+                              <p className="text-xs text-muted-foreground font-mono mt-1">SKU: {item.sku}</p>
                             )}
                             {item.variant_title && (
-                              <p className="text-xs text-muted-foreground">{item.variant_title}</p>
+                              <p className="text-xs text-muted-foreground mt-0.5">{item.variant_title}</p>
                             )}
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex-shrink-0">
                             <span 
-                              className={`text-lg font-bold px-3 py-1 rounded ${
+                              className={`text-lg font-bold px-3 py-1 rounded inline-block ${
                                 isMultiple 
                                   ? 'text-red-400 bg-red-500/20 animate-pulse' 
-                                  : 'text-foreground'
+                                  : 'text-foreground bg-muted'
                               }`}
                             >
                               x{qty}
