@@ -678,11 +678,11 @@ export default function Tasks({ user }) {
                         </div>
                         
                         {/* Assignee */}
-                        {task.assigned_to_name && (
+                        {task.assigned_name && (
                           <div className="mt-2 pt-2 border-t border-border/50 flex items-center gap-1">
                             <UserCircle className="w-3 h-3 text-muted-foreground" />
                             <span className="text-xs text-muted-foreground truncate">
-                              {task.assigned_to_name}
+                              {task.assigned_name}
                             </span>
                           </div>
                         )}
