@@ -87,12 +87,14 @@ export default function Customers() {
   // Tag form
   const [newTag, setNewTag] = useState("");
 
-  const fetchCustomers = useCallback(async (page = 1) => {
+  const fetchCustomers = useCallback(async (page = 1, sortBy = sortColumn, sortDir = sortDirection) => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
       params.append("page", page.toString());
       params.append("page_size", "50");
+      params.append("sort_by", sortBy);
+      params.append("sort_order", sortDir);
       if (searchTerm) params.append("search", searchTerm);
       if (storeFilter !== "all") params.append("store_id", storeFilter);
       if (tagFilter !== "all") params.append("tag", tagFilter);
@@ -112,7 +114,7 @@ export default function Customers() {
     } catch (error) {
       toast.error("Failed to load customers");
     } finally {
-      setLoading(false);
+      setLoading(false));
     }
   }, [searchTerm, storeFilter, tagFilter, segmentFilter]);
 
