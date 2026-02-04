@@ -283,10 +283,15 @@ async def deduct_inventory_for_order(order: dict, user: User) -> dict:
     if allocations:
         await db.inventory_allocations.insert_many(allocations)
     
+    # Save frame inventory deduction logs
+    if frame_inventory_logs:
+        await db.frame_inventory_log.insert_many(frame_inventory_logs)
+    
     return {
         "order_id": order_id,
         "deductions": deductions,
         "allocations_created": len(allocations),
+        "frame_inventory_deductions": len(frame_inventory_logs),
         "errors": errors
     }
 
