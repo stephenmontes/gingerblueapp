@@ -1103,6 +1103,20 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
                 </div>
               </div>
 
+              {/* Actions */}
+              <div className="border-t border-border pt-4 flex items-center gap-2">
+                <TaskCreateButton 
+                  orderId={selectedOrder.order_id}
+                  orderNumber={selectedOrder.order_number || selectedOrder.order_id?.slice(-8)}
+                  variant="outline"
+                  size="sm"
+                  data-testid="create-task-from-order"
+                >
+                  <ListTodo className="w-4 h-4 mr-1" />
+                  Create Task
+                </TaskCreateButton>
+              </div>
+
               {/* Reference IDs - Collapsed */}
               <details className="border-t border-border pt-4">
                 <summary className="label-caps cursor-pointer hover:text-primary">Reference IDs</summary>
