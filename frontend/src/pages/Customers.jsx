@@ -311,11 +311,48 @@ export default function Customers() {
         setShowBulkSegment(false);
         setBulkSegmentValue("");
         setSelectedIds([]);
-        fetchCustomers(currentPage);
+        fetchCustomers(currentPage, sortColumn, sortDirection);
       }
     } catch (error) {
       toast.error("Failed to set segment");
     }
+  };
+
+  const handleSort = (column) => {
+    let newDirection = "asc";
+    if (column === sortColumn) {
+      newDirection = sortDirection === "asc" ? "desc" : "asc";
+    } else {
+      // Default sort direction based on column type
+      newDirection = ["total_spent", "orders_count", "created_at"].includes(column) ? "desc" : "asc";
+    }
+    setSortColumn(column);
+    setSortDirection(newDirection);
+    setCurrentPage(1);
+    fetchCustomers(1, column, newDirection);
+  };
+
+  const SortableHeader = ({ column, children }) => {
+    const isActive = sortColumn === column;
+    return (
+      <TableHead 
+        className="cursor-pointer hover:bg-muted/50 select-none"
+        onClick={() => handleSort(column)}
+      >
+        <div className="flex items-center gap-1">
+          {children}
+          {isActive ? (
+            sortDirection === "asc" ? (
+              <ArrowUp className="w-3 h-3" />
+            ) : (
+              <ArrowDown className="w-3 h-3" />
+            )
+          ) : (
+            <ArrowUpDown className="w-3 h-3 opacity-30" />
+          )}
+        </div>
+      </TableHead>
+    );
   };
 
   useEffect(() => {
@@ -327,7 +364,7 @@ export default function Customers() {
   useEffect(() => {
     const debounce = setTimeout(() => {
       setCurrentPage(1);
-      fetchCustomers(1);
+      fetchCustomers(1, sortColumn, sortDirection);
     }, 300);
     return () => clearTimeout(debounce);
   }, [searchTerm, storeFilter, tagFilter, segmentFilter]);
