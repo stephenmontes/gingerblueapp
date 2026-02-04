@@ -30,6 +30,8 @@ from routers import (
 from routers.shipstation import router as shipstation_router
 from routers.calendar import router as calendar_router
 from routers.customers import router as customers_router
+from routers.tasks import router as tasks_router
+from routers.notifications import router as notifications_router
 from database import create_indexes
 
 # Configure logging
