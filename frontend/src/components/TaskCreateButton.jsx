@@ -68,7 +68,7 @@ export function TaskCreateButton({
         ...task,
         due_date: task.due_date ? task.due_date.toISOString() : null,
         checklist: task.checklist.map(text => ({ text, completed: false })),
-        assigned_to: task.assigned_to || null,
+        assigned_to: task.assigned_to && task.assigned_to !== "unassigned" ? task.assigned_to : null,
         customer_id: customerId,
         order_id: orderId,
       };
