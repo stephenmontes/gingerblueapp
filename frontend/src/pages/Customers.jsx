@@ -608,7 +608,9 @@ export default function Customers({ user }) {
                     <SortableHeader column="email">Contact</SortableHeader>
                     <TableHead>Location</TableHead>
                     <SortableHeader column="orders_count">Orders</SortableHeader>
-                    <SortableHeader column="total_spent">Spent</SortableHeader>
+                    {user?.role !== "worker" && (
+                      <SortableHeader column="total_spent">Spent</SortableHeader>
+                    )}
                     <TableHead>Tags</TableHead>
                     <TableHead>Store</TableHead>
                     <TableHead className="w-10"></TableHead>
