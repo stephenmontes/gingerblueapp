@@ -547,6 +547,44 @@ async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current
         update_data["fulfillment_updated_at"] = now
         update_data["fulfillment_updated_by"] = user.user_id
     
+    # For ShipStation batches: Create a fulfillment batch to track orders as a group
+    fulfillment_batch_id = None
+    if is_shipstation_batch:
+        fulfillment_batch_id = f"fbatch_{uuid.uuid4().hex[:8]}"
+        
+        # Create fulfillment batch document
+        fulfillment_batch_doc = {
+            "fulfillment_batch_id": fulfillment_batch_id,
+            "production_batch_id": batch_id,
+            "name": batch_data.name,
+            "order_ids": batch_data.order_ids,
+            "order_count": len(batch_data.order_ids),
+            "store_type": "shipstation",
+            "store_id": primary_store_id,
+            "store_name": primary_store_name,
+            "current_stage_id": print_list_stage["stage_id"] if print_list_stage else "fulfill_print",
+            "current_stage_name": print_list_stage["name"] if print_list_stage else "Print List",
+            "assigned_to": None,
+            "assigned_name": None,
+            "status": "active",
+            "time_started": None,
+            "time_completed": None,
+            "timer_active": False,
+            "timer_started_at": None,
+            "timer_paused": False,
+            "accumulated_minutes": 0,
+            "created_by": user.user_id,
+            "created_by_name": user.name,
+            "created_at": now,
+            "updated_at": now
+        }
+        
+        await db.fulfillment_batches.insert_one(fulfillment_batch_doc)
+        
+        # Add fulfillment batch reference to update_data
+        update_data["fulfillment_batch_id"] = fulfillment_batch_id
+        update_data["is_batch_fulfillment"] = True  # Flag for UI to show batch worksheet
+    
     # Update orders in fulfillment_orders collection
     await db.fulfillment_orders.update_many(
         {"order_id": {"$in": batch_data.order_ids}},
@@ -567,12 +605,17 @@ async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current
                 "user_name": user.name,
                 "action": "batch_created",
                 "batch_id": batch_id,
+                "fulfillment_batch_id": fulfillment_batch_id,
                 "created_at": now
             })
         if fulfillment_logs:
             await db.fulfillment_logs.insert_many(fulfillment_logs)
     
-    return {**{k: v for k, v in batch_doc.items() if k != "_id"}, "items_count": len(frame_items)}
+    response_data = {**{k: v for k, v in batch_doc.items() if k != "_id"}, "items_count": len(frame_items)}
+    if fulfillment_batch_id:
+        response_data["fulfillment_batch_id"] = fulfillment_batch_id
+    
+    return response_data
 
 @router.delete("/{batch_id}")
 async def delete_batch(
