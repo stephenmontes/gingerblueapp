@@ -124,17 +124,21 @@ export function TaskCreateButton({
     }));
   };
 
+  const handleButtonClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setShowDialog(true);
+  };
+
   return (
     <>
       <Button 
         variant={variant} 
         size={size} 
         className={className}
-        onClick={(e) => {
-          e.stopPropagation();
-          setShowDialog(true);
-        }}
-        data-testid="create-task-btn-inline"
+        onClick={handleButtonClick}
+        type="button"
+        {...restProps}
       >
         {children || (
           <>
@@ -144,10 +148,11 @@ export function TaskCreateButton({
         )}
       </Button>
 
-      <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+      {showDialog && createPortal(
+        <Dialog open={showDialog} onOpenChange={setShowDialog}>
+          <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto z-[100]" onClick={(e) => e.stopPropagation()}>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
               <ListTodo className="w-5 h-5" />
               Create Task
             </DialogTitle>
