@@ -51,7 +51,7 @@ const NOTE_TYPES = [
   { value: "issue", label: "Issue/Complaint", icon: AlertCircle },
 ];
 
-export default function Customers() {
+export default function Customers({ user }) {
   const [customers, setCustomers] = useState([]);
   const [stats, setStats] = useState(null);
   const [segments, setSegments] = useState({ segments: [], tags: [] });
