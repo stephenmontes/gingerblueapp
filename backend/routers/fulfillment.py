@@ -898,3 +898,82 @@ async def mark_order_shipped(
         result["inventory_deduction"] = deduction_result
     
     return result
+
+
+
+@router.post("/orders/{order_id}/start-timer")
+async def start_order_timer(order_id: str, user: User = Depends(get_current_user)):
+    """Start timer for an individual order (used for GB Home workflow)"""
+    order = await db.fulfillment_orders.find_one({"order_id": order_id}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    if order.get("timer_active"):
+        return {"success": True, "message": "Timer already running"}
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    await db.fulfillment_orders.update_one(
+        {"order_id": order_id},
+        {"$set": {
+            "timer_active": True,
+            "timer_started_at": now,
+            "assigned_to": user.user_id,
+            "assigned_name": user.name,
+            "updated_at": now
+        }}
+    )
+    
+    return {"success": True, "message": "Timer started", "started_at": now}
+
+
+@router.post("/orders/{order_id}/stop-timer")
+async def stop_order_timer(order_id: str, user: User = Depends(get_current_user)):
+    """Stop timer for an individual order"""
+    order = await db.fulfillment_orders.find_one({"order_id": order_id}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    if not order.get("timer_active"):
+        return {"success": True, "message": "Timer not running"}
+    
+    now = datetime.now(timezone.utc)
+    
+    # Calculate elapsed time
+    elapsed_minutes = 0
+    if order.get("timer_started_at"):
+        started_at = datetime.fromisoformat(order["timer_started_at"].replace("Z", "+00:00"))
+        elapsed_minutes = (now - started_at).total_seconds() / 60
+    
+    accumulated = order.get("timer_accumulated_minutes", 0) + elapsed_minutes
+    
+    await db.fulfillment_orders.update_one(
+        {"order_id": order_id},
+        {"$set": {
+            "timer_active": False,
+            "timer_accumulated_minutes": accumulated,
+            "updated_at": now.isoformat()
+        }}
+    )
+    
+    # Log the time
+    time_log = {
+        "log_id": f"ftlog_{uuid.uuid4().hex[:12]}",
+        "order_id": order_id,
+        "user_id": user.user_id,
+        "user_name": user.name,
+        "stage_id": order.get("fulfillment_stage_id"),
+        "stage_name": order.get("fulfillment_stage_name"),
+        "minutes": elapsed_minutes,
+        "action": "order_timer_stopped",
+        "created_at": now.isoformat()
+    }
+    await db.fulfillment_time_logs.insert_one(time_log)
+    
+    return {
+        "success": True,
+        "message": "Timer stopped",
+        "elapsed_minutes": elapsed_minutes,
+        "total_minutes": accumulated
+    }
+
