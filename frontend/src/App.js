@@ -323,6 +323,18 @@ function AppRouter() {
           </RoleProtectedRoute>
         }
       />
+      <Route
+        path="/customers"
+        element={
+          <RoleProtectedRoute allowedRoles={["admin", "manager"]}>
+            {({ user, setUser }) => (
+              <Layout user={user} setUser={setUser}>
+                <Customers user={user} />
+              </Layout>
+            )}
+          </RoleProtectedRoute>
+        }
+      />
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
