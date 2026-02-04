@@ -448,7 +448,7 @@ function GroupedBatchWorksheet({ batch, stages, onRefresh, onClose }) {
       </ScrollArea>
 
       {/* Action Buttons */}
-      <div className="flex items-center justify-between p-4 bg-card rounded-lg border border-border">
+      <div className="flex items-center justify-between p-4 bg-card rounded-lg border border-border flex-shrink-0">
         <div className="text-sm text-muted-foreground">
           {completedOrders.size} of {batch.orders?.length || 0} orders checked
         </div>
