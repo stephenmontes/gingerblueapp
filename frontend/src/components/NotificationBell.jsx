@@ -87,11 +87,19 @@ export function NotificationBell() {
   };
 
   useEffect(() => {
+    // Fetch immediately on mount
     fetchNotifications();
     // Poll for new notifications every 30 seconds
     const interval = setInterval(fetchNotifications, 30000);
     return () => clearInterval(interval);
   }, [fetchNotifications]);
+
+  // Also fetch when popover opens
+  useEffect(() => {
+    if (open) {
+      fetchNotifications();
+    }
+  }, [open, fetchNotifications]);
 
   const formatTime = (dateStr) => {
     const date = new Date(dateStr);
