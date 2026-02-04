@@ -210,6 +210,11 @@ export default function Layout({ children, user, setUser }) {
 
       {/* Main content */}
       <main className={`flex-1 overflow-auto ${user?.training_mode ? 'pt-8' : ''}`}>
+        {/* Top bar with notifications */}
+        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border px-6 py-3 flex items-center justify-end gap-2">
+          <NotificationBell />
+          <ThemeToggle />
+        </div>
         <div className="p-6 md:p-8 lg:pl-8">{children}</div>
       </main>
     </div>
