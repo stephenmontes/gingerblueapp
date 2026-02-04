@@ -344,7 +344,9 @@ async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current
         "_id": 0,
         "order_id": 1,
         "items": 1,
-        "store_name": 1
+        "store_id": 1,
+        "store_name": 1,
+        "platform": 1
     }
     orders = await db.fulfillment_orders.find(
         {"order_id": {"$in": batch_data.order_ids}}, 
