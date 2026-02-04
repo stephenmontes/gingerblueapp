@@ -822,6 +822,7 @@ export default function Tasks({ user }) {
           )}
         </CardContent>
       </Card>
+      )}
 
       {/* Create Task Dialog */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
