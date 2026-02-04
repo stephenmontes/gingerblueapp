@@ -74,6 +74,40 @@ export default function FrameInventory() {
     }
   }
 
+  async function fetchDeductionLogs(page = 1) {
+    setLogsLoading(true);
+    try {
+      const params = new URLSearchParams();
+      params.append("page", page.toString());
+      params.append("page_size", "20");
+      if (logDateFilter) {
+        params.append("start_date", logDateFilter);
+        params.append("end_date", logDateFilter);
+      }
+      
+      const res = await fetch(`${API}/inventory/frame-inventory-log?${params.toString()}`, {
+        credentials: "include"
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        setLogs(data.logs || []);
+        setLogSummary(data.summary || null);
+        setLogPage(data.pagination?.page || 1);
+        setLogTotalPages(data.pagination?.total_pages || 1);
+      }
+    } catch (err) {
+      toast.error("Failed to load deduction logs");
+    } finally {
+      setLogsLoading(false);
+    }
+  }
+
+  function openLogDialog() {
+    setShowLogDialog(true);
+    fetchDeductionLogs(1);
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     try {
