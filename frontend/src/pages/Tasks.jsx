@@ -168,7 +168,7 @@ export default function Tasks({ user }) {
         ...newTask,
         due_date: newTask.due_date ? newTask.due_date.toISOString() : null,
         checklist: newTask.checklist.map(text => ({ text, completed: false })),
-        assigned_to: newTask.assigned_to || null,
+        assigned_to: newTask.assigned_to && newTask.assigned_to !== "unassigned" ? newTask.assigned_to : null,
         customer_id: newTask.customer_id || null,
         order_id: newTask.order_id || null,
       };
