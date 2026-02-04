@@ -51,6 +51,7 @@ const NOTE_TYPES = [
   { value: "email", label: "Email", icon: Mail },
   { value: "meeting", label: "Meeting", icon: Users },
   { value: "issue", label: "Issue/Complaint", icon: AlertCircle },
+  { value: "task", label: "Task", icon: ListTodo },
 ];
 
 export default function Customers({ user }) {
