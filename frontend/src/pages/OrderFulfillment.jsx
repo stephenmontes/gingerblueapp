@@ -265,25 +265,44 @@ export default function OrderFulfillment() {
         )}
       </div>
 
-      {/* ShipStation/Etsy Fulfillment Batches */}
+      {/* Batch-Based Fulfillment Section */}
       {fulfillmentBatches.length > 0 && (
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold flex items-center gap-2">
-            <Truck className="w-5 h-5 text-yellow-500" />
-            Etsy Batch Fulfillment
-            <Badge variant="outline" className="text-yellow-400 border-yellow-400/30">
-              {fulfillmentBatches.length} active
-            </Badge>
-          </h2>
-          {fulfillmentBatches.map((batch) => (
-            <FulfillmentBatchWorksheet
-              key={batch.fulfillment_batch_id}
-              batch={batch}
-              stages={stages}
-              onRefresh={loadData}
-              onTimerChange={handleTimerChange}
-            />
-          ))}
+        <div className="grid grid-cols-12 gap-4">
+          {/* Batch List - Left Panel */}
+          <div className={`${selectedBatch ? 'col-span-3' : 'col-span-12'}`}>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <Package className="w-5 h-5 text-primary" />
+                Fulfillment Batches
+                <Badge variant="outline">
+                  {fulfillmentBatches.length} active
+                </Badge>
+              </h2>
+            </div>
+            
+            <div className={`${selectedBatch ? 'space-y-2' : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'}`}>
+              {fulfillmentBatches.map((batch) => (
+                <FulfillmentBatchCard
+                  key={batch.fulfillment_batch_id}
+                  batch={batch}
+                  isSelected={selectedBatch?.fulfillment_batch_id === batch.fulfillment_batch_id}
+                  onSelect={handleSelectBatch}
+                />
+              ))}
+            </div>
+          </div>
+          
+          {/* Batch Detail - Right Panel */}
+          {selectedBatch && batchDetail && (
+            <div className="col-span-9">
+              <FulfillmentBatchDetail
+                batch={batchDetail}
+                stages={stages}
+                onRefresh={loadData}
+                onClose={handleCloseBatchDetail}
+              />
+            </div>
+          )}
         </div>
       )}
 
