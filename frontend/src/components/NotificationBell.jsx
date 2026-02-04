@@ -18,6 +18,20 @@ const NOTIFICATION_ICONS = {
   task: ListTodo,
 };
 
+// Create a simple event emitter for notification refresh
+export const notificationEvents = {
+  listeners: [],
+  subscribe(callback) {
+    this.listeners.push(callback);
+    return () => {
+      this.listeners = this.listeners.filter(l => l !== callback);
+    };
+  },
+  emit() {
+    this.listeners.forEach(callback => callback());
+  }
+};
+
 export function NotificationBell() {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
