@@ -365,8 +365,8 @@ function GroupedBatchWorksheet({ batch, stages, onRefresh, onClose }) {
       </div>
 
       {/* Orders Worksheet */}
-      <ScrollArea className="h-[calc(100vh-350px)] min-h-[400px]">
-        <div className="space-y-4 p-4">
+      <ScrollArea className="flex-1 h-[calc(100vh-320px)] min-h-[300px]">
+        <div className="space-y-4 p-4 pr-6">
           {batch.orders?.map((order, orderIdx) => {
             const orderTotal = order.items?.reduce((sum, item) => sum + (item.qty || item.quantity || 1), 0) || 0;
             const isCompleted = completedOrders.has(order.order_id);
