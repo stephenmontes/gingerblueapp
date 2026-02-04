@@ -74,6 +74,8 @@ api_router.include_router(webhooks_router)
 api_router.include_router(shipstation_router, prefix="/shipstation", tags=["shipstation"])
 api_router.include_router(calendar_router)
 api_router.include_router(customers_router)
+api_router.include_router(tasks_router)
+api_router.include_router(notifications_router)
 
 # Root endpoint
 @api_router.get("/")
