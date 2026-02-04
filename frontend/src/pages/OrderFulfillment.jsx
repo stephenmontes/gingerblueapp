@@ -97,12 +97,46 @@ export default function OrderFulfillment() {
           })
         );
         setFulfillmentBatches(batchesWithOrders);
+        
+        // Update selected batch if it's still active
+        if (selectedBatch) {
+          const updatedBatch = batchesWithOrders.find(
+            b => b.fulfillment_batch_id === selectedBatch.fulfillment_batch_id
+          );
+          if (updatedBatch) {
+            setBatchDetail(updatedBatch);
+          } else {
+            // Batch no longer active, clear selection
+            setSelectedBatch(null);
+            setBatchDetail(null);
+          }
+        }
       }
     } catch (err) {
       toast.error("Failed to load fulfillment data");
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleSelectBatch(batch) {
+    setSelectedBatch(batch);
+    // Fetch detailed batch info with orders
+    try {
+      const res = await fetch(`${API}/fulfillment-batches/${batch.fulfillment_batch_id}`, {
+        credentials: "include"
+      });
+      if (res.ok) {
+        setBatchDetail(await res.json());
+      }
+    } catch (e) {
+      toast.error("Failed to load batch details");
+    }
+  }
+
+  function handleCloseBatchDetail() {
+    setSelectedBatch(null);
+    setBatchDetail(null);
   }
 
   function getStageCount(stageId) {
