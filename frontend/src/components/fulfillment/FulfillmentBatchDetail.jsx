@@ -678,10 +678,29 @@ export function FulfillmentBatchDetail({ batch, stages, onRefresh, onClose, canD
                         <p className="text-sm text-muted-foreground">{order.customer_name}</p>
                       </div>
                     </div>
-                    <div className="text-right">
+                    <div className="flex items-center gap-2">
                       <Badge variant={orderComplete ? "default" : "outline"} className={`text-lg px-3 py-1 ${orderComplete ? 'bg-green-500' : ''}`}>
                         {orderCompleted} / {orderTotal}
                       </Badge>
+                      {canDelete && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button size="sm" variant="ghost">
+                              <MoreVertical className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem 
+                              onClick={() => confirmDeleteOrder(order.order_id, order.order_number || order.order_id?.slice(-8))}
+                              className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                              data-testid={`delete-order-${order.order_id}`}
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Remove from Fulfillment
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
                     </div>
                   </div>
 
