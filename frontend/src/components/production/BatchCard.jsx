@@ -220,7 +220,14 @@ export function BatchCard({ batch, isSelected, onSelect, onRefresh, isArchived }
         {/* Archive date */}
         {isArchived && batch.archived_at && (
           <p className="text-xs text-muted-foreground mt-2">
-            Archived: {new Date(batch.archived_at).toLocaleDateString()}
+            {batch.auto_archived ? (
+              <span className="flex items-center gap-1 text-green-400">
+                <CheckCircle className="w-3 h-3" />
+                Auto-completed: {new Date(batch.archived_at).toLocaleDateString()}
+              </span>
+            ) : (
+              <>Archived: {new Date(batch.archived_at).toLocaleDateString()}</>
+            )}
           </p>
         )}
 
