@@ -16,7 +16,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronRight, Package, AlertTriangle, Clock } from "lucide-react";
+import { ChevronRight, Package, AlertTriangle, Clock, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { OrderRow } from "./OrderRow";
 import { InventoryDialog } from "./InventoryDialog";
