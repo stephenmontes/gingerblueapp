@@ -218,8 +218,17 @@ async def delete_batch(
     order_ids = batch.get("order_ids", [])
     fulfillment_batch_id = batch.get("fulfillment_batch_id")
     
-    # 1. Delete all batch frames
-    frames_deleted = await db.batch_frames.delete_many({"batch_id": batch_id})
+    # 1. Conditionally delete batch frames based on remove_frames parameter
+    frames_deleted_count = 0
+    if remove_frames:
+        frames_deleted = await db.batch_frames.delete_many({"batch_id": batch_id})
+        frames_deleted_count = frames_deleted.deleted_count
+    else:
+        # Just unlink frames from batch but keep them in production queue
+        await db.batch_frames.update_many(
+            {"batch_id": batch_id},
+            {"$unset": {"batch_id": "", "batch_name": ""}}
+        )
     
     # 2. Delete all production items (if any)
     items_deleted = await db.production_items.delete_many({"batch_id": batch_id})
