@@ -341,6 +341,8 @@ export default function OrderFulfillment({ user }) {
             stages={stages}
             onRefresh={loadData}
             onTimerChange={handleTimerChange}
+            canDelete={canDelete}
+            user={user}
           />
         )
       ))}
