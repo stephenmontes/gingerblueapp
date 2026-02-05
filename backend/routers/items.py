@@ -225,11 +225,31 @@ async def add_item_to_inventory(item_id: str, user: User = Depends(get_current_u
     # Remove item from production
     await db.production_items.delete_one({"item_id": item_id})
     
+    # Check if batch is now empty and should be auto-archived
+    batch_archived = False
+    batch_id = item.get("batch_id")
+    if batch_id:
+        remaining_items = await db.production_items.count_documents({"batch_id": batch_id})
+        if remaining_items == 0:
+            # Auto-archive the batch
+            await db.production_batches.update_one(
+                {"batch_id": batch_id},
+                {"$set": {
+                    "status": "archived",
+                    "archived_at": now,
+                    "archived_by": user.user_id,
+                    "auto_archived": True,
+                    "auto_archive_reason": "all_items_sent_to_inventory"
+                }}
+            )
+            batch_archived = True
+    
     return {
         "message": f"Added to inventory: {', '.join(messages)}",
         "sku": sku,
         "match_key": match_key,
         "good_added": qty_good,
         "rejected_added": qty_rejected,
-        "item_removed": True
+        "item_removed": True,
+        "batch_archived": batch_archived
     }
