@@ -281,6 +281,11 @@ export default function OrderFulfillment({ user }) {
                   {fulfillmentBatches.length} active
                 </Badge>
               </h2>
+              {selectedBatch && (
+                <Button variant="ghost" size="sm" onClick={handleCloseBatchDetail}>
+                  Close Batch
+                </Button>
+              )}
             </div>
             
             <div className={`${selectedBatch ? 'space-y-2' : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'}`}>
@@ -298,54 +303,108 @@ export default function OrderFulfillment({ user }) {
           {/* Batch Detail - Right Panel */}
           {selectedBatch && batchDetail && (
             <div className="col-span-9">
-              <FulfillmentBatchDetail
-                batch={batchDetail}
-                stages={stages}
-                onRefresh={loadData}
-                onClose={handleCloseBatchDetail}
-              />
+              {/* For enhanced batches (ShipStation/GB Decor): Show combined worksheet */}
+              {batchDetail.is_enhanced_batch ? (
+                <FulfillmentBatchDetail
+                  batch={batchDetail}
+                  stages={stages}
+                  onRefresh={loadData}
+                  onClose={handleCloseBatchDetail}
+                />
+              ) : (
+                /* For GB Home batches: Show individual orders with stage tabs */
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-lg font-semibold">{batchDetail.name}</h2>
+                    <Badge variant="outline">{batchDetail.order_count} orders</Badge>
+                  </div>
+                  
+                  {/* Stage Tabs for this batch */}
+                  <div className="flex gap-2 overflow-x-auto pb-2">
+                    {stages.map((stage) => (
+                      <Button
+                        key={stage.stage_id}
+                        variant={activeTab === stage.stage_id ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setActiveTab(stage.stage_id)}
+                        className="flex items-center gap-2 whitespace-nowrap"
+                        data-testid={`batch-tab-${stage.stage_id}`}
+                      >
+                        <div 
+                          className="w-3 h-3 rounded-full" 
+                          style={{ backgroundColor: stage.color }}
+                        />
+                        {stage.name}
+                        <Badge variant="secondary">
+                          {getStageCount(stage.stage_id)}
+                        </Badge>
+                      </Button>
+                    ))}
+                  </div>
+                  
+                  {/* Stage Content for GB Home batch */}
+                  {stages.map((stage) => (
+                    activeTab === stage.stage_id && (
+                      <FulfillmentStageTab
+                        key={stage.stage_id}
+                        stage={stage}
+                        stages={stages}
+                        onRefresh={loadData}
+                        onTimerChange={handleTimerChange}
+                        canDelete={canDelete}
+                        user={user}
+                        batchId={selectedBatch.fulfillment_batch_id}
+                      />
+                    )
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
       )}
 
-      {/* Stage Tabs - Button Style matching Frame Production */}
-      <div className="flex gap-2 overflow-x-auto pb-2">
-        {stages.map((stage) => (
-          <Button
-            key={stage.stage_id}
-            variant={activeTab === stage.stage_id ? "default" : "outline"}
-            size="sm"
-            onClick={() => setActiveTab(stage.stage_id)}
-            className="flex items-center gap-2 whitespace-nowrap"
-            data-testid={`tab-${stage.stage_id}`}
-          >
-            <div 
-              className="w-3 h-3 rounded-full" 
-              style={{ backgroundColor: stage.color }}
-            />
-            {stage.name}
-            <Badge variant="secondary">
-              {getStageCount(stage.stage_id)}
-            </Badge>
-          </Button>
-        ))}
-      </div>
+      {/* Stage Tabs - Only show when NO batch is selected OR no batches exist */}
+      {(!selectedBatch || fulfillmentBatches.length === 0) && (
+        <>
+          <div className="flex gap-2 overflow-x-auto pb-2">
+            {stages.map((stage) => (
+              <Button
+                key={stage.stage_id}
+                variant={activeTab === stage.stage_id ? "default" : "outline"}
+                size="sm"
+                onClick={() => setActiveTab(stage.stage_id)}
+                className="flex items-center gap-2 whitespace-nowrap"
+                data-testid={`tab-${stage.stage_id}`}
+              >
+                <div 
+                  className="w-3 h-3 rounded-full" 
+                  style={{ backgroundColor: stage.color }}
+                />
+                {stage.name}
+                <Badge variant="secondary">
+                  {getStageCount(stage.stage_id)}
+                </Badge>
+              </Button>
+            ))}
+          </div>
 
-      {/* Stage Content */}
-      {stages.map((stage) => (
-        activeTab === stage.stage_id && (
-          <FulfillmentStageTab
-            key={stage.stage_id}
-            stage={stage}
-            stages={stages}
-            onRefresh={loadData}
-            onTimerChange={handleTimerChange}
-            canDelete={canDelete}
-            user={user}
-          />
-        )
-      ))}
+          {/* Stage Content */}
+          {stages.map((stage) => (
+            activeTab === stage.stage_id && (
+              <FulfillmentStageTab
+                key={stage.stage_id}
+                stage={stage}
+                stages={stages}
+                onRefresh={loadData}
+                onTimerChange={handleTimerChange}
+                canDelete={canDelete}
+                user={user}
+              />
+            )
+          ))}
+        </>
+      )}
 
       {/* Stage Orders Popup */}
       <StageOrdersPopup 
