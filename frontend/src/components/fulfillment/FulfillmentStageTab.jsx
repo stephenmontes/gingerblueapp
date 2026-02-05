@@ -90,8 +90,13 @@ export function FulfillmentStageTab({ stage, stages, onRefresh, onTimerChange, c
 
   async function loadOrders() {
     try {
-      // Don't include inventory status for faster loading
-      const res = await fetch(`${API}/fulfillment/stages/${stage.stage_id}/orders?include_inventory_status=false&page_size=100`, {
+      // Build URL with optional batch filter
+      let url = `${API}/fulfillment/stages/${stage.stage_id}/orders?include_inventory_status=false&page_size=100`;
+      if (batchId) {
+        url += `&fulfillment_batch_id=${batchId}`;
+      }
+      
+      const res = await fetch(url, {
         credentials: "include",
       });
       if (res.ok) {
