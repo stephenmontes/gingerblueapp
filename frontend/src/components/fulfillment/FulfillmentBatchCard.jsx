@@ -23,18 +23,22 @@ export function FulfillmentBatchCard({ batch, isSelected, onSelect }) {
       return "bg-green-500/10 border-green-500/30";
     }
     
+    // GB Home (wholesale) = light blue
+    if (storeType === "gb_home" || batch.is_gb_home_batch) {
+      return "bg-blue-500/10 border-blue-500/30";
+    }
+    
     // Mixed stores = yellow
     if (storeType === "mixed") {
       return "bg-yellow-500/10 border-yellow-500/30";
     }
     
-    // GB Home (wholesale) = light blue
-    if (storeId === "store_gb_wholesale" || batch.store_name?.toLowerCase().includes("home")) {
+    // Fallback checks by store name
+    if (batch.store_name?.toLowerCase().includes("home")) {
       return "bg-blue-500/10 border-blue-500/30";
     }
     
-    // GB Decor (retail) fallback = light green
-    if (storeId === "store_gb_retail" || batch.store_name?.toLowerCase().includes("decor")) {
+    if (batch.store_name?.toLowerCase().includes("decor")) {
       return "bg-green-500/10 border-green-500/30";
     }
     
@@ -50,6 +54,9 @@ export function FulfillmentBatchCard({ batch, isSelected, onSelect }) {
     }
     if (batch.store_type === "gb_decor" || batch.is_gb_decor_batch) {
       return { name: batch.store_name || "GB Decor", icon: Store };
+    }
+    if (batch.store_type === "gb_home" || batch.is_gb_home_batch) {
+      return { name: batch.store_name || "GB Home", icon: Store };
     }
     if (batch.store_type === "mixed") {
       return { name: "Mixed", icon: Store };
