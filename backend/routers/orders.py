@@ -446,6 +446,61 @@ async def get_sync_status(user: User = Depends(get_current_user)):
     return result
 
 
+@router.post("/sync-all")
+async def sync_all_stores(
+    user: User = Depends(get_current_user)
+):
+    """Manually trigger sync for all stores (admin/manager only)"""
+    if user.role not in ["admin", "manager"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    from services.scheduler import sync_all_stores as do_sync
+    result = await do_sync()
+    return {
+        "success": True,
+        "message": f"Synced {len(result)} stores",
+        "results": result
+    }
+
+
+@router.get("/sync/scheduler-status")
+async def get_scheduler_status(user: User = Depends(get_current_user)):
+    """Get status of the scheduled sync job"""
+    if user.role not in ["admin", "manager"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    from services.scheduler import get_scheduler_status as get_status
+    
+    # Also get last sync log
+    last_sync = await db.scheduled_sync_logs.find_one(
+        {"sync_type": "daily_order_sync"},
+        {"_id": 0},
+        sort=[("triggered_at", -1)]
+    )
+    
+    status = get_status()
+    status["last_scheduled_sync"] = last_sync
+    
+    return status
+
+
+@router.get("/sync/logs")
+async def get_sync_logs(
+    limit: int = Query(10, ge=1, le=100),
+    user: User = Depends(get_current_user)
+):
+    """Get recent scheduled sync logs"""
+    if user.role not in ["admin", "manager"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    logs = await db.scheduled_sync_logs.find(
+        {},
+        {"_id": 0}
+    ).sort("triggered_at", -1).limit(limit).to_list(limit)
+    
+    return {"logs": logs}
+
+
 @router.post("/upload-csv/{store_id}")
 async def upload_orders_csv(
     store_id: str,
