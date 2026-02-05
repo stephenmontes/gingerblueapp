@@ -205,6 +205,7 @@ export default function Production({ user }) {
             selectedBatch={selectedBatch}
             onSelectBatch={handleBatchSelect}
             onRefresh={loadInitialData}
+            user={user}
           />
         </div>
 
