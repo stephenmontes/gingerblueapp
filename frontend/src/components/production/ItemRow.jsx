@@ -115,6 +115,15 @@ export function ItemRow({ item, stages, currentStageId, onUpdateQty, onMoveStage
       if (res.ok) {
         const result = await res.json();
         toast.success(result.message);
+        
+        // Check if batch was auto-archived
+        if (result.batch_archived) {
+          toast.info("Batch completed! All items sent to inventory - batch moved to History.", {
+            duration: 5000,
+            icon: "📦"
+          });
+        }
+        
         if (onRefresh) onRefresh();
       } else {
         const err = await res.json();
