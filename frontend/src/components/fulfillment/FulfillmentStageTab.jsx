@@ -37,7 +37,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 
-export function FulfillmentStageTab({ stage, stages, onRefresh, onTimerChange, canDelete, user }) {
+export function FulfillmentStageTab({ stage, stages, onRefresh, onTimerChange, canDelete, user, batchId }) {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrders, setSelectedOrders] = useState([]);
@@ -52,7 +52,7 @@ export function FulfillmentStageTab({ stage, stages, onRefresh, onTimerChange, c
   useEffect(() => {
     loadOrders();
     checkActiveTimer();
-  }, [stage.stage_id]);
+  }, [stage.stage_id, batchId]);
 
   async function checkActiveTimer() {
     try {
