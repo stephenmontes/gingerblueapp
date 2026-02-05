@@ -475,9 +475,9 @@ async def get_fulfillment_batch_report(
 ):
     """Get comprehensive time and cost report for a fulfillment batch
     Includes:
-    - Workers time breakdown
+    - Workers time breakdown with individual hourly rates
     - Average items per hour
-    - Cost per hour and total cost
+    - Cost calculated per user's hourly rate
     - Production time from associated frame production batch
     """
     batch = await db.fulfillment_batches.find_one(
@@ -487,6 +487,11 @@ async def get_fulfillment_batch_report(
     
     if not batch:
         raise HTTPException(status_code=404, detail="Fulfillment batch not found")
+    
+    # Get all users to fetch their hourly rates
+    all_users = await db.users.find({}, {"_id": 0, "user_id": 1, "hourly_rate": 1}).to_list(1000)
+    user_rates = {u["user_id"]: u.get("hourly_rate", 15.00) for u in all_users}
+    default_rate = 15.00  # Default if no rate set
     
     # Get orders to count total items
     orders = await db.fulfillment_orders.find(
@@ -519,6 +524,7 @@ async def get_fulfillment_batch_report(
     production_batch_id = batch.get("production_batch_id")
     production_time = None
     production_workers = {}
+    production_total_cost = 0
     
     if production_batch_id:
         # Get production batch
@@ -539,20 +545,27 @@ async def get_fulfillment_batch_report(
                 minutes = log.get("minutes", 0)
                 prod_total_minutes += minutes
                 
-                user_id = log.get("user_id", "unknown")
+                log_user_id = log.get("user_id", "unknown")
                 user_name = log.get("user_name", "Unknown")
+                user_rate = user_rates.get(log_user_id, default_rate)
+                worker_cost = (minutes / 60) * user_rate
+                production_total_cost += worker_cost
                 
-                if user_id not in production_workers:
-                    production_workers[user_id] = {
+                if log_user_id not in production_workers:
+                    production_workers[log_user_id] = {
                         "user_name": user_name,
-                        "total_minutes": 0
+                        "total_minutes": 0,
+                        "hourly_rate": user_rate,
+                        "cost": 0
                     }
-                production_workers[user_id]["total_minutes"] += minutes
+                production_workers[log_user_id]["total_minutes"] += minutes
+                production_workers[log_user_id]["cost"] += worker_cost
             
             production_time = {
                 "batch_id": production_batch_id,
                 "batch_name": production_batch.get("name"),
                 "total_minutes": prod_total_minutes,
+                "total_cost": round(production_total_cost, 2),
                 "workers": production_workers
             }
     
@@ -565,21 +578,24 @@ async def get_fulfillment_batch_report(
     hours = combined_total_minutes / 60 if combined_total_minutes > 0 else 0
     items_per_hour = total_items / hours if hours > 0 else 0
     
-    # Default cost per hour (can be configured)
-    cost_per_hour = 15.00  # Default $15/hour
-    total_cost = hours * cost_per_hour
-    
-    # Build worker summary for fulfillment
+    # Build worker summary for fulfillment with individual rates
     fulfillment_workers = []
-    for user_id, data in workers_time.items():
+    fulfillment_total_cost = 0
+    
+    for worker_user_id, data in workers_time.items():
         worker_hours = data["total_minutes"] / 60
+        worker_rate = user_rates.get(worker_user_id, default_rate)
+        worker_cost = worker_hours * worker_rate
+        fulfillment_total_cost += worker_cost
+        
         fulfillment_workers.append({
-            "user_id": user_id,
+            "user_id": worker_user_id,
             "user_name": data["user_name"],
             "total_minutes": data["total_minutes"],
             "total_hours": round(worker_hours, 2),
+            "hourly_rate": worker_rate,
             "items_per_hour": round(total_items / worker_hours, 1) if worker_hours > 0 else 0,
-            "cost": round(worker_hours * cost_per_hour, 2)
+            "cost": round(worker_cost, 2)
         })
     
     # Add currently active workers
@@ -587,17 +603,62 @@ async def get_fulfillment_batch_report(
         if worker.get("started_at"):
             started_at = datetime.fromisoformat(worker["started_at"].replace("Z", "+00:00"))
             active_minutes = (now - started_at).total_seconds() / 60
+            worker_rate = user_rates.get(worker["user_id"], default_rate)
+            active_cost = (active_minutes / 60) * worker_rate
             
             # Check if already in workers list
             existing = next((w for w in fulfillment_workers if w["user_id"] == worker["user_id"]), None)
             if existing:
                 existing["total_minutes"] += active_minutes
                 existing["total_hours"] = round(existing["total_minutes"] / 60, 2)
+                existing["cost"] = round((existing["total_minutes"] / 60) * worker_rate, 2)
                 existing["is_active"] = True
+                fulfillment_total_cost += active_cost
             else:
                 worker_hours = active_minutes / 60
+                fulfillment_total_cost += active_cost
                 fulfillment_workers.append({
                     "user_id": worker["user_id"],
+                    "user_name": worker["user_name"],
+                    "total_minutes": active_minutes,
+                    "total_hours": round(worker_hours, 2),
+                    "hourly_rate": worker_rate,
+                    "items_per_hour": round(total_items / worker_hours, 1) if worker_hours > 0 else 0,
+                    "cost": round(active_cost, 2),
+                    "is_active": True
+                })
+    
+    # Calculate total cost (fulfillment + production)
+    total_cost = fulfillment_total_cost + production_total_cost
+    
+    # Calculate weighted average hourly rate
+    avg_hourly_rate = total_cost / hours if hours > 0 else default_rate
+    
+    return {
+        "batch_id": batch_id,
+        "batch_name": batch.get("name"),
+        "status": batch.get("status"),
+        "total_orders": len(orders),
+        "total_items": total_items,
+        
+        "fulfillment_time": {
+            "total_minutes": round(fulfillment_total_minutes, 1),
+            "total_hours": round(fulfillment_total_minutes / 60, 2),
+            "total_cost": round(fulfillment_total_cost, 2),
+            "workers": fulfillment_workers,
+            "active_workers_count": len(active_workers)
+        },
+        
+        "production_time": production_time,
+        
+        "combined_metrics": {
+            "total_minutes": round(combined_total_minutes, 1),
+            "total_hours": round(hours, 2),
+            "items_per_hour": round(items_per_hour, 1),
+            "avg_hourly_rate": round(avg_hourly_rate, 2),
+            "total_cost": round(total_cost, 2)
+        }
+    }
                     "user_name": worker["user_name"],
                     "total_minutes": active_minutes,
                     "total_hours": round(worker_hours, 2),
