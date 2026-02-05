@@ -22,7 +22,9 @@ import {
   DollarSign,
   TrendingUp,
   Minus,
-  Plus
+  Plus,
+  Trash2,
+  MoreVertical
 } from "lucide-react";
 import { toast } from "sonner";
 import { API } from "@/utils/api";
