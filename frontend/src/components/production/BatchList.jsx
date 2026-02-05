@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Package, Archive, Layers } from "lucide-react";
 import { BatchCard } from "./BatchCard";
 
-export function BatchList({ batches, selectedBatch, onSelectBatch, onRefresh }) {
+export function BatchList({ batches, selectedBatch, onSelectBatch, onRefresh, user }) {
   const activeBatches = batches.filter(b => b.status === "active");
   const archivedBatches = batches.filter(b => b.status === "archived");
 
@@ -36,6 +36,7 @@ export function BatchList({ batches, selectedBatch, onSelectBatch, onRefresh }) 
                   selectedBatch={selectedBatch} 
                   onSelectBatch={onSelectBatch}
                   onRefresh={onRefresh}
+                  user={user}
                 />
               )}
             </ScrollArea>
@@ -52,6 +53,7 @@ export function BatchList({ batches, selectedBatch, onSelectBatch, onRefresh }) 
                   onSelectBatch={onSelectBatch}
                   onRefresh={onRefresh}
                   isArchived
+                  user={user}
                 />
               )}
             </ScrollArea>
@@ -71,7 +73,7 @@ function EmptyState({ message }) {
   );
 }
 
-function BatchListItems({ batches, selectedBatch, onSelectBatch, onRefresh, isArchived }) {
+function BatchListItems({ batches, selectedBatch, onSelectBatch, onRefresh, isArchived, user }) {
   const selectedId = selectedBatch ? selectedBatch.batch_id : null;
 
   return (
@@ -84,6 +86,7 @@ function BatchListItems({ batches, selectedBatch, onSelectBatch, onRefresh, isAr
           onSelect={onSelectBatch}
           onRefresh={onRefresh}
           isArchived={isArchived}
+          user={user}
         />
       ))}
     </div>
