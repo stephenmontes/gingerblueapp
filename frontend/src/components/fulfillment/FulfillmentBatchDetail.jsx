@@ -146,7 +146,9 @@ function BatchReportDialog({ batch, isOpen, onClose }) {
                       </div>
                       <div className="text-right text-sm">
                         <p>{worker.total_hours} hrs • {worker.items_per_hour} items/hr</p>
-                        <p className="text-muted-foreground">${worker.cost}</p>
+                        <p className="text-muted-foreground">
+                          ${worker.hourly_rate}/hr → ${worker.cost}
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -170,7 +172,12 @@ function BatchReportDialog({ batch, isOpen, onClose }) {
                         <User className="w-4 h-4 text-muted-foreground" />
                         <span className="font-medium">{worker.user_name}</span>
                       </div>
-                      <span className="text-sm">{(worker.total_minutes / 60).toFixed(2)} hrs</span>
+                      <div className="text-right text-sm">
+                        <p>{(worker.total_minutes / 60).toFixed(2)} hrs</p>
+                        <p className="text-muted-foreground">
+                          ${worker.hourly_rate}/hr → ${worker.cost?.toFixed(2) || '0.00'}
+                        </p>
+                      </div>
                     </div>
                   ))}
                 </div>
