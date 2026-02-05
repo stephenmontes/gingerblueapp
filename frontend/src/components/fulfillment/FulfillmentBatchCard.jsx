@@ -1,11 +1,12 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { User, Timer, Package, Store, Truck } from "lucide-react";
+import { User, Users, Timer, Package, Store, Truck } from "lucide-react";
 
 export function FulfillmentBatchCard({ batch, isSelected, onSelect }) {
   const orderCount = batch.order_ids?.length || batch.order_count || 0;
   const isRunning = batch.timer_active && !batch.timer_paused;
+  const activeWorkers = batch.active_workers || [];
   
   // Determine card background color based on store
   const getStoreColor = () => {
