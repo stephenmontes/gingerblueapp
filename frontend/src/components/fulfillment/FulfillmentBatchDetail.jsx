@@ -331,6 +331,8 @@ export function FulfillmentBatchDetail({ batch, stages, onRefresh, onClose }) {
   };
 
   const handleMoveStage = async (targetStageId) => {
+    if (requiresTimer()) return;
+    
     setLoading(true);
     try {
       const res = await fetch(`${API}/fulfillment-batches/${batch.fulfillment_batch_id}/move-stage?target_stage_id=${targetStageId}`, {
