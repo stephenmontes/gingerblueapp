@@ -517,12 +517,26 @@ async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current
         if order.get("platform"):
             platforms.add(order["platform"])
     
-    # Determine if this is a ShipStation (Etsy) batch
+    # Determine if this is a ShipStation (Etsy) batch or GB Decor batch
     is_shipstation_batch = "shipstation" in platforms
+    
+    # Check if this is a GB Decor batch (needs same treatment as ShipStation)
+    is_gb_decor_batch = False
+    for name in store_names:
+        if name and "decor" in name.lower():
+            is_gb_decor_batch = True
+            break
+    
+    # Both ShipStation and GB Decor batches use the enhanced workflow
+    is_enhanced_batch = is_shipstation_batch or is_gb_decor_batch
+    
+    # Valid frame SKU prefixes for production cut list
+    # Only these items go to frame production; others go directly to fulfillment
+    FRAME_SKU_PREFIXES = ("BWF", "CRF", "CLF", "MTF")
     
     # Aggregate frames by size/color - THIS IS THE PRODUCTION LIST
     # Each unique size/color combination becomes ONE production frame item
-    # For ShipStation batches: Only include items with SKU starting with "BWF"
+    # For enhanced batches: Only include items with valid frame SKU prefixes
     frame_aggregation = {}
     total_frames = 0
     
@@ -530,11 +544,11 @@ async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current
         for item in order.get("items", []):
             sku = item.get("sku", "UNKNOWN")
             
-            # For ShipStation batches, only process BWF items for frame production
-            if is_shipstation_batch:
-                sku_prefix = sku.split("-")[0] if "-" in sku else sku[:3]
-                if not sku_prefix.upper().startswith("BWF"):
-                    continue  # Skip non-BWF items for frame production
+            # For enhanced batches (ShipStation/Etsy/GB Decor), only process frame items
+            if is_enhanced_batch:
+                sku_prefix = sku.split("-")[0].upper() if "-" in sku else sku[:3].upper()
+                if sku_prefix not in FRAME_SKU_PREFIXES:
+                    continue  # Skip non-frame items for frame production
             
             parsed = parse_sku(sku)
             size = parsed["size"]
