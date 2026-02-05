@@ -29,6 +29,18 @@ Build a manufacturing and fulfillment app for Shopify websites with detailed tim
 - Fulfillment stages: Print List → Mount → Finish → Pack & Ship
 - Order-based batches route to Print List stage
 - Time tracking for fulfillment process
+- **Enhanced Etsy/ShipStation Batch Workflow** (NEW - Feb 2026)
+  - Item-level quantity tracking with +/- buttons
+  - Auto-mark items complete when qty reaches required
+  - Auto-mark orders complete when all items done
+  - Progress resets when moving to new stage
+  - Timer persists across stages (no stop on stage move)
+  - Multiple workers can work on same batch simultaneously
+  - Comprehensive batch report with:
+    - Per-worker time breakdown
+    - Items per hour metrics
+    - Cost per hour and total cost
+    - Combined production + fulfillment time
 
 ### 5. CRM System (NEW - Feb 2026)
 - Customer import from all connected Shopify stores
