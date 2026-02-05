@@ -260,13 +260,16 @@ function QtyInput({ value, max, onChange, disabled }) {
 }
 
 // Main Batch Detail Component
-export function FulfillmentBatchDetail({ batch, stages, onRefresh, onClose }) {
+export function FulfillmentBatchDetail({ batch, stages, onRefresh, onClose, canDelete }) {
   const [timerRunning, setTimerRunning] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [loading, setLoading] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [itemProgress, setItemProgress] = useState({});
   const [updatingItem, setUpdatingItem] = useState(null);
+  const [deleteOrderId, setDeleteOrderId] = useState(null);
+  const [deleteOrderNumber, setDeleteOrderNumber] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   // Check if current user is in active workers (timer must be running to work)
   const activeWorkers = batch.active_workers || [];
