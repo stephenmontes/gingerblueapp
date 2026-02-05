@@ -641,10 +641,11 @@ async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current
         "name": batch_data.name,
         "order_ids": batch_data.order_ids,
         "batch_type": "order_based",  # Distinguish from on_demand batches
-        "store_type": store_type,  # "single_store", "mixed", "shipstation", or "gb_decor"
+        "store_type": store_type,  # "single_store", "mixed", "shipstation", "gb_decor", or "gb_home"
         "is_shipstation_batch": is_shipstation_batch,  # Flag for special ShipStation/Etsy handling
         "is_gb_decor_batch": is_gb_decor_batch,  # Flag for GB Decor handling
-        "is_enhanced_batch": is_enhanced_batch,  # Flag for enhanced batch workflow
+        "is_gb_home_batch": is_gb_home_batch,  # Flag for GB Home handling
+        "is_enhanced_batch": is_enhanced_batch,  # Flag for enhanced batch workflow (combined worksheet)
         "store_id": primary_store_id,
         "store_name": primary_store_name,
         "store_ids": list(store_ids),
