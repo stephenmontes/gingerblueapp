@@ -259,6 +259,15 @@ export function FrameList({ batch, activeTimer, currentStageId, stages, onRefres
       if (res.ok) {
         const result = await res.json();
         toast.success(result.message);
+        
+        // Check if batch was auto-archived
+        if (result.batch_archived) {
+          toast.info("Batch completed! All frames sent to inventory - batch moved to History.", {
+            duration: 5000,
+            icon: "📦"
+          });
+        }
+        
         fetchFrames(); // Refresh the list
         onRefresh?.(); // Refresh parent to update stage counts
       } else {
