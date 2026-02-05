@@ -138,6 +138,8 @@ export function OrderRow({
           onShowInventory={onShowInventory}
           onOpenWorksheet={onOpenWorksheet}
           onPrintOrder={onPrintOrder}
+          canDelete={canDelete}
+          onDeleteOrder={onDeleteOrder}
         />
       </TableCell>
     </TableRow>
