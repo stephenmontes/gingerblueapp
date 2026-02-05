@@ -20,6 +20,10 @@ Build a manufacturing and fulfillment app for Shopify websites with detailed tim
 - Production stages: Cutting → Assembly → Sand → Paint → QC
 - On-demand batches for inventory creation
 - Time tracking per stage and user
+- **Auto-archive batches when all items sent to inventory** (NEW - Feb 2026)
+  - Batches automatically move to History when empty
+  - Shows "Auto-completed" indicator in History tab
+  - Toast notification when batch completes
 
 ### 4. Order Fulfillment
 - Fulfillment stages: Print List → Mount → Finish → Pack & Ship
