@@ -514,18 +514,34 @@ async def save_worksheet_progress(
 async def get_orders_by_stage(
     stage_id: str,
     include_inventory_status: bool = False,
+    include_batch_orders: bool = False,
     page: int = 1,
     page_size: int = 50,
     user: User = Depends(get_current_user)
 ):
-    """Get orders in a specific fulfillment stage with pagination"""
+    """Get orders in a specific fulfillment stage with pagination
+    
+    Args:
+        include_batch_orders: If False (default), exclude orders that belong to a fulfillment batch
+                            (those are shown in the batch view instead)
+    """
     skip = (page - 1) * page_size
     
+    # Build query - optionally exclude orders that are part of a fulfillment batch
+    query = {"fulfillment_stage_id": stage_id}
+    if not include_batch_orders:
+        # Exclude orders that are part of a fulfillment batch (they're shown in batch view)
+        query["$or"] = [
+            {"fulfillment_batch_id": {"$exists": False}},
+            {"fulfillment_batch_id": None},
+            {"fulfillment_batch_id": ""}
+        ]
+    
     # Get total count for pagination
-    total = await db.fulfillment_orders.count_documents({"fulfillment_stage_id": stage_id})
+    total = await db.fulfillment_orders.count_documents(query)
     
     orders = await db.fulfillment_orders.find(
-        {"fulfillment_stage_id": stage_id},
+        query,
         {"_id": 0}
     ).sort("created_at", -1).skip(skip).limit(page_size).to_list(page_size)
     
