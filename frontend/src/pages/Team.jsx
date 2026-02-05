@@ -494,6 +494,31 @@ export default function Team({ user }) {
                         <RoleBadge role={member.role} />
                       </TableCell>
                       <TableCell>
+                        {user?.role === "admin" ? (
+                          <div className="flex items-center gap-1">
+                            <DollarSign className="w-4 h-4 text-muted-foreground" />
+                            <Input
+                              type="number"
+                              min="0"
+                              step="0.50"
+                              className="w-20 h-8"
+                              defaultValue={member.hourly_rate || 15}
+                              onBlur={(e) => handleRateChange(member.user_id, e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  handleRateChange(member.user_id, e.target.value);
+                                  e.target.blur();
+                                }
+                              }}
+                              data-testid={`rate-input-${member.user_id}`}
+                            />
+                            <span className="text-xs text-muted-foreground">/hr</span>
+                          </div>
+                        ) : (
+                          <span className="font-mono">${(member.hourly_rate || 15).toFixed(2)}/hr</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
                         <span className="font-mono">{stats.total_items || 0}</span>
                       </TableCell>
                       <TableCell>
