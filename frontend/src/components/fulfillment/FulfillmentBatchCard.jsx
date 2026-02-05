@@ -1,16 +1,38 @@
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { User, Users, Timer, Package, Store, Truck } from "lucide-react";
+import { 
+  User, 
+  Users, 
+  Timer, 
+  Package, 
+  Store, 
+  Truck, 
+  Undo2 
+} from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { toast } from "sonner";
+import { API } from "@/utils/api";
 
-export function FulfillmentBatchCard({ batch, isSelected, onSelect }) {
+export function FulfillmentBatchCard({ batch, isSelected, onSelect, onRefresh, canDelete }) {
+  const [undoDialogOpen, setUndoDialogOpen] = useState(false);
+  const [undoing, setUndoing] = useState(false);
+  
   const orderCount = batch.order_ids?.length || batch.order_count || 0;
   const isRunning = batch.timer_active && !batch.timer_paused;
   const activeWorkers = batch.active_workers || [];
   
   // Determine card background color based on store
   const getStoreColor = () => {
-    const storeId = batch.store_id;
     const storeType = batch.store_type;
     
     // ShipStation orders (Etsy) = yellow
@@ -83,6 +105,48 @@ export function FulfillmentBatchCard({ batch, isSelected, onSelect }) {
   const completedOrders = batch.orders_completed || 0;
   const progress = orderCount > 0 ? (completedOrders / orderCount) * 100 : 0;
 
+  // Handle undo batch - uses the production batch endpoint which handles both
+  const handleUndo = async (removeFrames) => {
+    // Use production_batch_id to delete (which also removes the fulfillment batch)
+    const batchId = batch.production_batch_id;
+    
+    if (!batchId) {
+      toast.error("Cannot undo: No linked production batch found");
+      return;
+    }
+    
+    setUndoing(true);
+    try {
+      const url = `${API}/batches/${batchId}?remove_frames=${removeFrames}`;
+      const res = await fetch(url, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      
+      if (res.ok) {
+        if (removeFrames) {
+          toast.success("Batch undone - orders returned and frames removed from all stages");
+        } else {
+          toast.success("Batch undone - orders returned, frames remain in production queue");
+        }
+        setUndoDialogOpen(false);
+        if (onRefresh) onRefresh();
+      } else {
+        const err = await res.json();
+        toast.error(err.detail || "Failed to undo batch");
+      }
+    } catch (err) {
+      toast.error("Failed to undo batch");
+    } finally {
+      setUndoing(false);
+    }
+  };
+
+  const handleUndoClick = (e) => {
+    e.stopPropagation();
+    setUndoDialogOpen(true);
+  };
+
   return (
     <Card
       className={`cursor-pointer transition-all ${storeColor} ${isSelected ? "ring-2 ring-primary" : "hover:border-primary/50"}`}
@@ -135,12 +199,76 @@ export function FulfillmentBatchCard({ batch, isSelected, onSelect }) {
 
         {/* Current Stage */}
         {batch.current_stage_name && (
-          <div className="mt-2 pt-2 border-t border-border/50">
+          <div className="mt-2 pt-2 border-t border-border/50 flex items-center justify-between">
             <span className="text-xs text-muted-foreground">
               Stage: <strong>{batch.current_stage_name}</strong>
             </span>
+            
+            {/* Undo Button - Admin/Manager only */}
+            {canDelete && (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 px-2 text-muted-foreground hover:text-red-400"
+                onClick={handleUndoClick}
+                data-testid={`undo-batch-${batch.fulfillment_batch_id}`}
+              >
+                <Undo2 className="w-3 h-3 mr-1" />
+                Undo
+              </Button>
+            )}
           </div>
         )}
+
+        {/* Undo Dialog */}
+        <Dialog open={undoDialogOpen} onOpenChange={setUndoDialogOpen}>
+          <DialogContent onClick={(e) => e.stopPropagation()}>
+            <DialogHeader>
+              <DialogTitle>Undo Batch: {batch.name}</DialogTitle>
+              <DialogDescription>
+                This will return all {orderCount} orders back to the Orders page and remove the batch from both Frame Production and Order Fulfillment.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="py-4 space-y-3">
+              <p className="text-sm font-medium">What should happen to frames in production?</p>
+              
+              <Button
+                variant="outline"
+                className="w-full justify-start text-left h-auto py-3 px-4"
+                onClick={() => handleUndo(true)}
+                disabled={undoing}
+              >
+                <div>
+                  <p className="font-medium text-red-400">Remove all frames</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Delete frames from all production stages. Orders return to Orders page.
+                  </p>
+                </div>
+              </Button>
+              
+              <Button
+                variant="outline"
+                className="w-full justify-start text-left h-auto py-3 px-4"
+                onClick={() => handleUndo(false)}
+                disabled={undoing}
+              >
+                <div>
+                  <p className="font-medium text-blue-400">Keep frames in queue</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Frames remain in their current production stages. Orders return to Orders page.
+                  </p>
+                </div>
+              </Button>
+            </div>
+
+            <DialogFooter>
+              <Button variant="ghost" onClick={() => setUndoDialogOpen(false)} disabled={undoing}>
+                Cancel
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );
