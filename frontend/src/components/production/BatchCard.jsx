@@ -26,7 +26,7 @@ import { useState } from "react";
 import { API } from "@/utils/api";
 
 
-export function BatchCard({ batch, isSelected, onSelect, onRefresh, isArchived }) {
+export function BatchCard({ batch, isSelected, onSelect, onRefresh, isArchived, user }) {
   const [undoDialogOpen, setUndoDialogOpen] = useState(false);
   const totalItems = batch.total_items || 0;
   const itemsCompleted = batch.items_completed || 0;
@@ -37,6 +37,9 @@ export function BatchCard({ batch, isSelected, onSelect, onRefresh, isArchived }
   
   // Check if production has started (any items completed)
   const productionStarted = itemsCompleted > 0;
+  
+  // Check if user can delete/archive (admin or manager only)
+  const canModify = user?.role === "admin" || user?.role === "manager";
 
   // Determine card background color based on store
   const getStoreColor = () => {
