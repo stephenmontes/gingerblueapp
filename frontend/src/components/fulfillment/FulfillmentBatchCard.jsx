@@ -13,9 +13,14 @@ export function FulfillmentBatchCard({ batch, isSelected, onSelect }) {
     const storeId = batch.store_id;
     const storeType = batch.store_type;
     
-    // ShipStation orders (Etsy, Antique Farmhouse) = yellow
+    // ShipStation orders (Etsy) = yellow
     if (storeType === "shipstation" || batch.is_shipstation_batch) {
       return "bg-yellow-500/10 border-yellow-500/30";
+    }
+    
+    // Antique Farmhouse = orange/amber
+    if (storeType === "antique_farmhouse") {
+      return "bg-orange-500/10 border-orange-500/30";
     }
     
     // GB Decor (retail) with enhanced workflow = light green
@@ -34,6 +39,10 @@ export function FulfillmentBatchCard({ batch, isSelected, onSelect }) {
     }
     
     // Fallback checks by store name
+    if (batch.store_name?.toLowerCase().includes("antique") || batch.store_name?.toLowerCase().includes("farmhouse")) {
+      return "bg-orange-500/10 border-orange-500/30";
+    }
+    
     if (batch.store_name?.toLowerCase().includes("home")) {
       return "bg-blue-500/10 border-blue-500/30";
     }
@@ -51,6 +60,9 @@ export function FulfillmentBatchCard({ batch, isSelected, onSelect }) {
   const getStoreDisplay = () => {
     if (batch.store_type === "shipstation" || batch.is_shipstation_batch) {
       return { name: "ShipStation", icon: Truck };
+    }
+    if (batch.store_type === "antique_farmhouse") {
+      return { name: batch.store_name || "Antique Farmhouse", icon: Truck };
     }
     if (batch.store_type === "gb_decor" || batch.is_gb_decor_batch) {
       return { name: batch.store_name || "GB Decor", icon: Store };
