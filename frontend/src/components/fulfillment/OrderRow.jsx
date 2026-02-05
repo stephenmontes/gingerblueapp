@@ -20,7 +20,8 @@ import {
   Layers,
   ExternalLink,
   FileText,
-  Printer
+  Printer,
+  Trash2
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -37,7 +38,9 @@ export function OrderRow({
   onMarkShipped,
   onShowInventory,
   onOpenWorksheet,
-  onPrintOrder
+  onPrintOrder,
+  canDelete,
+  onDeleteOrder
 }) {
   const navigate = useNavigate();
   const invStatus = order.inventory_status;
