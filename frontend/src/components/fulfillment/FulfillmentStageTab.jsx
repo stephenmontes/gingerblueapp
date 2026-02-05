@@ -479,6 +479,8 @@ function OrdersView({
                   onShowInventory={() => onShowInventory(order)}
                   onOpenWorksheet={() => onOpenWorksheet(order)}
                   onPrintOrder={() => onPrintOrder(order)}
+                  canDelete={canDelete}
+                  onDeleteOrder={() => onDeleteOrder(order.order_id, order.order_number)}
                 />
               ))}
             </TableBody>
