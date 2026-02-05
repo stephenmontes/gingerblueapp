@@ -234,48 +234,50 @@ export function BatchCard({ batch, isSelected, onSelect, onRefresh, isArchived, 
           </p>
         )}
 
-        {/* Action buttons */}
-        <div className="mt-3 flex gap-2">
-          {isArchived ? (
-            <Button
-              size="sm"
-              variant="outline"
-              className="w-full text-xs"
-              onClick={handleRestore}
-              data-testid={`restore-batch-${batch.batch_id}`}
-            >
-              <RotateCcw className="w-3 h-3 mr-1" />
-              Restore
-            </Button>
-          ) : (
-            <>
-              {/* Undo button - always available */}
+        {/* Action Buttons - Only for Admin/Manager */}
+        {canModify && (
+          <div className="mt-3 flex gap-2">
+            {isArchived ? (
               <Button
                 size="sm"
                 variant="outline"
-                className="flex-1 text-xs text-orange-400 border-orange-400/30 hover:bg-orange-500/10"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setUndoDialogOpen(true);
-                }}
-                data-testid={`undo-batch-${batch.batch_id}`}
+                className="w-full text-xs"
+                onClick={handleRestore}
+                data-testid={`restore-batch-${batch.batch_id}`}
               >
-                <Undo2 className="w-3 h-3 mr-1" />
-                Undo
+                <RotateCcw className="w-3 h-3 mr-1" />
+                Restore
               </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="flex-1 text-xs"
-                onClick={handleArchive}
-                data-testid={`archive-batch-${batch.batch_id}`}
-              >
-                <Archive className="w-3 h-3 mr-1" />
-                Archive
-              </Button>
-            </>
-          )}
-        </div>
+            ) : (
+              <>
+                {/* Undo button - admin/manager only */}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex-1 text-xs text-orange-400 border-orange-400/30 hover:bg-orange-500/10"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setUndoDialogOpen(true);
+                  }}
+                  data-testid={`undo-batch-${batch.batch_id}`}
+                >
+                  <Undo2 className="w-3 h-3 mr-1" />
+                  Undo
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex-1 text-xs"
+                  onClick={handleArchive}
+                  data-testid={`archive-batch-${batch.batch_id}`}
+                >
+                  <Archive className="w-3 h-3 mr-1" />
+                  Archive
+                </Button>
+              </>
+            )}
+          </div>
+        )}
 
         {/* Undo Dialog with options */}
         <Dialog open={undoDialogOpen} onOpenChange={setUndoDialogOpen}>
