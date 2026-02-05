@@ -84,7 +84,12 @@ export function FulfillmentBatchCard({ batch, isSelected, onSelect }) {
             <Package className="w-4 h-4" />
             {orderCount} orders
           </span>
-          {batch.assigned_name && (
+          {activeWorkers.length > 0 ? (
+            <span className="flex items-center gap-1 text-green-400">
+              <Users className="w-4 h-4" />
+              {activeWorkers.length} working
+            </span>
+          ) : batch.assigned_name && (
             <span className="flex items-center gap-1">
               <User className="w-4 h-4" />
               {batch.assigned_name}
