@@ -319,6 +319,30 @@ export function FulfillmentStageTab({ stage, stages, onRefresh, onTimerChange, c
         currentStage={stage}
         onClose={() => setPrintOrder(null)}
       />
+      
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteOrderId} onOpenChange={(open) => !open && setDeleteOrderId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Order from Fulfillment?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will remove order <span className="font-semibold text-foreground">{deleteOrderNumber}</span> from the fulfillment workflow. 
+              <br /><br />
+              <span className="text-muted-foreground">Note: This only removes the order from fulfillment stages. The original order will not be affected.</span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteOrder}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? "Removing..." : "Remove Order"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     
     </>
   );
