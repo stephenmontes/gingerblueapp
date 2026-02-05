@@ -17,7 +17,7 @@ import { FulfillmentBatchCard } from "@/components/fulfillment/FulfillmentBatchC
 import { FulfillmentBatchDetail } from "@/components/fulfillment/FulfillmentBatchDetail";
 import { API } from "@/utils/api";
 
-export default function OrderFulfillment() {
+export default function OrderFulfillment({ user }) {
   const [stages, setStages] = useState([]);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -30,6 +30,9 @@ export default function OrderFulfillment() {
   const [fulfillmentBatches, setFulfillmentBatches] = useState([]);
   const [selectedBatch, setSelectedBatch] = useState(null);
   const [batchDetail, setBatchDetail] = useState(null);
+  
+  // Check if user can delete (admin or manager)
+  const canDelete = user?.role === "admin" || user?.role === "manager";
 
   useEffect(() => {
     loadData();
