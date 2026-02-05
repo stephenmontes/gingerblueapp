@@ -298,7 +298,13 @@ async def archive_batch(batch_id: str, user: User = Depends(get_current_user)):
     
     For order-based batches: Updates orders in fulfillment
     For on-demand batches: Moves completed frames to inventory
+    
+    Only admins and managers can archive batches.
     """
+    # Check if user is admin or manager
+    if user.role not in ["admin", "manager"]:
+        raise HTTPException(status_code=403, detail="Only admins and managers can archive batches")
+    
     batch = await db.production_batches.find_one({"batch_id": batch_id}, {"_id": 0})
     if not batch:
         raise HTTPException(status_code=404, detail="Batch not found")
