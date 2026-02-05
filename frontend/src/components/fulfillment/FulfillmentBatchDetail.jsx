@@ -667,7 +667,7 @@ export function FulfillmentBatchDetail({ batch, stages, onRefresh, onClose }) {
                               value={progress}
                               max={qty}
                               onChange={(newQty) => handleUpdateItemProgress(order.order_id, itemIdx, newQty)}
-                              disabled={isUpdating}
+                              disabled={isUpdating || !hasActiveTimer}
                             />
                             {itemComplete && <CheckCircle2 className="w-5 h-5 text-green-400" />}
                           </div>
