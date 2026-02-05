@@ -170,6 +170,39 @@ export function FulfillmentStageTab({ stage, stages, onRefresh, onTimerChange, c
     }
   }
 
+  async function handleDeleteOrder() {
+    if (!deleteOrderId) return;
+    setDeleting(true);
+    
+    try {
+      const res = await fetch(`${API}/fulfillment/orders/${deleteOrderId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      
+      if (res.ok) {
+        const result = await res.json();
+        toast.success(result.message);
+        loadOrders();
+        onRefresh();
+      } else {
+        const err = await res.json();
+        toast.error(err.detail || "Failed to remove order");
+      }
+    } catch (err) {
+      toast.error("Failed to remove order from fulfillment");
+    } finally {
+      setDeleting(false);
+      setDeleteOrderId(null);
+      setDeleteOrderNumber(null);
+    }
+  }
+
+  function confirmDeleteOrder(orderId, orderNumber) {
+    setDeleteOrderId(orderId);
+    setDeleteOrderNumber(orderNumber);
+  }
+
   async function markShipped(orderId) {
     if (requiresTimer()) return;
     try {
