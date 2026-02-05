@@ -497,6 +497,14 @@ export function FulfillmentBatchDetail({ batch, stages, onRefresh, onClose }) {
 
       {/* Timer and Progress Bar */}
       <div className="p-4 border-b border-border space-y-3">
+        {/* Timer Required Warning */}
+        {!hasActiveTimer && (
+          <div className="flex items-center gap-2 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg text-yellow-400">
+            <Clock className="w-5 h-5 flex-shrink-0" />
+            <span className="text-sm font-medium">Start your timer to update item quantities and move orders</span>
+          </div>
+        )}
+        
         {/* Timer Controls */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
