@@ -659,16 +659,3 @@ async def get_fulfillment_batch_report(
             "total_cost": round(total_cost, 2)
         }
     }
-            "active_workers_count": len(active_workers)
-        },
-        
-        "production_time": production_time,
-        
-        "combined_metrics": {
-            "total_minutes": round(combined_total_minutes, 1),
-            "total_hours": round(hours, 2),
-            "items_per_hour": round(items_per_hour, 1),
-            "cost_per_hour": cost_per_hour,
-            "total_cost": round(total_cost, 2)
-        }
-    }
