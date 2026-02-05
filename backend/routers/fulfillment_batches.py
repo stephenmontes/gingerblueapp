@@ -659,25 +659,6 @@ async def get_fulfillment_batch_report(
             "total_cost": round(total_cost, 2)
         }
     }
-                    "user_name": worker["user_name"],
-                    "total_minutes": active_minutes,
-                    "total_hours": round(worker_hours, 2),
-                    "items_per_hour": round(total_items / worker_hours, 1) if worker_hours > 0 else 0,
-                    "cost": round(worker_hours * cost_per_hour, 2),
-                    "is_active": True
-                })
-    
-    return {
-        "batch_id": batch_id,
-        "batch_name": batch.get("name"),
-        "status": batch.get("status"),
-        "total_orders": len(orders),
-        "total_items": total_items,
-        
-        "fulfillment_time": {
-            "total_minutes": round(fulfillment_total_minutes, 1),
-            "total_hours": round(fulfillment_total_minutes / 60, 2),
-            "workers": fulfillment_workers,
             "active_workers_count": len(active_workers)
         },
         
