@@ -520,9 +520,11 @@ async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current
     # Determine if this is a ShipStation (Etsy) batch or GB Decor batch
     is_shipstation_batch = "shipstation" in platforms
     
-    # Check if this is a GB Decor batch (needs same treatment as ShipStation)
+    # Check store names for special handling
     is_gb_decor_batch = False
     is_gb_home_batch = False
+    is_antique_farmhouse_batch = False
+    
     for name in store_names:
         if name:
             name_lower = name.lower()
@@ -530,10 +532,12 @@ async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current
                 is_gb_decor_batch = True
             elif "home" in name_lower:
                 is_gb_home_batch = True
+            elif "antique" in name_lower or "farmhouse" in name_lower:
+                is_antique_farmhouse_batch = True
     
-    # ShipStation and GB Decor batches use the enhanced workflow (combined worksheet)
+    # ShipStation, GB Decor, and Antique Farmhouse batches use the enhanced workflow (combined worksheet)
     # GB Home uses batch cards but individual order processing
-    is_enhanced_batch = is_shipstation_batch or is_gb_decor_batch
+    is_enhanced_batch = is_shipstation_batch or is_gb_decor_batch or is_antique_farmhouse_batch
     
     # All batches now get fulfillment batch cards
     needs_fulfillment_batch = True
