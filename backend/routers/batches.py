@@ -584,9 +584,10 @@ async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current
     # Determine batch store type
     # single_store: all orders from one store
     # mixed: orders from multiple stores
-    # shipstation: all orders from shipstation platform
+    # shipstation: all orders from shipstation platform (Etsy)
     # gb_decor: all orders from GB Decor store
     # gb_home: all orders from GB Home store
+    # antique_farmhouse: all orders from Antique Farmhouse store
     store_type = "mixed"
     primary_store_id = None
     primary_store_name = None
@@ -594,7 +595,9 @@ async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current
     if len(store_ids) == 1:
         primary_store_id = list(store_ids)[0]
         primary_store_name = list(store_names)[0] if store_names else None
-        if is_shipstation_batch:
+        if is_antique_farmhouse_batch:
+            store_type = "antique_farmhouse"
+        elif is_shipstation_batch:
             store_type = "shipstation"
         elif is_gb_decor_batch:
             store_type = "gb_decor"
@@ -602,6 +605,8 @@ async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current
             store_type = "gb_home"
         else:
             store_type = "single_store"
+    elif is_antique_farmhouse_batch:
+        store_type = "antique_farmhouse"
     elif is_shipstation_batch:
         store_type = "shipstation"
     elif is_gb_decor_batch:
