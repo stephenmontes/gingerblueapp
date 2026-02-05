@@ -38,6 +38,7 @@ import {
   Calendar,
   Filter,
   Download,
+  DollarSign,
 } from "lucide-react";
 import { toast } from "sonner";
 import { TimerHistory } from "@/components/TimerHistory";
