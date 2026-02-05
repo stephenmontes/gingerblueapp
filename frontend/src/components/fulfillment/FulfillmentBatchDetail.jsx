@@ -187,9 +187,17 @@ function BatchReportDialog({ batch, isOpen, onClose }) {
             {/* Cost Summary */}
             <div className="p-4 bg-primary/10 rounded-lg">
               <div className="flex justify-between items-center">
-                <span className="font-semibold">Cost @ ${report.combined_metrics.cost_per_hour}/hr</span>
+                <span className="font-semibold">
+                  Total Cost (Avg ${report.combined_metrics.avg_hourly_rate}/hr)
+                </span>
                 <span className="text-xl font-bold">${report.combined_metrics.total_cost}</span>
               </div>
+              {report.production_time && (
+                <div className="text-sm text-muted-foreground mt-2">
+                  Production: ${report.production_time.total_cost} + 
+                  Fulfillment: ${report.fulfillment_time.total_cost}
+                </div>
+              )}
             </div>
           </div>
         ) : (
