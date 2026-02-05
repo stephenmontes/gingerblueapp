@@ -1250,8 +1250,26 @@ async def move_frame_to_inventory(
         "created_at": now
     })
     
+    # Check if batch is now empty and should be auto-archived
+    batch_archived = False
+    remaining_frames = await db.batch_frames.count_documents({"batch_id": batch_id})
+    if remaining_frames == 0:
+        # Auto-archive the batch
+        await db.production_batches.update_one(
+            {"batch_id": batch_id},
+            {"$set": {
+                "status": "archived",
+                "archived_at": now,
+                "archived_by": user.user_id,
+                "auto_archived": True,
+                "auto_archive_reason": "all_frames_sent_to_inventory"
+            }}
+        )
+        batch_archived = True
+    
     return {
         "message": f"Moved {size}-{color} to inventory: {qty_good} good, {qty_rejected} rejected",
+        "batch_archived": batch_archived,
         **result
     }
 
