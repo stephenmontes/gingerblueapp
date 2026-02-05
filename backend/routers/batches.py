@@ -171,12 +171,19 @@ async def get_batches(status: Optional[str] = None, user: User = Depends(get_cur
 
 
 @router.delete("/{batch_id}")
-async def delete_batch(batch_id: str, user: User = Depends(get_current_user)):
+async def delete_batch(
+    batch_id: str, 
+    remove_frames: bool = True,
+    user: User = Depends(get_current_user)
+):
     """Delete/Undo a batch - removes from both Frame Production and Order Fulfillment
+    
+    Args:
+        remove_frames: If True, delete all batch frames. If False, keep frames in production queue.
     
     This action:
     1. Removes the production batch
-    2. Removes all batch frames
+    2. Optionally removes all batch frames (based on remove_frames param)
     3. Removes the linked fulfillment batch (if ShipStation)
     4. Resets orders to remove batch references
     
@@ -199,6 +206,7 @@ async def delete_batch(batch_id: str, user: User = Depends(get_current_user)):
         "batch_name": batch.get("name"),
         "batch_type": batch.get("batch_type"),
         "order_ids": batch.get("order_ids", []),
+        "remove_frames": remove_frames,
         "deleted_by": user.user_id,
         "deleted_by_name": user.name,
         "action": "batch_deleted",
