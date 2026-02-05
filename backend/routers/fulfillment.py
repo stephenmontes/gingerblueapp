@@ -977,3 +977,139 @@ async def stop_order_timer(order_id: str, user: User = Depends(get_current_user)
         "total_minutes": accumulated
     }
 
+
+
+@router.delete("/orders/{order_id}")
+async def remove_order_from_fulfillment(order_id: str, user: User = Depends(get_current_user)):
+    """
+    Remove an order from the fulfillment workflow (admin/manager only).
+    This only removes the order from fulfillment stages - does not affect the actual order.
+    """
+    # Check if user is admin or manager
+    if user.role not in ["admin", "manager"]:
+        raise HTTPException(status_code=403, detail="Only admins and managers can remove orders from fulfillment")
+    
+    # Check if order exists in fulfillment
+    order = await db.fulfillment_orders.find_one({"order_id": order_id}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found in fulfillment workflow")
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    # Log the removal before deleting
+    removal_log = {
+        "log_id": f"frmlog_{uuid.uuid4().hex[:12]}",
+        "order_id": order_id,
+        "order_number": order.get("order_number"),
+        "store_id": order.get("store_id"),
+        "store_name": order.get("store_name"),
+        "stage_id": order.get("fulfillment_stage_id"),
+        "stage_name": order.get("fulfillment_stage_name"),
+        "removed_by": user.user_id,
+        "removed_by_name": user.name,
+        "action": "removed_from_fulfillment",
+        "reason": "manual_removal_by_admin",
+        "created_at": now
+    }
+    await db.fulfillment_removal_logs.insert_one(removal_log)
+    
+    # Delete the order from fulfillment_orders
+    result = await db.fulfillment_orders.delete_one({"order_id": order_id})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=500, detail="Failed to remove order from fulfillment")
+    
+    return {
+        "success": True,
+        "message": f"Order {order.get('order_number', order_id)} removed from fulfillment workflow",
+        "order_id": order_id,
+        "removed_by": user.name
+    }
+
+
+@router.delete("/orders/{order_id}/items/{item_id}")
+async def remove_item_from_fulfillment_order(order_id: str, item_id: str, user: User = Depends(get_current_user)):
+    """
+    Remove a specific item from an order in the fulfillment workflow (admin/manager only).
+    This only removes the item from fulfillment - does not affect the actual order.
+    """
+    # Check if user is admin or manager
+    if user.role not in ["admin", "manager"]:
+        raise HTTPException(status_code=403, detail="Only admins and managers can remove items from fulfillment")
+    
+    # Check if order exists in fulfillment
+    order = await db.fulfillment_orders.find_one({"order_id": order_id}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found in fulfillment workflow")
+    
+    # Find the item in the order's line items
+    line_items = order.get("line_items", [])
+    item_to_remove = None
+    item_index = None
+    
+    for idx, item in enumerate(line_items):
+        if item.get("line_item_id") == item_id or item.get("item_id") == item_id:
+            item_to_remove = item
+            item_index = idx
+            break
+    
+    if item_to_remove is None:
+        raise HTTPException(status_code=404, detail="Item not found in order")
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    # Log the item removal
+    removal_log = {
+        "log_id": f"firmlog_{uuid.uuid4().hex[:12]}",
+        "order_id": order_id,
+        "order_number": order.get("order_number"),
+        "item_id": item_id,
+        "item_name": item_to_remove.get("name") or item_to_remove.get("title"),
+        "item_sku": item_to_remove.get("sku"),
+        "quantity": item_to_remove.get("quantity", 1),
+        "store_id": order.get("store_id"),
+        "store_name": order.get("store_name"),
+        "stage_id": order.get("fulfillment_stage_id"),
+        "stage_name": order.get("fulfillment_stage_name"),
+        "removed_by": user.user_id,
+        "removed_by_name": user.name,
+        "action": "item_removed_from_fulfillment",
+        "reason": "manual_removal_by_admin",
+        "created_at": now
+    }
+    await db.fulfillment_removal_logs.insert_one(removal_log)
+    
+    # Remove the item from the order's line items
+    updated_items = [item for idx, item in enumerate(line_items) if idx != item_index]
+    
+    # If this was the last item, remove the entire order from fulfillment
+    if len(updated_items) == 0:
+        await db.fulfillment_orders.delete_one({"order_id": order_id})
+        return {
+            "success": True,
+            "message": f"Last item removed - order {order.get('order_number', order_id)} removed from fulfillment workflow",
+            "order_id": order_id,
+            "item_id": item_id,
+            "order_removed": True,
+            "removed_by": user.name
+        }
+    
+    # Update the order with remaining items
+    await db.fulfillment_orders.update_one(
+        {"order_id": order_id},
+        {"$set": {
+            "line_items": updated_items,
+            "item_count": len(updated_items),
+            "updated_at": now
+        }}
+    )
+    
+    return {
+        "success": True,
+        "message": f"Item removed from order {order.get('order_number', order_id)}",
+        "order_id": order_id,
+        "item_id": item_id,
+        "items_remaining": len(updated_items),
+        "removed_by": user.name
+    }
+
