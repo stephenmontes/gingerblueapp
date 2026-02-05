@@ -169,6 +169,111 @@ async def get_batches(status: Optional[str] = None, user: User = Depends(get_cur
     batches = await db.production_batches.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
     return batches
 
+
+@router.delete("/{batch_id}")
+async def delete_batch(batch_id: str, user: User = Depends(get_current_user)):
+    """Delete/Undo a batch - removes from both Frame Production and Order Fulfillment
+    
+    This action:
+    1. Removes the production batch
+    2. Removes all batch frames
+    3. Removes the linked fulfillment batch (if ShipStation)
+    4. Resets orders to remove batch references
+    
+    Only admins/managers can delete batches.
+    """
+    # Check permissions
+    if user.role not in ["admin", "manager"]:
+        raise HTTPException(status_code=403, detail="Only admins and managers can delete batches")
+    
+    batch = await db.production_batches.find_one({"batch_id": batch_id}, {"_id": 0})
+    if not batch:
+        raise HTTPException(status_code=404, detail="Batch not found")
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    # Log the deletion before removing
+    deletion_log = {
+        "log_id": f"bdel_{uuid.uuid4().hex[:12]}",
+        "batch_id": batch_id,
+        "batch_name": batch.get("name"),
+        "batch_type": batch.get("batch_type"),
+        "order_ids": batch.get("order_ids", []),
+        "deleted_by": user.user_id,
+        "deleted_by_name": user.name,
+        "action": "batch_deleted",
+        "created_at": now
+    }
+    await db.batch_deletion_logs.insert_one(deletion_log)
+    
+    # Get order IDs before deletion
+    order_ids = batch.get("order_ids", [])
+    fulfillment_batch_id = batch.get("fulfillment_batch_id")
+    
+    # 1. Delete all batch frames
+    frames_deleted = await db.batch_frames.delete_many({"batch_id": batch_id})
+    
+    # 2. Delete all production items (if any)
+    items_deleted = await db.production_items.delete_many({"batch_id": batch_id})
+    
+    # 3. Delete the production batch
+    await db.production_batches.delete_one({"batch_id": batch_id})
+    
+    # 4. If there's a linked fulfillment batch, delete it
+    fulfillment_batch_deleted = False
+    if fulfillment_batch_id:
+        await db.fulfillment_batches.delete_one({"fulfillment_batch_id": fulfillment_batch_id})
+        fulfillment_batch_deleted = True
+    
+    # Also check by production_batch_id reference
+    linked_fulfillment = await db.fulfillment_batches.find_one({"production_batch_id": batch_id})
+    if linked_fulfillment:
+        await db.fulfillment_batches.delete_one({"production_batch_id": batch_id})
+        fulfillment_batch_deleted = True
+    
+    # 5. Reset orders - remove batch references but keep them in fulfillment
+    if order_ids:
+        await db.fulfillment_orders.update_many(
+            {"order_id": {"$in": order_ids}},
+            {"$unset": {
+                "batch_id": "",
+                "batch_name": "",
+                "fulfillment_batch_id": "",
+                "is_batch_fulfillment": ""
+            },
+            "$set": {
+                "status": "pending",
+                "fulfillment_stage_id": "fulfill_orders",
+                "fulfillment_stage_name": "In Production",
+                "updated_at": now
+            }}
+        )
+        
+        # Also update the main orders collection
+        await db.orders.update_many(
+            {"order_id": {"$in": order_ids}},
+            {"$unset": {
+                "batch_id": "",
+                "batch_name": ""
+            },
+            "$set": {
+                "status": "pending",
+                "updated_at": now
+            }}
+        )
+    
+    return {
+        "success": True,
+        "message": f"Batch '{batch.get('name')}' has been deleted",
+        "batch_id": batch_id,
+        "frames_deleted": frames_deleted.deleted_count,
+        "items_deleted": items_deleted.deleted_count,
+        "orders_reset": len(order_ids),
+        "fulfillment_batch_deleted": fulfillment_batch_deleted,
+        "deleted_by": user.name
+    }
+
+
 @router.post("/{batch_id}/archive")
 async def archive_batch(batch_id: str, user: User = Depends(get_current_user)):
     """Archive/complete a batch - moves it to history
