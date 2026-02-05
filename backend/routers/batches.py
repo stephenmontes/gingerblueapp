@@ -771,6 +771,10 @@ async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current
     if fulfillment_batch_id:
         response_data["fulfillment_batch_id"] = fulfillment_batch_id
     
+    # Add auto-archive message if batch was archived due to no frames
+    if auto_archived:
+        response_data["auto_archived_message"] = "No frame items found - production batch archived. Orders moved to fulfillment."
+    
     return response_data
 
 @router.get("/{batch_id}/items-grouped")
