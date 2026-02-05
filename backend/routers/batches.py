@@ -691,9 +691,9 @@ async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current
         update_data["fulfillment_updated_at"] = now
         update_data["fulfillment_updated_by"] = user.user_id
     
-    # For ShipStation batches: Create a fulfillment batch to track orders as a group
+    # For enhanced batches (ShipStation/Etsy/GB Decor): Create a fulfillment batch to track orders as a group
     fulfillment_batch_id = None
-    if is_shipstation_batch:
+    if is_enhanced_batch:
         fulfillment_batch_id = f"fbatch_{uuid.uuid4().hex[:8]}"
         
         # Create fulfillment batch document
@@ -703,7 +703,7 @@ async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current
             "name": batch_data.name,
             "order_ids": batch_data.order_ids,
             "order_count": len(batch_data.order_ids),
-            "store_type": "shipstation",
+            "store_type": store_type,  # "shipstation" or "gb_decor"
             "store_id": primary_store_id,
             "store_name": primary_store_name,
             "current_stage_id": print_list_stage["stage_id"] if print_list_stage else "fulfill_print",
@@ -717,6 +717,9 @@ async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current
             "timer_started_at": None,
             "timer_paused": False,
             "accumulated_minutes": 0,
+            "active_workers": [],
+            "workers_time": {},
+            "item_progress": {},
             "created_by": user.user_id,
             "created_by_name": user.name,
             "created_at": now,
