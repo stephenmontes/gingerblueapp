@@ -714,9 +714,11 @@ async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current
         update_data["fulfillment_updated_at"] = now
         update_data["fulfillment_updated_by"] = user.user_id
     
-    # For enhanced batches (ShipStation/Etsy/GB Decor): Create a fulfillment batch to track orders as a group
+    # Create fulfillment batch for all batch types (card-based workflow)
+    # - ShipStation/GB Decor: Use combined worksheet with qty tracking
+    # - GB Home: Use batch card but show individual orders when selected
     fulfillment_batch_id = None
-    if is_enhanced_batch:
+    if needs_fulfillment_batch:
         fulfillment_batch_id = f"fbatch_{uuid.uuid4().hex[:8]}"
         
         # Create fulfillment batch document
@@ -726,7 +728,8 @@ async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current
             "name": batch_data.name,
             "order_ids": batch_data.order_ids,
             "order_count": len(batch_data.order_ids),
-            "store_type": store_type,  # "shipstation" or "gb_decor"
+            "store_type": store_type,  # "shipstation", "gb_decor", "gb_home", etc.
+            "is_enhanced_batch": is_enhanced_batch,  # True for combined worksheet, False for individual orders
             "store_id": primary_store_id,
             "store_name": primary_store_name,
             "current_stage_id": print_list_stage["stage_id"] if print_list_stage else "fulfill_print",
@@ -753,7 +756,7 @@ async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current
         
         # Add fulfillment batch reference to update_data
         update_data["fulfillment_batch_id"] = fulfillment_batch_id
-        update_data["is_batch_fulfillment"] = True  # Flag for UI to show batch worksheet
+        update_data["is_batch_fulfillment"] = True  # Flag for UI to show batch workflow
     
     # Update orders in fulfillment_orders collection
     await db.fulfillment_orders.update_many(
