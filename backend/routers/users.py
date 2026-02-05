@@ -64,7 +64,7 @@ async def update_user_hourly_rate(
     if not target_user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    result = await db.users.update_one(
+    await db.users.update_one(
         {"user_id": user_id},
         {"$set": {"hourly_rate": rate_update.hourly_rate}}
     )
