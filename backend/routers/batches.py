@@ -573,6 +573,7 @@ async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current
     # single_store: all orders from one store
     # mixed: orders from multiple stores
     # shipstation: all orders from shipstation platform
+    # gb_decor: all orders from GB Decor store
     store_type = "mixed"
     primary_store_id = None
     primary_store_name = None
@@ -582,10 +583,14 @@ async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current
         primary_store_name = list(store_names)[0] if store_names else None
         if is_shipstation_batch:
             store_type = "shipstation"
+        elif is_gb_decor_batch:
+            store_type = "gb_decor"
         else:
             store_type = "single_store"
     elif is_shipstation_batch:
         store_type = "shipstation"
+    elif is_gb_decor_batch:
+        store_type = "gb_decor"
     
     # Create aggregated frame items - these move through stages as units
     frame_items = []
