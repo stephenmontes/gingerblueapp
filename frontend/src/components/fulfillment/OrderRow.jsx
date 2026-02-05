@@ -276,6 +276,19 @@ function OrderActions({
               ))}
             </>
           )}
+          {canDelete && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem 
+                onClick={onDeleteOrder}
+                className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                data-testid={`delete-order-${order.order_id}`}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Remove from Fulfillment
+              </DropdownMenuItem>
+            </>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
