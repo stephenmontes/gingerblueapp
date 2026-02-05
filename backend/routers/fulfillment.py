@@ -515,6 +515,7 @@ async def get_orders_by_stage(
     stage_id: str,
     include_inventory_status: bool = False,
     include_batch_orders: bool = False,
+    fulfillment_batch_id: Optional[str] = None,
     page: int = 1,
     page_size: int = 50,
     user: User = Depends(get_current_user)
@@ -524,12 +525,17 @@ async def get_orders_by_stage(
     Args:
         include_batch_orders: If False (default), exclude orders that belong to a fulfillment batch
                             (those are shown in the batch view instead)
+        fulfillment_batch_id: If provided, only return orders from this specific batch
     """
     skip = (page - 1) * page_size
     
-    # Build query - optionally exclude orders that are part of a fulfillment batch
+    # Build query
     query = {"fulfillment_stage_id": stage_id}
-    if not include_batch_orders:
+    
+    # If specific batch requested, filter by it
+    if fulfillment_batch_id:
+        query["fulfillment_batch_id"] = fulfillment_batch_id
+    elif not include_batch_orders:
         # Exclude orders that are part of a fulfillment batch (they're shown in batch view)
         query["$or"] = [
             {"fulfillment_batch_id": {"$exists": False}},
