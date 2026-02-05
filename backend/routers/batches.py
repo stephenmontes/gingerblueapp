@@ -617,6 +617,12 @@ async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current
     if frame_items:
         await db.batch_frames.insert_many(frame_items)
     
+    # For enhanced batches with no frames, auto-archive the production batch
+    # Orders will still go to fulfillment, but no frame production is needed
+    auto_archived = False
+    if is_enhanced_batch and len(frame_items) == 0:
+        auto_archived = True
+    
     batch_doc = {
         "batch_id": batch_id,
         "name": batch_data.name,
@@ -633,7 +639,10 @@ async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current
         "current_stage_id": cutting_stage["stage_id"],
         "assigned_to": None,
         "assigned_name": None,
-        "status": "active",
+        "status": "archived" if auto_archived else "active",
+        "auto_archived": auto_archived,
+        "auto_archive_reason": "no_frames_to_produce" if auto_archived else None,
+        "archived_at": now if auto_archived else None,
         "time_started": None,
         "time_completed": None,
         "total_frames": total_frames,
