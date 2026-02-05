@@ -451,6 +451,39 @@ export function FulfillmentBatchDetail({ batch, stages, onRefresh, onClose, canD
     }
   };
 
+  // Delete order handler
+  const handleDeleteOrder = async () => {
+    if (!deleteOrderId) return;
+    setDeleting(true);
+    
+    try {
+      const res = await fetch(`${API}/fulfillment/orders/${deleteOrderId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      
+      if (res.ok) {
+        const result = await res.json();
+        toast.success(result.message);
+        onRefresh?.();
+      } else {
+        const err = await res.json();
+        toast.error(err.detail || "Failed to remove order");
+      }
+    } catch (err) {
+      toast.error("Failed to remove order from fulfillment");
+    } finally {
+      setDeleting(false);
+      setDeleteOrderId(null);
+      setDeleteOrderNumber(null);
+    }
+  };
+
+  const confirmDeleteOrder = (orderId, orderNumber) => {
+    setDeleteOrderId(orderId);
+    setDeleteOrderNumber(orderNumber);
+  };
+
   // Calculate progress
   const totalItems = batch.orders?.reduce((sum, order) => {
     const items = order.items || order.line_items || [];
