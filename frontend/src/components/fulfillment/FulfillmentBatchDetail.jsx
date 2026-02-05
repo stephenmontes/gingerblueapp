@@ -235,9 +235,21 @@ export function FulfillmentBatchDetail({ batch, stages, onRefresh, onClose }) {
   const [itemProgress, setItemProgress] = useState({});
   const [updatingItem, setUpdatingItem] = useState(null);
 
-  // Check if current user is in active workers
+  // Check if current user is in active workers (timer must be running to work)
   const activeWorkers = batch.active_workers || [];
-  const isUserActive = activeWorkers.some(w => w.user_id === batch.assigned_to); // Simplified check
+  const hasActiveTimer = batch.timer_active && !batch.timer_paused && activeWorkers.length > 0;
+  
+  // Helper to check if timer is required before action
+  const requiresTimer = () => {
+    if (!hasActiveTimer) {
+      toast.error("Start your timer before updating items", {
+        icon: <Clock className="w-4 h-4" />,
+        description: "Click 'Start Timer' or 'Join Work' to begin tracking your work"
+      });
+      return true;
+    }
+    return false;
+  };
   
   // Timer logic for batch
   useEffect(() => {
