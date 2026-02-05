@@ -207,6 +207,36 @@ export default function Team({ user }) {
     }
   };
 
+  const handleRateChange = async (userId, newRate) => {
+    const rate = parseFloat(newRate);
+    if (isNaN(rate) || rate < 0) {
+      toast.error("Please enter a valid hourly rate");
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API}/users/${userId}/hourly-rate`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ hourly_rate: rate }),
+      });
+
+      if (response.ok) {
+        toast.success("Hourly rate updated");
+        setUsers((prev) =>
+          prev.map((u) => (u.user_id === userId ? { ...u, hourly_rate: rate } : u))
+        );
+      } else {
+        const error = await response.json();
+        toast.error(error.detail || "Failed to update hourly rate");
+      }
+    } catch (error) {
+      console.error("Failed to update hourly rate:", error);
+      toast.error("Failed to update hourly rate");
+    }
+  };
+
   const getInitials = (name) => {
     if (!name) return "U";
     return name
