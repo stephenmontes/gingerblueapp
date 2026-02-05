@@ -355,6 +355,8 @@ export function FulfillmentBatchDetail({ batch, stages, onRefresh, onClose }) {
   };
 
   const handleComplete = async () => {
+    if (requiresTimer()) return;
+    
     setLoading(true);
     try {
       const res = await fetch(`${API}/fulfillment-batches/${batch.fulfillment_batch_id}/complete`, {
@@ -374,6 +376,8 @@ export function FulfillmentBatchDetail({ batch, stages, onRefresh, onClose }) {
   };
 
   const handleUpdateItemProgress = async (orderId, itemIndex, newQty) => {
+    if (requiresTimer()) return;
+    
     const itemKey = `item_${itemIndex}`;
     
     // Optimistic update
