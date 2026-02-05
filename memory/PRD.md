@@ -92,6 +92,8 @@ Build a manufacturing and fulfillment app for Shopify websites with detailed tim
 - ShipStation Fulfillment UI (rates, labels)
 - Order Audit Log
 - Etsy Webhooks
+- Bulk Print (combined packing slips)
+- UI State Persistence (remember filters/sorting)
 
 ## Known Issues
 - Custom domain login requires re-linking after deployment (platform issue)
