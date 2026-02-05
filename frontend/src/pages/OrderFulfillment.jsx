@@ -295,6 +295,8 @@ export default function OrderFulfillment({ user }) {
                   batch={batch}
                   isSelected={selectedBatch?.fulfillment_batch_id === batch.fulfillment_batch_id}
                   onSelect={handleSelectBatch}
+                  onRefresh={loadData}
+                  canDelete={canDelete}
                 />
               ))}
             </div>
