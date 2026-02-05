@@ -522,13 +522,21 @@ async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current
     
     # Check if this is a GB Decor batch (needs same treatment as ShipStation)
     is_gb_decor_batch = False
+    is_gb_home_batch = False
     for name in store_names:
-        if name and "decor" in name.lower():
-            is_gb_decor_batch = True
-            break
+        if name:
+            name_lower = name.lower()
+            if "decor" in name_lower:
+                is_gb_decor_batch = True
+            elif "home" in name_lower:
+                is_gb_home_batch = True
     
-    # Both ShipStation and GB Decor batches use the enhanced workflow
+    # ShipStation and GB Decor batches use the enhanced workflow (combined worksheet)
+    # GB Home uses batch cards but individual order processing
     is_enhanced_batch = is_shipstation_batch or is_gb_decor_batch
+    
+    # All batches now get fulfillment batch cards
+    needs_fulfillment_batch = True
     
     # Valid frame SKU prefixes for production cut list
     # Only these items go to frame production; others go directly to fulfillment
