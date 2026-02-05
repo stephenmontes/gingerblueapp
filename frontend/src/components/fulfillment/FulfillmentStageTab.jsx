@@ -37,7 +37,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 
-export function FulfillmentStageTab({ stage, stages, onRefresh, onTimerChange }) {
+export function FulfillmentStageTab({ stage, stages, onRefresh, onTimerChange, canDelete, user }) {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrders, setSelectedOrders] = useState([]);
@@ -45,6 +45,9 @@ export function FulfillmentStageTab({ stage, stages, onRefresh, onTimerChange })
   const [worksheetOrder, setWorksheetOrder] = useState(null);
   const [printOrder, setPrintOrder] = useState(null);
   const [activeTimer, setActiveTimer] = useState(null);
+  const [deleteOrderId, setDeleteOrderId] = useState(null);
+  const [deleteOrderNumber, setDeleteOrderNumber] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     loadOrders();
