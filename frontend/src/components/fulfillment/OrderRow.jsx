@@ -202,7 +202,9 @@ function OrderActions({
   onMarkShipped,
   onShowInventory,
   onOpenWorksheet,
-  onPrintOrder
+  onPrintOrder,
+  canDelete,
+  onDeleteOrder
 }) {
   const isOrdersStage = stage.stage_id === "fulfill_orders";
   
