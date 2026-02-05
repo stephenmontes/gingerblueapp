@@ -403,12 +403,29 @@ function GroupedBatchWorksheet({ batch, stages, onRefresh, onClose }) {
                     {order.items?.map((item, itemIdx) => {
                       const qty = item.qty || item.quantity || 1;
                       const isMultiple = qty > 1;
+                      const imageUrl = item.image_url || item.image;
                       
                       return (
                         <div 
                           key={itemIdx} 
                           className="flex items-start gap-3 p-3 bg-muted/30 rounded-lg"
                         >
+                          {/* Item Thumbnail */}
+                          {imageUrl ? (
+                            <div className="flex-shrink-0 w-16 h-16 rounded-md overflow-hidden bg-muted">
+                              <img 
+                                src={imageUrl} 
+                                alt={item.name} 
+                                className="w-full h-full object-cover"
+                                onError={(e) => { e.target.style.display = 'none'; }}
+                              />
+                            </div>
+                          ) : (
+                            <div className="flex-shrink-0 w-16 h-16 rounded-md bg-muted flex items-center justify-center">
+                              <Package className="w-6 h-6 text-muted-foreground" />
+                            </div>
+                          )}
+                          
                           <div className="flex-1 min-w-0">
                             <p className="font-medium text-sm leading-relaxed break-words">{item.name}</p>
                             {item.sku && (
