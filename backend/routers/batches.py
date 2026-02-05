@@ -394,7 +394,14 @@ async def archive_batch(batch_id: str, user: User = Depends(get_current_user)):
 
 @router.post("/{batch_id}/restore")
 async def restore_batch(batch_id: str, user: User = Depends(get_current_user)):
-    """Restore an archived batch back to active"""
+    """Restore an archived batch back to active
+    
+    Only admins and managers can restore batches.
+    """
+    # Check if user is admin or manager
+    if user.role not in ["admin", "manager"]:
+        raise HTTPException(status_code=403, detail="Only admins and managers can restore batches")
+    
     batch = await db.production_batches.find_one({"batch_id": batch_id}, {"_id": 0})
     if not batch:
         raise HTTPException(status_code=404, detail="Batch not found")
