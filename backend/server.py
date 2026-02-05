@@ -48,8 +48,13 @@ async def lifespan(app: FastAPI):
     """Startup and shutdown events"""
     # Startup: Create database indexes
     await create_indexes()
+    # Start the scheduler for daily order sync
+    start_scheduler()
+    logger.info("Scheduler started for daily 7 AM EST order sync")
     yield
-    # Shutdown: cleanup if needed
+    # Shutdown: cleanup
+    stop_scheduler()
+    logger.info("Scheduler stopped")
 
 # Create the main app with lifespan
 app = FastAPI(title="ShopFactory API", version="2.0.0", lifespan=lifespan)
