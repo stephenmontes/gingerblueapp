@@ -740,67 +740,6 @@ async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current
     
     return response_data
 
-@router.delete("/{batch_id}")
-async def delete_batch(
-    batch_id: str, 
-    remove_frames: bool = True,
-    user: User = Depends(get_current_user)
-):
-    """Delete a batch and return orders to pending
-    
-    Args:
-        batch_id: The batch to delete
-        remove_frames: If True, delete all frames from production stages.
-                      If False, keep frames in their current stages (orphaned).
-    """
-    if user.role not in ["admin", "manager"]:
-        raise HTTPException(status_code=403, detail="Not authorized")
-    
-    batch = await db.production_batches.find_one({"batch_id": batch_id}, {"_id": 0})
-    if not batch:
-        raise HTTPException(status_code=404, detail="Batch not found")
-    
-    frames_deleted = 0
-    frames_kept = 0
-    
-    if remove_frames:
-        # Delete frames from batch_frames collection
-        result = await db.batch_frames.delete_many({"batch_id": batch_id})
-        frames_deleted = result.deleted_count
-    else:
-        # Keep frames but clear their batch_id so they're orphaned
-        result = await db.batch_frames.update_many(
-            {"batch_id": batch_id},
-            {"$set": {"batch_id": None, "batch_name": None}}
-        )
-        frames_kept = result.modified_count
-    
-    # Clear fulfillment stage assignment for orders (return to Orders page)
-    await db.fulfillment_orders.update_many(
-        {"batch_id": batch_id},
-        {
-            "$set": {
-                "batch_id": None,
-                "batch_name": None,
-                "status": "pending",
-                "updated_at": datetime.now(timezone.utc).isoformat()
-            },
-            "$unset": {
-                "fulfillment_stage_id": "",
-                "fulfillment_stage_name": ""
-            }
-        }
-    )
-    
-    await db.production_batches.delete_one({"batch_id": batch_id})
-    
-    return {
-        "message": "Batch deleted",
-        "frames_deleted": frames_deleted,
-        "frames_kept": frames_kept,
-        "remove_frames": remove_frames
-    }
-
 @router.get("/{batch_id}/items-grouped")
 async def get_batch_items_grouped(batch_id: str, user: User = Depends(get_current_user)):
     """Get batch frames grouped by color and size with subtotals"""
