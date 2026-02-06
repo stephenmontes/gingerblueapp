@@ -97,12 +97,36 @@ async def start_fulfillment_batch_timer(
     if not batch:
         raise HTTPException(status_code=404, detail="Fulfillment batch not found")
     
+    # Check for any active stage timer first
+    any_active_stage = await db.fulfillment_time_logs.find_one({
+        "user_id": user.user_id,
+        "completed_at": None
+    }, {"_id": 0})
+    
+    if any_active_stage:
+        raise HTTPException(
+            status_code=400,
+            detail=f"You have an active timer for '{any_active_stage.get('stage_name', 'another stage')}'. Stop it first."
+        )
+    
+    # Check if user is active on another batch
+    other_batch = await db.fulfillment_batches.find_one({
+        "fulfillment_batch_id": {"$ne": batch_id},
+        "active_workers.user_id": user.user_id
+    }, {"_id": 0, "batch_name": 1})
+    
+    if other_batch:
+        raise HTTPException(
+            status_code=400,
+            detail=f"You are already working on batch '{other_batch.get('batch_name', 'another batch')}'. Stop that timer first."
+        )
+    
     now = datetime.now(timezone.utc).isoformat()
     
     # Get current active workers
     active_workers = batch.get("active_workers", [])
     
-    # Check if user is already an active worker
+    # Check if user is already an active worker on this batch
     user_already_active = any(w["user_id"] == user.user_id for w in active_workers)
     
     if user_already_active:
