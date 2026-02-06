@@ -427,6 +427,137 @@ export default function Dashboard({ user }) {
           </div>
         </CardContent>
       </Card>
+
+      {/* Frame Production Rates Modal */}
+      <Dialog open={showRatesModal} onOpenChange={setShowRatesModal}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-primary" />
+              Frame Production Rates by User
+            </DialogTitle>
+          </DialogHeader>
+          
+          {/* Filters */}
+          <div className="flex flex-wrap gap-4 mb-4">
+            <div className="flex flex-col gap-1">
+              <label className="text-sm text-muted-foreground">Time Period</label>
+              <Select value={ratePeriod} onValueChange={handlePeriodChange}>
+                <SelectTrigger className="w-[140px]" data-testid="rate-period-select">
+                  <SelectValue placeholder="Select period" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="day">Last 24 Hours</SelectItem>
+                  <SelectItem value="week">Last 7 Days</SelectItem>
+                  <SelectItem value="month">Last 30 Days</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex flex-col gap-1">
+              <label className="text-sm text-muted-foreground">Stage</label>
+              <Select value={rateStage} onValueChange={handleStageChange}>
+                <SelectTrigger className="w-[160px]" data-testid="rate-stage-select">
+                  <SelectValue placeholder="All stages" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Stages</SelectItem>
+                  {ratesData?.available_stages?.map(stage => (
+                    <SelectItem key={stage.stage_id} value={stage.stage_id}>
+                      {stage.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          {/* Summary Stats */}
+          {ratesData && !ratesLoading && (
+            <div className="grid grid-cols-3 gap-4 mb-4">
+              <Card className="bg-muted/50">
+                <CardContent className="p-4 text-center">
+                  <p className="text-2xl font-bold text-primary">{ratesData.overall_average}</p>
+                  <p className="text-xs text-muted-foreground">Avg Frames/Hour</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-muted/50">
+                <CardContent className="p-4 text-center">
+                  <p className="text-2xl font-bold">{ratesData.total_frames}</p>
+                  <p className="text-xs text-muted-foreground">Total Frames</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-muted/50">
+                <CardContent className="p-4 text-center">
+                  <p className="text-2xl font-bold">{ratesData.total_hours}</p>
+                  <p className="text-xs text-muted-foreground">Total Hours</p>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+          
+          {/* User Rates Table */}
+          {ratesLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <RefreshCw className="w-6 h-6 animate-spin text-primary" />
+            </div>
+          ) : ratesData?.user_rates?.length > 0 ? (
+            <div className="space-y-3">
+              {ratesData.user_rates.map((userData, idx) => (
+                <Card key={userData.user_id} className="bg-card border-border">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                          idx === 0 ? 'bg-yellow-500/20 text-yellow-500' :
+                          idx === 1 ? 'bg-gray-400/20 text-gray-400' :
+                          idx === 2 ? 'bg-amber-600/20 text-amber-600' :
+                          'bg-muted text-muted-foreground'
+                        }`}>
+                          <User className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <p className="font-semibold">{userData.user_name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {userData.total_frames} frames in {userData.total_hours}h
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-2xl font-bold text-primary">{userData.overall_rate}</p>
+                        <p className="text-xs text-muted-foreground">frames/hour</p>
+                      </div>
+                    </div>
+                    
+                    {/* Stage breakdown */}
+                    {userData.stages?.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-border">
+                        <p className="text-xs text-muted-foreground mb-2">By Stage:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {userData.stages.map(stage => (
+                            <Badge 
+                              key={stage.stage_id} 
+                              variant="outline"
+                              className="text-xs"
+                            >
+                              {stage.stage_name}: {stage.rate}/hr ({stage.frames} frames)
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <p>No production data available for the selected period.</p>
+              <p className="text-sm mt-1">Complete some frames to see rates.</p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
