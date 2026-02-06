@@ -405,7 +405,8 @@ function OrdersView({
   onPrintOrder,
   onTimerChange,
   canDelete,
-  onDeleteOrder
+  onDeleteOrder,
+  onStartTimer
 }) {
   const stageColor = stage.color || "#6366F1";
   
@@ -428,6 +429,15 @@ function OrdersView({
             <p className="text-sm font-medium text-yellow-400">Timer Required</p>
             <p className="text-xs text-muted-foreground">Start a timer to complete tasks in this stage</p>
           </div>
+          <Button 
+            size="sm" 
+            onClick={onStartTimer}
+            className="gap-2"
+            data-testid="start-stage-timer-btn"
+          >
+            <Play className="w-4 h-4" />
+            Start Timer
+          </Button>
         </div>
       )}
       <CardHeader className="pb-3">
