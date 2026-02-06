@@ -67,6 +67,7 @@ class TestProductionWorkersBanner:
                 assert "user_name" in worker
                 assert "started_at" in worker
                 assert "is_paused" in worker
+                assert "accumulated_minutes" in worker
                 
     def test_worker_is_paused_is_boolean(self, api_client, auth_token):
         """Test that is_paused field is a boolean"""
