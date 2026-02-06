@@ -1,0 +1,99 @@
+{
+  "summary": "Production Workers Banner feature testing completed successfully. All backend tests (9/9) and frontend UI tests (12/12) passed. Fixed a bug where accumulated_minutes was not returned by the backend endpoint, causing paused workers to show 0m instead of their actual accumulated time.",
+  
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  
+  "passed_tests": [
+    "Backend: GET /api/stages/active-workers returns 200 OK",
+    "Backend: Response is a dictionary (workers grouped by stage)",
+    "Backend: Workers are grouped by stage_id",
+    "Backend: Each worker has required fields (user_id, user_name, started_at, is_paused, accumulated_minutes)",
+    "Backend: is_paused field is boolean",
+    "Backend: started_at is in ISO format",
+    "Backend: Endpoint requires authentication (401 without session)",
+    "Backend: GET /api/stages returns 200 OK",
+    "Backend: Stages have required fields (stage_id, name, color)",
+    "Frontend: ProductionWorkersBanner visible on Frame Production page",
+    "Frontend: Banner heading shows 'Production Team Activity'",
+    "Frontend: Workers grouped by stage (Cutting, Assembly)",
+    "Frontend: Worker cards show name and elapsed time",
+    "Frontend: Summary badges show Active and Paused counts",
+    "Frontend: Green styling for active workers",
+    "Frontend: Yellow styling for paused workers",
+    "Frontend: Pulsing indicator for active workers",
+    "Frontend: Elapsed time displayed in font-mono",
+    "Frontend: Worker count badges visible",
+    "Frontend: Subtitle shows tracking count"
+  ],
+  
+  "test_report_links": [
+    "/app/backend/tests/test_production_workers_banner.py",
+    "/app/test_reports/pytest/production_workers_banner_results.xml"
+  ],
+  
+  "action_items": [],
+  
+  "critical_code_review_comments": [
+    "ProductionWorkersBanner.jsx: Well-structured component with proper loading state, live elapsed time counters, and correct styling for active/paused workers",
+    "stages.py: active-workers endpoint correctly returns workers grouped by stage with all required fields",
+    "Data-testid attribute properly added (production-workers-banner) for testing"
+  ],
+  
+  "updated_files": [
+    "/app/backend/routers/stages.py - Added accumulated_minutes to active-workers response",
+    "/app/backend/tests/test_production_workers_banner.py - Created test file"
+  ],
+  
+  "success_rate": {
+    "backend": "100% (9/9 tests passed)",
+    "frontend": "100% (12/12 UI tests passed)"
+  },
+  
+  "test_credentials": {
+    "session_token": "test_session_1770350235642",
+    "user_id": "test-user-1770350235642"
+  },
+  
+  "seed_data_creation": "Created 3 test active timers (2 active, 1 paused) across 2 stages for testing, then cleaned up",
+  
+  "retest_needed": false,
+  
+  "should_main_agent_self_test": false,
+  
+  "context_for_next_testing_agent": "Production Workers Banner feature is fully functional. The banner appears on /production page showing all users currently tracking time across production stages. Workers are grouped by stage with live elapsed time counters. Active workers have green styling with pulsing indicator, paused workers have yellow styling. Backend endpoint /api/stages/active-workers returns workers grouped by stage_id with user_id, user_name, started_at, is_paused, and accumulated_minutes fields.",
+  
+  "features_verified": {
+    "production_workers_banner": {
+      "location": "Frame Production page (/production)",
+      "heading": "Production Team Activity",
+      "subtitle": "X people tracking time (Y paused)",
+      "summary_badges": ["X Active (green)", "Y Paused (yellow)"],
+      "worker_card_fields": ["name", "elapsed time", "status indicator"],
+      "active_worker_styling": "Green background, green pulsing dot, clock icon",
+      "paused_worker_styling": "Yellow background, yellow dot, pause icon",
+      "grouping": "Workers grouped by production stage with stage color indicator"
+    },
+    "backend_endpoint": {
+      "path": "GET /api/stages/active-workers",
+      "response_format": "Dictionary with stage_id as keys, array of workers as values",
+      "worker_fields": ["user_id", "user_name", "started_at", "is_paused", "accumulated_minutes"],
+      "query": "time_logs where completed_at = null"
+    }
+  },
+  
+  "bug_fixed": {
+    "issue": "Backend /api/stages/active-workers was not returning accumulated_minutes field",
+    "impact": "Paused workers showed 0m 0s instead of their actual accumulated time",
+    "fix": "Added accumulated_minutes to the response in stages.py line 67",
+    "verification": "Worker Two now correctly shows 15m 0s (accumulated time) instead of 0m 0s"
+  }
+}
