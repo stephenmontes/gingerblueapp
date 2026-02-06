@@ -1645,3 +1645,239 @@ async def move_all_frames_to_inventory(
         "batch_archived": batch_archived
     }
 
+
+
+@router.get("/{batch_id}/report")
+async def get_production_batch_report(batch_id: str, user: User = Depends(get_current_user)):
+    """Get comprehensive time and cost report for a production batch.
+    
+    Shows:
+    - Total frames produced
+    - Time breakdown by stage and worker
+    - Cost breakdown by worker with individual rates
+    - Combined metrics (items per hour, cost per item)
+    """
+    batch = await db.production_batches.find_one({"batch_id": batch_id}, {"_id": 0})
+    if not batch:
+        raise HTTPException(status_code=404, detail="Batch not found")
+    
+    # Get frames for this batch
+    frames = await db.batch_frames.find({"batch_id": batch_id}, {"_id": 0}).to_list(10000)
+    total_frames = sum(f.get("qty_required", 1) for f in frames)
+    frames_completed = sum(f.get("qty_completed", 0) for f in frames)
+    frames_rejected = sum(f.get("qty_rejected", 0) for f in frames)
+    
+    # Get all time logs for this batch
+    time_logs = await db.time_logs.find({
+        "batch_id": batch_id,
+        "workflow_type": "production"
+    }, {"_id": 0}).to_list(10000)
+    
+    # Get currently active timers for this batch
+    active_timers = await db.time_logs.find({
+        "batch_id": batch_id,
+        "completed_at": None,
+        "workflow_type": "production"
+    }, {"_id": 0}).to_list(100)
+    
+    # Get user hourly rates
+    users = await db.users.find({}, {"_id": 0, "user_id": 1, "hourly_rate": 1}).to_list(1000)
+    user_rates = {u["user_id"]: u.get("hourly_rate", 30) for u in users}
+    default_rate = 30
+    
+    # Calculate time by stage
+    stage_times = {}
+    worker_times = {}
+    total_minutes = 0
+    total_cost = 0.0
+    
+    now = datetime.now(timezone.utc)
+    
+    # Process completed time logs
+    for log in time_logs:
+        if log.get("completed_at"):
+            minutes = log.get("duration_minutes", 0)
+            user_id = log.get("user_id", "unknown")
+            user_name = log.get("user_name", "Unknown")
+            stage_id = log.get("stage_id", "unknown")
+            stage_name = log.get("stage_name", "Unknown Stage")
+            hourly_rate = user_rates.get(user_id, default_rate)
+            
+            total_minutes += minutes
+            worker_cost = (minutes / 60) * hourly_rate
+            total_cost += worker_cost
+            
+            # Aggregate by stage
+            if stage_id not in stage_times:
+                stage_times[stage_id] = {
+                    "stage_id": stage_id,
+                    "stage_name": stage_name,
+                    "total_minutes": 0,
+                    "total_cost": 0,
+                    "workers": {}
+                }
+            stage_times[stage_id]["total_minutes"] += minutes
+            stage_times[stage_id]["total_cost"] += worker_cost
+            
+            # Track worker per stage
+            if user_id not in stage_times[stage_id]["workers"]:
+                stage_times[stage_id]["workers"][user_id] = {
+                    "user_id": user_id,
+                    "user_name": user_name,
+                    "total_minutes": 0,
+                    "hourly_rate": hourly_rate,
+                    "cost": 0
+                }
+            stage_times[stage_id]["workers"][user_id]["total_minutes"] += minutes
+            stage_times[stage_id]["workers"][user_id]["cost"] += worker_cost
+            
+            # Aggregate by worker (overall)
+            if user_id not in worker_times:
+                worker_times[user_id] = {
+                    "user_id": user_id,
+                    "user_name": user_name,
+                    "total_minutes": 0,
+                    "hourly_rate": hourly_rate,
+                    "cost": 0,
+                    "items_processed": 0,
+                    "is_active": False
+                }
+            worker_times[user_id]["total_minutes"] += minutes
+            worker_times[user_id]["cost"] += worker_cost
+            worker_times[user_id]["items_processed"] += log.get("items_processed", 0)
+    
+    # Add active timer time
+    for timer in active_timers:
+        if timer.get("started_at"):
+            started = datetime.fromisoformat(timer["started_at"].replace("Z", "+00:00"))
+            if timer.get("is_paused"):
+                active_minutes = timer.get("accumulated_minutes", 0)
+            else:
+                active_minutes = (now - started).total_seconds() / 60
+                active_minutes += timer.get("accumulated_minutes", 0)
+            
+            user_id = timer.get("user_id", "unknown")
+            user_name = timer.get("user_name", "Unknown")
+            stage_id = timer.get("stage_id", "unknown")
+            stage_name = timer.get("stage_name", "Unknown Stage")
+            hourly_rate = user_rates.get(user_id, default_rate)
+            
+            active_cost = (active_minutes / 60) * hourly_rate
+            total_minutes += active_minutes
+            total_cost += active_cost
+            
+            # Add to stage times
+            if stage_id not in stage_times:
+                stage_times[stage_id] = {
+                    "stage_id": stage_id,
+                    "stage_name": stage_name,
+                    "total_minutes": 0,
+                    "total_cost": 0,
+                    "workers": {}
+                }
+            stage_times[stage_id]["total_minutes"] += active_minutes
+            stage_times[stage_id]["total_cost"] += active_cost
+            
+            if user_id not in stage_times[stage_id]["workers"]:
+                stage_times[stage_id]["workers"][user_id] = {
+                    "user_id": user_id,
+                    "user_name": user_name,
+                    "total_minutes": 0,
+                    "hourly_rate": hourly_rate,
+                    "cost": 0
+                }
+            stage_times[stage_id]["workers"][user_id]["total_minutes"] += active_minutes
+            stage_times[stage_id]["workers"][user_id]["cost"] += active_cost
+            
+            # Add to worker times
+            if user_id not in worker_times:
+                worker_times[user_id] = {
+                    "user_id": user_id,
+                    "user_name": user_name,
+                    "total_minutes": 0,
+                    "hourly_rate": hourly_rate,
+                    "cost": 0,
+                    "items_processed": 0,
+                    "is_active": True
+                }
+            else:
+                worker_times[user_id]["is_active"] = True
+            worker_times[user_id]["total_minutes"] += active_minutes
+            worker_times[user_id]["cost"] += active_cost
+    
+    # Calculate metrics
+    total_hours = total_minutes / 60 if total_minutes > 0 else 0
+    items_completed = frames_completed
+    items_per_hour = items_completed / total_hours if total_hours > 0 else 0
+    cost_per_item = total_cost / items_completed if items_completed > 0 else 0
+    avg_hourly_rate = total_cost / total_hours if total_hours > 0 else default_rate
+    
+    # Format stage times
+    stage_list = []
+    for stage_id, stage_data in stage_times.items():
+        stage_hours = stage_data["total_minutes"] / 60
+        stage_list.append({
+            "stage_id": stage_id,
+            "stage_name": stage_data["stage_name"],
+            "total_minutes": round(stage_data["total_minutes"], 1),
+            "total_hours": round(stage_hours, 2),
+            "total_cost": round(stage_data["total_cost"], 2),
+            "workers": list(stage_data["workers"].values())
+        })
+    
+    # Sort stages by production order
+    stages = await db.production_stages.find({}, {"_id": 0}).sort("order", 1).to_list(100)
+    stage_order = {s["stage_id"]: s.get("order", 999) for s in stages}
+    stage_list.sort(key=lambda x: stage_order.get(x["stage_id"], 999))
+    
+    # Format worker times
+    worker_list = []
+    for user_id, worker_data in worker_times.items():
+        worker_hours = worker_data["total_minutes"] / 60
+        worker_items_per_hour = worker_data["items_processed"] / worker_hours if worker_hours > 0 else 0
+        worker_list.append({
+            "user_id": user_id,
+            "user_name": worker_data["user_name"],
+            "total_minutes": round(worker_data["total_minutes"], 1),
+            "total_hours": round(worker_hours, 2),
+            "hourly_rate": worker_data["hourly_rate"],
+            "cost": round(worker_data["cost"], 2),
+            "items_processed": worker_data["items_processed"],
+            "items_per_hour": round(worker_items_per_hour, 1),
+            "is_active": worker_data["is_active"]
+        })
+    
+    worker_list.sort(key=lambda x: x["total_hours"], reverse=True)
+    
+    return {
+        "batch_id": batch_id,
+        "batch_name": batch.get("name"),
+        "batch_type": batch.get("batch_type", "orders"),
+        "status": batch.get("status"),
+        "created_at": batch.get("created_at"),
+        
+        "production_summary": {
+            "total_frames": total_frames,
+            "frames_completed": frames_completed,
+            "frames_rejected": frames_rejected,
+            "completion_rate": round((frames_completed / total_frames * 100) if total_frames > 0 else 0, 1)
+        },
+        
+        "time_summary": {
+            "total_minutes": round(total_minutes, 1),
+            "total_hours": round(total_hours, 2),
+            "total_cost": round(total_cost, 2),
+            "active_timers_count": len(active_timers)
+        },
+        
+        "stage_breakdown": stage_list,
+        
+        "worker_breakdown": worker_list,
+        
+        "metrics": {
+            "items_per_hour": round(items_per_hour, 1),
+            "cost_per_item": round(cost_per_item, 2),
+            "avg_hourly_rate": round(avg_hourly_rate, 2)
+        }
+    }
+
