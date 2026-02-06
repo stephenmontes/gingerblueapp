@@ -386,6 +386,7 @@ export default function OrderFulfillment({ user }) {
                   onRefresh={loadData}
                   onClose={handleCloseBatchDetail}
                   canDelete={canDelete}
+                  user={user}
                 />
               ) : (
                 /* For GB Home batches: Show individual orders with stage tabs */
