@@ -90,6 +90,11 @@ export default function Dashboard({ user }) {
   const [ratesLoading, setRatesLoading] = useState(false);
   const [ratePeriod, setRatePeriod] = useState("week");
   const [rateStage, setRateStage] = useState("all");
+  
+  // In Production orders modal state
+  const [showInProductionModal, setShowInProductionModal] = useState(false);
+  const [inProductionOrders, setInProductionOrders] = useState([]);
+  const [inProductionLoading, setInProductionLoading] = useState(false);
 
   const fetchStats = async () => {
     try {
@@ -106,6 +111,29 @@ export default function Dashboard({ user }) {
     } finally {
       setLoading(false);
     }
+  };
+  
+  const fetchInProductionOrders = async () => {
+    setInProductionLoading(true);
+    try {
+      const response = await fetch(`${API}/stats/orders-in-production`, {
+        credentials: "include",
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setInProductionOrders(data.orders || []);
+      }
+    } catch (error) {
+      console.error("Failed to fetch in-production orders:", error);
+      toast.error("Failed to load orders in production");
+    } finally {
+      setInProductionLoading(false);
+    }
+  };
+  
+  const handleOpenInProductionModal = () => {
+    setShowInProductionModal(true);
+    fetchInProductionOrders();
   };
   
   const fetchFrameRates = async (period = ratePeriod, stageId = rateStage) => {
