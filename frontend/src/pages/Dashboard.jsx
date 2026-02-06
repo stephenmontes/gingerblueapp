@@ -265,6 +265,10 @@ export default function Dashboard({ user }) {
               <TrendingUp className="w-8 h-8 text-primary" />
             </div>
           </div>
+          <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1">
+            <ArrowRight className="w-3 h-3" />
+            Click to view per-user rates
+          </p>
         </CardContent>
       </Card>
 
