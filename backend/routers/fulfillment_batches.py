@@ -149,7 +149,13 @@ async def start_fulfillment_batch_timer(
         "user_name": user.name,
         "stage_id": batch.get("current_stage_id"),
         "stage_name": batch.get("current_stage_name"),
+        "workflow_type": "fulfillment",
         "action": "worker_joined",
+        "started_at": now,
+        "completed_at": None,
+        "duration_minutes": 0,
+        "orders_processed": 0,
+        "items_processed": 0,
         "created_at": now
     }
     await db.fulfillment_time_logs.insert_one(worker_log)
