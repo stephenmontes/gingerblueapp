@@ -158,6 +158,34 @@ export function ItemRow({ item, stages, currentStageId, onUpdateQty, onMoveStage
     }
   }
 
+  async function handleReturnToPrevious() {
+    if (!prevStage) {
+      toast.error("Already at the first stage");
+      return;
+    }
+    
+    setReturningStage(true);
+    try {
+      const res = await fetch(`${API}/batches/${item.batch_id}/frames/${item.frame_id || item.item_id}/return-stage`, {
+        method: "POST",
+        credentials: "include",
+      });
+      
+      if (res.ok) {
+        const result = await res.json();
+        toast.success(result.message || `Returned to ${prevStage.name}`);
+        if (onRefresh) onRefresh();
+      } else {
+        const err = await res.json();
+        toast.error(err.detail || "Failed to return to previous stage");
+      }
+    } catch (err) {
+      toast.error("Failed to return to previous stage");
+    } finally {
+      setReturningStage(false);
+    }
+  }
+
   return (
     <div
       className={`flex flex-col gap-3 p-4 bg-muted/30 rounded-lg border ${hasActiveTimer ? "border-border" : "border-orange-500/30"}`}
