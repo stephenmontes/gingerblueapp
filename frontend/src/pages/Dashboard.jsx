@@ -937,7 +937,7 @@ export default function Dashboard({ user }) {
                 ) : (
                   <div className="text-center py-8 text-muted-foreground">
                     <Clock className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                    <p>No orders with ship dates in the next 30 days.</p>
+                    <p>No unbatched orders awaiting production.</p>
                   </div>
                 )}
               </div>
