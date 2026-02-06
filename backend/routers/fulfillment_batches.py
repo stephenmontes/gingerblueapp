@@ -311,19 +311,23 @@ async def pause_fulfillment_batch_timer(
     now_iso = now.isoformat()
     
     # Calculate accumulated time for this session before pausing
+    session_minutes = 0
     if user_worker.get("started_at"):
         started_at = datetime.fromisoformat(user_worker["started_at"].replace("Z", "+00:00"))
         session_minutes = (now - started_at).total_seconds() / 60
-        accumulated = user_worker.get("accumulated_minutes", 0) + session_minutes
-    else:
-        accumulated = user_worker.get("accumulated_minutes", 0)
+    
+    accumulated = user_worker.get("accumulated_minutes", 0) + session_minutes
+    
+    # Store original_started_at for reporting purposes
+    original_started_at = user_worker.get("original_started_at") or user_worker.get("started_at")
     
     # Update the worker's status to paused
     active_workers[user_worker_idx] = {
         **user_worker,
         "is_paused": True,
         "paused_at": now_iso,
-        "accumulated_minutes": accumulated
+        "accumulated_minutes": accumulated,
+        "original_started_at": original_started_at
     }
     
     await db.fulfillment_batches.update_one(
