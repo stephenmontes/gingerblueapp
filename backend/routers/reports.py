@@ -12,9 +12,9 @@ router = APIRouter(tags=["reports"])
 async def get_dashboard_stats(user: User = Depends(get_current_user)):
     """Get dashboard statistics"""
     
-    # Total Orders: Orders that have been sent to production (have batch_id)
-    total_in_production = await db.fulfillment_orders.count_documents({
-        "batch_id": {"$ne": None}
+    # Total Orders: All unfulfilled orders (not shipped, not cancelled)
+    total_unfulfilled = await db.fulfillment_orders.count_documents({
+        "status": {"$nin": ["shipped", "cancelled"]}
     })
     
     # In Production: Orders currently in a production batch (batched orders)
