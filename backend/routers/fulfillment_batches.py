@@ -108,11 +108,15 @@ async def start_fulfillment_batch_timer(
     if user_already_active:
         return {"success": True, "message": "You are already working on this batch", "batch": batch}
     
-    # Add user to active workers
+    # Add user to active workers with full tracking fields
     worker_entry = {
         "user_id": user.user_id,
         "user_name": user.name,
-        "started_at": now
+        "started_at": now,
+        "original_started_at": now,
+        "is_paused": False,
+        "accumulated_minutes": 0,
+        "items_processed": 0
     }
     active_workers.append(worker_entry)
     
