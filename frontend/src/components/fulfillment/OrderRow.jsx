@@ -62,6 +62,12 @@ export function OrderRow({
   
   const isOrdersStage = stage.stage_id === "fulfill_orders";
   
+  // Get up to 3 unique item images for thumbnails
+  const itemThumbnails = items
+    .filter(item => item.image_url)
+    .slice(0, 3)
+    .map(item => item.image_url);
+  
   return (
     <TableRow className={`border-border ${isAllComplete ? 'bg-green-500/5' : ''}`}>
       {isOrdersStage && (
@@ -84,6 +90,37 @@ export function OrderRow({
         ) : (
           <span>#{order.order_number || order.order_id?.slice(-8)}</span>
         )}
+      </TableCell>
+      <TableCell>
+        {/* Item Thumbnails */}
+        <div className="flex items-center gap-1">
+          {itemThumbnails.length > 0 ? (
+            <>
+              {itemThumbnails.map((url, idx) => (
+                <div 
+                  key={idx} 
+                  className="w-10 h-10 rounded border border-border overflow-hidden bg-muted flex-shrink-0"
+                >
+                  <img 
+                    src={url} 
+                    alt="" 
+                    className="w-full h-full object-cover"
+                    onError={(e) => e.target.style.display = 'none'}
+                  />
+                </div>
+              ))}
+              {items.length > 3 && (
+                <div className="w-10 h-10 rounded border border-border bg-muted flex items-center justify-center text-xs text-muted-foreground flex-shrink-0">
+                  +{items.length - 3}
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="w-10 h-10 rounded border border-border bg-muted flex items-center justify-center">
+              <Layers className="w-4 h-4 text-muted-foreground" />
+            </div>
+          )}
+        </div>
       </TableCell>
       <TableCell>
         <div>
