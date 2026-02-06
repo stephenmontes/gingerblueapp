@@ -94,6 +94,26 @@ async def get_dashboard_stats(user: User = Depends(get_current_user)):
     # Get active production batches count
     active_batches = await db.production_batches.count_documents({"status": "active"})
     
+    # Calculate average frame production rate from production_logs
+    frame_rate_pipeline = [
+        {"$match": {"quantity": {"$gt": 0}}},
+        {"$group": {
+            "_id": None,
+            "total_frames": {"$sum": "$quantity"}
+        }}
+    ]
+    frame_result = await db.production_logs.aggregate(frame_rate_pipeline).to_list(1)
+    total_frames_produced = frame_result[0]["total_frames"] if frame_result else 0
+    
+    # Get total production time in hours
+    time_result = await db.time_logs.aggregate([
+        {"$match": {"duration_minutes": {"$gt": 0}}},
+        {"$group": {"_id": None, "total_minutes": {"$sum": "$duration_minutes"}}}
+    ]).to_list(1)
+    total_hours = (time_result[0]["total_minutes"] / 60) if time_result else 0
+    
+    avg_frames_per_hour = round(total_frames_produced / total_hours, 1) if total_hours > 0 else 0
+    
     return {
         "orders": {
             "total": total_in_production,  # Total orders sent to production
@@ -104,8 +124,157 @@ async def get_dashboard_stats(user: User = Depends(get_current_user)):
         },
         "active_batches": active_batches,
         "avg_items_per_hour": avg_items_per_hour,
+        "avg_frames_per_hour": avg_frames_per_hour,
         "orders_by_store": [{"name": s["_id"] or "Unknown", "count": s["count"]} for s in orders_by_store],
         "daily_production": daily_stats
+    }
+
+
+@router.get("/stats/frame-production-rates")
+async def get_frame_production_rates(
+    period: Literal["day", "week", "month"] = Query("week", description="Time period for rate calculation"),
+    stage_id: Optional[str] = Query(None, description="Filter by specific stage"),
+    user: User = Depends(get_current_user)
+):
+    """Get detailed frame production rates by user, filterable by stage and time period"""
+    
+    # Calculate date range based on period
+    now = datetime.now(timezone.utc)
+    if period == "day":
+        start_date = now - timedelta(days=1)
+        period_label = "Last 24 Hours"
+    elif period == "week":
+        start_date = now - timedelta(days=7)
+        period_label = "Last 7 Days"
+    else:  # month
+        start_date = now - timedelta(days=30)
+        period_label = "Last 30 Days"
+    
+    start_date_str = start_date.isoformat()
+    
+    # Build match criteria for production logs
+    match_criteria = {
+        "created_at": {"$gte": start_date_str},
+        "quantity": {"$gt": 0}
+    }
+    
+    if stage_id:
+        match_criteria["from_stage"] = stage_id
+    
+    # Get frames produced per user
+    user_frames_pipeline = [
+        {"$match": match_criteria},
+        {"$group": {
+            "_id": {
+                "user_id": "$moved_by",
+                "user_name": "$moved_by_name",
+                "stage_id": "$from_stage"
+            },
+            "frames_produced": {"$sum": "$quantity"},
+            "moves_count": {"$sum": 1}
+        }},
+        {"$sort": {"frames_produced": -1}}
+    ]
+    
+    user_frame_stats = await db.production_logs.aggregate(user_frames_pipeline).to_list(100)
+    
+    # Build match criteria for time logs
+    time_match = {"created_at": {"$gte": start_date_str}, "duration_minutes": {"$gt": 0}}
+    if stage_id:
+        time_match["stage_id"] = stage_id
+    
+    # Get time spent per user per stage
+    user_time_pipeline = [
+        {"$match": time_match},
+        {"$group": {
+            "_id": {
+                "user_id": "$user_id",
+                "user_name": "$user_name", 
+                "stage_id": "$stage_id",
+                "stage_name": "$stage_name"
+            },
+            "total_minutes": {"$sum": "$duration_minutes"},
+            "sessions": {"$sum": 1}
+        }}
+    ]
+    
+    user_time_stats = await db.time_logs.aggregate(user_time_pipeline).to_list(100)
+    
+    # Build a lookup for time by user+stage
+    time_lookup = {}
+    for t in user_time_stats:
+        key = f"{t['_id']['user_id']}_{t['_id']['stage_id']}"
+        time_lookup[key] = {
+            "minutes": t["total_minutes"],
+            "hours": round(t["total_minutes"] / 60, 2),
+            "sessions": t["sessions"],
+            "stage_name": t["_id"]["stage_name"]
+        }
+    
+    # Combine frames and time for rate calculation
+    user_rates = []
+    user_totals = {}  # Aggregate by user
+    
+    for stat in user_frame_stats:
+        user_id = stat["_id"]["user_id"]
+        user_name = stat["_id"]["user_name"] or "Unknown"
+        stage_id_key = stat["_id"]["stage_id"]
+        frames = stat["frames_produced"]
+        
+        time_key = f"{user_id}_{stage_id_key}"
+        time_data = time_lookup.get(time_key, {"minutes": 0, "hours": 0, "sessions": 0, "stage_name": "Unknown"})
+        
+        hours = time_data["hours"]
+        rate = round(frames / hours, 1) if hours > 0 else 0
+        
+        # Track per-user totals
+        if user_id not in user_totals:
+            user_totals[user_id] = {
+                "user_id": user_id,
+                "user_name": user_name,
+                "total_frames": 0,
+                "total_hours": 0,
+                "stages": []
+            }
+        
+        user_totals[user_id]["total_frames"] += frames
+        user_totals[user_id]["total_hours"] += hours
+        user_totals[user_id]["stages"].append({
+            "stage_id": stage_id_key,
+            "stage_name": time_data["stage_name"],
+            "frames": frames,
+            "hours": hours,
+            "rate": rate
+        })
+    
+    # Calculate overall rate for each user
+    for user_id, data in user_totals.items():
+        data["overall_rate"] = round(data["total_frames"] / data["total_hours"], 1) if data["total_hours"] > 0 else 0
+        user_rates.append(data)
+    
+    # Sort by overall rate descending
+    user_rates.sort(key=lambda x: x["overall_rate"], reverse=True)
+    
+    # Get available stages for filter dropdown
+    stages = await db.production_stages.find(
+        {},
+        {"_id": 0, "stage_id": 1, "name": 1, "order": 1}
+    ).sort("order", 1).to_list(20)
+    
+    # Calculate overall average
+    total_frames = sum(u["total_frames"] for u in user_rates)
+    total_hours = sum(u["total_hours"] for u in user_rates)
+    overall_avg = round(total_frames / total_hours, 1) if total_hours > 0 else 0
+    
+    return {
+        "period": period,
+        "period_label": period_label,
+        "stage_filter": stage_id,
+        "overall_average": overall_avg,
+        "total_frames": total_frames,
+        "total_hours": round(total_hours, 2),
+        "user_rates": user_rates,
+        "available_stages": stages
     }
 
 
