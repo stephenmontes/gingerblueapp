@@ -493,11 +493,14 @@ export function FulfillmentBatchDetail({ batch, stages, onRefresh, onClose, canD
       );
       
       if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        console.error("Failed to update progress:", res.status, errorData);
         // Revert on error
         onRefresh?.();
-        toast.error("Failed to update progress");
+        toast.error(errorData.detail || "Failed to update progress");
       }
     } catch (err) {
+      console.error("Failed to update progress:", err);
       onRefresh?.();
       toast.error("Failed to update progress");
     } finally {
