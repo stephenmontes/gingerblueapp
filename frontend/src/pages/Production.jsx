@@ -223,8 +223,10 @@ export default function Production({ user }) {
       {/* KPI Summary Banner - tracks hours by user & date */}
       <ProductionKpiBanner />
 
-      {/* Hours by User & Date Report */}
-      <ProductionUserDateReport />
+      {/* Hours by User & Date Report - Admin/Manager only */}
+      {(user?.role === "admin" || user?.role === "manager") && (
+        <ProductionUserDateReport />
+      )}
 
       {/* On-Demand Batch Creation Banner */}
       {(user?.role === "admin" || user?.role === "manager") && (
