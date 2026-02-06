@@ -267,27 +267,6 @@ export default function Dashboard({ user }) {
     fetchFrameRates(ratePeriod, newStage);
   };
 
-  const seedDemoData = async () => {
-    setSeeding(true);
-    try {
-      const response = await fetch(`${API}/demo/seed`, {
-        method: "POST",
-        credentials: "include",
-      });
-      if (response.ok) {
-        toast.success("Demo data created successfully!");
-        fetchStats();
-      } else {
-        const err = await response.json();
-        toast.error(err.detail || "Failed to seed demo data");
-      }
-    } catch (error) {
-      toast.error("Failed to seed demo data");
-    } finally {
-      setSeeding(false);
-    }
-  };
-
   useEffect(() => {
     fetchStats();
   }, []);
