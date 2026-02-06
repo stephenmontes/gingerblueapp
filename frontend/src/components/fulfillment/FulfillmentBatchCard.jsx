@@ -23,7 +23,7 @@ import {
 import { toast } from "sonner";
 import { API } from "@/utils/api";
 
-export function FulfillmentBatchCard({ batch, isSelected, onSelect, onRefresh, canDelete }) {
+export function FulfillmentBatchCard({ batch, isSelected, onSelect, onRefresh, canDelete, isHistory }) {
   const [undoDialogOpen, setUndoDialogOpen] = useState(false);
   const [undoing, setUndoing] = useState(false);
   
@@ -33,6 +33,11 @@ export function FulfillmentBatchCard({ batch, isSelected, onSelect, onRefresh, c
   
   // Determine card background color based on store
   const getStoreColor = () => {
+    // If history/completed, use muted color
+    if (isHistory || batch.status === "completed") {
+      return "bg-muted/50 border-muted-foreground/20";
+    }
+    
     const storeType = batch.store_type;
     
     // ShipStation orders (Etsy) = yellow
