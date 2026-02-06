@@ -257,6 +257,28 @@ export default function Team({ user }) {
     }
   };
 
+  const handleStopUserTimer = async (userId, workflowType) => {
+    try {
+      const response = await fetch(`${API}/admin/stop-user-timer/${userId}?workflow_type=${workflowType}`, {
+        method: "POST",
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        toast.success(result.message);
+        // Refresh active timers
+        await fetchActiveTimers();
+      } else {
+        const error = await response.json();
+        toast.error(error.detail || "Failed to stop timer");
+      }
+    } catch (error) {
+      console.error("Failed to stop timer:", error);
+      toast.error("Failed to stop timer");
+    }
+  };
+
   const getInitials = (name) => {
     if (!name) return "U";
     return name
@@ -269,6 +291,18 @@ export default function Team({ user }) {
 
   const getUserStats = (userId) => {
     return userStats.find((s) => s.user_id === userId) || {};
+  };
+
+  const getUserActiveTimer = (userId) => {
+    return activeTimers.find((t) => t.user_id === userId);
+  };
+
+  const formatElapsedTime = (minutes) => {
+    if (!minutes || minutes < 1) return "0m";
+    const h = Math.floor(minutes / 60);
+    const m = Math.round(minutes % 60);
+    if (h > 0) return `${h}h ${m}m`;
+    return `${m}m`;
   };
 
   // Calculate team stats
