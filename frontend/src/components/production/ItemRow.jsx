@@ -252,6 +252,21 @@ export function ItemRow({ item, stages, currentStageId, onUpdateQty, onMoveStage
           </Button>
         </div>
 
+        {/* Return to Previous Stage Button */}
+        {prevStage && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleReturnToPrevious}
+            className="gap-1 text-amber-500 border-amber-500/50 hover:bg-amber-500/10"
+            disabled={returningStage}
+            data-testid={`return-item-${item.item_id}`}
+          >
+            <ArrowLeft className="w-4 h-4" />
+            {returningStage ? "..." : prevStage.name}
+          </Button>
+        )}
+
         {/* Move to Next Stage Button - always visible if there's a next stage */}
         {nextStage && (
           <Button
