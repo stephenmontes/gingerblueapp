@@ -124,6 +124,7 @@ export function FulfillmentTimerBanner({ onTimerChange, onGoToStage }) {
   if (loading || !activeTimer) return null;
 
   const isPaused = activeTimer.is_paused;
+  const isBatchTimer = activeTimer.workflow_type === "fulfillment_batch" || activeTimer.batch_name;
 
   return (
     <div className={`rounded-lg p-4 mb-4 ${isPaused ? "bg-yellow-500/10 border border-yellow-500/30" : "bg-primary/10 border border-primary/30"}`}>
@@ -133,9 +134,16 @@ export function FulfillmentTimerBanner({ onTimerChange, onGoToStage }) {
             <Clock className={`w-5 h-5 ${isPaused ? "text-yellow-400" : "text-primary animate-pulse"}`} />
           </div>
           <div>
-            <div className="text-sm font-medium flex items-center gap-1">
+            <div className="text-sm font-medium flex items-center gap-1 flex-wrap">
               <span>Fulfillment Timer {isPaused ? "paused" : "active"}:</span>
-              <span className={`${isPaused ? "text-yellow-400" : "text-primary"}`}>{activeTimer.stage_name}</span>
+              <span className={`${isPaused ? "text-yellow-400" : "text-primary"}`}>
+                {activeTimer.stage_name}
+              </span>
+              {isBatchTimer && activeTimer.batch_name && (
+                <Badge variant="secondary" className="ml-1 text-xs">
+                  {activeTimer.batch_name}
+                </Badge>
+              )}
               {isPaused && <Badge variant="outline" className="ml-1 text-xs border-yellow-500 text-yellow-400">PAUSED</Badge>}
             </div>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -145,17 +153,17 @@ export function FulfillmentTimerBanner({ onTimerChange, onGoToStage }) {
                 accumulatedMinutes={activeTimer.accumulated_minutes || 0}
               />
               <span>•</span>
-              <span>{activeTimer.orders_processed || 0} orders processed</span>
+              <span>{activeTimer.items_processed || activeTimer.orders_processed || 0} items processed</span>
             </div>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {/* Go to Stage Button */}
-          {onGoToStage && activeTimer.stage_id && (
+          {/* Go to Stage/Batch Button */}
+          {onGoToStage && (activeTimer.stage_id || activeTimer.fulfillment_batch_id) && (
             <Button 
               size="sm" 
               variant="outline" 
-              onClick={() => onGoToStage(activeTimer.stage_id, activeTimer.batch_id)}
+              onClick={() => onGoToStage(activeTimer.stage_id, activeTimer.batch_id || activeTimer.fulfillment_batch_id)}
               className="gap-1"
               data-testid="go-to-stage-btn"
             >
