@@ -602,7 +602,7 @@ export default function Dashboard({ user }) {
 
       {/* In Production Orders Modal */}
       <Dialog open={showInProductionModal} onOpenChange={setShowInProductionModal}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+        <DialogContent className="max-w-4xl max-h-[80vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <RefreshCw className="w-5 h-5 text-blue-400" />
@@ -615,7 +615,7 @@ export default function Dashboard({ user }) {
               <RefreshCw className="w-6 h-6 animate-spin text-primary" />
             </div>
           ) : inProductionOrders.length > 0 ? (
-            <ScrollArea className="flex-1 pr-4">
+            <div className="flex-1 overflow-y-auto max-h-[50vh] pr-2">
               <div className="space-y-2">
                 {inProductionOrders.map((order) => (
                   <Card key={order.order_id} className="bg-card border-border">
@@ -651,7 +651,7 @@ export default function Dashboard({ user }) {
                   </Card>
                 ))}
               </div>
-            </ScrollArea>
+            </div>
           ) : (
             <div className="text-center py-8 text-muted-foreground">
               <Package className="w-12 h-12 mx-auto mb-3 opacity-50" />
