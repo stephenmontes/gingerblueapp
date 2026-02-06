@@ -129,7 +129,8 @@ export default function Team({ user }) {
     try {
       await Promise.all([
         fetchUsers(), 
-        fetchStats(period, customStartDate, customEndDate)
+        fetchStats(period, customStartDate, customEndDate),
+        fetchActiveTimers()
       ]);
     } finally {
       setLoading(false);
@@ -138,6 +139,9 @@ export default function Team({ user }) {
 
   useEffect(() => {
     fetchData();
+    // Refresh active timers every 30 seconds
+    const interval = setInterval(fetchActiveTimers, 30000);
+    return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
