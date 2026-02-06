@@ -510,6 +510,7 @@ export default function Team({ user }) {
                 <TableRow className="border-border hover:bg-transparent">
                   <TableHead className="label-caps">Member</TableHead>
                   <TableHead className="label-caps">Role</TableHead>
+                  <TableHead className="label-caps">Active Timer</TableHead>
                   <TableHead className="label-caps">Hourly Rate</TableHead>
                   <TableHead className="label-caps">Items Processed</TableHead>
                   <TableHead className="label-caps">Hours Logged</TableHead>
