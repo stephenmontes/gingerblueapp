@@ -843,13 +843,13 @@ export default function Dashboard({ user }) {
         </DialogContent>
       </Dialog>
 
-      {/* Pending Orders (Ship Date within 30 Days) Modal */}
+      {/* Pending Orders (Awaiting Production) Modal */}
       <Dialog open={showPendingModal} onOpenChange={setShowPendingModal}>
         <DialogContent className="max-w-4xl max-h-[80vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Clock className="w-5 h-5 text-amber-400" />
-              Pending Orders (Ship Date within 30 Days)
+              Pending Orders (Awaiting Production)
             </DialogTitle>
           </DialogHeader>
           
