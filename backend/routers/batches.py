@@ -1218,6 +1218,93 @@ async def move_all_completed_frames(
         "to_stage_name": next_stage.get("name", "")
     }
 
+
+@router.post("/{batch_id}/frames/{frame_id}/return-stage")
+async def return_frame_to_previous_stage(
+    batch_id: str,
+    frame_id: str,
+    target_stage_id: Optional[str] = None,
+    user: User = Depends(get_current_user)
+):
+    """Return a frame to the previous stage (or specified stage)"""
+    frame = await db.batch_frames.find_one({"batch_id": batch_id, "frame_id": frame_id})
+    if not frame:
+        raise HTTPException(status_code=404, detail="Frame not found")
+    
+    current_stage_id = frame.get("current_stage_id")
+    
+    # Get stages in order
+    stages = await db.production_stages.find({}, {"_id": 0}).sort("order", 1).to_list(100)
+    stage_map = {s["stage_id"]: s for s in stages}
+    
+    # Find previous stage
+    if target_stage_id:
+        prev_stage = stage_map.get(target_stage_id)
+        if not prev_stage:
+            raise HTTPException(status_code=400, detail="Target stage not found")
+    else:
+        # Find previous stage in order
+        current_order = None
+        for s in stages:
+            if s["stage_id"] == current_stage_id:
+                current_order = s.get("order", 0)
+                break
+        
+        prev_stage = None
+        if current_order is not None and current_order > 0:
+            for s in stages:
+                if s.get("order", 0) == current_order - 1:
+                    prev_stage = s
+                    break
+    
+    if not prev_stage:
+        raise HTTPException(status_code=400, detail="No previous stage available - already at first stage")
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    # Update frame - reset qty_completed and qty_rejected for the stage
+    await db.batch_frames.update_one(
+        {"frame_id": frame_id},
+        {
+            "$set": {
+                "current_stage_id": prev_stage["stage_id"],
+                "current_stage_name": prev_stage.get("name", ""),
+                "qty_completed": 0,
+                "qty_rejected": 0,
+                "status": "pending",
+                "stage_updated_at": now,
+                "stage_updated_by": user.user_id,
+                "updated_at": now
+            }
+        }
+    )
+    
+    # Log the transition (mark as return/revert)
+    await db.production_logs.insert_one({
+        "log_id": f"log_{uuid.uuid4().hex[:12]}",
+        "frame_id": frame_id,
+        "batch_id": batch_id,
+        "from_stage": current_stage_id,
+        "to_stage": prev_stage["stage_id"],
+        "to_stage_name": prev_stage.get("name", ""),
+        "size": frame.get("size"),
+        "color": frame.get("color"),
+        "qty": frame.get("qty_required"),
+        "action": "return_to_previous",
+        "moved_by": user.user_id,
+        "moved_by_name": user.name,
+        "created_at": now
+    })
+    
+    return {
+        "message": f"Returned {frame.get('size')}-{frame.get('color')} to {prev_stage.get('name')}",
+        "frame_id": frame_id,
+        "from_stage": current_stage_id,
+        "to_stage": prev_stage["stage_id"],
+        "to_stage_name": prev_stage.get("name", "")
+    }
+
+
 # Keep old cut-list endpoint for backwards compatibility but redirect to frames
 @router.get("/{batch_id}/cut-list")
 async def get_cut_list(batch_id: str, user: User = Depends(get_current_user)):
