@@ -51,23 +51,29 @@ export default function Layout({ children, user, setUser }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
 
+  const handleSaveTimers = async () => {
+    try {
+      const res = await fetch(`${API}/timer-recovery/save-all`, {
+        method: "POST",
+        credentials: "include"
+      });
+      if (res.ok) {
+        const result = await res.json();
+        if (result.saved_count > 0) {
+          toast.success(`Saved ${result.saved_count} timer(s). You can resume after logging back in.`);
+        }
+        return result.saved_count;
+      }
+    } catch (err) {
+      console.error("Failed to save timers:", err);
+    }
+    return 0;
+  };
+
   const handleLogout = async () => {
     try {
-      // Auto-stop any active timer before logout
-      const timerRes = await fetch(`${API}/user/active-timers`, {
-        credentials: "include",
-      });
-      if (timerRes.ok) {
-        const timers = await timerRes.json();
-        if (timers.length > 0) {
-          // Stop the active timer
-          await fetch(`${API}/stages/${timers[0].stage_id}/stop-timer?items_processed=0`, {
-            method: "POST",
-            credentials: "include",
-          });
-          toast.info("Timer stopped automatically");
-        }
-      }
+      // Save any active timers before logout (instead of stopping them)
+      await handleSaveTimers();
       
       await fetch(`${API}/auth/logout`, {
         method: "POST",
@@ -83,6 +89,11 @@ export default function Layout({ children, user, setUser }) {
       sessionStorage.removeItem("shopfactory_user");
       navigate("/login", { replace: true });
     }
+  };
+
+  const handleTimerRestored = (workflowType) => {
+    // Trigger a page refresh to pick up the restored timer
+    window.location.reload();
   };
 
   const getInitials = (name) => {
