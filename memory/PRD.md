@@ -29,6 +29,12 @@ Build a manufacturing and fulfillment app for Shopify websites with detailed tim
 - Fulfillment stages: Print List → Mount → Finish → Pack & Ship
 - Order-based batches route to Print List stage
 - Time tracking for fulfillment process
+- **Persistent Timer System** (NEW - Feb 2026)
+  - Global timer banner at top of Order Fulfillment page
+  - Start/Stop/Pause timer controls from page level AND within each stage
+  - "Go to Stage" button navigates to the active timer's stage
+  - Timer persists across all stages
+  - Users can only complete stage tasks with an active timer
 - **Enhanced Etsy/ShipStation Batch Workflow** (NEW - Feb 2026)
   - Item-level quantity tracking with +/- buttons
   - Auto-mark items complete when qty reaches required
@@ -36,6 +42,10 @@ Build a manufacturing and fulfillment app for Shopify websites with detailed tim
   - Progress resets when moving to new stage
   - Timer persists across stages (no stop on stage move)
   - Multiple workers can work on same batch simultaneously
+  - **Pause/Resume Timer for Batch Workers** (NEW)
+    - Individual users can pause their timer while staying on batch
+    - Paused users shown in yellow in the workers list
+    - Resume to continue tracking
   - Comprehensive batch report with:
     - Per-worker time breakdown
     - Items per hour metrics
