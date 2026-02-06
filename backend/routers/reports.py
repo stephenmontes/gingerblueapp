@@ -180,22 +180,13 @@ async def get_unfulfilled_orders_by_store(user: User = Depends(get_current_user)
 
 @router.get("/stats/pending-orders-by-store")
 async def get_pending_orders_by_store(user: User = Depends(get_current_user)):
-    """Get pending orders (ship date within 30 days) grouped by store with order values"""
+    """Get pending orders (unbatched, awaiting production) grouped by store with order values"""
     
-    now = datetime.now(timezone.utc)
-    thirty_days_from_now = (now + timedelta(days=30)).isoformat()
-    now_str = now.isoformat()
-    
-    # Aggregate pending orders by store
+    # Aggregate unbatched pending orders by store
     pipeline = [
         {"$match": {
-            "status": {"$nin": ["shipped", "cancelled"]},
-            "requested_ship_date": {
-                "$exists": True,
-                "$ne": None,
-                "$gte": now_str,
-                "$lte": thirty_days_from_now
-            }
+            "batch_id": None,
+            "status": {"$nin": ["shipped", "cancelled"]}
         }},
         {"$group": {
             "_id": "$store_name",
@@ -207,7 +198,6 @@ async def get_pending_orders_by_store(user: User = Depends(get_current_user)):
                 "customer_name": "$customer_name",
                 "total_price": "$total_price",
                 "status": "$status",
-                "batch_id": "$batch_id",
                 "requested_ship_date": "$requested_ship_date",
                 "created_at": {"$ifNull": ["$external_created_at", "$created_at"]}
             }}
@@ -224,11 +214,11 @@ async def get_pending_orders_by_store(user: User = Depends(get_current_user)):
     # Format response
     stores = []
     for store in store_data:
-        # Sort orders by ship date ascending (soonest first)
+        # Sort orders by created date descending (newest first)
         orders = sorted(
             store["orders"], 
-            key=lambda x: x.get("requested_ship_date") or "9999", 
-            reverse=False
+            key=lambda x: x.get("created_at") or "", 
+            reverse=True
         )[:50]
         
         stores.append({
