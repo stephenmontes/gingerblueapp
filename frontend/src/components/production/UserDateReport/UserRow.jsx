@@ -3,9 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ChevronDown, ChevronRight, AlertTriangle } from "lucide-react";
 
-export function ProductionUserRow({ userData, dailyLimit }) {
+export function ProductionUserRow({ userData, dailyLimit, currentUser }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const exceeds = userData.total_hours > dailyLimit;
+  
+  // Only show cost if current user is viewing their own data or is admin/manager
+  const canSeeCost = currentUser?.user_id === userData.user_id || 
+                     currentUser?.role === "admin" || 
+                     currentUser?.role === "manager";
 
   return (
     <div className={exceeds ? 'bg-red-500/5' : ''}>
@@ -25,7 +30,7 @@ export function ProductionUserRow({ userData, dailyLimit }) {
           {userData.total_hours.toFixed(1)}h
         </div>
         <div className="text-right font-mono text-green-400">
-          ${userData.labor_cost.toFixed(2)}
+          {canSeeCost ? `$${userData.labor_cost.toFixed(2)}` : '—'}
         </div>
         <div className="text-right">{userData.total_items}</div>
         <div>
