@@ -200,10 +200,14 @@ async def stop_fulfillment_batch_timer(
         return {"success": True, "message": "You are not currently working on this batch"}
     
     # Calculate time worked by this user
-    elapsed_minutes = 0
-    if user_worker.get("started_at"):
+    # Check if user was paused - if so, use accumulated_minutes
+    elapsed_minutes = user_worker.get("accumulated_minutes", 0)
+    
+    # If not paused, add the current session time
+    if not user_worker.get("is_paused") and user_worker.get("started_at"):
         started_at = datetime.fromisoformat(user_worker["started_at"].replace("Z", "+00:00"))
-        elapsed_minutes = (now - started_at).total_seconds() / 60
+        session_minutes = (now - started_at).total_seconds() / 60
+        elapsed_minutes += session_minutes
     
     # Update worker time tracking
     workers_time = batch.get("workers_time", {})
@@ -216,7 +220,7 @@ async def stop_fulfillment_batch_timer(
     
     workers_time[user.user_id]["total_minutes"] += elapsed_minutes
     workers_time[user.user_id]["sessions"].append({
-        "started_at": user_worker["started_at"],
+        "started_at": user_worker.get("original_started_at") or user_worker.get("started_at"),
         "ended_at": now_iso,
         "minutes": elapsed_minutes,
         "stage_id": batch.get("current_stage_id"),
@@ -253,11 +257,11 @@ async def stop_fulfillment_batch_timer(
         "stage_name": batch.get("current_stage_name"),
         "workflow_type": "fulfillment",
         "action": "worker_stopped",
-        "started_at": user_worker.get("started_at"),
+        "started_at": user_worker.get("original_started_at") or user_worker.get("started_at"),
         "completed_at": now_iso,
         "duration_minutes": round(elapsed_minutes, 2),
         "orders_processed": 0,
-        "items_processed": 0,
+        "items_processed": user_worker.get("items_processed", 0),
         "created_at": now_iso
     }
     await db.fulfillment_time_logs.insert_one(time_log)
@@ -265,8 +269,8 @@ async def stop_fulfillment_batch_timer(
     return {
         "success": True, 
         "message": f"Timer stopped - You worked {elapsed_minutes:.1f} minutes",
-        "elapsed_minutes": elapsed_minutes,
-        "total_minutes": accumulated,
+        "elapsed_minutes": round(elapsed_minutes, 2),
+        "total_minutes": round(accumulated, 2),
         "remaining_workers": len(new_active_workers)
     }
 
