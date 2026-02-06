@@ -289,11 +289,12 @@ export default function OrderFulfillment({ user }) {
           </Button>
           
           {showUserDateReport && (
-          <div className="p-4 pt-0">
-            <UserDateReport />
-          </div>
-        )}
-      </div>
+            <div className="p-4 pt-0">
+              <UserDateReport />
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Time Entry Manager Toggle (Admin/Manager only) */}
       <div className="border border-border rounded-lg">
