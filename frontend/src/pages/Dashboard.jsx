@@ -202,6 +202,35 @@ export default function Dashboard({ user }) {
     fetchPendingOrdersByStore();
   };
   
+  const fetchCompletedOrdersByStore = async (period = completedPeriod) => {
+    setCompletedOrdersLoading(true);
+    try {
+      const response = await fetch(`${API}/stats/completed-orders-by-store?period=${period}`, {
+        credentials: "include",
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setCompletedOrdersData(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch completed orders:", error);
+      toast.error("Failed to load completed orders");
+    } finally {
+      setCompletedOrdersLoading(false);
+    }
+  };
+  
+  const handleOpenCompletedModal = () => {
+    setShowCompletedModal(true);
+    setExpandedCompletedStore(null);
+    fetchCompletedOrdersByStore("week");
+  };
+  
+  const handleCompletedPeriodChange = (newPeriod) => {
+    setCompletedPeriod(newPeriod);
+    fetchCompletedOrdersByStore(newPeriod);
+  };
+  
   const fetchFrameRates = async (period = ratePeriod, stageId = rateStage) => {
     setRatesLoading(true);
     try {
