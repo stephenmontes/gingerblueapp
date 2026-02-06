@@ -355,6 +355,7 @@ export function FulfillmentStageTab({ stage, stages, onRefresh, onTimerChange, c
         onTimerChange={handleTimerChangeInternal}
         canDelete={canDelete}
         onDeleteOrder={confirmDeleteOrder}
+        onStartTimer={startTimer}
       />
       <InventoryDialog order={inventoryDialogOrder} onClose={() => setInventoryDialogOrder(null)} />
       <OrderWorksheet
