@@ -189,11 +189,26 @@ export default function Production({ user }) {
 
   return (
     <div className="space-y-6" data-testid="production-page">
-      <div>
-        <h1 className="text-3xl font-heading font-bold">Frame Production</h1>
-        <p className="text-muted-foreground mt-1">
-          Track time per stage • One timer per user at a time
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-heading font-bold">Frame Production</h1>
+          <p className="text-muted-foreground mt-1">
+            Track time per stage • One timer per user at a time
+          </p>
+        </div>
+        
+        {/* Time Entry Management Button - Admin/Manager only */}
+        {(user?.role === "admin" || user?.role === "manager") && (
+          <Button
+            variant="outline"
+            onClick={() => setShowTimeEntryDialog(true)}
+            className="gap-2"
+            data-testid="manage-time-entries-btn"
+          >
+            <Clock className="w-4 h-4" />
+            Manage Time Entries
+          </Button>
+        )}
       </div>
 
       {/* Active Timer Banner - shows which stage user is tracking */}
@@ -235,6 +250,13 @@ export default function Production({ user }) {
           )}
         </div>
       </div>
+
+      {/* Time Entry Management Dialog */}
+      <ProductionTimeEntryDialog
+        isOpen={showTimeEntryDialog}
+        onClose={() => setShowTimeEntryDialog(false)}
+        user={user}
+      />
     </div>
   );
 }
