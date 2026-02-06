@@ -237,8 +237,35 @@ export function FulfillmentStageTab({ stage, stages, onRefresh, onTimerChange, c
 
   const currentStageIndex = stages.findIndex(s => s.stage_id === stage.stage_id);
   const nextStage = stages[currentStageIndex + 1];
+  const prevStage = currentStageIndex > 0 ? stages[currentStageIndex - 1] : null;
   const isLastStage = currentStageIndex === stages.length - 1;
   const outOfStockCount = orders.filter(o => o.inventory_status && !o.inventory_status.all_in_stock).length;
+
+  async function onReturnOrderToPrevious(orderId) {
+    if (!prevStage) {
+      toast.error("Already at the first stage");
+      return;
+    }
+    
+    try {
+      const res = await fetch(`${API}/fulfillment/orders/${orderId}/return-stage`, {
+        method: "POST",
+        credentials: "include",
+      });
+      
+      if (res.ok) {
+        const result = await res.json();
+        toast.success(result.message || `Returned to ${prevStage.name}`);
+        loadOrders();
+        onRefresh();
+      } else {
+        const err = await res.json();
+        toast.error(err.detail || "Failed to return to previous stage");
+      }
+    } catch (err) {
+      toast.error("Failed to return order to previous stage");
+    }
+  }
 
   if (loading) {
     return (
