@@ -41,10 +41,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { API } from "@/utils/api";
 
-const KPICard = ({ title, value, subtitle, icon: Icon, color, trend }) => (
-  <Card className="bg-card border-border card-hover" data-testid={`kpi-${title.toLowerCase().replace(/\s/g, '-')}`}>
+const KPICard = ({ title, value, subtitle, icon: Icon, color, trend, onClick, clickable }) => (
+  <Card 
+    className={`bg-card border-border card-hover ${clickable ? 'cursor-pointer hover:border-primary/50 transition-colors' : ''}`} 
+    data-testid={`kpi-${title.toLowerCase().replace(/\s/g, '-')}`}
+    onClick={onClick}
+  >
     <CardContent className="p-6">
       <div className="flex items-start justify-between">
         <div>
@@ -63,6 +68,12 @@ const KPICard = ({ title, value, subtitle, icon: Icon, color, trend }) => (
           <TrendingUp className="w-4 h-4" />
           <span>{trend}</span>
         </div>
+      )}
+      {clickable && (
+        <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1">
+          <ArrowRight className="w-3 h-3" />
+          Click to view details
+        </p>
       )}
     </CardContent>
   </Card>
