@@ -425,3 +425,168 @@ async def get_work_summary(user: User = Depends(get_current_user)):
         }
     }
 
+
+
+@router.get("/admin/all-active-timers")
+async def get_all_active_timers(user: User = Depends(get_current_user)):
+    """Get all active timers across all users (admin/manager only)."""
+    if user.role not in ["admin", "manager"]:
+        raise HTTPException(status_code=403, detail="Only admins and managers can view all active timers")
+    
+    now = datetime.now(timezone.utc)
+    
+    # Get production timers
+    production_timers = await db.time_logs.find({
+        "completed_at": None,
+        "workflow_type": "production"
+    }, {"_id": 0}).to_list(100)
+    
+    # Get fulfillment timers
+    fulfillment_timers = await db.fulfillment_time_logs.find({
+        "completed_at": None
+    }, {"_id": 0}).to_list(100)
+    
+    all_timers = []
+    
+    for timer in production_timers:
+        started = datetime.fromisoformat(timer["started_at"].replace('Z', '+00:00'))
+        accumulated = timer.get("accumulated_minutes", 0)
+        
+        if timer.get("is_paused"):
+            elapsed_minutes = accumulated
+        else:
+            elapsed_minutes = accumulated + (now - started).total_seconds() / 60
+        
+        all_timers.append({
+            "log_id": timer.get("log_id"),
+            "user_id": timer.get("user_id"),
+            "user_name": timer.get("user_name"),
+            "workflow_type": "production",
+            "stage_id": timer.get("stage_id"),
+            "stage_name": timer.get("stage_name"),
+            "batch_id": timer.get("batch_id"),
+            "started_at": timer.get("started_at"),
+            "elapsed_minutes": round(elapsed_minutes, 1),
+            "is_paused": timer.get("is_paused", False),
+            "items_processed": timer.get("items_processed", 0)
+        })
+    
+    for timer in fulfillment_timers:
+        started_at = timer.get("started_at")
+        accumulated = timer.get("accumulated_minutes", 0)
+        
+        if started_at:
+            started = datetime.fromisoformat(started_at.replace('Z', '+00:00'))
+            if timer.get("is_paused"):
+                elapsed_minutes = accumulated
+            else:
+                elapsed_minutes = accumulated + (now - started).total_seconds() / 60
+        else:
+            elapsed_minutes = accumulated
+        
+        all_timers.append({
+            "log_id": timer.get("log_id"),
+            "user_id": timer.get("user_id"),
+            "user_name": timer.get("user_name"),
+            "workflow_type": "fulfillment",
+            "stage_id": timer.get("stage_id"),
+            "stage_name": timer.get("stage_name"),
+            "batch_id": timer.get("fulfillment_batch_id"),
+            "started_at": timer.get("started_at"),
+            "elapsed_minutes": round(elapsed_minutes, 1),
+            "is_paused": timer.get("is_paused", False),
+            "items_processed": timer.get("items_processed", 0)
+        })
+    
+    return all_timers
+
+
+@router.post("/admin/stop-user-timer/{user_id}")
+async def admin_stop_user_timer(
+    user_id: str,
+    workflow_type: str = "production",
+    user: User = Depends(get_current_user)
+):
+    """Stop another user's active timer (admin/manager only)."""
+    if user.role not in ["admin", "manager"]:
+        raise HTTPException(status_code=403, detail="Only admins and managers can stop other users' timers")
+    
+    now = datetime.now(timezone.utc)
+    
+    if workflow_type == "production":
+        active_timer = await db.time_logs.find_one({
+            "user_id": user_id,
+            "completed_at": None,
+            "workflow_type": "production"
+        }, {"_id": 0})
+        
+        if not active_timer:
+            raise HTTPException(status_code=404, detail="No active production timer found for this user")
+        
+        # Calculate elapsed time
+        started = datetime.fromisoformat(active_timer["started_at"].replace('Z', '+00:00'))
+        accumulated = active_timer.get("accumulated_minutes", 0)
+        
+        if active_timer.get("is_paused"):
+            total_minutes = accumulated
+        else:
+            total_minutes = accumulated + (now - started).total_seconds() / 60
+        
+        # Stop the timer
+        await db.time_logs.update_one(
+            {"log_id": active_timer["log_id"]},
+            {"$set": {
+                "completed_at": now.isoformat(),
+                "duration_minutes": round(total_minutes, 2),
+                "stopped_by_admin": True,
+                "stopped_by_admin_id": user.user_id,
+                "stopped_by_admin_name": user.name
+            }}
+        )
+        
+        return {
+            "message": f"Stopped {active_timer.get('user_name')}'s production timer",
+            "user_name": active_timer.get("user_name"),
+            "stage_name": active_timer.get("stage_name"),
+            "duration_minutes": round(total_minutes, 1)
+        }
+    
+    else:  # fulfillment
+        active_timer = await db.fulfillment_time_logs.find_one({
+            "user_id": user_id,
+            "completed_at": None
+        }, {"_id": 0})
+        
+        if not active_timer:
+            raise HTTPException(status_code=404, detail="No active fulfillment timer found for this user")
+        
+        started_at = active_timer.get("started_at")
+        accumulated = active_timer.get("accumulated_minutes", 0)
+        
+        if started_at:
+            started = datetime.fromisoformat(started_at.replace('Z', '+00:00'))
+            if active_timer.get("is_paused"):
+                total_minutes = accumulated
+            else:
+                total_minutes = accumulated + (now - started).total_seconds() / 60
+        else:
+            total_minutes = accumulated
+        
+        await db.fulfillment_time_logs.update_one(
+            {"log_id": active_timer["log_id"]},
+            {"$set": {
+                "completed_at": now.isoformat(),
+                "duration_minutes": round(total_minutes, 2),
+                "stopped_by_admin": True,
+                "stopped_by_admin_id": user.user_id,
+                "stopped_by_admin_name": user.name
+            }}
+        )
+        
+        return {
+            "message": f"Stopped {active_timer.get('user_name')}'s fulfillment timer",
+            "user_name": active_timer.get("user_name"),
+            "stage_name": active_timer.get("stage_name"),
+            "duration_minutes": round(total_minutes, 1)
+        }
+
