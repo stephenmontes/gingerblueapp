@@ -208,6 +208,7 @@ export function BatchHeader({ batch, batchDetails, activeStageId, stageName, sta
         batch={batch}
         isOpen={showReport}
         onClose={() => setShowReport(false)}
+        user={user}
       />
     </Card>
   );
