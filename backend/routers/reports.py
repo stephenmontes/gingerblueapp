@@ -23,17 +23,20 @@ async def get_dashboard_stats(user: User = Depends(get_current_user)):
         "status": {"$nin": ["shipped", "cancelled", "completed"]}
     })
     
-    # Pending Orders: Unbatched orders with no ship date or ship date within 30 days
+    # Pending Orders: Orders with ship dates within the next 30 days
     # Excluding shipped/cancelled orders
-    thirty_days_from_now = (datetime.now(timezone.utc) + timedelta(days=30)).isoformat()
+    now = datetime.now(timezone.utc)
+    thirty_days_from_now = (now + timedelta(days=30)).isoformat()
+    now_str = now.isoformat()
+    
     pending_orders = await db.fulfillment_orders.count_documents({
-        "batch_id": None,
         "status": {"$nin": ["shipped", "cancelled"]},
-        "$or": [
-            {"requested_ship_date": None},
-            {"requested_ship_date": {"$exists": False}},
-            {"requested_ship_date": {"$lte": thirty_days_from_now}}
-        ]
+        "requested_ship_date": {
+            "$exists": True,
+            "$ne": None,
+            "$gte": now_str,
+            "$lte": thirty_days_from_now
+        }
     })
     
     # Completed: Orders that have been shipped
