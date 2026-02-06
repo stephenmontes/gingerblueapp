@@ -48,6 +48,10 @@ Build a manufacturing and fulfillment app for Shopify websites with detailed tim
   - Progress resets when moving to new stage
   - Timer persists across stages (no stop on stage move)
   - Multiple workers can work on same batch simultaneously
+  - **Order Selection & Bulk Actions** (NEW)
+    - Checkbox selection for individual orders
+    - Select All / Deselect All functionality
+    - "Mark Selected Complete" button to bulk complete all items in selected orders
   - **Pause/Resume Timer for Batch Workers** (NEW)
     - Individual users can pause their timer while staying on batch
     - Paused users shown in yellow in the workers list
