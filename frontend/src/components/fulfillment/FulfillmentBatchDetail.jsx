@@ -273,6 +273,8 @@ export function FulfillmentBatchDetail({ batch, stages, onRefresh, onClose, canD
   const [deleteOrderId, setDeleteOrderId] = useState(null);
   const [deleteOrderNumber, setDeleteOrderNumber] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [selectedOrders, setSelectedOrders] = useState(new Set());
+  const [markingComplete, setMarkingComplete] = useState(false);
 
   // Check if current user is in active workers (timer must be running to work)
   const activeWorkers = batch.active_workers || [];
