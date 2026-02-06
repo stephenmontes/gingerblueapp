@@ -1009,6 +1009,8 @@ async def update_frame(
         raise HTTPException(status_code=404, detail="Frame not found")
     
     now = datetime.now(timezone.utc).isoformat()
+    current_stage_id = frame.get("current_stage_id")
+    previous_qty = frame.get("qty_completed", 0)
     
     update_data = {
         "qty_completed": qty_completed,
@@ -1026,7 +1028,20 @@ async def update_frame(
         {"$set": update_data}
     )
     
-    return {"message": "Frame updated", "frame_id": frame_id, "qty_completed": qty_completed}
+    # Update items_processed in active timer if qty increased
+    items_delta = qty_completed - previous_qty
+    if items_delta > 0 and current_stage_id:
+        await db.time_logs.update_one(
+            {
+                "user_id": user.user_id,
+                "stage_id": current_stage_id,
+                "completed_at": None,
+                "workflow_type": "production"
+            },
+            {"$inc": {"items_processed": items_delta}}
+        )
+    
+    return {"message": "Frame updated", "frame_id": frame_id, "qty_completed": qty_completed, "items_delta": items_delta}
 
 
 @router.delete("/{batch_id}/frames/{frame_id}")
