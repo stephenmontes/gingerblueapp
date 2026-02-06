@@ -711,6 +711,83 @@ async def move_order_to_next_stage(
     return result
 
 
+@router.post("/orders/{order_id}/return-stage")
+async def return_order_to_previous_stage(
+    order_id: str,
+    target_stage_id: Optional[str] = None,
+    user: User = Depends(get_current_user)
+):
+    """Return an order to the previous fulfillment stage"""
+    order = await db.fulfillment_orders.find_one({"order_id": order_id})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    current_stage_id = order.get("fulfillment_stage_id", "fulfill_orders")
+    
+    stages = await db.fulfillment_stages.find({}, {"_id": 0}).sort("order", 1).to_list(100)
+    if not stages:
+        raise HTTPException(status_code=400, detail="No fulfillment stages configured")
+    
+    stage_map = {s["stage_id"]: s for s in stages}
+    
+    # Find previous stage
+    if target_stage_id:
+        prev_stage = stage_map.get(target_stage_id)
+        if not prev_stage:
+            raise HTTPException(status_code=400, detail="Target stage not found")
+    else:
+        current_idx = 0
+        for i, s in enumerate(stages):
+            if s["stage_id"] == current_stage_id:
+                current_idx = i
+                break
+        
+        if current_idx <= 0:
+            raise HTTPException(status_code=400, detail="Order is already at the first stage")
+        
+        prev_stage = stages[current_idx - 1]
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    # Reset worksheet progress for items when returning to previous stage
+    items = order.get("items", []) or order.get("line_items", [])
+    for item in items:
+        item["qty_done"] = 0
+        item["is_complete"] = False
+    
+    await db.fulfillment_orders.update_one(
+        {"order_id": order_id},
+        {"$set": {
+            "fulfillment_stage_id": prev_stage["stage_id"],
+            "fulfillment_stage_name": prev_stage["name"],
+            "fulfillment_updated_at": now,
+            "fulfillment_updated_by": user.user_id,
+            "items": items,
+            "all_items_complete": False
+        }}
+    )
+    
+    # Log the change
+    await db.fulfillment_logs.insert_one({
+        "log_id": f"flog_{uuid.uuid4().hex[:12]}",
+        "order_id": order_id,
+        "from_stage": current_stage_id,
+        "to_stage": prev_stage["stage_id"],
+        "to_stage_name": prev_stage["name"],
+        "action": "return_to_previous",
+        "user_id": user.user_id,
+        "user_name": user.name,
+        "created_at": now
+    })
+    
+    return {
+        "message": f"Order returned to {prev_stage['name']}",
+        "from_stage": current_stage_id,
+        "to_stage": prev_stage["stage_id"],
+        "stage": prev_stage
+    }
+
+
 @router.post("/orders/bulk-move")
 async def bulk_move_orders(
     order_ids: list,
