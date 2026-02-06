@@ -171,6 +171,30 @@ export default function Dashboard({ user }) {
     fetchTotalOrdersByStore();
   };
   
+  const fetchPendingOrdersByStore = async () => {
+    setPendingOrdersLoading(true);
+    try {
+      const response = await fetch(`${API}/stats/pending-orders-by-store`, {
+        credentials: "include",
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setPendingOrdersData(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch pending orders:", error);
+      toast.error("Failed to load pending orders");
+    } finally {
+      setPendingOrdersLoading(false);
+    }
+  };
+  
+  const handleOpenPendingModal = () => {
+    setShowPendingModal(true);
+    setExpandedPendingStore(null);
+    fetchPendingOrdersByStore();
+  };
+  
   const fetchFrameRates = async (period = ratePeriod, stageId = rateStage) => {
     setRatesLoading(true);
     try {
