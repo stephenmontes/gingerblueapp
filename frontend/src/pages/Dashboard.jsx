@@ -101,11 +101,18 @@ export default function Dashboard({ user }) {
   const [totalOrdersLoading, setTotalOrdersLoading] = useState(false);
   const [expandedStore, setExpandedStore] = useState(null);
   
-  // Pending Orders (ship date within 30 days) modal state
+  // Pending Orders modal state
   const [showPendingModal, setShowPendingModal] = useState(false);
   const [pendingOrdersData, setPendingOrdersData] = useState(null);
   const [pendingOrdersLoading, setPendingOrdersLoading] = useState(false);
   const [expandedPendingStore, setExpandedPendingStore] = useState(null);
+  
+  // Completed Orders modal state
+  const [showCompletedModal, setShowCompletedModal] = useState(false);
+  const [completedOrdersData, setCompletedOrdersData] = useState(null);
+  const [completedOrdersLoading, setCompletedOrdersLoading] = useState(false);
+  const [completedPeriod, setCompletedPeriod] = useState("week");
+  const [expandedCompletedStore, setExpandedCompletedStore] = useState(null);
 
   const fetchStats = async () => {
     try {
