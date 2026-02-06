@@ -278,6 +278,88 @@ async def get_frame_production_rates(
     }
 
 
+@router.get("/stats/orders-in-production")
+async def get_orders_in_production(user: User = Depends(get_current_user)):
+    """Get list of orders currently in production (have batch_id set)"""
+    
+    # Fetch orders that are in production batches
+    orders = await db.fulfillment_orders.find(
+        {
+            "batch_id": {"$ne": None},
+            "status": {"$nin": ["shipped", "cancelled", "completed"]}
+        },
+        {
+            "_id": 0,
+            "order_id": 1,
+            "order_number": 1,
+            "customer_name": 1,
+            "store_name": 1,
+            "batch_id": 1,
+            "batch_name": 1,
+            "status": 1,
+            "items": 1,
+            "line_items": 1,
+            "total_price": 1,
+            "created_at": 1,
+            "external_created_at": 1
+        }
+    ).sort("created_at", -1).to_list(500)
+    
+    # Get batch info for each order
+    batch_ids = list(set(o.get("batch_id") for o in orders if o.get("batch_id")))
+    batches = await db.production_batches.find(
+        {"batch_id": {"$in": batch_ids}},
+        {"_id": 0, "batch_id": 1, "name": 1, "current_stage_id": 1, "status": 1}
+    ).to_list(100)
+    
+    batch_lookup = {b["batch_id"]: b for b in batches}
+    
+    # Enrich orders with batch info
+    enriched_orders = []
+    for order in orders:
+        batch_info = batch_lookup.get(order.get("batch_id"), {})
+        
+        # Calculate item count
+        items = order.get("items") or order.get("line_items") or []
+        item_count = len(items) if isinstance(items, list) else 0
+        total_qty = sum(item.get("quantity", 1) for item in items) if isinstance(items, list) else 0
+        
+        enriched_orders.append({
+            "order_id": order.get("order_id"),
+            "order_number": order.get("order_number"),
+            "customer_name": order.get("customer_name"),
+            "store_name": order.get("store_name"),
+            "batch_id": order.get("batch_id"),
+            "batch_name": batch_info.get("name") or order.get("batch_name"),
+            "batch_stage": batch_info.get("current_stage_id"),
+            "batch_status": batch_info.get("status"),
+            "status": order.get("status"),
+            "item_count": item_count,
+            "total_qty": total_qty,
+            "total_price": order.get("total_price"),
+            "created_at": order.get("external_created_at") or order.get("created_at")
+        })
+    
+    # Group by batch for summary
+    batches_summary = {}
+    for order in enriched_orders:
+        bid = order.get("batch_id")
+        if bid not in batches_summary:
+            batches_summary[bid] = {
+                "batch_id": bid,
+                "batch_name": order.get("batch_name"),
+                "batch_stage": order.get("batch_stage"),
+                "order_count": 0
+            }
+        batches_summary[bid]["order_count"] += 1
+    
+    return {
+        "total": len(enriched_orders),
+        "orders": enriched_orders,
+        "batches_summary": list(batches_summary.values())
+    }
+
+
 @router.get("/stats/production-kpis")
 async def get_production_kpis(user: User = Depends(get_current_user)):
     """Get production KPIs including rejection rates and costs"""
