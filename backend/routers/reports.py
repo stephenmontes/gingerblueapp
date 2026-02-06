@@ -116,17 +116,71 @@ async def get_dashboard_stats(user: User = Depends(get_current_user)):
     
     return {
         "orders": {
-            "total": total_in_production,  # Total orders sent to production
-            "pending": pending_orders,      # Unbatched orders needing attention
-            "in_production": in_production, # Currently in production batches
+            "total": total_unfulfilled,       # Total unfulfilled orders (not shipped)
+            "pending": pending_orders,         # Unbatched orders needing attention
+            "in_production": in_production,    # Currently in production batches
             "in_fulfillment": in_fulfillment,
-            "completed": completed          # Shipped orders
+            "completed": completed             # Shipped orders
         },
         "active_batches": active_batches,
         "avg_items_per_hour": avg_items_per_hour,
         "avg_frames_per_hour": avg_frames_per_hour,
         "orders_by_store": [{"name": s["_id"] or "Unknown", "count": s["count"]} for s in orders_by_store],
         "daily_production": daily_stats
+    }
+
+
+@router.get("/stats/unfulfilled-orders-by-store")
+async def get_unfulfilled_orders_by_store(user: User = Depends(get_current_user)):
+    """Get unfulfilled orders grouped by store with order values"""
+    
+    # Aggregate unfulfilled orders by store
+    pipeline = [
+        {"$match": {"status": {"$nin": ["shipped", "cancelled"]}}},
+        {"$group": {
+            "_id": "$store_name",
+            "order_count": {"$sum": 1},
+            "total_value": {"$sum": {"$ifNull": ["$total_price", 0]}},
+            "orders": {"$push": {
+                "order_id": "$order_id",
+                "order_number": "$order_number",
+                "customer_name": "$customer_name",
+                "total_price": "$total_price",
+                "status": "$status",
+                "batch_id": "$batch_id",
+                "created_at": {"$ifNull": ["$external_created_at", "$created_at"]}
+            }}
+        }},
+        {"$sort": {"total_value": -1}}
+    ]
+    
+    store_data = await db.fulfillment_orders.aggregate(pipeline).to_list(100)
+    
+    # Calculate totals
+    total_orders = sum(s["order_count"] for s in store_data)
+    total_value = sum(s["total_value"] for s in store_data)
+    
+    # Format response
+    stores = []
+    for store in store_data:
+        # Sort orders by created_at descending and limit to 50
+        orders = sorted(
+            store["orders"], 
+            key=lambda x: x.get("created_at") or "", 
+            reverse=True
+        )[:50]
+        
+        stores.append({
+            "store_name": store["_id"] or "Unknown",
+            "order_count": store["order_count"],
+            "total_value": round(store["total_value"], 2),
+            "orders": orders
+        })
+    
+    return {
+        "total_orders": total_orders,
+        "total_value": round(total_value, 2),
+        "stores": stores
     }
 
 
