@@ -11,7 +11,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { 
   MoreVertical, 
-  ArrowRight, 
+  ArrowRight,
+  ArrowLeft, 
   Truck,
   AlertTriangle,
   CheckCircle,
