@@ -65,10 +65,11 @@ export default function OrderFulfillment({ user }) {
 
   async function loadData() {
     try {
-      const [stagesRes, summaryRes, batchesRes] = await Promise.all([
+      const [stagesRes, summaryRes, batchesRes, historyRes] = await Promise.all([
         fetch(`${API}/fulfillment/stages`, { credentials: "include" }),
         fetch(`${API}/fulfillment/summary`, { credentials: "include" }),
         fetch(`${API}/fulfillment-batches?status=active`, { credentials: "include" }),
+        fetch(`${API}/fulfillment-batches?status=completed`, { credentials: "include" }),
       ]);
 
       if (stagesRes.ok) {
@@ -116,6 +117,10 @@ export default function OrderFulfillment({ user }) {
             setBatchDetail(null);
           }
         }
+      }
+      if (historyRes.ok) {
+        const historyData = await historyRes.json();
+        setHistoryBatches(historyData.batches || []);
       }
     } catch (err) {
       toast.error("Failed to load fulfillment data");
