@@ -23,6 +23,9 @@ export default function Production({ user }) {
   // Track active timer at page level - this is the source of truth
   const [activeTimer, setActiveTimer] = useState(null);
   const [timerVersion, setTimerVersion] = useState(0); // Used to force child re-renders
+  
+  // Time entry management dialog
+  const [showTimeEntryDialog, setShowTimeEntryDialog] = useState(false);
 
   useEffect(() => {
     loadInitialData();
