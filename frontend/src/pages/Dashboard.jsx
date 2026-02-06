@@ -914,16 +914,16 @@ export default function Dashboard({ user }) {
                                   <div>
                                     <p className="font-medium">#{order.order_number}</p>
                                     <p className="text-xs text-muted-foreground">{order.customer_name}</p>
-                                    {order.requested_ship_date && (
+                                    {order.requested_ship_date && order.requested_ship_date !== 'null' && (
                                       <p className="text-xs text-amber-400">
-                                        Ship: {new Date(order.requested_ship_date).toLocaleDateString()}
+                                        Ship: {order.requested_ship_date}
                                       </p>
                                     )}
                                   </div>
                                   <div className="text-right">
                                     <p className="font-semibold">${order.total_price?.toFixed(2) || '0.00'}</p>
                                     <Badge variant="outline" className="text-xs">
-                                      {order.batch_id ? 'In Batch' : order.status}
+                                      {order.status}
                                     </Badge>
                                   </div>
                                 </div>
