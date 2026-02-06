@@ -217,14 +217,51 @@ async def resume_fulfillment_timer(stage_id: str, user: User = Depends(get_curre
 
 @router.get("/user/active-timer")
 async def get_user_active_fulfillment_timer(user: User = Depends(get_current_user)):
-    """Get user's active fulfillment timer if any."""
-    active = await db.fulfillment_time_logs.find_one({
+    """Get user's active fulfillment timer if any (checks both stage and batch timers)."""
+    now = datetime.now(timezone.utc)
+    
+    # Check for active stage timer
+    active_stage = await db.fulfillment_time_logs.find_one({
         "user_id": user.user_id,
         "completed_at": None
     }, {"_id": 0})
     
-    if active:
-        return [active]
+    if active_stage:
+        return [active_stage]
+    
+    # Check for active batch timer
+    batch_with_user = await db.fulfillment_batches.find_one({
+        "active_workers.user_id": user.user_id
+    }, {"_id": 0})
+    
+    if batch_with_user:
+        # Find this user's worker entry
+        for worker in batch_with_user.get("active_workers", []):
+            if worker.get("user_id") == user.user_id:
+                # Calculate elapsed time
+                elapsed_minutes = worker.get("accumulated_minutes", 0)
+                if not worker.get("is_paused") and worker.get("started_at"):
+                    started = datetime.fromisoformat(worker["started_at"].replace('Z', '+00:00'))
+                    elapsed_minutes += (now - started).total_seconds() / 60
+                
+                # Return in similar format to stage timer
+                return [{
+                    "log_id": f"batch_{batch_with_user['fulfillment_batch_id']}",
+                    "user_id": user.user_id,
+                    "user_name": worker.get("user_name"),
+                    "stage_id": batch_with_user.get("current_stage_id"),
+                    "stage_name": batch_with_user.get("current_stage_name") or batch_with_user.get("batch_name"),
+                    "batch_id": batch_with_user.get("fulfillment_batch_id"),
+                    "fulfillment_batch_id": batch_with_user.get("fulfillment_batch_id"),
+                    "batch_name": batch_with_user.get("batch_name"),
+                    "workflow_type": "fulfillment_batch",
+                    "started_at": worker.get("original_started_at") or worker.get("started_at"),
+                    "is_paused": worker.get("is_paused", False),
+                    "accumulated_minutes": worker.get("accumulated_minutes", 0),
+                    "elapsed_minutes": round(elapsed_minutes, 1),
+                    "items_processed": worker.get("items_processed", 0)
+                }]
+    
     return []
 
 
