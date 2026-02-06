@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime, timezone
 import uuid
+import re
 
 from database import db
 from models.user import User
@@ -10,6 +11,25 @@ from models.production import BatchCreate, ItemMove
 from dependencies import get_current_user
 
 router = APIRouter(prefix="/batches", tags=["batches"])
+
+# Valid frame SKU prefixes
+FRAME_SKU_PREFIXES = ("BWF", "CRF", "CLF", "MTF")
+
+# Regex pattern to find frame SKUs in text
+FRAME_SKU_PATTERN = re.compile(
+    r'\b(BWF|CRF|CLF|MTF)[-_]?[A-Z]{2}[-_]?\d{3,4}[-_]?[A-Z]{1,3}[-_]?[A-Z]\b',
+    re.IGNORECASE
+)
+
+
+def extract_sku_from_text(text: str) -> Optional[str]:
+    """Extract a valid frame SKU from text."""
+    if not text:
+        return None
+    match = FRAME_SKU_PATTERN.search(text)
+    if match:
+        return match.group(0).upper().replace('_', '-')
+    return None
 
 
 class OnDemandFrame(BaseModel):
