@@ -512,6 +512,90 @@ export function FulfillmentBatchDetail({ batch, stages, onRefresh, onClose, canD
     }
   };
 
+  // Order selection handlers
+  const toggleOrderSelection = (orderId) => {
+    setSelectedOrders(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(orderId)) {
+        newSet.delete(orderId);
+      } else {
+        newSet.add(orderId);
+      }
+      return newSet;
+    });
+  };
+
+  const toggleAllOrders = () => {
+    const orders = batch.orders || [];
+    if (selectedOrders.size === orders.length) {
+      setSelectedOrders(new Set());
+    } else {
+      setSelectedOrders(new Set(orders.map(o => o.order_id)));
+    }
+  };
+
+  // Mark selected orders complete (set all items to max qty)
+  const handleMarkSelectedComplete = async () => {
+    if (requiresTimer()) return;
+    if (selectedOrders.size === 0) {
+      toast.error("No orders selected");
+      return;
+    }
+
+    setMarkingComplete(true);
+    const orders = batch.orders || [];
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (const orderId of selectedOrders) {
+      const order = orders.find(o => o.order_id === orderId);
+      if (!order) continue;
+
+      const items = order.items || order.line_items || [];
+      
+      for (let itemIdx = 0; itemIdx < items.length; itemIdx++) {
+        const item = items[itemIdx];
+        const qty = item.qty || item.quantity || 1;
+        const currentProgress = itemProgress[orderId]?.[`item_${itemIdx}`] || 0;
+        
+        // Only update if not already complete
+        if (currentProgress < qty) {
+          try {
+            const res = await fetch(
+              `${API}/fulfillment-batches/${batch.fulfillment_batch_id}/items/progress?order_id=${orderId}&item_index=${itemIdx}`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({ qty_completed: qty })
+              }
+            );
+            
+            if (res.ok) {
+              successCount++;
+            } else {
+              errorCount++;
+            }
+          } catch (err) {
+            errorCount++;
+          }
+        }
+      }
+    }
+
+    setMarkingComplete(false);
+    setSelectedOrders(new Set());
+    
+    if (successCount > 0) {
+      toast.success(`Marked ${successCount} items complete`);
+    }
+    if (errorCount > 0) {
+      toast.error(`Failed to update ${errorCount} items`);
+    }
+    
+    onRefresh?.();
+  };
+
   // Delete order handler
   const handleDeleteOrder = async () => {
     if (!deleteOrderId) return;
