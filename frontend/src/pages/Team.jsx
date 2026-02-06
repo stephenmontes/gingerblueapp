@@ -64,6 +64,7 @@ const RoleBadge = ({ role }) => {
 export default function Team({ user }) {
   const [users, setUsers] = useState([]);
   const [userStats, setUserStats] = useState([]);
+  const [activeTimers, setActiveTimers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showTimerHistory, setShowTimerHistory] = useState(false);
   
@@ -82,6 +83,18 @@ export default function Team({ user }) {
       }
     } catch (error) {
       console.error("Failed to fetch users:", error);
+    }
+  };
+
+  const fetchActiveTimers = async () => {
+    try {
+      const res = await fetch(`${API}/admin/all-active-timers`, { credentials: "include" });
+      if (res.ok) {
+        const data = await res.json();
+        setActiveTimers(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch active timers:", error);
     }
   };
 
