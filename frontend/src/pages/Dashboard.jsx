@@ -287,9 +287,11 @@ export default function Dashboard({ user }) {
         <KPICard
           title="Total Orders"
           value={stats?.orders?.total || 0}
-          subtitle="Sent to production"
+          subtitle="Unfulfilled orders"
           icon={Package}
           color="text-primary"
+          clickable={true}
+          onClick={handleOpenTotalOrdersModal}
         />
         <KPICard
           title="Pending"
