@@ -11,21 +11,32 @@ router = APIRouter(tags=["reports"])
 @router.get("/stats/dashboard")
 async def get_dashboard_stats(user: User = Depends(get_current_user)):
     """Get dashboard statistics"""
-    # Optimized: Use single aggregation for order counts instead of multiple count_documents
+    # Use fulfillment_orders collection (main orders collection)
     order_stats_pipeline = [
         {"$group": {
             "_id": "$status",
             "count": {"$sum": 1}
         }}
     ]
-    order_stats = await db.orders.aggregate(order_stats_pipeline).to_list(20)
+    order_stats = await db.fulfillment_orders.aggregate(order_stats_pipeline).to_list(20)
     
     # Convert to dict for easy lookup
     status_counts = {s["_id"]: s["count"] for s in order_stats}
     total_orders = sum(status_counts.values())
     pending = status_counts.get("pending", 0)
     in_production = status_counts.get("in_production", 0)
-    completed = status_counts.get("completed", 0)
+    completed = status_counts.get("completed", 0) + status_counts.get("shipped", 0)
+    
+    # Count orders in fulfillment stages
+    fulfillment_pipeline = [
+        {"$match": {"fulfillment_stage_id": {"$exists": True, "$ne": None}}},
+        {"$group": {
+            "_id": "$fulfillment_stage_id",
+            "count": {"$sum": 1}
+        }}
+    ]
+    fulfillment_stats = await db.fulfillment_orders.aggregate(fulfillment_pipeline).to_list(20)
+    in_fulfillment = sum(s["count"] for s in fulfillment_stats)
     
     pipeline = [
         {"$match": {"duration_minutes": {"$gt": 0}}},
@@ -43,8 +54,9 @@ async def get_dashboard_stats(user: User = Depends(get_current_user)):
             (agg_result[0]["total_items"] / agg_result[0]["total_minutes"]) * 60, 1
         )
     
+    # Get orders by store from fulfillment_orders
     store_pipeline = [{"$group": {"_id": "$store_name", "count": {"$sum": 1}}}]
-    orders_by_store = await db.orders.aggregate(store_pipeline).to_list(100)
+    orders_by_store = await db.fulfillment_orders.aggregate(store_pipeline).to_list(100)
     
     week_ago = datetime.now(timezone.utc) - timedelta(days=7)
     daily_pipeline = [
@@ -60,12 +72,23 @@ async def get_dashboard_stats(user: User = Depends(get_current_user)):
     ]
     daily_stats = await db.time_logs.aggregate(daily_pipeline).to_list(7)
     
+    # Get active production batches count
+    active_batches = await db.production_batches.count_documents({"status": "active"})
+    
     return {
-        "orders": {"total": total_orders, "pending": pending, "in_production": in_production, "completed": completed},
+        "orders": {
+            "total": total_orders, 
+            "pending": pending, 
+            "in_production": in_production,
+            "in_fulfillment": in_fulfillment,
+            "completed": completed
+        },
+        "active_batches": active_batches,
         "avg_items_per_hour": avg_items_per_hour,
         "orders_by_store": [{"name": s["_id"] or "Unknown", "count": s["count"]} for s in orders_by_store],
         "daily_production": daily_stats
     }
+
 
 @router.get("/stats/production-kpis")
 async def get_production_kpis(user: User = Depends(get_current_user)):
