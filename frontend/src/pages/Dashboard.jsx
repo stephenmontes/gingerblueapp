@@ -326,7 +326,7 @@ export default function Dashboard({ user }) {
         <KPICard
           title="Pending"
           value={stats?.orders?.pending || 0}
-          subtitle="Ship date within 30 days"
+          subtitle="Awaiting production"
           icon={Clock}
           color="text-amber-400"
           clickable={true}
