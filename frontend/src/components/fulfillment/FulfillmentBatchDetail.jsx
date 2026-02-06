@@ -835,8 +835,42 @@ export function FulfillmentBatchDetail({ batch, stages, onRefresh, onClose, canD
         ))}
       </div>
 
+      {/* Selection Toolbar */}
+      <div className="flex items-center justify-between p-3 border-b border-border bg-muted/30">
+        <div className="flex items-center gap-3">
+          <Checkbox 
+            checked={selectedOrders.size === (batch.orders?.length || 0) && batch.orders?.length > 0}
+            onCheckedChange={toggleAllOrders}
+            data-testid="select-all-orders"
+          />
+          <span className="text-sm">
+            {selectedOrders.size > 0 
+              ? `${selectedOrders.size} order${selectedOrders.size > 1 ? 's' : ''} selected`
+              : 'Select orders'
+            }
+          </span>
+        </div>
+        
+        {selectedOrders.size > 0 && (
+          <Button
+            size="sm"
+            onClick={handleMarkSelectedComplete}
+            disabled={markingComplete || !isUserActive || isUserPaused}
+            className="gap-2 bg-green-600 hover:bg-green-700"
+            data-testid="mark-selected-complete-btn"
+          >
+            {markingComplete ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <CheckSquare className="w-4 h-4" />
+            )}
+            Mark {selectedOrders.size} Complete
+          </Button>
+        )}
+      </div>
+
       {/* Orders Worksheet */}
-      <ScrollArea className="flex-1 h-[calc(100vh-400px)] min-h-[300px]">
+      <ScrollArea className="flex-1 h-[calc(100vh-450px)] min-h-[300px]">
         <div className="space-y-4 p-4 pr-6">
           {batch.orders?.map((order, orderIdx) => {
             const items = order.items || order.line_items || [];
@@ -845,16 +879,23 @@ export function FulfillmentBatchDetail({ batch, stages, onRefresh, onClose, canD
               return sum + (itemProgress[order.order_id]?.[`item_${idx}`] || 0);
             }, 0);
             const orderComplete = isOrderComplete(order);
+            const isSelected = selectedOrders.has(order.order_id);
             
             return (
               <Card 
                 key={order.order_id} 
-                className={`transition-all ${orderComplete ? 'bg-green-500/10 border-green-500/30' : ''}`}
+                className={`transition-all ${orderComplete ? 'bg-green-500/10 border-green-500/30' : ''} ${isSelected ? 'ring-2 ring-primary' : ''}`}
               >
                 <CardContent className="p-4">
                   {/* Order Header */}
                   <div className="flex items-center justify-between mb-3 pb-3 border-b border-border">
                     <div className="flex items-center gap-3">
+                      {/* Checkbox */}
+                      <Checkbox 
+                        checked={isSelected}
+                        onCheckedChange={() => toggleOrderSelection(order.order_id)}
+                        data-testid={`select-order-${order.order_id}`}
+                      />
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
                         orderComplete ? 'bg-green-500 text-white' : 'bg-muted'
                       }`}>
