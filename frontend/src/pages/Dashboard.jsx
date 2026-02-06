@@ -72,6 +72,13 @@ export default function Dashboard({ user }) {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [seeding, setSeeding] = useState(false);
+  
+  // Frame production rate modal state
+  const [showRatesModal, setShowRatesModal] = useState(false);
+  const [ratesData, setRatesData] = useState(null);
+  const [ratesLoading, setRatesLoading] = useState(false);
+  const [ratePeriod, setRatePeriod] = useState("week");
+  const [rateStage, setRateStage] = useState("all");
 
   const fetchStats = async () => {
     try {
@@ -88,6 +95,43 @@ export default function Dashboard({ user }) {
     } finally {
       setLoading(false);
     }
+  };
+  
+  const fetchFrameRates = async (period = ratePeriod, stageId = rateStage) => {
+    setRatesLoading(true);
+    try {
+      let url = `${API}/stats/frame-production-rates?period=${period}`;
+      if (stageId && stageId !== "all") {
+        url += `&stage_id=${stageId}`;
+      }
+      const response = await fetch(url, {
+        credentials: "include",
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setRatesData(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch frame rates:", error);
+      toast.error("Failed to load frame production rates");
+    } finally {
+      setRatesLoading(false);
+    }
+  };
+  
+  const handleOpenRatesModal = () => {
+    setShowRatesModal(true);
+    fetchFrameRates();
+  };
+  
+  const handlePeriodChange = (newPeriod) => {
+    setRatePeriod(newPeriod);
+    fetchFrameRates(newPeriod, rateStage);
+  };
+  
+  const handleStageChange = (newStage) => {
+    setRateStage(newStage);
+    fetchFrameRates(ratePeriod, newStage);
   };
 
   const seedDemoData = async () => {
