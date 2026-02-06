@@ -374,8 +374,12 @@ export function FulfillmentBatchDetail({ batch, stages, onRefresh, onClose, canD
         const result = await res.json();
         toast.success(result.message);
         onRefresh?.();
+      } else {
+        const err = await res.json();
+        toast.error(err.detail || "Failed to stop timer");
       }
     } catch (err) {
+      console.error("Stop timer error:", err);
       toast.error("Failed to stop timer");
     }
   };
