@@ -599,6 +599,79 @@ export default function Dashboard({ user }) {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* In Production Orders Modal */}
+      <Dialog open={showInProductionModal} onOpenChange={setShowInProductionModal}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <RefreshCw className="w-5 h-5 text-blue-400" />
+              Orders In Production ({inProductionOrders.length})
+            </DialogTitle>
+          </DialogHeader>
+          
+          {inProductionLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <RefreshCw className="w-6 h-6 animate-spin text-primary" />
+            </div>
+          ) : inProductionOrders.length > 0 ? (
+            <ScrollArea className="flex-1 pr-4">
+              <div className="space-y-2">
+                {inProductionOrders.map((order) => (
+                  <Card key={order.order_id} className="bg-card border-border">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <p className="font-semibold">#{order.order_number}</p>
+                            <Badge variant="outline" className="text-xs">
+                              {order.store_name}
+                            </Badge>
+                            {order.batch_name && (
+                              <Badge className="text-xs bg-blue-500/20 text-blue-400">
+                                {order.batch_name}
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground">{order.customer_name}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold">{order.total_qty} items</p>
+                          <p className="text-xs text-muted-foreground">
+                            {order.total_price ? `$${order.total_price.toFixed(2)}` : ''}
+                          </p>
+                        </div>
+                      </div>
+                      {order.created_at && (
+                        <p className="text-xs text-muted-foreground mt-2">
+                          Ordered: {new Date(order.created_at).toLocaleDateString()}
+                        </p>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </ScrollArea>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <Package className="w-12 h-12 mx-auto mb-3 opacity-50" />
+              <p>No orders currently in production.</p>
+              <p className="text-sm mt-1">Send orders to production to see them here.</p>
+            </div>
+          )}
+          
+          <div className="pt-4 border-t border-border mt-auto">
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => window.location.href = "/production"}
+            >
+              Go to Production Page
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
