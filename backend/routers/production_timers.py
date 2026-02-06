@@ -367,7 +367,7 @@ async def add_manual_production_time_entry(
     if entry_date:
         try:
             entry_datetime = datetime.fromisoformat(entry_date.replace('Z', '+00:00'))
-        except:
+        except ValueError:
             entry_datetime = now
     else:
         entry_datetime = now
@@ -450,7 +450,7 @@ async def get_production_hours_by_user_date(
         if completed:
             try:
                 log_date = datetime.fromisoformat(completed.replace('Z', '+00:00')).strftime("%Y-%m-%d")
-            except:
+            except ValueError:
                 continue
         else:
             continue
