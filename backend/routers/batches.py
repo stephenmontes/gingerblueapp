@@ -1145,12 +1145,25 @@ async def move_frame_to_next_stage(
         "created_at": now
     })
     
+    # Update the user's active timer for this stage with items_processed
+    qty_moved = frame.get("qty_required", 1)
+    await db.time_logs.update_one(
+        {
+            "user_id": user.user_id,
+            "stage_id": current_stage_id,
+            "completed_at": None,
+            "workflow_type": "production"
+        },
+        {"$inc": {"items_processed": qty_moved}}
+    )
+    
     return {
         "message": f"Moved {frame.get('size')}-{frame.get('color')} to {next_stage.get('name')}",
         "frame_id": frame_id,
         "from_stage": current_stage_id,
         "to_stage": next_stage["stage_id"],
-        "to_stage_name": next_stage.get("name", "")
+        "to_stage_name": next_stage.get("name", ""),
+        "items_processed": qty_moved
     }
 
 @router.post("/{batch_id}/frames/move-all")
