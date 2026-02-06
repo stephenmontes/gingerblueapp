@@ -373,6 +373,42 @@ export function FulfillmentBatchDetail({ batch, stages, onRefresh, onClose, canD
     }
   };
 
+  const handlePauseTimer = async () => {
+    try {
+      const res = await fetch(`${API}/fulfillment-batches/${batch.fulfillment_batch_id}/pause-timer`, {
+        method: "POST",
+        credentials: "include"
+      });
+      if (res.ok) {
+        toast.info("Timer paused");
+        onRefresh?.();
+      } else {
+        const err = await res.json();
+        toast.error(err.detail || "Failed to pause timer");
+      }
+    } catch (err) {
+      toast.error("Failed to pause timer");
+    }
+  };
+
+  const handleResumeTimer = async () => {
+    try {
+      const res = await fetch(`${API}/fulfillment-batches/${batch.fulfillment_batch_id}/resume-timer`, {
+        method: "POST",
+        credentials: "include"
+      });
+      if (res.ok) {
+        toast.success("Timer resumed");
+        onRefresh?.();
+      } else {
+        const err = await res.json();
+        toast.error(err.detail || "Failed to resume timer");
+      }
+    } catch (err) {
+      toast.error("Failed to resume timer");
+    }
+  };
+
   const handleMoveStage = async (targetStageId) => {
     if (requiresTimer()) return;
     
