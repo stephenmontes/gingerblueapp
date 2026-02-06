@@ -22,7 +22,7 @@ async def start_fulfillment_timer(
     if not stage:
         raise HTTPException(status_code=404, detail="Stage not found")
     
-    # Check for any active fulfillment timer
+    # Check for any active fulfillment stage timer
     any_active = await db.fulfillment_time_logs.find_one({
         "user_id": user.user_id,
         "completed_at": None
@@ -32,6 +32,17 @@ async def start_fulfillment_timer(
         raise HTTPException(
             status_code=400, 
             detail=f"You already have an active timer for {any_active.get('stage_name', 'another stage')}. Stop it first."
+        )
+    
+    # Also check for active batch timers (from fulfillment_batches.active_workers)
+    batch_with_user = await db.fulfillment_batches.find_one({
+        "active_workers.user_id": user.user_id
+    }, {"_id": 0, "batch_name": 1, "fulfillment_batch_id": 1})
+    
+    if batch_with_user:
+        raise HTTPException(
+            status_code=400,
+            detail=f"You are currently working on batch '{batch_with_user.get('batch_name', 'Unknown')}'. Stop that timer first."
         )
     
     # Get batch_id from the order if order_id is provided, or use fulfillment_batch_id directly
