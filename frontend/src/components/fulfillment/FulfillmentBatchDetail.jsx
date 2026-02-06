@@ -261,7 +261,7 @@ function QtyInput({ value, max, onChange, disabled }) {
 }
 
 // Main Batch Detail Component
-export function FulfillmentBatchDetail({ batch, stages, onRefresh, onClose, canDelete }) {
+export function FulfillmentBatchDetail({ batch, stages, onRefresh, onClose, canDelete, user }) {
   const [timerRunning, setTimerRunning] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -274,6 +274,12 @@ export function FulfillmentBatchDetail({ batch, stages, onRefresh, onClose, canD
 
   // Check if current user is in active workers (timer must be running to work)
   const activeWorkers = batch.active_workers || [];
+  
+  // Find the current user's worker entry
+  const currentUserWorker = user ? activeWorkers.find(w => w.user_id === user.user_id) : null;
+  const isUserActive = !!currentUserWorker;
+  const isUserPaused = currentUserWorker?.is_paused || false;
+  
   const hasActiveTimer = batch.timer_active && !batch.timer_paused && activeWorkers.length > 0;
   
   // Helper to check if timer is required before action
