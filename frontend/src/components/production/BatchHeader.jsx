@@ -202,6 +202,13 @@ export function BatchHeader({ batch, batchDetails, activeStageId, stageName, sta
           </div>
         </div>
       </CardContent>
+
+      {/* Batch Report Dialog */}
+      <ProductionBatchReportDialog
+        batch={batch}
+        isOpen={showReport}
+        onClose={() => setShowReport(false)}
+      />
     </Card>
   );
 }
