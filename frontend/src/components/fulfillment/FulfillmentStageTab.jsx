@@ -502,11 +502,13 @@ function OrdersView({
                   stage={stage}
                   stages={stages}
                   nextStage={nextStage}
+                  prevStage={prevStage}
                   isLastStage={isLastStage}
                   isSelected={selectedOrders.includes(order.order_id)}
                   onToggleSelect={() => onToggleOrderSelection(order.order_id)}
                   onMoveNext={() => onMoveOrderToNext(order.order_id)}
                   onMoveToStage={(stageId) => onMoveOrderToStage(order.order_id, stageId)}
+                  onReturnToPrevious={() => onReturnOrderToPrevious(order.order_id)}
                   onMarkShipped={() => onMarkShipped(order.order_id)}
                   onShowInventory={() => onShowInventory(order)}
                   onOpenWorksheet={() => onOpenWorksheet(order)}
