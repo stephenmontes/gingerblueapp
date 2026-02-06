@@ -334,17 +334,6 @@ export default function Dashboard({ user }) {
             <RefreshCw className="w-4 h-4" />
             Refresh
           </Button>
-          {user?.role === "admin" && (
-            <Button
-              onClick={seedDemoData}
-              disabled={seeding}
-              className="gap-2 bg-primary hover:bg-primary/90"
-              data-testid="seed-demo-btn"
-            >
-              <Zap className="w-4 h-4" />
-              {seeding ? "Seeding..." : "Load Demo Data"}
-            </Button>
-          )}
         </div>
       </div>
 
