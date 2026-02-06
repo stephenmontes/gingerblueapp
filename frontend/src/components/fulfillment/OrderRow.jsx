@@ -198,9 +198,11 @@ function OrderActions({
   stage,
   stages,
   nextStage,
+  prevStage,
   isLastStage,
   onMoveNext,
   onMoveToStage,
+  onReturnToPrevious,
   onMarkShipped,
   onShowInventory,
   onOpenWorksheet,
@@ -212,6 +214,19 @@ function OrderActions({
   
   return (
     <div className="flex items-center justify-end gap-1">
+      {/* Return to Previous Stage Button */}
+      {prevStage && (
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={onReturnToPrevious}
+          className="gap-1 text-amber-500 border-amber-500/50 hover:bg-amber-500/10"
+          data-testid={`return-order-${order.order_id}`}
+        >
+          <ArrowLeft className="w-4 h-4" />
+          {prevStage.name}
+        </Button>
+      )}
       {isOrdersStage && !isLastStage && nextStage && (
         <Button
           size="sm"
