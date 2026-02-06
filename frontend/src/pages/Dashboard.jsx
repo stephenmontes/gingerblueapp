@@ -81,7 +81,6 @@ const KPICard = ({ title, value, subtitle, icon: Icon, color, trend, onClick, cl
 export default function Dashboard({ user }) {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [seeding, setSeeding] = useState(false);
   
   // Frame production rate modal state
   const [showRatesModal, setShowRatesModal] = useState(false);
