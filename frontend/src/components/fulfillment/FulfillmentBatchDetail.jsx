@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
+import { Checkbox } from "@/components/ui/checkbox";
 import { 
   Play, 
   Square, 
@@ -25,7 +26,8 @@ import {
   Plus,
   Trash2,
   MoreVertical,
-  Pause
+  Pause,
+  CheckSquare
 } from "lucide-react";
 import { toast } from "sonner";
 import { API } from "@/utils/api";
