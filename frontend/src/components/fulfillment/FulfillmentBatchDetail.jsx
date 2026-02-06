@@ -621,22 +621,54 @@ export function FulfillmentBatchDetail({ batch, stages, onRefresh, onClose, canD
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className={`text-2xl font-mono font-bold px-4 py-2 rounded-lg ${
-              timerRunning ? 'bg-green-500/20 text-green-400' : 'bg-muted'
+              isUserPaused ? 'bg-yellow-500/20 text-yellow-400' : timerRunning && isUserActive ? 'bg-green-500/20 text-green-400' : 'bg-muted'
             }`}>
               <Clock className="w-5 h-5 inline mr-2" />
               {formatTime(elapsedSeconds)}
+              {isUserPaused && <Badge variant="outline" className="ml-2 text-xs border-yellow-500 text-yellow-400">PAUSED</Badge>}
             </div>
             
-            {!timerRunning ? (
-              <Button onClick={handleStartTimer} className="gap-2">
+            {/* Timer Action Buttons */}
+            {!isUserActive ? (
+              <Button onClick={handleStartTimer} className="gap-2" data-testid="start-batch-timer">
                 <Play className="w-4 h-4" />
                 {activeWorkers.length > 0 ? "Join Work" : "Start Timer"}
               </Button>
             ) : (
-              <Button onClick={handleStopTimer} variant="destructive" className="gap-2">
-                <Square className="w-4 h-4" />
-                Stop My Timer
-              </Button>
+              <div className="flex items-center gap-2">
+                {/* Pause/Resume Button */}
+                {isUserPaused ? (
+                  <Button 
+                    onClick={handleResumeTimer} 
+                    className="gap-2 bg-green-600 hover:bg-green-700"
+                    data-testid="resume-batch-timer"
+                  >
+                    <Play className="w-4 h-4" />
+                    Resume
+                  </Button>
+                ) : (
+                  <Button 
+                    onClick={handlePauseTimer} 
+                    variant="secondary" 
+                    className="gap-2"
+                    data-testid="pause-batch-timer"
+                  >
+                    <Pause className="w-4 h-4" />
+                    Pause
+                  </Button>
+                )}
+                
+                {/* Stop Button */}
+                <Button 
+                  onClick={handleStopTimer} 
+                  variant="destructive" 
+                  className="gap-2"
+                  data-testid="stop-batch-timer"
+                >
+                  <Square className="w-4 h-4" />
+                  Stop
+                </Button>
+              </div>
             )}
           </div>
           
@@ -644,9 +676,14 @@ export function FulfillmentBatchDetail({ batch, stages, onRefresh, onClose, canD
           {activeWorkers.length > 0 && (
             <div className="flex items-center gap-2">
               {activeWorkers.slice(0, 3).map((w, i) => (
-                <Badge key={i} variant="secondary" className="gap-1">
+                <Badge 
+                  key={i} 
+                  variant="secondary" 
+                  className={`gap-1 ${w.is_paused ? 'border-yellow-500/50 text-yellow-400' : ''}`}
+                >
                   <User className="w-3 h-3" />
                   {w.user_name}
+                  {w.is_paused && <span className="text-xs">(paused)</span>}
                 </Badge>
               ))}
               {activeWorkers.length > 3 && (
