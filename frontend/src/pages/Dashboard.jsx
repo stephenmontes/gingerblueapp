@@ -94,6 +94,12 @@ export default function Dashboard({ user }) {
   const [showInProductionModal, setShowInProductionModal] = useState(false);
   const [inProductionOrders, setInProductionOrders] = useState([]);
   const [inProductionLoading, setInProductionLoading] = useState(false);
+  
+  // Total Orders (unfulfilled) modal state
+  const [showTotalOrdersModal, setShowTotalOrdersModal] = useState(false);
+  const [totalOrdersData, setTotalOrdersData] = useState(null);
+  const [totalOrdersLoading, setTotalOrdersLoading] = useState(false);
+  const [expandedStore, setExpandedStore] = useState(null);
 
   const fetchStats = async () => {
     try {
