@@ -166,7 +166,12 @@ export function FulfillmentBatchCard({ batch, isSelected, onSelect, onRefresh, c
               <StoreIcon className="w-3 h-3" />
               {storeDisplay.name}
             </Badge>
-            {isRunning && (
+            {(isHistory || batch.status === "completed") && (
+              <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs">
+                Completed
+              </Badge>
+            )}
+            {isRunning && !isHistory && (
               <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs">
                 <Timer className="w-3 h-3 mr-1" />
                 Running
