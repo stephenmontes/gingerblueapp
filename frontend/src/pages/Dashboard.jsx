@@ -141,6 +141,30 @@ export default function Dashboard({ user }) {
     fetchInProductionOrders();
   };
   
+  const fetchTotalOrdersByStore = async () => {
+    setTotalOrdersLoading(true);
+    try {
+      const response = await fetch(`${API}/stats/unfulfilled-orders-by-store`, {
+        credentials: "include",
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setTotalOrdersData(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch orders by store:", error);
+      toast.error("Failed to load orders by store");
+    } finally {
+      setTotalOrdersLoading(false);
+    }
+  };
+  
+  const handleOpenTotalOrdersModal = () => {
+    setShowTotalOrdersModal(true);
+    setExpandedStore(null);
+    fetchTotalOrdersByStore();
+  };
+  
   const fetchFrameRates = async (period = ratePeriod, stageId = rateStage) => {
     setRatesLoading(true);
     try {
@@ -156,7 +180,7 @@ export default function Dashboard({ user }) {
         setRatesData(data);
       }
     } catch (error) {
-      console.error("Failed to fetch frame rates:", error);
+      console.error("Failed to fetch frame rates:");
       toast.error("Failed to load frame production rates");
     } finally {
       setRatesLoading(false);
