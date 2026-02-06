@@ -39,6 +39,9 @@ import {
   Filter,
   Download,
   DollarSign,
+  Square,
+  Play,
+  Pause,
 } from "lucide-react";
 import { toast } from "sonner";
 import { TimerHistory } from "@/components/TimerHistory";
