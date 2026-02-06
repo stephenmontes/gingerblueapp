@@ -167,12 +167,9 @@ function BatchReportDialog({ batch, isOpen, onClose }) {
                       </div>
                       <div className="text-right text-sm">
                         <p>{worker.total_hours} hrs • {worker.items_per_hour} items/hr</p>
-                        {/* Only show cost for current user or admins */}
-                        {(user?.user_id === worker.user_id || user?.role === "admin" || user?.role === "manager") && (
-                          <p className="text-muted-foreground">
-                            ${worker.hourly_rate}/hr → ${worker.cost}
-                          </p>
-                        )}
+                        <p className="text-muted-foreground">
+                          ${worker.hourly_rate}/hr → ${worker.cost}
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -198,12 +195,9 @@ function BatchReportDialog({ batch, isOpen, onClose }) {
                       </div>
                       <div className="text-right text-sm">
                         <p>{(worker.total_minutes / 60).toFixed(2)} hrs</p>
-                        {/* Only show cost for current user or admins */}
-                        {(user?.user_id === userId || user?.role === "admin" || user?.role === "manager") && (
-                          <p className="text-muted-foreground">
-                            ${worker.hourly_rate}/hr → ${worker.cost?.toFixed(2) || '0.00'}
-                          </p>
-                        )}
+                        <p className="text-muted-foreground">
+                          ${worker.hourly_rate}/hr → ${worker.cost?.toFixed(2) || '0.00'}
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -211,23 +205,21 @@ function BatchReportDialog({ batch, isOpen, onClose }) {
               </div>
             )}
 
-            {/* Cost Summary - Only show for admins/managers */}
-            {(user?.role === "admin" || user?.role === "manager") && (
-              <div className="p-4 bg-primary/10 rounded-lg">
-                <div className="flex justify-between items-center">
-                  <span className="font-semibold">
-                    Total Cost (Avg ${report.combined_metrics.avg_hourly_rate}/hr)
-                  </span>
-                  <span className="text-xl font-bold">${report.combined_metrics.total_cost}</span>
-                </div>
-                {report.production_time && (
-                  <div className="text-sm text-muted-foreground mt-2">
-                    Production: ${report.production_time.total_cost} + 
-                    Fulfillment: ${report.fulfillment_time.total_cost}
-                  </div>
-                )}
+            {/* Cost Summary */}
+            <div className="p-4 bg-primary/10 rounded-lg">
+              <div className="flex justify-between items-center">
+                <span className="font-semibold">
+                  Total Cost (Avg ${report.combined_metrics.avg_hourly_rate}/hr)
+                </span>
+                <span className="text-xl font-bold">${report.combined_metrics.total_cost}</span>
               </div>
-            )}
+              {report.production_time && (
+                <div className="text-sm text-muted-foreground mt-2">
+                  Production: ${report.production_time.total_cost} + 
+                  Fulfillment: ${report.fulfillment_time.total_cost}
+                </div>
+              )}
+            </div>
           </div>
         ) : (
           <p className="text-center text-muted-foreground py-8">No report data available</p>
