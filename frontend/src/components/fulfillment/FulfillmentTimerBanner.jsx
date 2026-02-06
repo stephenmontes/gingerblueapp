@@ -111,6 +111,18 @@ export function FulfillmentTimerBanner({ onTimerChange, onGoToStage }) {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {/* Go to Stage Button */}
+          {onGoToStage && activeTimer.stage_id && (
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={() => onGoToStage(activeTimer.stage_id, activeTimer.batch_id)}
+              className="gap-1"
+              data-testid="go-to-stage-btn"
+            >
+              <ArrowRight className="w-4 h-4" /> Go to Stage
+            </Button>
+          )}
           {isPaused ? (
             <Button size="sm" onClick={handleResume} className="gap-1 bg-green-600 hover:bg-green-700" data-testid="resume-fulfillment-timer">
               <Play className="w-4 h-4" /> Resume
