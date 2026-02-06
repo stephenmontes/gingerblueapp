@@ -378,6 +378,104 @@ async def get_fulfillment_timer_history(
     return logs
 
 
+@router.get("/user/timer-history")
+async def get_user_timer_history(
+    period: str = "today",
+    user: User = Depends(get_current_user)
+):
+    """Get the current user's timer history for a specified period."""
+    now = datetime.now(timezone.utc)
+    
+    # Calculate date range based on period
+    if period == "today":
+        start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        period_label = "Today"
+    elif period == "yesterday":
+        start_date = (now - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+        now = start_date.replace(hour=23, minute=59, second=59)
+        period_label = "Yesterday"
+    elif period == "this_week":
+        days_since_monday = now.weekday()
+        start_date = (now - timedelta(days=days_since_monday)).replace(hour=0, minute=0, second=0, microsecond=0)
+        period_label = "This Week"
+    else:
+        start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        period_label = "Today"
+    
+    # Fetch completed sessions
+    logs = await db.fulfillment_time_logs.find({
+        "user_id": user.user_id,
+        "completed_at": {"$ne": None, "$gte": start_date.isoformat()}
+    }, {"_id": 0}).sort("completed_at", -1).to_list(100)
+    
+    # Calculate totals
+    total_minutes = sum(log.get("duration_minutes", 0) for log in logs)
+    total_orders = sum(log.get("orders_processed", 0) for log in logs)
+    total_items = sum(log.get("items_processed", 0) for log in logs)
+    
+    # Group by stage
+    stage_totals = {}
+    for log in logs:
+        stage_id = log.get("stage_id", "unknown")
+        if stage_id not in stage_totals:
+            stage_totals[stage_id] = {
+                "stage_id": stage_id,
+                "stage_name": log.get("stage_name", "Unknown"),
+                "total_minutes": 0,
+                "session_count": 0
+            }
+        stage_totals[stage_id]["total_minutes"] += log.get("duration_minutes", 0)
+        stage_totals[stage_id]["session_count"] += 1
+    
+    # Check for active timer
+    active_timer = await db.fulfillment_time_logs.find_one({
+        "user_id": user.user_id,
+        "completed_at": None
+    }, {"_id": 0})
+    
+    active_minutes = 0
+    if active_timer and not active_timer.get("is_paused"):
+        started = datetime.fromisoformat(active_timer["started_at"].replace('Z', '+00:00'))
+        active_minutes = (now - started).total_seconds() / 60
+        active_minutes += active_timer.get("accumulated_minutes", 0)
+    elif active_timer:
+        active_minutes = active_timer.get("accumulated_minutes", 0)
+    
+    return {
+        "period": period,
+        "period_label": period_label,
+        "user_id": user.user_id,
+        "user_name": user.name,
+        "sessions": [{
+            "log_id": log["log_id"],
+            "stage_id": log.get("stage_id"),
+            "stage_name": log.get("stage_name"),
+            "order_number": log.get("order_number"),
+            "batch_id": log.get("batch_id") or log.get("fulfillment_batch_id"),
+            "started_at": log.get("started_at"),
+            "completed_at": log.get("completed_at"),
+            "duration_minutes": round(log.get("duration_minutes", 0), 1),
+            "orders_processed": log.get("orders_processed", 0),
+            "items_processed": log.get("items_processed", 0),
+            "is_manual": log.get("manual_entry", False)
+        } for log in logs],
+        "active_timer": {
+            "stage_name": active_timer.get("stage_name"),
+            "started_at": active_timer.get("started_at"),
+            "is_paused": active_timer.get("is_paused", False),
+            "current_minutes": round(active_minutes, 1)
+        } if active_timer else None,
+        "totals": {
+            "total_hours": round(total_minutes / 60, 2),
+            "total_minutes": round(total_minutes, 1),
+            "total_orders": total_orders,
+            "total_items": total_items,
+            "session_count": len(logs),
+            "active_minutes": round(active_minutes, 1)
+        },
+        "by_stage": list(stage_totals.values())
+    }
+
 
 @router.get("/stats/overall-kpis")
 async def get_fulfillment_overall_kpis(
