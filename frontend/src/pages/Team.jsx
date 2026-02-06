@@ -549,6 +549,48 @@ export default function Team({ user }) {
                         <RoleBadge role={member.role} />
                       </TableCell>
                       <TableCell>
+                        {(() => {
+                          const timer = getUserActiveTimer(member.user_id);
+                          if (!timer) {
+                            return <span className="text-muted-foreground text-sm">—</span>;
+                          }
+                          return (
+                            <div className="flex items-center gap-2">
+                              <div className="flex flex-col">
+                                <div className="flex items-center gap-2">
+                                  {timer.is_paused ? (
+                                    <Pause className="w-3 h-3 text-yellow-400" />
+                                  ) : (
+                                    <Play className="w-3 h-3 text-green-400" />
+                                  )}
+                                  <span className="font-mono font-semibold text-primary">
+                                    {formatElapsedTime(timer.elapsed_minutes)}
+                                  </span>
+                                </div>
+                                <span className="text-xs text-muted-foreground">
+                                  {timer.stage_name}
+                                </span>
+                                <Badge variant="outline" className="text-xs mt-1 w-fit">
+                                  {timer.workflow_type === "production" ? "Production" : "Fulfillment"}
+                                </Badge>
+                              </div>
+                              {(user?.role === "admin" || user?.role === "manager") && member.user_id !== user.user_id && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 px-2 text-destructive hover:text-destructive"
+                                  onClick={() => handleStopUserTimer(member.user_id, timer.workflow_type)}
+                                  data-testid={`stop-timer-${member.user_id}`}
+                                >
+                                  <Square className="w-3 h-3 mr-1" />
+                                  Stop
+                                </Button>
+                              )}
+                            </div>
+                          );
+                        })()}
+                      </TableCell>
+                      <TableCell>
                         {user?.role === "admin" ? (
                           <div className="flex items-center gap-1">
                             <DollarSign className="w-4 h-4 text-muted-foreground" />
