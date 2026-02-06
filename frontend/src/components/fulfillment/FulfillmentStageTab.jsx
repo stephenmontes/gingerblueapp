@@ -88,6 +88,24 @@ export function FulfillmentStageTab({ stage, stages, onRefresh, onTimerChange, c
     return false;
   }
 
+  async function startTimer() {
+    try {
+      const res = await fetch(`${API}/fulfillment/stages/${stage.stage_id}/start-timer`, {
+        method: "POST",
+        credentials: "include",
+      });
+      if (res.ok) {
+        toast.success(`Timer started for ${stage.name}`);
+        handleTimerChangeInternal();
+      } else {
+        const err = await res.json();
+        toast.error(err.detail || "Failed to start timer");
+      }
+    } catch (err) {
+      toast.error("Failed to start timer");
+    }
+  }
+
   async function loadOrders() {
     try {
       // Build URL with optional batch filter
