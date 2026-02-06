@@ -428,7 +428,7 @@ async def get_work_summary(user: User = Depends(get_current_user)):
 
 
 @router.get("/admin/all-active-timers")
-async def get_all_active_timers(user: User = Depends(get_current_user)):
+async def get_all_active_timers_admin(user: User = Depends(get_current_user)):
     """Get all active timers across all users (admin/manager only)."""
     if user.role not in ["admin", "manager"]:
         raise HTTPException(status_code=403, detail="Only admins and managers can view all active timers")
@@ -441,9 +441,14 @@ async def get_all_active_timers(user: User = Depends(get_current_user)):
         "workflow_type": "production"
     }, {"_id": 0}).to_list(100)
     
-    # Get fulfillment timers
+    # Get fulfillment stage timers
     fulfillment_timers = await db.fulfillment_time_logs.find({
         "completed_at": None
+    }, {"_id": 0}).to_list(100)
+    
+    # Get fulfillment batch timers (from active_workers in fulfillment_batches)
+    batches_with_workers = await db.fulfillment_batches.find({
+        "active_workers": {"$exists": True, "$ne": []}
     }, {"_id": 0}).to_list(100)
     
     all_timers = []
@@ -497,6 +502,34 @@ async def get_all_active_timers(user: User = Depends(get_current_user)):
             "is_paused": timer.get("is_paused", False),
             "items_processed": timer.get("items_processed", 0)
         })
+    
+    # Add batch timers (from active_workers array in fulfillment_batches)
+    for batch in batches_with_workers:
+        active_workers = batch.get("active_workers", [])
+        for worker in active_workers:
+            started_at = worker.get("started_at")
+            accumulated = worker.get("accumulated_minutes", 0)
+            
+            if started_at and not worker.get("is_paused"):
+                started = datetime.fromisoformat(started_at.replace('Z', '+00:00'))
+                elapsed_minutes = accumulated + (now - started).total_seconds() / 60
+            else:
+                elapsed_minutes = accumulated
+            
+            all_timers.append({
+                "log_id": f"batch_{batch.get('fulfillment_batch_id')}_{worker.get('user_id')}",
+                "user_id": worker.get("user_id"),
+                "user_name": worker.get("user_name"),
+                "workflow_type": "fulfillment_batch",
+                "stage_id": batch.get("current_stage_id"),
+                "stage_name": batch.get("current_stage_name") or batch.get("batch_name"),
+                "batch_id": batch.get("fulfillment_batch_id"),
+                "batch_name": batch.get("batch_name"),
+                "started_at": worker.get("original_started_at") or worker.get("started_at"),
+                "elapsed_minutes": round(elapsed_minutes, 1),
+                "is_paused": worker.get("is_paused", False),
+                "items_processed": worker.get("items_processed", 0)
+            })
     
     return all_timers
 
