@@ -211,11 +211,15 @@ export function FulfillmentBatchCard({ batch, isSelected, onSelect, onRefresh, c
         {batch.current_stage_name && (
           <div className="mt-2 pt-2 border-t border-border/50 flex items-center justify-between">
             <span className="text-xs text-muted-foreground">
-              Stage: <strong>{batch.current_stage_name}</strong>
+              {isHistory || batch.status === "completed" ? (
+                <>Completed: <strong>{batch.time_completed ? new Date(batch.time_completed).toLocaleDateString() : 'N/A'}</strong></>
+              ) : (
+                <>Stage: <strong>{batch.current_stage_name}</strong></>
+              )}
             </span>
             
-            {/* Undo Button - Admin/Manager only */}
-            {canDelete && (
+            {/* Undo Button - Admin/Manager only, not for history */}
+            {canDelete && !isHistory && batch.status !== "completed" && (
               <Button
                 size="sm"
                 variant="ghost"
