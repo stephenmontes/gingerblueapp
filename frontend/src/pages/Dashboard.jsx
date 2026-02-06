@@ -9,11 +9,9 @@ import {
   TrendingUp,
   ArrowRight,
   RefreshCw,
-  Zap,
   Store,
   User,
   ChevronDown,
-  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
