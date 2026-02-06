@@ -2,12 +2,14 @@ import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Play, Pause, Square, Clock } from "lucide-react";
+import { Play, Pause, Square, Clock, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
 import { API } from "@/utils/api";
+import { ProductionBatchReportDialog } from "./ProductionBatchReportDialog";
 
 
 export function BatchHeader({ batch, batchDetails, activeStageId, stageName, stageColor, onTimerChange, activeTimer }) {
+  const [showReport, setShowReport] = useState(false);
   const totalItems = batchDetails ? batchDetails.total_items : 0;
   const orderCount = batch.order_ids ? batch.order_ids.length : 0;
 
