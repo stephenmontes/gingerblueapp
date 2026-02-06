@@ -588,11 +588,22 @@ async def create_batch(batch_data: BatchCreate, user: User = Depends(get_current
     for order in orders:
         for item in order.get("items", []):
             sku = item.get("sku", "UNKNOWN")
+            item_name = item.get("name", "") or item.get("title", "")
+            
+            # Check if SKU is valid (starts with frame prefix)
+            sku_upper = sku.upper()
+            sku_is_valid = any(sku_upper.startswith(p) for p in FRAME_SKU_PREFIXES)
+            
+            # If SKU is not valid, try to extract from item name
+            if not sku_is_valid:
+                extracted = extract_sku_from_text(item_name)
+                if extracted:
+                    sku = extracted
+                    sku_is_valid = True
             
             # For enhanced batches (ShipStation/Etsy/GB Decor), only process frame items
             if is_enhanced_batch:
-                sku_prefix = sku.split("-")[0].upper() if "-" in sku else sku[:3].upper()
-                if sku_prefix not in FRAME_SKU_PREFIXES:
+                if not sku_is_valid:
                     continue  # Skip non-frame items for frame production
             
             parsed = parse_sku(sku)
