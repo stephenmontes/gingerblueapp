@@ -571,8 +571,12 @@ export default function Team({ user }) {
                                   {timer.stage_name}
                                 </span>
                                 <Badge variant="outline" className="text-xs mt-1 w-fit">
-                                  {timer.workflow_type === "production" ? "Production" : "Fulfillment"}
+                                  {timer.workflow_type === "production" ? "Production" : 
+                                   timer.workflow_type === "fulfillment_batch" ? "Batch" : "Fulfillment"}
                                 </Badge>
+                                {timer.batch_name && (
+                                  <span className="text-xs text-muted-foreground">{timer.batch_name}</span>
+                                )}
                               </div>
                               {(user?.role === "admin" || user?.role === "manager") && member.user_id !== user.user_id && (
                                 <Button
