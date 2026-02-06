@@ -9,6 +9,7 @@ import { ActiveTimerBanner } from "../components/production/ActiveTimerBanner";
 import { OnDemandBatchBanner } from "../components/production/OnDemandBatchBanner";
 import { ProductionTimeEntryDialog } from "../components/production/ProductionTimeEntryDialog";
 import { ProductionKpiBanner } from "../components/production/ProductionKpiBanner";
+import { ProductionWorkersBanner } from "../components/production/ProductionWorkersBanner";
 import { API } from "@/utils/api";
 
 export default function Production({ user }) {
