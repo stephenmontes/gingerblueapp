@@ -215,6 +215,9 @@ export default function Production({ user }) {
       {/* Active Timer Banner - shows which stage user is tracking */}
       <ActiveTimerBanner activeTimer={activeTimer} onTimerChange={handleTimerChange} />
 
+      {/* KPI Summary Banner - tracks hours by user & date */}
+      <ProductionKpiBanner />
+
       {/* On-Demand Batch Creation Banner */}
       {(user?.role === "admin" || user?.role === "manager") && (
         <OnDemandBatchBanner onBatchCreated={loadInitialData} />
