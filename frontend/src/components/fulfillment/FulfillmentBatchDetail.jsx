@@ -24,7 +24,8 @@ import {
   Minus,
   Plus,
   Trash2,
-  MoreVertical
+  MoreVertical,
+  Pause
 } from "lucide-react";
 import { toast } from "sonner";
 import { API } from "@/utils/api";
