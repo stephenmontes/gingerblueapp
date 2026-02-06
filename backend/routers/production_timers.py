@@ -219,8 +219,20 @@ async def get_production_overall_kpis(
     pipeline = [
         {"$match": {
             "duration_minutes": {"$gt": 0},
-            "completed_at": {"$ne": None, "$gte": start_date.isoformat(), "$lte": end_date.isoformat()},
+            "completed_at": {"$ne": None},
             "workflow_type": "production"
+        }},
+        {"$addFields": {
+            "completed_date": {
+                "$cond": {
+                    "if": {"$eq": [{"$type": "$completed_at"}, "string"]},
+                    "then": {"$dateFromString": {"dateString": "$completed_at"}},
+                    "else": "$completed_at"
+                }
+            }
+        }},
+        {"$match": {
+            "completed_date": {"$gte": start_date, "$lte": end_date}
         }},
         {"$group": {
             "_id": None,
