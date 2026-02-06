@@ -271,6 +271,132 @@ async def stop_fulfillment_batch_timer(
     }
 
 
+@router.post("/{batch_id}/pause-timer")
+async def pause_fulfillment_batch_timer(
+    batch_id: str,
+    user: User = Depends(get_current_user)
+):
+    """Pause timer for the current user on a fulfillment batch"""
+    batch = await db.fulfillment_batches.find_one(
+        {"fulfillment_batch_id": batch_id},
+        {"_id": 0}
+    )
+    
+    if not batch:
+        raise HTTPException(status_code=404, detail="Fulfillment batch not found")
+    
+    active_workers = batch.get("active_workers", [])
+    
+    # Find current user in active workers
+    user_worker_idx = None
+    for idx, w in enumerate(active_workers):
+        if w["user_id"] == user.user_id:
+            user_worker_idx = idx
+            break
+    
+    if user_worker_idx is None:
+        raise HTTPException(status_code=400, detail="You are not currently working on this batch")
+    
+    user_worker = active_workers[user_worker_idx]
+    
+    # Check if already paused
+    if user_worker.get("is_paused"):
+        raise HTTPException(status_code=400, detail="Your timer is already paused")
+    
+    now = datetime.now(timezone.utc)
+    now_iso = now.isoformat()
+    
+    # Calculate accumulated time for this session before pausing
+    if user_worker.get("started_at"):
+        started_at = datetime.fromisoformat(user_worker["started_at"].replace("Z", "+00:00"))
+        session_minutes = (now - started_at).total_seconds() / 60
+        accumulated = user_worker.get("accumulated_minutes", 0) + session_minutes
+    else:
+        accumulated = user_worker.get("accumulated_minutes", 0)
+    
+    # Update the worker's status to paused
+    active_workers[user_worker_idx] = {
+        **user_worker,
+        "is_paused": True,
+        "paused_at": now_iso,
+        "accumulated_minutes": accumulated
+    }
+    
+    await db.fulfillment_batches.update_one(
+        {"fulfillment_batch_id": batch_id},
+        {"$set": {
+            "active_workers": active_workers,
+            "updated_at": now_iso
+        }}
+    )
+    
+    return {
+        "success": True,
+        "message": "Timer paused",
+        "accumulated_minutes": round(accumulated, 2)
+    }
+
+
+@router.post("/{batch_id}/resume-timer")
+async def resume_fulfillment_batch_timer(
+    batch_id: str,
+    user: User = Depends(get_current_user)
+):
+    """Resume timer for the current user on a fulfillment batch"""
+    batch = await db.fulfillment_batches.find_one(
+        {"fulfillment_batch_id": batch_id},
+        {"_id": 0}
+    )
+    
+    if not batch:
+        raise HTTPException(status_code=404, detail="Fulfillment batch not found")
+    
+    active_workers = batch.get("active_workers", [])
+    
+    # Find current user in active workers
+    user_worker_idx = None
+    for idx, w in enumerate(active_workers):
+        if w["user_id"] == user.user_id:
+            user_worker_idx = idx
+            break
+    
+    if user_worker_idx is None:
+        raise HTTPException(status_code=400, detail="You are not currently working on this batch")
+    
+    user_worker = active_workers[user_worker_idx]
+    
+    # Check if not paused
+    if not user_worker.get("is_paused"):
+        raise HTTPException(status_code=400, detail="Your timer is not paused")
+    
+    now = datetime.now(timezone.utc)
+    now_iso = now.isoformat()
+    
+    # Resume by setting a new started_at and clearing pause status
+    active_workers[user_worker_idx] = {
+        **user_worker,
+        "is_paused": False,
+        "started_at": now_iso,  # New session start time
+        "resumed_at": now_iso
+    }
+    
+    await db.fulfillment_batches.update_one(
+        {"fulfillment_batch_id": batch_id},
+        {"$set": {
+            "active_workers": active_workers,
+            "timer_paused": False,  # Ensure batch timer is not paused
+            "timer_active": True,
+            "updated_at": now_iso
+        }}
+    )
+    
+    return {
+        "success": True,
+        "message": "Timer resumed",
+        "started_at": now_iso
+    }
+
+
 @router.post("/{batch_id}/move-stage")
 async def move_fulfillment_batch_stage(
     batch_id: str,
