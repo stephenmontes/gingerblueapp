@@ -284,10 +284,17 @@ export function FulfillmentBatchDetail({ batch, stages, onRefresh, onClose, canD
   
   // Helper to check if timer is required before action
   const requiresTimer = () => {
-    if (!hasActiveTimer) {
+    if (!isUserActive) {
       toast.error("Start your timer before updating items", {
         icon: <Clock className="w-4 h-4" />,
         description: "Click 'Start Timer' or 'Join Work' to begin tracking your work"
+      });
+      return true;
+    }
+    if (isUserPaused) {
+      toast.error("Resume your timer before updating items", {
+        icon: <Clock className="w-4 h-4" />,
+        description: "Click 'Resume' to continue tracking your work"
       });
       return true;
     }
