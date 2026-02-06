@@ -182,10 +182,25 @@ async def transform_shipstation_order(
     ss_status = ss_order.get("orderStatus", "awaiting_shipment")
     local_status = status_map.get(ss_status, "awaiting_shipment")
     
+    # Valid frame SKU prefixes
+    FRAME_SKU_PREFIXES = ("BWF", "CRF", "CLF", "MTF")
+    
     # Process line items with product matching
     items = []
     for ss_item in ss_order.get("items", []):
         sku = ss_item.get("sku", "").strip()
+        item_name = ss_item.get("name", "")
+        
+        # Check if SKU is valid (starts with frame prefix)
+        sku_is_valid = sku and any(sku.upper().startswith(p) for p in FRAME_SKU_PREFIXES)
+        
+        # If SKU is not valid but looks like a description or item number,
+        # try to extract a valid SKU from the item name
+        if not sku_is_valid:
+            extracted_sku = extract_sku_from_text(item_name)
+            if extracted_sku:
+                sku = extracted_sku
+                sku_is_valid = True
         
         # Try to match product from our database
         matched_product = None
@@ -201,8 +216,9 @@ async def transform_shipstation_order(
             "line_item_id": f"li_{uuid.uuid4().hex[:8]}",
             "shipstation_item_id": ss_item.get("orderItemId"),
             "sku": sku or "NO-SKU",
-            "name": ss_item.get("name", "Unknown Item"),
-            "title": ss_item.get("name", "Unknown Item"),
+            "original_sku": ss_item.get("sku", "").strip(),  # Keep original for reference
+            "name": item_name or "Unknown Item",
+            "title": item_name or "Unknown Item",
             "quantity": ss_item.get("quantity", 1),
             "qty": ss_item.get("quantity", 1),
             "qty_done": ss_item.get("quantity", 1) if local_status == "shipped" else 0,
@@ -212,6 +228,7 @@ async def transform_shipstation_order(
             "image_url": ss_item.get("imageUrl"),
             "product_matched": matched_product is not None,
             "matched_product_id": matched_product.get("product_id") if matched_product else None,
+            "sku_extracted": not ss_item.get("sku", "").strip().upper().startswith(FRAME_SKU_PREFIXES) and sku_is_valid,
         }
         
         # If we matched a product, get its image
