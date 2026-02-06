@@ -225,6 +225,28 @@ export default function OrderFulfillment({ user }) {
         }}
       />
 
+      {/* My Timer History Toggle */}
+      <div className="border border-border rounded-lg">
+        <Button
+          variant="ghost"
+          onClick={() => setShowMyTimerHistory(!showMyTimerHistory)}
+          className="w-full justify-between h-12"
+          data-testid="toggle-my-timer-history"
+        >
+          <span className="flex items-center gap-2">
+            <History className="w-4 h-4" />
+            My Timer History
+          </span>
+          {showMyTimerHistory ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+        </Button>
+        
+        {showMyTimerHistory && (
+          <div className="p-4 pt-0">
+            <MyTimerHistory />
+          </div>
+        )}
+      </div>
+
       {/* KPI Banner */}
       <FulfillmentKpiBanner />
 
