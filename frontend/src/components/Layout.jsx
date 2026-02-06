@@ -239,6 +239,9 @@ export default function Layout({ children, user, setUser }) {
         </div>
         <div className="p-6 md:p-8 lg:pl-8">{children}</div>
       </main>
+
+      {/* Timer Recovery Dialog - shows when user has saved timers */}
+      <TimerRecoveryDialog onTimerRestored={handleTimerRestored} />
     </div>
   );
 }
