@@ -11,21 +11,35 @@ router = APIRouter(tags=["reports"])
 @router.get("/stats/dashboard")
 async def get_dashboard_stats(user: User = Depends(get_current_user)):
     """Get dashboard statistics"""
-    # Use fulfillment_orders collection (main orders collection)
-    order_stats_pipeline = [
-        {"$group": {
-            "_id": "$status",
-            "count": {"$sum": 1}
-        }}
-    ]
-    order_stats = await db.fulfillment_orders.aggregate(order_stats_pipeline).to_list(20)
     
-    # Convert to dict for easy lookup
-    status_counts = {s["_id"]: s["count"] for s in order_stats}
-    total_orders = sum(status_counts.values())
-    pending = status_counts.get("pending", 0)
-    in_production = status_counts.get("in_production", 0)
-    completed = status_counts.get("completed", 0) + status_counts.get("shipped", 0)
+    # Total Orders: Orders that have been sent to production (have batch_id)
+    total_in_production = await db.fulfillment_orders.count_documents({
+        "batch_id": {"$ne": None}
+    })
+    
+    # In Production: Orders currently in a production batch (batched orders)
+    in_production = await db.fulfillment_orders.count_documents({
+        "batch_id": {"$ne": None},
+        "status": {"$nin": ["shipped", "cancelled", "completed"]}
+    })
+    
+    # Pending Orders: Unbatched orders with no ship date or ship date within 30 days
+    # Excluding shipped/cancelled orders
+    thirty_days_from_now = (datetime.now(timezone.utc) + timedelta(days=30)).isoformat()
+    pending_orders = await db.fulfillment_orders.count_documents({
+        "batch_id": None,
+        "status": {"$nin": ["shipped", "cancelled"]},
+        "$or": [
+            {"requested_ship_date": None},
+            {"requested_ship_date": {"$exists": False}},
+            {"requested_ship_date": {"$lte": thirty_days_from_now}}
+        ]
+    })
+    
+    # Completed: Orders that have been shipped
+    completed = await db.fulfillment_orders.count_documents({
+        "status": "shipped"
+    })
     
     # Count orders in fulfillment stages
     fulfillment_pipeline = [
@@ -38,6 +52,7 @@ async def get_dashboard_stats(user: User = Depends(get_current_user)):
     fulfillment_stats = await db.fulfillment_orders.aggregate(fulfillment_pipeline).to_list(20)
     in_fulfillment = sum(s["count"] for s in fulfillment_stats)
     
+    # Calculate average items per hour from time logs
     pipeline = [
         {"$match": {"duration_minutes": {"$gt": 0}}},
         {"$group": {
@@ -54,10 +69,14 @@ async def get_dashboard_stats(user: User = Depends(get_current_user)):
             (agg_result[0]["total_items"] / agg_result[0]["total_minutes"]) * 60, 1
         )
     
-    # Get orders by store from fulfillment_orders
-    store_pipeline = [{"$group": {"_id": "$store_name", "count": {"$sum": 1}}}]
+    # Get orders by store from fulfillment_orders (excluding shipped/cancelled)
+    store_pipeline = [
+        {"$match": {"status": {"$nin": ["shipped", "cancelled"]}}},
+        {"$group": {"_id": "$store_name", "count": {"$sum": 1}}}
+    ]
     orders_by_store = await db.fulfillment_orders.aggregate(store_pipeline).to_list(100)
     
+    # Daily production stats from time logs
     week_ago = datetime.now(timezone.utc) - timedelta(days=7)
     daily_pipeline = [
         {"$match": {"completed_at": {"$ne": None}}},
@@ -77,11 +96,11 @@ async def get_dashboard_stats(user: User = Depends(get_current_user)):
     
     return {
         "orders": {
-            "total": total_orders, 
-            "pending": pending, 
-            "in_production": in_production,
+            "total": total_in_production,  # Total orders sent to production
+            "pending": pending_orders,      # Unbatched orders needing attention
+            "in_production": in_production, # Currently in production batches
             "in_fulfillment": in_fulfillment,
-            "completed": completed
+            "completed": completed          # Shipped orders
         },
         "active_batches": active_batches,
         "avg_items_per_hour": avg_items_per_hour,
