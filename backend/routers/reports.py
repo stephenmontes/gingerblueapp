@@ -187,6 +187,73 @@ async def get_unfulfilled_orders_by_store(user: User = Depends(get_current_user)
     }
 
 
+@router.get("/stats/pending-orders-by-store")
+async def get_pending_orders_by_store(user: User = Depends(get_current_user)):
+    """Get pending orders (ship date within 30 days) grouped by store with order values"""
+    
+    now = datetime.now(timezone.utc)
+    thirty_days_from_now = (now + timedelta(days=30)).isoformat()
+    now_str = now.isoformat()
+    
+    # Aggregate pending orders by store
+    pipeline = [
+        {"$match": {
+            "status": {"$nin": ["shipped", "cancelled"]},
+            "requested_ship_date": {
+                "$exists": True,
+                "$ne": None,
+                "$gte": now_str,
+                "$lte": thirty_days_from_now
+            }
+        }},
+        {"$group": {
+            "_id": "$store_name",
+            "order_count": {"$sum": 1},
+            "total_value": {"$sum": {"$ifNull": ["$total_price", 0]}},
+            "orders": {"$push": {
+                "order_id": "$order_id",
+                "order_number": "$order_number",
+                "customer_name": "$customer_name",
+                "total_price": "$total_price",
+                "status": "$status",
+                "batch_id": "$batch_id",
+                "requested_ship_date": "$requested_ship_date",
+                "created_at": {"$ifNull": ["$external_created_at", "$created_at"]}
+            }}
+        }},
+        {"$sort": {"total_value": -1}}
+    ]
+    
+    store_data = await db.fulfillment_orders.aggregate(pipeline).to_list(100)
+    
+    # Calculate totals
+    total_orders = sum(s["order_count"] for s in store_data)
+    total_value = sum(s["total_value"] for s in store_data)
+    
+    # Format response
+    stores = []
+    for store in store_data:
+        # Sort orders by ship date ascending (soonest first)
+        orders = sorted(
+            store["orders"], 
+            key=lambda x: x.get("requested_ship_date") or "9999", 
+            reverse=False
+        )[:50]
+        
+        stores.append({
+            "store_name": store["_id"] or "Unknown",
+            "order_count": store["order_count"],
+            "total_value": round(store["total_value"], 2),
+            "orders": orders
+        })
+    
+    return {
+        "total_orders": total_orders,
+        "total_value": round(total_value, 2),
+        "stores": stores
+    }
+
+
 @router.get("/stats/frame-production-rates")
 async def get_frame_production_rates(
     period: Literal["day", "week", "month"] = Query("week", description="Time period for rate calculation"),
