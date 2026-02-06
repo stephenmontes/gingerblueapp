@@ -10,6 +10,7 @@ import { OnDemandBatchBanner } from "../components/production/OnDemandBatchBanne
 import { ProductionTimeEntryDialog } from "../components/production/ProductionTimeEntryDialog";
 import { ProductionKpiBanner } from "../components/production/ProductionKpiBanner";
 import { ProductionWorkersBanner } from "../components/production/ProductionWorkersBanner";
+import { ProductionUserDateReport } from "../components/production/UserDateReport";
 import { API } from "@/utils/api";
 
 export default function Production({ user }) {
