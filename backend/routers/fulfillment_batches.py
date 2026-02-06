@@ -497,47 +497,64 @@ async def update_item_progress(
     user: User = Depends(get_current_user)
 ):
     """Update completion progress for a specific item in the batch"""
-    batch = await db.fulfillment_batches.find_one(
-        {"fulfillment_batch_id": batch_id},
-        {"_id": 0}
-    )
-    
-    if not batch:
-        raise HTTPException(status_code=404, detail="Fulfillment batch not found")
-    
-    now = datetime.now(timezone.utc).isoformat()
-    stage_id = batch.get("current_stage_id", "unknown")
-    stage_progress_key = f"stage_{stage_id}"
-    
-    # Get current item progress
-    item_progress = batch.get("item_progress", {})
-    if stage_progress_key not in item_progress:
-        item_progress[stage_progress_key] = {}
-    if order_id not in item_progress[stage_progress_key]:
-        item_progress[stage_progress_key][order_id] = {}
-    
-    item_key = f"item_{item_index}"
-    item_progress[stage_progress_key][order_id][item_key] = {
-        "qty_completed": progress.qty_completed,
-        "updated_at": now,
-        "updated_by": user.user_id
-    }
-    
-    await db.fulfillment_batches.update_one(
-        {"fulfillment_batch_id": batch_id},
-        {"$set": {
-            "item_progress": item_progress,
-            "updated_at": now
-        }}
-    )
-    
-    return {
-        "success": True,
-        "message": "Progress updated",
-        "order_id": order_id,
-        "item_index": item_index,
-        "qty_completed": progress.qty_completed
-    }
+    try:
+        batch = await db.fulfillment_batches.find_one(
+            {"fulfillment_batch_id": batch_id},
+            {"_id": 0}
+        )
+        
+        if not batch:
+            raise HTTPException(status_code=404, detail="Fulfillment batch not found")
+        
+        now = datetime.now(timezone.utc).isoformat()
+        stage_id = batch.get("current_stage_id", "unknown")
+        stage_progress_key = f"stage_{stage_id}"
+        
+        # Get current item progress
+        item_progress = batch.get("item_progress", {})
+        if stage_progress_key not in item_progress:
+            item_progress[stage_progress_key] = {}
+        if order_id not in item_progress[stage_progress_key]:
+            item_progress[stage_progress_key][order_id] = {}
+        
+        item_key = f"item_{item_index}"
+        item_progress[stage_progress_key][order_id][item_key] = {
+            "qty_completed": progress.qty_completed,
+            "updated_at": now,
+            "updated_by": user.user_id
+        }
+        
+        # Track items processed for the current user's active worker entry
+        active_workers = batch.get("active_workers", [])
+        for idx, worker in enumerate(active_workers):
+            if worker.get("user_id") == user.user_id:
+                items_processed = worker.get("items_processed", 0) + 1
+                active_workers[idx]["items_processed"] = items_processed
+                break
+        
+        await db.fulfillment_batches.update_one(
+            {"fulfillment_batch_id": batch_id},
+            {"$set": {
+                "item_progress": item_progress,
+                "active_workers": active_workers,
+                "updated_at": now
+            }}
+        )
+        
+        return {
+            "success": True,
+            "message": "Progress updated",
+            "order_id": order_id,
+            "item_index": item_index,
+            "qty_completed": progress.qty_completed
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        print(f"Error updating item progress: {e}")
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"Failed to update progress: {str(e)}")
 
 
 @router.post("/{batch_id}/complete")
