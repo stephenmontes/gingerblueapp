@@ -505,6 +505,7 @@ async def get_all_active_timers(user: User = Depends(get_current_user)):
 async def admin_stop_user_timer(
     user_id: str,
     workflow_type: str = "production",
+    batch_id: str = None,
     user: User = Depends(get_current_user)
 ):
     """Stop another user's active timer (admin/manager only)."""
@@ -512,6 +513,7 @@ async def admin_stop_user_timer(
         raise HTTPException(status_code=403, detail="Only admins and managers can stop other users' timers")
     
     now = datetime.now(timezone.utc)
+    now_iso = now.isoformat()
     
     if workflow_type == "production":
         active_timer = await db.time_logs.find_one({
@@ -536,7 +538,7 @@ async def admin_stop_user_timer(
         await db.time_logs.update_one(
             {"log_id": active_timer["log_id"]},
             {"$set": {
-                "completed_at": now.isoformat(),
+                "completed_at": now_iso,
                 "duration_minutes": round(total_minutes, 2),
                 "stopped_by_admin": True,
                 "stopped_by_admin_id": user.user_id,
@@ -551,7 +553,107 @@ async def admin_stop_user_timer(
             "duration_minutes": round(total_minutes, 1)
         }
     
-    else:  # fulfillment
+    elif workflow_type == "fulfillment_batch":
+        # Handle batch timers (GB Decor / ShipStation batches)
+        # These are stored in fulfillment_batches.active_workers, not fulfillment_time_logs
+        
+        # Find the batch where this user is an active worker
+        batch = await db.fulfillment_batches.find_one({
+            "active_workers.user_id": user_id
+        }, {"_id": 0})
+        
+        if not batch:
+            raise HTTPException(status_code=404, detail="No active batch timer found for this user")
+        
+        batch_id = batch.get("fulfillment_batch_id")
+        active_workers = batch.get("active_workers", [])
+        
+        # Find and remove this user from active workers
+        user_worker = None
+        new_active_workers = []
+        for w in active_workers:
+            if w["user_id"] == user_id:
+                user_worker = w
+            else:
+                new_active_workers.append(w)
+        
+        if not user_worker:
+            raise HTTPException(status_code=404, detail="User not found in batch active workers")
+        
+        # Calculate time worked
+        elapsed_minutes = user_worker.get("accumulated_minutes", 0)
+        if not user_worker.get("is_paused") and user_worker.get("started_at"):
+            started = datetime.fromisoformat(user_worker["started_at"].replace('Z', '+00:00'))
+            elapsed_minutes += (now - started).total_seconds() / 60
+        
+        # Update worker time tracking
+        workers_time = batch.get("workers_time", {})
+        if user_id not in workers_time:
+            workers_time[user_id] = {
+                "user_name": user_worker.get("user_name"),
+                "total_minutes": 0,
+                "sessions": []
+            }
+        
+        workers_time[user_id]["total_minutes"] += elapsed_minutes
+        workers_time[user_id]["sessions"].append({
+            "started_at": user_worker.get("original_started_at") or user_worker.get("started_at"),
+            "ended_at": now_iso,
+            "minutes": elapsed_minutes,
+            "stage_id": batch.get("current_stage_id"),
+            "stage_name": batch.get("current_stage_name"),
+            "stopped_by_admin": True,
+            "stopped_by_admin_name": user.name
+        })
+        
+        accumulated = batch.get("accumulated_minutes", 0) + elapsed_minutes
+        
+        update_data = {
+            "active_workers": new_active_workers,
+            "workers_time": workers_time,
+            "accumulated_minutes": accumulated,
+            "updated_at": now_iso
+        }
+        
+        # If no more active workers, pause the timer
+        if len(new_active_workers) == 0:
+            update_data["timer_active"] = False
+            update_data["timer_paused"] = True
+        
+        await db.fulfillment_batches.update_one(
+            {"fulfillment_batch_id": batch_id},
+            {"$set": update_data}
+        )
+        
+        # Log the time
+        time_log = {
+            "log_id": f"ftlog_{uuid.uuid4().hex[:12]}",
+            "fulfillment_batch_id": batch_id,
+            "user_id": user_id,
+            "user_name": user_worker.get("user_name"),
+            "stage_id": batch.get("current_stage_id"),
+            "stage_name": batch.get("current_stage_name"),
+            "workflow_type": "fulfillment",
+            "action": "worker_stopped_by_admin",
+            "started_at": user_worker.get("original_started_at") or user_worker.get("started_at"),
+            "completed_at": now_iso,
+            "duration_minutes": round(elapsed_minutes, 2),
+            "stopped_by_admin": True,
+            "stopped_by_admin_id": user.user_id,
+            "stopped_by_admin_name": user.name,
+            "created_at": now_iso
+        }
+        await db.fulfillment_time_logs.insert_one(time_log)
+        
+        return {
+            "message": f"Stopped {user_worker.get('user_name')}'s batch timer",
+            "user_name": user_worker.get("user_name"),
+            "batch_name": batch.get("batch_name"),
+            "stage_name": batch.get("current_stage_name"),
+            "duration_minutes": round(elapsed_minutes, 1)
+        }
+    
+    else:  # fulfillment (stage-based)
         active_timer = await db.fulfillment_time_logs.find_one({
             "user_id": user_id,
             "completed_at": None
@@ -575,7 +677,7 @@ async def admin_stop_user_timer(
         await db.fulfillment_time_logs.update_one(
             {"log_id": active_timer["log_id"]},
             {"$set": {
-                "completed_at": now.isoformat(),
+                "completed_at": now_iso,
                 "duration_minutes": round(total_minutes, 2),
                 "stopped_by_admin": True,
                 "stopped_by_admin_id": user.user_id,
