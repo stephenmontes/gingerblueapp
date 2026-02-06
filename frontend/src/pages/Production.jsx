@@ -256,6 +256,7 @@ export default function Production({ user }) {
               onTimerChange={handleTimerChange}
               activeTimer={activeTimer}
               timerVersion={timerVersion}
+              user={user}
             />
           ) : (
             <NoBatchSelected />
