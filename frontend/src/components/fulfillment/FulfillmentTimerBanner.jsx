@@ -31,44 +31,25 @@ export function FulfillmentTimerBanner({ onTimerChange, onGoToStage }) {
     }
   }
 
-  async function handlePause() {
-    if (!activeTimer) return;
-    try {
-      const res = await fetch(`${API}/fulfillment/stages/${activeTimer.stage_id}/pause-timer`, {
-        method: "POST", credentials: "include"
-      });
-      if (res.ok) {
-        toast.info("Timer paused");
-        checkActiveTimer();
-        onTimerChange?.();
-      }
-    } catch (err) {
-      toast.error("Failed to pause timer");
-    }
-  }
-
-  async function handleResume() {
-    if (!activeTimer) return;
-    try {
-      const res = await fetch(`${API}/fulfillment/stages/${activeTimer.stage_id}/resume-timer`, {
-        method: "POST", credentials: "include"
-      });
-      if (res.ok) {
-        toast.success("Timer resumed");
-        checkActiveTimer();
-        onTimerChange?.();
-      }
-    } catch (err) {
-      toast.error("Failed to resume timer");
-    }
-  }
-
   async function handleStop() {
     if (!activeTimer) return;
     try {
-      const res = await fetch(`${API}/fulfillment/stages/${activeTimer.stage_id}/stop-timer`, {
-        method: "POST", credentials: "include"
-      });
+      // Check if this is a batch timer or stage timer
+      const isBatchTimer = activeTimer.workflow_type === "fulfillment_batch" || activeTimer.batch_name;
+      
+      let res;
+      if (isBatchTimer && activeTimer.fulfillment_batch_id) {
+        // Stop batch timer
+        res = await fetch(`${API}/fulfillment-batches/${activeTimer.fulfillment_batch_id}/stop-timer`, {
+          method: "POST", credentials: "include"
+        });
+      } else {
+        // Stop stage timer
+        res = await fetch(`${API}/fulfillment/stages/${activeTimer.stage_id}/stop-timer`, {
+          method: "POST", credentials: "include"
+        });
+      }
+      
       if (res.ok) {
         toast.success("Timer stopped");
         setActiveTimer(null);
@@ -79,6 +60,64 @@ export function FulfillmentTimerBanner({ onTimerChange, onGoToStage }) {
       }
     } catch (err) {
       toast.error("Failed to stop timer");
+    }
+  }
+
+  async function handlePause() {
+    if (!activeTimer) return;
+    try {
+      const isBatchTimer = activeTimer.workflow_type === "fulfillment_batch" || activeTimer.batch_name;
+      
+      let res;
+      if (isBatchTimer && activeTimer.fulfillment_batch_id) {
+        res = await fetch(`${API}/fulfillment-batches/${activeTimer.fulfillment_batch_id}/pause-timer`, {
+          method: "POST", credentials: "include"
+        });
+      } else {
+        res = await fetch(`${API}/fulfillment/stages/${activeTimer.stage_id}/pause-timer`, {
+          method: "POST", credentials: "include"
+        });
+      }
+      
+      if (res.ok) {
+        toast.info("Timer paused");
+        checkActiveTimer();
+        onTimerChange?.();
+      } else {
+        const err = await res.json();
+        toast.error(err.detail || "Failed to pause timer");
+      }
+    } catch (err) {
+      toast.error("Failed to pause timer");
+    }
+  }
+
+  async function handleResume() {
+    if (!activeTimer) return;
+    try {
+      const isBatchTimer = activeTimer.workflow_type === "fulfillment_batch" || activeTimer.batch_name;
+      
+      let res;
+      if (isBatchTimer && activeTimer.fulfillment_batch_id) {
+        res = await fetch(`${API}/fulfillment-batches/${activeTimer.fulfillment_batch_id}/resume-timer`, {
+          method: "POST", credentials: "include"
+        });
+      } else {
+        res = await fetch(`${API}/fulfillment/stages/${activeTimer.stage_id}/resume-timer`, {
+          method: "POST", credentials: "include"
+        });
+      }
+      
+      if (res.ok) {
+        toast.success("Timer resumed");
+        checkActiveTimer();
+        onTimerChange?.();
+      } else {
+        const err = await res.json();
+        toast.error(err.detail || "Failed to resume timer");
+      }
+    } catch (err) {
+      toast.error("Failed to resume timer");
     }
   }
 
