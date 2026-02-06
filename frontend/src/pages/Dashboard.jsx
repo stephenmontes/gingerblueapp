@@ -842,6 +842,125 @@ export default function Dashboard({ user }) {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Pending Orders (Ship Date within 30 Days) Modal */}
+      <Dialog open={showPendingModal} onOpenChange={setShowPendingModal}>
+        <DialogContent className="max-w-4xl max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Clock className="w-5 h-5 text-amber-400" />
+              Pending Orders (Ship Date within 30 Days)
+            </DialogTitle>
+          </DialogHeader>
+          
+          {pendingOrdersLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <RefreshCw className="w-6 h-6 animate-spin text-primary" />
+            </div>
+          ) : pendingOrdersData ? (
+            <>
+              {/* Summary */}
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <Card className="bg-muted/50">
+                  <CardContent className="p-4 text-center">
+                    <p className="text-3xl font-bold text-amber-400">{pendingOrdersData.total_orders}</p>
+                    <p className="text-sm text-muted-foreground">Pending Orders</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-muted/50">
+                  <CardContent className="p-4 text-center">
+                    <p className="text-3xl font-bold text-green-500">${pendingOrdersData.total_value?.toLocaleString()}</p>
+                    <p className="text-sm text-muted-foreground">Combined Value</p>
+                  </CardContent>
+                </Card>
+              </div>
+              
+              {/* Stores List */}
+              <div className="flex-1 overflow-y-auto max-h-[45vh] pr-2 space-y-3">
+                {pendingOrdersData.stores?.length > 0 ? (
+                  pendingOrdersData.stores.map((store) => (
+                    <Card key={store.store_name} className="bg-card border-border">
+                      <CardContent className="p-0">
+                        {/* Store Header - Clickable */}
+                        <div 
+                          className="p-4 flex items-center justify-between cursor-pointer hover:bg-muted/50 transition-colors"
+                          onClick={() => setExpandedPendingStore(expandedPendingStore === store.store_name ? null : store.store_name)}
+                        >
+                          <div className="flex items-center gap-3">
+                            <Store className="w-5 h-5 text-amber-400" />
+                            <div>
+                              <p className="font-semibold">{store.store_name}</p>
+                              <p className="text-sm text-muted-foreground">{store.order_count} orders</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className="text-right">
+                              <p className="text-xl font-bold text-green-500">${store.total_value?.toLocaleString()}</p>
+                              <p className="text-xs text-muted-foreground">subtotal</p>
+                            </div>
+                            <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${expandedPendingStore === store.store_name ? 'rotate-180' : ''}`} />
+                          </div>
+                        </div>
+                        
+                        {/* Expanded Orders List */}
+                        {expandedPendingStore === store.store_name && (
+                          <div className="border-t border-border p-4 bg-muted/30 max-h-60 overflow-y-auto">
+                            <div className="space-y-2">
+                              {store.orders?.map((order) => (
+                                <div 
+                                  key={order.order_id} 
+                                  className="flex items-center justify-between p-2 bg-background rounded-lg"
+                                >
+                                  <div>
+                                    <p className="font-medium">#{order.order_number}</p>
+                                    <p className="text-xs text-muted-foreground">{order.customer_name}</p>
+                                    {order.requested_ship_date && (
+                                      <p className="text-xs text-amber-400">
+                                        Ship: {new Date(order.requested_ship_date).toLocaleDateString()}
+                                      </p>
+                                    )}
+                                  </div>
+                                  <div className="text-right">
+                                    <p className="font-semibold">${order.total_price?.toFixed(2) || '0.00'}</p>
+                                    <Badge variant="outline" className="text-xs">
+                                      {order.batch_id ? 'In Batch' : order.status}
+                                    </Badge>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Clock className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                    <p>No orders with ship dates in the next 30 days.</p>
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <Clock className="w-12 h-12 mx-auto mb-3 opacity-50" />
+              <p>No pending orders found.</p>
+            </div>
+          )}
+          
+          <div className="pt-4 border-t border-border mt-auto">
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => window.location.href = "/orders"}
+            >
+              Go to Orders Page
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
