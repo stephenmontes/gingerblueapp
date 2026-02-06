@@ -491,8 +491,9 @@ function OrdersView({
                   </TableHead>
                 )}
                 <TableHead>Order #</TableHead>
-                <TableHead>Customer</TableHead>
                 <TableHead>Items</TableHead>
+                <TableHead>Customer</TableHead>
+                <TableHead>Qty</TableHead>
                 <TableHead>Batch</TableHead>
                 <TableHead>Stock Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
