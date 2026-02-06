@@ -237,7 +237,7 @@ async def stop_fulfillment_batch_timer(
         {"$set": update_data}
     )
     
-    # Log the time
+    # Log the time in the same format as stage timers for consistency
     time_log = {
         "log_id": f"ftlog_{uuid.uuid4().hex[:12]}",
         "fulfillment_batch_id": batch_id,
@@ -245,8 +245,13 @@ async def stop_fulfillment_batch_timer(
         "user_name": user.name,
         "stage_id": batch.get("current_stage_id"),
         "stage_name": batch.get("current_stage_name"),
-        "minutes": elapsed_minutes,
+        "workflow_type": "fulfillment",
         "action": "worker_stopped",
+        "started_at": user_worker.get("started_at"),
+        "completed_at": now_iso,
+        "duration_minutes": round(elapsed_minutes, 2),
+        "orders_processed": 0,
+        "items_processed": 0,
         "created_at": now_iso
     }
     await db.fulfillment_time_logs.insert_one(time_log)
