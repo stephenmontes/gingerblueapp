@@ -480,12 +480,22 @@ async def save_worksheet_progress(
     items = order.get("items", []) or order.get("line_items", [])
     worksheet_items = data.get("items", [])
     
+    # Track items that were newly completed
+    items_newly_completed = 0
+    
     # Update items with worksheet progress
     for ws_item in worksheet_items:
         idx = ws_item.get("item_index", -1)
         if 0 <= idx < len(items):
+            old_is_complete = items[idx].get("is_complete", False)
+            new_is_complete = ws_item.get("is_complete", False)
+            
             items[idx]["qty_done"] = ws_item.get("qty_done", 0)
-            items[idx]["is_complete"] = ws_item.get("is_complete", False)
+            items[idx]["is_complete"] = new_is_complete
+            
+            # Count newly completed items
+            if new_is_complete and not old_is_complete:
+                items_newly_completed += items[idx].get("qty", 1) or items[idx].get("quantity", 1) or 1
     
     # Check if all items are complete
     all_complete = all(item.get("is_complete", False) for item in items) if items else False
@@ -502,11 +512,26 @@ async def save_worksheet_progress(
         }}
     )
     
+    # Update items_processed in user's active fulfillment timer
+    if items_newly_completed > 0:
+        current_stage_id = order.get("fulfillment_stage_id")
+        if current_stage_id:
+            await db.fulfillment_time_logs.update_one(
+                {
+                    "user_id": user.user_id,
+                    "stage_id": current_stage_id,
+                    "completed_at": None,
+                    "workflow_type": "fulfillment"
+                },
+                {"$inc": {"items_processed": items_newly_completed}}
+            )
+    
     return {
         "message": "Worksheet saved",
         "all_complete": all_complete,
         "items_complete": sum(1 for i in items if i.get("is_complete", False)),
-        "total_items": len(items)
+        "total_items": len(items),
+        "items_newly_completed": items_newly_completed
     }
 
 
