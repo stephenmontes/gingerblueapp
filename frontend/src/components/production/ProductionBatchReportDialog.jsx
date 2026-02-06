@@ -24,7 +24,7 @@ import { toast } from "sonner";
 import { API } from "@/utils/api";
 
 
-export function ProductionBatchReportDialog({ batch, isOpen, onClose }) {
+export function ProductionBatchReportDialog({ batch, isOpen, onClose, user }) {
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
 
