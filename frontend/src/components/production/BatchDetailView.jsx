@@ -60,6 +60,7 @@ export function BatchDetailView({
         stageColor={currentStageData?.color}
         onTimerChange={onTimerChange}
         activeTimer={activeTimer}
+        user={user}
       />
 
       {/* Orders in batch */}
