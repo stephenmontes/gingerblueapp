@@ -3,6 +3,7 @@ ShipStation Order Sync Service
 Syncs orders from ShipStation stores to local database with product matching
 """
 import asyncio
+import re
 from datetime import datetime, timezone, timedelta
 from typing import Dict, List, Any, Optional
 import uuid
@@ -11,6 +12,35 @@ from services.shipstation_service import shipstation_service
 import logging
 
 logger = logging.getLogger(__name__)
+
+# Valid frame SKU prefixes
+FRAME_SKU_PREFIXES = ("BWF", "CRF", "CLF", "MTF")
+
+# Regex pattern to find frame SKUs in text
+# Matches patterns like: BWF-AD-1225-HS-W, CRF-BE-617-S-B, etc.
+FRAME_SKU_PATTERN = re.compile(
+    r'\b(BWF|CRF|CLF|MTF)[-_]?[A-Z]{2}[-_]?\d{3,4}[-_]?[A-Z]{1,3}[-_]?[A-Z]\b',
+    re.IGNORECASE
+)
+
+
+def extract_sku_from_text(text: str) -> Optional[str]:
+    """
+    Extract a valid frame SKU from text (item name, description, etc.)
+    
+    Looks for patterns like BWF-AD-1225-HS-W in the text.
+    Returns the first valid SKU found, or None if no SKU found.
+    """
+    if not text:
+        return None
+    
+    match = FRAME_SKU_PATTERN.search(text)
+    if match:
+        # Normalize the SKU (uppercase, dashes)
+        sku = match.group(0).upper().replace('_', '-')
+        return sku
+    
+    return None
 
 
 async def sync_orders_from_shipstation(
