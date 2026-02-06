@@ -11,6 +11,9 @@ import {
   RefreshCw,
   Zap,
   Store,
+  User,
+  ChevronDown,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -25,6 +28,19 @@ import {
   Pie,
   Cell,
 } from "recharts";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { API } from "@/utils/api";
 
 const KPICard = ({ title, value, subtitle, icon: Icon, color, trend }) => (
