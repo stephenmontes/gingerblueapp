@@ -8,6 +8,7 @@ import { BatchDetailView, NoBatchSelected } from "../components/production/Batch
 import { ActiveTimerBanner } from "../components/production/ActiveTimerBanner";
 import { OnDemandBatchBanner } from "../components/production/OnDemandBatchBanner";
 import { ProductionTimeEntryDialog } from "../components/production/ProductionTimeEntryDialog";
+import { ProductionKpiBanner } from "../components/production/ProductionKpiBanner";
 import { API } from "@/utils/api";
 
 export default function Production({ user }) {
