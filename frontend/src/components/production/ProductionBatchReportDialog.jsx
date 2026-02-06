@@ -251,8 +251,9 @@ export function ProductionBatchReportDialog({ batch, isOpen, onClose, user }) {
                       <Clock className="w-3 h-3 inline mr-1" />
                       {report.time_summary.active_timers_count} active timer{report.time_summary.active_timers_count > 1 ? 's' : ''} included
                     </div>
-                )}
-              </div>
+                  )}
+                </div>
+              )}
             </div>
           </ScrollArea>
         ) : (
