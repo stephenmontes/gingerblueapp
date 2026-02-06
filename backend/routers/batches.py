@@ -1207,6 +1207,7 @@ async def move_all_completed_frames(
     }, {"_id": 0}).to_list(1000)
     
     moved_count = 0
+    total_items_moved = 0
     for frame in frames_to_move:
         await db.batch_frames.update_one(
             {"frame_id": frame["frame_id"]},
@@ -1223,10 +1224,24 @@ async def move_all_completed_frames(
             }
         )
         moved_count += 1
+        total_items_moved += frame.get("qty_required", 1)
+    
+    # Update the user's active timer for this stage with items_processed
+    if total_items_moved > 0:
+        await db.time_logs.update_one(
+            {
+                "user_id": user.user_id,
+                "stage_id": from_stage_id,
+                "completed_at": None,
+                "workflow_type": "production"
+            },
+            {"$inc": {"items_processed": total_items_moved}}
+        )
     
     return {
         "message": f"Moved {moved_count} frames to {next_stage.get('name')}",
         "moved_count": moved_count,
+        "items_processed": total_items_moved,
         "to_stage": next_stage["stage_id"],
         "to_stage_name": next_stage.get("name", "")
     }
