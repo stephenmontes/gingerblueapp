@@ -19,7 +19,6 @@ export function BatchDetailView({
   onTimerChange,
   activeTimer,
   timerVersion,
-  user,
 }) {
   const [activeStageId, setActiveStageId] = useState(null);
 
