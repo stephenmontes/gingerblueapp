@@ -216,6 +216,9 @@ export default function Production({ user }) {
       {/* Active Timer Banner - shows which stage user is tracking */}
       <ActiveTimerBanner activeTimer={activeTimer} onTimerChange={handleTimerChange} />
 
+      {/* Production Team Activity Banner - shows all active workers */}
+      <ProductionWorkersBanner />
+
       {/* KPI Summary Banner - tracks hours by user & date */}
       <ProductionKpiBanner />
 
