@@ -617,10 +617,18 @@ export function FulfillmentBatchDetail({ batch, stages, onRefresh, onClose, canD
       {/* Timer and Progress Bar */}
       <div className="p-4 border-b border-border space-y-3">
         {/* Timer Required Warning */}
-        {!hasActiveTimer && (
+        {!isUserActive && (
           <div className="flex items-center gap-2 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg text-yellow-400">
             <Clock className="w-5 h-5 flex-shrink-0" />
             <span className="text-sm font-medium">Start your timer to update item quantities and move orders</span>
+          </div>
+        )}
+        
+        {/* Paused Warning */}
+        {isUserPaused && (
+          <div className="flex items-center gap-2 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg text-yellow-400">
+            <Pause className="w-5 h-5 flex-shrink-0" />
+            <span className="text-sm font-medium">Your timer is paused. Resume to continue tracking and update items.</span>
           </div>
         )}
         
