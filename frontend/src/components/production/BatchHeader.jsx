@@ -110,6 +110,17 @@ export function BatchHeader({ batch, batchDetails, activeStageId, stageName, sta
             </p>
           </div>
           <div className="flex items-center gap-4">
+            {/* Report Button */}
+            <Button
+              variant="outline"
+              onClick={() => setShowReport(true)}
+              className="gap-2"
+              data-testid="batch-report-btn"
+            >
+              <BarChart3 className="w-4 h-4" />
+              Report
+            </Button>
+
             {/* Stage indicator */}
             {activeStageId && (
               <div className="flex items-center gap-2">
