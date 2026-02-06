@@ -4,9 +4,15 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowRight, CheckCircle2, PackagePlus, XCircle, Clock } from "lucide-react";
+import { ArrowRight, ArrowLeft, CheckCircle2, PackagePlus, XCircle, Clock, MoreVertical } from "lucide-react";
 import { toast } from "sonner";
 import { API } from "@/utils/api";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const COLOR_LABELS = { B: "Black", W: "White", N: "Natural" };
 
@@ -14,9 +20,11 @@ export function ItemRow({ item, stages, currentStageId, onUpdateQty, onMoveStage
   const [qty, setQty] = useState(item.qty_completed || 0);
   const [rejectedQty, setRejectedQty] = useState(item.qty_rejected || 0);
   const [addingToInventory, setAddingToInventory] = useState(false);
+  const [returningStage, setReturningStage] = useState(false);
   
   const currentIdx = stages.findIndex((s) => s.stage_id === item.current_stage_id);
   const nextStage = currentIdx >= 0 && currentIdx < stages.length - 1 ? stages[currentIdx + 1] : null;
+  const prevStage = currentIdx > 0 ? stages[currentIdx - 1] : null;
   
   const qtyRequired = item.qty_required || 1;
   const qtyCompleted = item.qty_completed || 0;
