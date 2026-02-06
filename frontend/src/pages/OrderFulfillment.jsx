@@ -28,6 +28,7 @@ export default function OrderFulfillment({ user }) {
   const [showReport, setShowReport] = useState(false);
   const [showTimeManager, setShowTimeManager] = useState(false);
   const [showUserDateReport, setShowUserDateReport] = useState(false);
+  const [showMyTimerHistory, setShowMyTimerHistory] = useState(false);
   const [fulfillmentBatches, setFulfillmentBatches] = useState([]);
   const [historyBatches, setHistoryBatches] = useState([]);
   const [batchTab, setBatchTab] = useState("active"); // "active" or "history"
