@@ -320,6 +320,7 @@ export function FulfillmentStageTab({ stage, stages, onRefresh, onTimerChange, c
         selectedOrders={selectedOrders}
         outOfStockCount={outOfStockCount}
         nextStage={nextStage}
+        prevStage={prevStage}
         isLastStage={isLastStage}
         hasActiveTimerForStage={hasActiveTimerForStage}
         timerRequired={timerRequired}
@@ -327,6 +328,7 @@ export function FulfillmentStageTab({ stage, stages, onRefresh, onTimerChange, c
         onToggleAllOrders={toggleAllOrders}
         onMoveOrderToNext={moveOrderToNext}
         onMoveOrderToStage={moveOrderToStage}
+        onReturnOrderToPrevious={onReturnOrderToPrevious}
         onBulkMoveOrders={bulkMoveOrders}
         onMarkShipped={markShipped}
         onShowInventory={setInventoryDialogOrder}
