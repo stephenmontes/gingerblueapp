@@ -383,6 +383,8 @@ export default function Dashboard({ user }) {
           subtitle="Shipped"
           icon={CheckCircle2}
           color="text-green-400"
+          clickable={true}
+          onClick={handleOpenCompletedModal}
         />
       </div>
 
