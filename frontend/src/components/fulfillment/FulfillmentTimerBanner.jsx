@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Clock, StopCircle, Play, Pause } from "lucide-react";
+import { Clock, StopCircle, Play, Pause, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { FulfillmentUserStats } from "./FulfillmentUserStats";
 import { API } from "@/utils/api";
 
 
-export function FulfillmentTimerBanner({ onTimerChange }) {
+export function FulfillmentTimerBanner({ onTimerChange, onGoToStage }) {
   const [activeTimer, setActiveTimer] = useState(null);
   const [loading, setLoading] = useState(true);
 
