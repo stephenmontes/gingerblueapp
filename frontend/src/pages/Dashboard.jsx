@@ -187,7 +187,7 @@ export default function Dashboard({ user }) {
             Welcome back, {user?.name?.split(" ")[0]}
           </h1>
           <p className="text-muted-foreground mt-1">
-            Here's what's happening in your manufacturing hub
+            Here&apos;s what&apos;s happening in your manufacturing hub
           </p>
         </div>
         <div className="flex items-center gap-3">
