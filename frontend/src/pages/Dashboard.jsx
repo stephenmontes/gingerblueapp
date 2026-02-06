@@ -275,6 +275,8 @@ export default function Dashboard({ user }) {
           subtitle="Currently processing"
           icon={RefreshCw}
           color="text-blue-400"
+          clickable={true}
+          onClick={handleOpenInProductionModal}
         />
         <KPICard
           title="Completed"
