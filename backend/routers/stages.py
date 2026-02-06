@@ -63,7 +63,8 @@ async def get_stages_active_workers(user: User = Depends(get_current_user)):
             "user_id": timer["user_id"],
             "user_name": timer["user_name"],
             "started_at": timer["started_at"],
-            "is_paused": timer.get("is_paused", False)
+            "is_paused": timer.get("is_paused", False),
+            "accumulated_minutes": timer.get("accumulated_minutes", 0)
         })
     
     return stage_workers
