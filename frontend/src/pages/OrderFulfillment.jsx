@@ -276,7 +276,7 @@ export default function OrderFulfillment({ user }) {
       </div>
 
       {/* Batch-Based Fulfillment Section */}
-      {fulfillmentBatches.length > 0 && (
+      {(fulfillmentBatches.length > 0 || historyBatches.length > 0) && (
         <div className="grid grid-cols-12 gap-4">
           {/* Batch List - Left Panel */}
           <div className={`${selectedBatch ? 'col-span-3' : 'col-span-12'}`}>
@@ -284,9 +284,6 @@ export default function OrderFulfillment({ user }) {
               <h2 className="text-lg font-semibold flex items-center gap-2">
                 <Package className="w-5 h-5 text-primary" />
                 Fulfillment Batches
-                <Badge variant="outline">
-                  {fulfillmentBatches.length} active
-                </Badge>
               </h2>
               {selectedBatch && (
                 <Button variant="ghost" size="sm" onClick={handleCloseBatchDetail}>
@@ -295,18 +292,70 @@ export default function OrderFulfillment({ user }) {
               )}
             </div>
             
-            <div className={`${selectedBatch ? 'space-y-2' : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'}`}>
-              {fulfillmentBatches.map((batch) => (
-                <FulfillmentBatchCard
-                  key={batch.fulfillment_batch_id}
-                  batch={batch}
-                  isSelected={selectedBatch?.fulfillment_batch_id === batch.fulfillment_batch_id}
-                  onSelect={handleSelectBatch}
-                  onRefresh={loadData}
-                  canDelete={canDelete}
-                />
-              ))}
+            {/* Active / History Tabs */}
+            <div className="flex gap-2 mb-4">
+              <Button
+                variant={batchTab === "active" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setBatchTab("active")}
+                className="gap-1"
+              >
+                Active
+                <Badge variant="secondary" className="ml-1">{fulfillmentBatches.length}</Badge>
+              </Button>
+              <Button
+                variant={batchTab === "history" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setBatchTab("history")}
+                className="gap-1"
+              >
+                History
+                <Badge variant="secondary" className="ml-1">{historyBatches.length}</Badge>
+              </Button>
             </div>
+            
+            {batchTab === "active" ? (
+              <div className={`${selectedBatch ? 'space-y-2' : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'}`}>
+                {fulfillmentBatches.length > 0 ? (
+                  fulfillmentBatches.map((batch) => (
+                    <FulfillmentBatchCard
+                      key={batch.fulfillment_batch_id}
+                      batch={batch}
+                      isSelected={selectedBatch?.fulfillment_batch_id === batch.fulfillment_batch_id}
+                      onSelect={handleSelectBatch}
+                      onRefresh={loadData}
+                      canDelete={canDelete}
+                    />
+                  ))
+                ) : (
+                  <div className="col-span-full text-center py-8 text-muted-foreground">
+                    <Package className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                    <p>No active fulfillment batches</p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className={`${selectedBatch ? 'space-y-2' : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'}`}>
+                {historyBatches.length > 0 ? (
+                  historyBatches.map((batch) => (
+                    <FulfillmentBatchCard
+                      key={batch.fulfillment_batch_id}
+                      batch={batch}
+                      isSelected={selectedBatch?.fulfillment_batch_id === batch.fulfillment_batch_id}
+                      onSelect={handleSelectBatch}
+                      onRefresh={loadData}
+                      canDelete={canDelete}
+                      isHistory={true}
+                    />
+                  ))
+                ) : (
+                  <div className="col-span-full text-center py-8 text-muted-foreground">
+                    <Package className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                    <p>No completed batches in history</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
           
           {/* Batch Detail - Right Panel */}
