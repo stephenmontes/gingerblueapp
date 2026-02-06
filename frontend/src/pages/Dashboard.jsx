@@ -219,7 +219,7 @@ export default function Dashboard({ user }) {
         <KPICard
           title="Total Orders"
           value={stats?.orders?.total || 0}
-          subtitle="All time"
+          subtitle="Sent to production"
           icon={Package}
           color="text-primary"
         />
@@ -240,22 +240,26 @@ export default function Dashboard({ user }) {
         <KPICard
           title="Completed"
           value={stats?.orders?.completed || 0}
-          subtitle="Ready to ship"
+          subtitle="Shipped"
           icon={CheckCircle2}
           color="text-green-400"
         />
       </div>
 
-      {/* Performance Card */}
-      <Card className="bg-card border-border" data-testid="performance-card">
+      {/* Avg Frame Production Rate Card - Clickable */}
+      <Card 
+        className="bg-card border-border cursor-pointer hover:border-primary/50 transition-colors" 
+        data-testid="frame-production-rate-card"
+        onClick={handleOpenRatesModal}
+      >
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="label-caps mb-2">Average Production Rate</p>
+              <p className="label-caps mb-2">Avg Frame Production Rate</p>
               <p className="text-5xl font-heading font-bold text-primary">
-                {stats?.avg_items_per_hour || 0}
+                {stats?.avg_frames_per_hour || 0}
               </p>
-              <p className="text-muted-foreground mt-1">items per hour</p>
+              <p className="text-muted-foreground mt-1">frames per hour</p>
             </div>
             <div className="p-4 rounded-xl bg-primary/10">
               <TrendingUp className="w-8 h-8 text-primary" />
