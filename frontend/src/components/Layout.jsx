@@ -15,6 +15,7 @@ import {
   Calendar,
   UserCircle,
   ListTodo,
+  Save,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -28,6 +29,7 @@ import {
 import { toast } from "sonner";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { NotificationBell } from "@/components/NotificationBell";
+import { TimerRecoveryDialog } from "@/components/TimerRecoveryDialog";
 import { API } from "@/utils/api";
 
 const navItems = [
