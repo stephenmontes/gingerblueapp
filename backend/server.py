@@ -33,6 +33,7 @@ from routers.customers import router as customers_router
 from routers.tasks import router as tasks_router
 from routers.notifications import router as notifications_router
 from routers.fulfillment_batches import router as fulfillment_batches_router
+from routers.production_timers import router as production_timers_router
 from database import create_indexes
 from services.scheduler import start_scheduler, stop_scheduler
 
