@@ -204,7 +204,24 @@ export default function OrderFulfillment({ user }) {
       </div>
 
       {/* Active Timer Banner */}
-      <FulfillmentTimerBanner onTimerChange={handleTimerChange} />
+      <FulfillmentTimerBanner 
+        onTimerChange={handleTimerChange} 
+        onGoToStage={(stageId, batchId) => {
+          // If the timer has a batch_id, find and select that batch
+          if (batchId) {
+            const batch = fulfillmentBatches.find(b => b.fulfillment_batch_id === batchId);
+            if (batch) {
+              handleSelectBatch(batch);
+              return;
+            }
+          }
+          // Otherwise, switch to the stage tab
+          setActiveTab(stageId);
+          // Also deselect any selected batch to show stage tabs
+          setSelectedBatch(null);
+          setBatchDetail(null);
+        }}
+      />
 
       {/* KPI Banner */}
       <FulfillmentKpiBanner />
