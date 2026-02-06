@@ -134,9 +134,11 @@ export function OrderRow({
           stage={stage}
           stages={stages}
           nextStage={nextStage}
+          prevStage={prevStage}
           isLastStage={isLastStage}
           onMoveNext={onMoveNext}
           onMoveToStage={onMoveToStage}
+          onReturnToPrevious={onReturnToPrevious}
           onMarkShipped={onMarkShipped}
           onShowInventory={onShowInventory}
           onOpenWorksheet={onOpenWorksheet}
