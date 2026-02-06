@@ -200,6 +200,15 @@ export default function Layout({ children, user, setUser }) {
                 </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
+                  onClick={handleSaveTimers}
+                  className="cursor-pointer"
+                  data-testid="save-timers-btn"
+                >
+                  <Save className="mr-2 h-4 w-4" />
+                  Save Active Timers
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
                   onClick={handleLogout}
                   className="text-destructive focus:text-destructive cursor-pointer"
                   data-testid="logout-btn"
