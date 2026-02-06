@@ -35,6 +35,12 @@ Build a manufacturing and fulfillment app for Shopify websites with detailed tim
   - "Go to Stage" button navigates to the active timer's stage
   - Timer persists across all stages
   - Users can only complete stage tasks with an active timer
+- **My Timer History** (NEW - Feb 2026)
+  - Collapsible section showing user's timer sessions for today/yesterday/this week
+  - Shows total time, sessions count, orders, and items processed
+  - Breakdown by stage with expandable session details
+  - Active timer indicator with current elapsed time
+  - Auto-refreshes every 60 seconds
 - **Enhanced Etsy/ShipStation Batch Workflow** (NEW - Feb 2026)
   - Item-level quantity tracking with +/- buttons
   - Auto-mark items complete when qty reaches required
