@@ -996,7 +996,63 @@ async def mark_order_shipped(
     if deduction_result:
         result["inventory_deduction"] = deduction_result
     
+    # Check if fulfillment batch should be auto-completed
+    fulfillment_batch_id = order.get("fulfillment_batch_id")
+    if fulfillment_batch_id:
+        batch_completed = await check_and_complete_fulfillment_batch(fulfillment_batch_id, user)
+        if batch_completed:
+            result["batch_completed"] = True
+            result["batch_message"] = "Fulfillment batch automatically completed"
+    
     return result
+
+
+async def check_and_complete_fulfillment_batch(batch_id: str, user):
+    """Check if all orders in a fulfillment batch are shipped and auto-complete the batch"""
+    batch = await db.fulfillment_batches.find_one({"fulfillment_batch_id": batch_id})
+    if not batch or batch.get("status") != "active":
+        return False
+    
+    order_ids = batch.get("order_ids", [])
+    if not order_ids:
+        return False
+    
+    # Check if all orders in the batch are shipped
+    shipped_count = await db.fulfillment_orders.count_documents({
+        "order_id": {"$in": order_ids},
+        "status": "shipped"
+    })
+    
+    if shipped_count >= len(order_ids):
+        # All orders are shipped - complete the batch
+        now = datetime.now(timezone.utc).isoformat()
+        
+        # Calculate accumulated time
+        accumulated = batch.get("accumulated_minutes", 0)
+        if batch.get("timer_active") and batch.get("timer_started_at"):
+            try:
+                started = datetime.fromisoformat(batch["timer_started_at"].replace("Z", "+00:00"))
+                elapsed = (datetime.now(timezone.utc) - started).total_seconds() / 60
+                accumulated += elapsed
+            except:
+                pass
+        
+        await db.fulfillment_batches.update_one(
+            {"fulfillment_batch_id": batch_id},
+            {"$set": {
+                "status": "completed",
+                "time_completed": now,
+                "completed_by": user.user_id,
+                "completed_by_name": user.name,
+                "timer_active": False,
+                "accumulated_minutes": accumulated,
+                "auto_completed": True,
+                "updated_at": now
+            }}
+        )
+        return True
+    
+    return False
 
 
 
