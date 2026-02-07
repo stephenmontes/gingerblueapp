@@ -116,12 +116,21 @@ async def get_dashboard_stats(
     ]
     orders_by_store = await db.fulfillment_orders.aggregate(store_pipeline).to_list(100)
     
-    # Daily production stats from time logs
-    week_ago = datetime.now(timezone.utc) - timedelta(days=7)
+    # Daily production stats from time logs - use date range if provided
+    if start_dt and end_dt:
+        daily_match = {
+            "completed_at": {
+                "$gte": start_dt.isoformat(),
+                "$lte": end_dt.isoformat()
+            }
+        }
+    else:
+        week_ago = datetime.now(timezone.utc) - timedelta(days=7)
+        daily_match = {"completed_at": {"$ne": None}}
+    
     daily_pipeline = [
-        {"$match": {"completed_at": {"$ne": None}}},
+        {"$match": daily_match},
         {"$addFields": {"completed_date": {"$dateFromString": {"dateString": "$completed_at"}}}},
-        {"$match": {"completed_date": {"$gte": week_ago}}},
         {"$group": {
             "_id": {"$dateToString": {"format": "%Y-%m-%d", "date": "$completed_date"}},
             "items": {"$sum": "$items_processed"},
@@ -129,7 +138,8 @@ async def get_dashboard_stats(
         }},
         {"$sort": {"_id": 1}}
     ]
-    daily_stats = await db.time_logs.aggregate(daily_pipeline).to_list(7)
+    # Limit to 31 days to avoid excessive data
+    daily_stats = await db.time_logs.aggregate(daily_pipeline).to_list(31)
     
     # Get active production batches count
     active_batches = await db.production_batches.count_documents({"status": "active"})
