@@ -590,13 +590,32 @@ async def admin_stop_user_timer(
         # Handle batch timers (GB Decor / ShipStation batches)
         # These are stored in fulfillment_batches.active_workers, not fulfillment_time_logs
         
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"Admin stop timer - Looking for batch timer for user_id: {user_id}")
+        
         # Find the batch where this user is an active worker
         batch = await db.fulfillment_batches.find_one({
             "active_workers.user_id": user_id
         }, {"_id": 0})
         
         if not batch:
-            raise HTTPException(status_code=404, detail="No active batch timer found for this user")
+            # Debug: Check what batches exist with active workers
+            all_batches_with_workers = await db.fulfillment_batches.find({
+                "active_workers": {"$exists": True, "$ne": []}
+            }, {"_id": 0, "fulfillment_batch_id": 1, "batch_name": 1, "active_workers": 1}).to_list(50)
+            
+            logger.warning(f"No batch found for user {user_id}. Batches with workers: {len(all_batches_with_workers)}")
+            for b in all_batches_with_workers:
+                worker_ids = [w.get("user_id") for w in b.get("active_workers", [])]
+                logger.warning(f"  Batch {b.get('batch_name')}: workers = {worker_ids}")
+            
+            raise HTTPException(
+                status_code=404, 
+                detail=f"No active batch timer found for user {user_id}. Found {len(all_batches_with_workers)} batches with active workers."
+            )
+        
+        logger.info(f"Found batch: {batch.get('batch_name')} (ID: {batch.get('fulfillment_batch_id')})")
         
         batch_id = batch.get("fulfillment_batch_id")
         active_workers = batch.get("active_workers", [])
