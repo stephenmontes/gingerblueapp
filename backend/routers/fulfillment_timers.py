@@ -101,14 +101,26 @@ async def stop_fulfillment_timer(
     user: User = Depends(get_current_user)
 ):
     """Stop time tracking for a user's fulfillment stage work."""
+    # First try to find timer for this specific stage
     active_timer = await db.fulfillment_time_logs.find_one({
         "user_id": user.user_id,
         "stage_id": stage_id,
         "completed_at": None
     }, {"_id": 0})
     
+    # If not found for this stage, try to find any active timer for this user
     if not active_timer:
-        raise HTTPException(status_code=400, detail="No active timer for this stage")
+        active_timer = await db.fulfillment_time_logs.find_one({
+            "user_id": user.user_id,
+            "completed_at": None
+        }, {"_id": 0})
+        
+        if active_timer:
+            # Found timer but for different stage - still stop it
+            print(f"Timer found for different stage: {active_timer.get('stage_id')} vs requested: {stage_id}")
+    
+    if not active_timer:
+        raise HTTPException(status_code=400, detail="No active timer found")
     
     now = datetime.now(timezone.utc)
     accumulated = active_timer.get("accumulated_minutes", 0)
@@ -116,7 +128,7 @@ async def stop_fulfillment_timer(
     if active_timer.get("is_paused"):
         duration_minutes = accumulated
     else:
-        started_at = datetime.fromisoformat(active_timer["started_at"])
+        started_at = datetime.fromisoformat(active_timer["started_at"].replace('Z', '+00:00'))
         if started_at.tzinfo is None:
             started_at = started_at.replace(tzinfo=timezone.utc)
         current_session = (now - started_at).total_seconds() / 60
@@ -136,8 +148,8 @@ async def stop_fulfillment_timer(
     
     return {
         "message": "Timer stopped",
-        "stage_id": stage_id,
-        "stage_name": active_timer["stage_name"],
+        "stage_id": active_timer.get("stage_id"),
+        "stage_name": active_timer.get("stage_name"),
         "duration_minutes": round(duration_minutes, 2),
         "orders_processed": orders_processed,
         "items_processed": items_processed
