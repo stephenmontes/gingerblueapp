@@ -76,6 +76,11 @@ Build a manufacturing and fulfillment app for Shopify websites with detailed tim
 - Cost per frame calculations
 - User performance metrics
 - Stage-level KPIs
+- **Date Range Filtering** (NEW - Feb 2026)
+  - Filter reports by: Today, Last 7 Days, This Month, Last Month, Custom Range
+  - Custom date picker for start and end dates
+  - Date filters applied to: Dashboard stats, Production KPIs, User stats, Stage stats
+  - Backend APIs updated: `/stats/dashboard`, `/stats/production-kpis`, `/stats/users`, `/stats/stages`
 
 ### 7. Scheduling
 - Google Calendar integration for order ship dates
