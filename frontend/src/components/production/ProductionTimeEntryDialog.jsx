@@ -52,6 +52,10 @@ export function ProductionTimeEntryDialog({ isOpen, onClose, user }) {
   const [loading, setLoading] = useState(true);
   const [kpis, setKpis] = useState(null);
   
+  // Sorting and filtering
+  const [sortBy, setSortBy] = useState("user_date"); // user_date, date_desc, user_asc
+  const [filterUser, setFilterUser] = useState("all");
+  
   // Add entry form state
   const [addFormOpen, setAddFormOpen] = useState(false);
   const [addForm, setAddForm] = useState({
