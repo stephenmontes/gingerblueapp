@@ -584,10 +584,25 @@ async def get_orders_in_production(user: User = Depends(get_current_user)):
 
 
 @router.get("/stats/production-kpis")
-async def get_production_kpis(user: User = Depends(get_current_user)):
-    """Get production KPIs including rejection rates and costs"""
+async def get_production_kpis(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    user: User = Depends(get_current_user)
+):
+    """Get production KPIs including rejection rates and costs, with optional date filtering"""
+    start_dt, end_dt = parse_date_range(start_date, end_date)
+    
+    # Build date match for frame queries
+    frame_match = {}
+    if start_dt and end_dt:
+        frame_match["created_at"] = {
+            "$gte": start_dt.isoformat(),
+            "$lte": end_dt.isoformat()
+        }
+    
     # Use aggregation for efficient KPI calculation
     pipeline = [
+        {"$match": frame_match} if frame_match else {"$match": {}},
         {"$group": {
             "_id": None,
             "total_required": {"$sum": "$qty_required"},
@@ -609,8 +624,15 @@ async def get_production_kpis(user: User = Depends(get_current_user)):
     good_frames = max(0, total_completed - total_rejected)
     
     # Time and cost calculations with aggregation
+    time_match = {"completed_at": {"$ne": None}}
+    if start_dt and end_dt:
+        time_match["completed_at"] = {
+            "$gte": start_dt.isoformat(),
+            "$lte": end_dt.isoformat()
+        }
+    
     time_pipeline = [
-        {"$match": {"completed_at": {"$ne": None}}},
+        {"$match": time_match},
         {"$group": {
             "_id": None,
             "total_minutes": {"$sum": "$duration_minutes"},
@@ -784,10 +806,23 @@ async def get_user_stats(
     return await db.time_logs.aggregate(pipeline).to_list(100)
 
 @router.get("/stats/stages")
-async def get_stage_stats(user: User = Depends(get_current_user)):
-    """Get statistics by production stage"""
+async def get_stage_stats(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    user: User = Depends(get_current_user)
+):
+    """Get statistics by production stage with optional date filtering"""
+    start_dt, end_dt = parse_date_range(start_date, end_date)
+    
+    match_query = {"duration_minutes": {"$gt": 0}}
+    if start_dt and end_dt:
+        match_query["completed_at"] = {
+            "$gte": start_dt.isoformat(),
+            "$lte": end_dt.isoformat()
+        }
+    
     pipeline = [
-        {"$match": {"duration_minutes": {"$gt": 0}}},
+        {"$match": match_query},
         {"$group": {
             "_id": {"stage_id": "$stage_id", "stage_name": "$stage_name"},
             "total_items": {"$sum": "$items_processed"},
