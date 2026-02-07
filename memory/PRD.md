@@ -132,5 +132,14 @@ Build a manufacturing and fulfillment app for Shopify websites with detailed tim
 - Bulk Print (combined packing slips)
 - UI State Persistence (remember filters/sorting)
 
+## Pending User Verification
+- **Report Button on Frame Production Page** - User needs to verify visibility after frontend restart
+- **Stuck Timer for pam@gingerbluedecor.com** - Admin cleanup endpoint created, needs to be executed
+
 ## Known Issues
 - Custom domain login requires re-linking after deployment (platform issue)
+- "Failed to update progress" error for Antique Farmhouse orders (enhanced logging added, needs debugging)
+
+## Recent Changes (Feb 2026)
+- Implemented date range filtering on Reports page (backend + frontend)
+- Enhanced time-based aggregations across all report endpoints
