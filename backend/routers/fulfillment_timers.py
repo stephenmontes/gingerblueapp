@@ -159,20 +159,28 @@ async def stop_fulfillment_timer(
 @router.post("/stages/{stage_id}/pause-timer")
 async def pause_fulfillment_timer(stage_id: str, user: User = Depends(get_current_user)):
     """Pause the fulfillment timer."""
+    # First try to find timer for this specific stage
     active_timer = await db.fulfillment_time_logs.find_one({
         "user_id": user.user_id,
         "stage_id": stage_id,
         "completed_at": None
     }, {"_id": 0})
     
+    # If not found for this stage, try to find any active timer
     if not active_timer:
-        raise HTTPException(status_code=400, detail="No active timer for this stage")
+        active_timer = await db.fulfillment_time_logs.find_one({
+            "user_id": user.user_id,
+            "completed_at": None
+        }, {"_id": 0})
+    
+    if not active_timer:
+        raise HTTPException(status_code=400, detail="No active timer found")
     
     if active_timer.get("is_paused"):
         raise HTTPException(status_code=400, detail="Timer is already paused")
     
     now = datetime.now(timezone.utc)
-    started_at = datetime.fromisoformat(active_timer["started_at"])
+    started_at = datetime.fromisoformat(active_timer["started_at"].replace('Z', '+00:00'))
     if started_at.tzinfo is None:
         started_at = started_at.replace(tzinfo=timezone.utc)
     
