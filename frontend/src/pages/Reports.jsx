@@ -164,7 +164,74 @@ export default function Reports() {
             Production analytics, costs, and quality metrics
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          {/* Date Range Filter */}
+          <div className="flex items-center gap-2">
+            <Select value={dateRange} onValueChange={setDateRange}>
+              <SelectTrigger className="w-[140px]" data-testid="date-range-select">
+                <CalendarIcon className="w-4 h-4 mr-2" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="day">Today</SelectItem>
+                <SelectItem value="week">Last 7 Days</SelectItem>
+                <SelectItem value="month">This Month</SelectItem>
+                <SelectItem value="last_month">Last Month</SelectItem>
+                <SelectItem value="custom">Custom Range</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            {dateRange === "custom" && (
+              <div className="flex items-center gap-2">
+                <Popover open={showStartPicker} onOpenChange={setShowStartPicker}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="w-[130px] justify-start text-left font-normal">
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {customStartDate ? format(customStartDate, "MMM d, yyyy") : "Start date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={customStartDate}
+                      onSelect={(date) => {
+                        setCustomStartDate(date);
+                        setShowStartPicker(false);
+                      }}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                <span className="text-muted-foreground">to</span>
+                <Popover open={showEndPicker} onOpenChange={setShowEndPicker}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="w-[130px] justify-start text-left font-normal">
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {customEndDate ? format(customEndDate, "MMM d, yyyy") : "End date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={customEndDate}
+                      onSelect={(date) => {
+                        setCustomEndDate(date);
+                        setShowEndPicker(false);
+                      }}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            )}
+            
+            {dateRange !== "custom" && (
+              <Badge variant="secondary" className="text-xs">
+                {getDateLabel()}
+              </Badge>
+            )}
+          </div>
+          
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="gap-2" data-testid="export-dropdown-btn">
@@ -202,7 +269,7 @@ export default function Reports() {
             </DropdownMenuContent>
           </DropdownMenu>
           <Button variant="outline" onClick={fetchData} className="gap-2" data-testid="refresh-reports-btn">
-            <RefreshCw className="w-4 h-4" />
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
         </div>
