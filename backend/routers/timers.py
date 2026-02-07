@@ -725,3 +725,156 @@ async def admin_stop_user_timer(
             "duration_minutes": round(total_minutes, 1)
         }
 
+
+@router.post("/admin/cleanup-user-timers")
+async def admin_cleanup_user_timers(
+    email: str,
+    user: User = Depends(get_current_user)
+):
+    """Force stop all active timers for a user by email (admin only)."""
+    if user.role not in ["admin", "manager"]:
+        raise HTTPException(status_code=403, detail="Only admins and managers can cleanup timers")
+    
+    # Find user by email
+    target_user = await db.users.find_one({"email": email}, {"_id": 0})
+    if not target_user:
+        raise HTTPException(status_code=404, detail=f"User with email {email} not found")
+    
+    target_user_id = target_user.get("user_id")
+    target_user_name = target_user.get("name", email)
+    now = datetime.now(timezone.utc)
+    now_iso = now.isoformat()
+    
+    results = {
+        "user_email": email,
+        "user_name": target_user_name,
+        "production_timers_stopped": 0,
+        "fulfillment_timers_stopped": 0,
+        "batch_timers_stopped": 0
+    }
+    
+    # Stop all active production timers
+    prod_result = await db.time_logs.update_many(
+        {"user_id": target_user_id, "completed_at": None},
+        {"$set": {
+            "completed_at": now_iso,
+            "stopped_by_admin": True,
+            "stopped_by_admin_id": user.user_id,
+            "stopped_by_admin_name": user.name,
+            "stop_reason": "Admin cleanup"
+        }}
+    )
+    results["production_timers_stopped"] = prod_result.modified_count
+    
+    # Stop all active fulfillment stage timers
+    fulfill_result = await db.fulfillment_time_logs.update_many(
+        {"user_id": target_user_id, "completed_at": None},
+        {"$set": {
+            "completed_at": now_iso,
+            "stopped_by_admin": True,
+            "stopped_by_admin_id": user.user_id,
+            "stopped_by_admin_name": user.name,
+            "stop_reason": "Admin cleanup"
+        }}
+    )
+    results["fulfillment_timers_stopped"] = fulfill_result.modified_count
+    
+    # Remove from all active batch workers
+    batches_with_user = await db.fulfillment_batches.find({
+        "active_workers.user_id": target_user_id
+    }, {"_id": 0, "fulfillment_batch_id": 1, "batch_name": 1, "active_workers": 1}).to_list(100)
+    
+    for batch in batches_with_user:
+        new_workers = [w for w in batch.get("active_workers", []) if w.get("user_id") != target_user_id]
+        update_data = {
+            "active_workers": new_workers,
+            "updated_at": now_iso
+        }
+        if len(new_workers) == 0:
+            update_data["timer_active"] = False
+            update_data["timer_paused"] = True
+        
+        await db.fulfillment_batches.update_one(
+            {"fulfillment_batch_id": batch["fulfillment_batch_id"]},
+            {"$set": update_data}
+        )
+        results["batch_timers_stopped"] += 1
+    
+    total_stopped = results["production_timers_stopped"] + results["fulfillment_timers_stopped"] + results["batch_timers_stopped"]
+    
+    return {
+        "message": f"Cleaned up {total_stopped} active timer(s) for {target_user_name}",
+        **results
+    }
+
+
+@router.get("/admin/user-active-timers")
+async def admin_get_user_active_timers(
+    email: str,
+    user: User = Depends(get_current_user)
+):
+    """Get all active timers for a specific user by email (admin only)."""
+    if user.role not in ["admin", "manager"]:
+        raise HTTPException(status_code=403, detail="Only admins and managers can view user timers")
+    
+    # Find user by email
+    target_user = await db.users.find_one({"email": email}, {"_id": 0})
+    if not target_user:
+        raise HTTPException(status_code=404, detail=f"User with email {email} not found")
+    
+    target_user_id = target_user.get("user_id")
+    
+    timers = []
+    
+    # Get production timers
+    prod_timers = await db.time_logs.find({
+        "user_id": target_user_id,
+        "completed_at": None
+    }, {"_id": 0}).to_list(50)
+    
+    for t in prod_timers:
+        timers.append({
+            "type": "production",
+            "log_id": t.get("log_id"),
+            "stage_name": t.get("stage_name"),
+            "started_at": t.get("started_at"),
+            "is_paused": t.get("is_paused", False)
+        })
+    
+    # Get fulfillment stage timers
+    fulfill_timers = await db.fulfillment_time_logs.find({
+        "user_id": target_user_id,
+        "completed_at": None
+    }, {"_id": 0}).to_list(50)
+    
+    for t in fulfill_timers:
+        timers.append({
+            "type": "fulfillment",
+            "log_id": t.get("log_id"),
+            "stage_name": t.get("stage_name"),
+            "started_at": t.get("started_at"),
+            "is_paused": t.get("is_paused", False)
+        })
+    
+    # Get batch timers
+    batches = await db.fulfillment_batches.find({
+        "active_workers.user_id": target_user_id
+    }, {"_id": 0, "fulfillment_batch_id": 1, "batch_name": 1, "active_workers": 1}).to_list(50)
+    
+    for b in batches:
+        for w in b.get("active_workers", []):
+            if w.get("user_id") == target_user_id:
+                timers.append({
+                    "type": "batch",
+                    "batch_id": b.get("fulfillment_batch_id"),
+                    "batch_name": b.get("batch_name"),
+                    "started_at": w.get("started_at"),
+                    "is_paused": w.get("is_paused", False)
+                })
+    
+    return {
+        "email": email,
+        "user_name": target_user.get("name"),
+        "active_timers": timers,
+        "total_count": len(timers)
+    }
