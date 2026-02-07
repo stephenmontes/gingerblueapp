@@ -289,9 +289,34 @@ export function ProductionTimeEntryDialog({ isOpen, onClose, user }) {
               </TabsList>
 
               <TabsContent value="history" className="flex-1 flex flex-col min-h-0 mt-4">
-                {/* Add Entry Button */}
-                {isAdmin && (
-                  <div className="flex justify-end mb-4 flex-shrink-0">
+                {/* Filters and Add Entry Button */}
+                <div className="flex items-center justify-between mb-4 flex-shrink-0 gap-4 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <Label className="text-sm text-muted-foreground">Sort:</Label>
+                    <Select value={sortBy} onValueChange={setSortBy}>
+                      <SelectTrigger className="w-[160px] h-8">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="user_date">User → Date</SelectItem>
+                        <SelectItem value="date_desc">Date (Newest)</SelectItem>
+                        <SelectItem value="user_asc">User (A-Z)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Label className="text-sm text-muted-foreground ml-2">User:</Label>
+                    <Select value={filterUser} onValueChange={setFilterUser}>
+                      <SelectTrigger className="w-[140px] h-8">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Users</SelectItem>
+                        {users.map((u) => (
+                          <SelectItem key={u.user_id} value={u.user_id}>{u.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {isAdmin && (
                     <Button
                       onClick={() => setAddFormOpen(true)}
                       className="gap-2"
@@ -300,13 +325,13 @@ export function ProductionTimeEntryDialog({ isOpen, onClose, user }) {
                       <Plus className="w-4 h-4" />
                       Add Manual Entry
                     </Button>
-                  </div>
-                )}
+                  )}
+                </div>
 
                 {/* Time Entries List */}
                 <ScrollArea className="flex-1">
                   <div className="space-y-2 pr-4">
-                    {timeEntries.length === 0 ? (
+                    {getSortedFilteredEntries().length === 0 ? (
                       <div className="text-center py-8 text-muted-foreground">
                         <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" />
                         <p>No time entries found</p>
