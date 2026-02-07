@@ -595,16 +595,27 @@ export default function Team({ user }) {
                                 )}
                               </div>
                               {(user?.role === "admin" || user?.role === "manager") && member.user_id !== user.user_id && (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="h-7 px-2 text-destructive hover:text-destructive"
-                                  onClick={() => handleStopUserTimer(member.user_id, timer.workflow_type)}
-                                  data-testid={`stop-timer-${member.user_id}`}
-                                >
-                                  <Square className="w-3 h-3 mr-1" />
-                                  Stop
-                                </Button>
+                                <div className="flex flex-col gap-1">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-7 px-2 text-destructive hover:text-destructive"
+                                    onClick={() => handleStopUserTimer(member.user_id, timer.workflow_type)}
+                                    data-testid={`stop-timer-${member.user_id}`}
+                                  >
+                                    <Square className="w-3 h-3 mr-1" />
+                                    Stop
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-6 px-2 text-xs text-muted-foreground hover:text-destructive"
+                                    onClick={() => handleForceCleanup(member.user_id, member.name)}
+                                    data-testid={`force-cleanup-${member.user_id}`}
+                                  >
+                                    Force Reset
+                                  </Button>
+                                </div>
                               )}
                             </div>
                           );
