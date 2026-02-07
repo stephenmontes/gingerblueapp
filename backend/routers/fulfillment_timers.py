@@ -1220,3 +1220,96 @@ async def check_limit_acknowledged(user: User = Depends(get_current_user)):
         "acknowledged_date": acknowledged_date
     }
 
+
+
+@router.post("/force-cleanup-my-timer")
+async def force_cleanup_my_timer(user: User = Depends(get_current_user)):
+    """Force cleanup ALL of the current user's active timers.
+    
+    This is a self-service endpoint for users to clean up their own corrupted timers.
+    It stops all active timers across all systems without requiring admin privileges.
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"Force cleanup requested by user: {user.email} ({user.user_id})")
+    
+    now = datetime.now(timezone.utc)
+    now_iso = now.isoformat()
+    
+    results = {
+        "user_id": user.user_id,
+        "user_name": user.name,
+        "fulfillment_stage_timers_stopped": 0,
+        "batch_timers_stopped": 0,
+        "production_timers_stopped": 0,
+        "details": []
+    }
+    
+    # 1. Stop all active fulfillment stage timers (fulfillment_time_logs)
+    fulfill_result = await db.fulfillment_time_logs.update_many(
+        {"user_id": user.user_id, "completed_at": None},
+        {"$set": {
+            "completed_at": now_iso,
+            "duration_minutes": 0,  # Duration will be 0 for corrupted timers
+            "force_stopped": True,
+            "stop_reason": "User force cleanup"
+        }}
+    )
+    results["fulfillment_stage_timers_stopped"] = fulfill_result.modified_count
+    if fulfill_result.modified_count > 0:
+        results["details"].append(f"Stopped {fulfill_result.modified_count} fulfillment stage timer(s)")
+        logger.info(f"Stopped {fulfill_result.modified_count} fulfillment stage timers for {user.name}")
+    
+    # 2. Remove from ALL batch active_workers arrays (fulfillment_batches)
+    batches_with_user = await db.fulfillment_batches.find({
+        "active_workers.user_id": user.user_id
+    }, {"_id": 0, "fulfillment_batch_id": 1, "batch_name": 1, "active_workers": 1}).to_list(100)
+    
+    for batch in batches_with_user:
+        new_workers = [w for w in batch.get("active_workers", []) if w.get("user_id") != user.user_id]
+        update_data = {
+            "active_workers": new_workers,
+            "updated_at": now_iso
+        }
+        if len(new_workers) == 0:
+            update_data["timer_active"] = False
+            update_data["timer_paused"] = True
+        
+        await db.fulfillment_batches.update_one(
+            {"fulfillment_batch_id": batch["fulfillment_batch_id"]},
+            {"$set": update_data}
+        )
+        results["batch_timers_stopped"] += 1
+        results["details"].append(f"Removed from batch: {batch.get('batch_name')}")
+        logger.info(f"Removed {user.name} from batch {batch.get('batch_name')}")
+    
+    # 3. Also stop any production timers (time_logs) - just in case
+    prod_result = await db.time_logs.update_many(
+        {"user_id": user.user_id, "completed_at": None},
+        {"$set": {
+            "completed_at": now_iso,
+            "duration_minutes": 0,
+            "force_stopped": True,
+            "stop_reason": "User force cleanup"
+        }}
+    )
+    results["production_timers_stopped"] = prod_result.modified_count
+    if prod_result.modified_count > 0:
+        results["details"].append(f"Stopped {prod_result.modified_count} production timer(s)")
+        logger.info(f"Stopped {prod_result.modified_count} production timers for {user.name}")
+    
+    total_stopped = (
+        results["fulfillment_stage_timers_stopped"] + 
+        results["batch_timers_stopped"] + 
+        results["production_timers_stopped"]
+    )
+    
+    if total_stopped == 0:
+        results["details"].append("No active timers found to cleanup")
+        logger.info(f"No active timers found for {user.name}")
+    
+    return {
+        "message": f"Cleanup complete: {total_stopped} timer(s) stopped",
+        **results
+    }
+
