@@ -8,14 +8,53 @@ from dependencies import get_current_user
 
 router = APIRouter(tags=["reports"])
 
+
+def parse_date_range(start_date: Optional[str], end_date: Optional[str]):
+    """Parse date strings and return datetime objects for filtering."""
+    start_dt = None
+    end_dt = None
+    
+    if start_date:
+        try:
+            start_dt = datetime.strptime(start_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+        except ValueError:
+            pass
+    
+    if end_date:
+        try:
+            # End of day for end_date
+            end_dt = datetime.strptime(end_date, "%Y-%m-%d").replace(
+                hour=23, minute=59, second=59, tzinfo=timezone.utc
+            )
+        except ValueError:
+            pass
+    
+    return start_dt, end_dt
+
+
 @router.get("/stats/dashboard")
-async def get_dashboard_stats(user: User = Depends(get_current_user)):
-    """Get dashboard statistics"""
+async def get_dashboard_stats(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    user: User = Depends(get_current_user)
+):
+    """Get dashboard statistics with optional date filtering"""
+    
+    start_dt, end_dt = parse_date_range(start_date, end_date)
+    
+    # Build date filter for orders based on created_at
+    order_date_filter = {}
+    if start_dt and end_dt:
+        order_date_filter["created_at"] = {
+            "$gte": start_dt.isoformat(),
+            "$lte": end_dt.isoformat()
+        }
     
     # Total Orders: All unfulfilled orders (not shipped, not cancelled)
-    total_unfulfilled = await db.fulfillment_orders.count_documents({
-        "status": {"$nin": ["shipped", "cancelled"]}
-    })
+    total_query = {"status": {"$nin": ["shipped", "cancelled"]}}
+    if order_date_filter:
+        total_query.update(order_date_filter)
+    total_unfulfilled = await db.fulfillment_orders.count_documents(total_query)
     
     # In Production: Orders currently in a production batch (batched orders)
     in_production = await db.fulfillment_orders.count_documents({
