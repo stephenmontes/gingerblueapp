@@ -146,9 +146,19 @@ export function FulfillmentTimerBanner({ onTimerChange, onGoToStage }) {
 
   const isPaused = activeTimer.is_paused;
   const isBatchTimer = activeTimer.workflow_type === "fulfillment_batch" || activeTimer.batch_name;
+  
+  // Check if timer data appears corrupted
+  const isCorrupted = !activeTimer.started_at || 
+    (new Date(activeTimer.started_at).toString() === "Invalid Date") ||
+    (!activeTimer.stage_id && !activeTimer.fulfillment_batch_id);
 
   return (
-    <div className={`rounded-lg p-4 mb-4 ${isPaused ? "bg-yellow-500/10 border border-yellow-500/30" : "bg-primary/10 border border-primary/30"}`}>
+    <div className={`rounded-lg p-4 mb-4 ${isCorrupted ? "bg-destructive/10 border border-destructive/30" : isPaused ? "bg-yellow-500/10 border border-yellow-500/30" : "bg-primary/10 border border-primary/30"}`}>
+      {isCorrupted && (
+        <div className="mb-3 p-2 bg-destructive/20 rounded text-sm text-destructive flex items-center gap-2">
+          <span>⚠️ Timer data appears corrupted. Click "Stop" to force cleanup.</span>
+        </div>
+      )}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isPaused ? "bg-yellow-500/20" : "bg-primary/20"}`}>
