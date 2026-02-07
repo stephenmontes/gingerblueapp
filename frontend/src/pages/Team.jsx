@@ -295,6 +295,34 @@ export default function Team({ user }) {
     }
   };
 
+  const handleForceCleanup = async (userId, userName) => {
+    if (!confirm(`Force cleanup ALL timers for ${userName}? This will stop any active timer across all systems.`)) {
+      return;
+    }
+    
+    try {
+      const response = await fetch(`${API}/admin/force-cleanup-user/${userId}`, {
+        method: "POST",
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        toast.success(result.message);
+        if (result.details?.length > 0) {
+          result.details.forEach(detail => toast.info(detail));
+        }
+        await fetchActiveTimers();
+      } else {
+        const error = await response.json();
+        toast.error(error.detail || "Failed to force cleanup timers");
+      }
+    } catch (error) {
+      console.error("Failed to force cleanup:", error);
+      toast.error("Failed to force cleanup timers");
+    }
+  };
+
   const getInitials = (name) => {
     if (!name) return "U";
     return name
