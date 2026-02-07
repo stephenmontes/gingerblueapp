@@ -134,7 +134,6 @@ Build a manufacturing and fulfillment app for Shopify websites with detailed tim
 
 ## Pending User Verification
 - **Report Button on Frame Production Page** - User needs to verify visibility after frontend restart
-- **Stuck Timer for pam@gingerbluedecor.com** - Admin cleanup endpoint created, needs to be executed
 
 ## Known Issues
 - Custom domain login requires re-linking after deployment (platform issue)
@@ -143,3 +142,10 @@ Build a manufacturing and fulfillment app for Shopify websites with detailed tim
 ## Recent Changes (Feb 2026)
 - Implemented date range filtering on Reports page (backend + frontend)
 - Enhanced time-based aggregations across all report endpoints
+- **Timer Corruption Fix** - Added force cleanup for corrupted timers:
+  - New `/api/fulfillment/force-cleanup-my-timer` endpoint for self-service cleanup
+  - New `/api/admin/force-cleanup-user/{user_id}` endpoint for admin cleanup
+  - FulfillmentTimerBanner now detects and handles corrupted timer data (NaN display)
+  - Automatic fallback to force cleanup when regular stop fails
+  - Visual warning when timer data appears corrupted
+  - "Force Reset" button on Team page for admins
