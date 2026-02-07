@@ -271,7 +271,23 @@ export default function Team({ user }) {
         await fetchActiveTimers();
       } else {
         const error = await response.json();
-        toast.error(error.detail || "Failed to stop timer");
+        console.error("Stop timer failed:", error);
+        
+        // Try force cleanup if normal stop fails
+        toast.warning("Standard stop failed, trying force cleanup...");
+        const forceResponse = await fetch(`${API}/admin/force-cleanup-user/${userId}`, {
+          method: "POST",
+          credentials: "include",
+        });
+        
+        if (forceResponse.ok) {
+          const forceResult = await forceResponse.json();
+          toast.success(forceResult.message);
+          await fetchActiveTimers();
+        } else {
+          const forceError = await forceResponse.json();
+          toast.error(forceError.detail || "Failed to stop timer - force cleanup also failed");
+        }
       }
     } catch (error) {
       console.error("Failed to stop timer:", error);
