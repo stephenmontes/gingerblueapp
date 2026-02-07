@@ -86,8 +86,15 @@ async def get_dashboard_stats(
     in_fulfillment = sum(s["count"] for s in fulfillment_stats)
     
     # Calculate average items per hour from time logs
+    time_match = {"duration_minutes": {"$gt": 0}}
+    if start_dt and end_dt:
+        time_match["completed_at"] = {
+            "$gte": start_dt.isoformat(),
+            "$lte": end_dt.isoformat()
+        }
+    
     pipeline = [
-        {"$match": {"duration_minutes": {"$gt": 0}}},
+        {"$match": time_match},
         {"$group": {
             "_id": None,
             "total_items": {"$sum": "$items_processed"},
