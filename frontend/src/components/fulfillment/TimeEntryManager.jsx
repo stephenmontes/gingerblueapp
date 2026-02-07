@@ -107,6 +107,34 @@ export function TimeEntryManager() {
     }
   }
 
+  function getSortedFilteredEntries() {
+    let filtered = entries;
+    
+    // Filter by user
+    if (filterUser !== "all") {
+      filtered = filtered.filter(e => e.user_id === filterUser);
+    }
+    
+    // Sort entries
+    return filtered.sort((a, b) => {
+      if (sortBy === "user_date") {
+        // Primary: user name, Secondary: date desc
+        const nameCompare = (a.user_name || "").localeCompare(b.user_name || "");
+        if (nameCompare !== 0) return nameCompare;
+        const dateA = a.completed_at || a.created_at || "";
+        const dateB = b.completed_at || b.created_at || "";
+        return dateB.localeCompare(dateA);
+      } else if (sortBy === "date_desc") {
+        const dateA = a.completed_at || a.created_at || "";
+        const dateB = b.completed_at || b.created_at || "";
+        return dateB.localeCompare(dateA);
+      } else if (sortBy === "user_asc") {
+        return (a.user_name || "").localeCompare(b.user_name || "");
+      }
+      return 0;
+    });
+  }
+
   if (loading) {
     return <LoadingState />;
   }
@@ -118,7 +146,7 @@ export function TimeEntryManager() {
   return (
     <Card className="bg-card border-border">
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-4">
           <CardTitle className="flex items-center gap-2">
             <Clock className="w-5 h-5 text-primary" />
             Time Entry Management
@@ -134,10 +162,43 @@ export function TimeEntryManager() {
             </Button>
           </div>
         </div>
+        {/* Sort and Filter Controls */}
+        <div className="flex items-center gap-4 mt-4 flex-wrap">
+          <div className="flex items-center gap-2">
+            <Label className="text-sm text-muted-foreground">Sort:</Label>
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-[160px] h-8">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="user_date">User → Date</SelectItem>
+                <SelectItem value="date_desc">Date (Newest)</SelectItem>
+                <SelectItem value="user_asc">User (A-Z)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-2">
+            <Label className="text-sm text-muted-foreground">User:</Label>
+            <Select value={filterUser} onValueChange={setFilterUser}>
+              <SelectTrigger className="w-[140px] h-8">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Users</SelectItem>
+                {users.map((u) => (
+                  <SelectItem key={u.user_id} value={u.user_id}>{u.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <Badge variant="secondary" className="text-xs">
+            {getSortedFilteredEntries().length} entries
+          </Badge>
+        </div>
       </CardHeader>
       <CardContent>
         <EntriesTable 
-          entries={entries} 
+          entries={getSortedFilteredEntries()} 
           onEdit={setEditEntry} 
           onRefresh={loadData} 
         />
