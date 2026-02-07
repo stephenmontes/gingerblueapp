@@ -38,27 +38,48 @@ export function FulfillmentTimerBanner({ onTimerChange, onGoToStage }) {
       const isBatchTimer = activeTimer.workflow_type === "fulfillment_batch" || activeTimer.batch_name;
       
       let res;
+      let stopAttempted = false;
+      
       if (isBatchTimer && activeTimer.fulfillment_batch_id) {
         // Stop batch timer
         res = await fetch(`${API}/fulfillment-batches/${activeTimer.fulfillment_batch_id}/stop-timer`, {
           method: "POST", credentials: "include"
         });
-      } else {
+        stopAttempted = true;
+      } else if (activeTimer.stage_id) {
         // Stop stage timer
         res = await fetch(`${API}/fulfillment/stages/${activeTimer.stage_id}/stop-timer`, {
           method: "POST", credentials: "include"
         });
+        stopAttempted = true;
       }
       
-      if (res.ok) {
+      if (stopAttempted && res?.ok) {
         toast.success("Timer stopped");
         setActiveTimer(null);
         onTimerChange?.();
+        return;
+      }
+      
+      // If regular stop failed or couldn't be attempted, try force cleanup
+      console.warn("Regular stop failed, trying force cleanup...");
+      toast.warning("Cleaning up corrupted timer...");
+      
+      const forceRes = await fetch(`${API}/fulfillment/force-cleanup-my-timer`, {
+        method: "POST", credentials: "include"
+      });
+      
+      if (forceRes.ok) {
+        const result = await forceRes.json();
+        toast.success(result.message || "Timer cleaned up");
+        setActiveTimer(null);
+        onTimerChange?.();
       } else {
-        const err = await res.json();
-        toast.error(err.detail || "Failed to stop timer");
+        const err = await forceRes.json();
+        toast.error(err.detail || "Failed to stop timer - please contact admin");
       }
     } catch (err) {
+      console.error("Failed to stop timer:", err);
       toast.error("Failed to stop timer");
     }
   }
