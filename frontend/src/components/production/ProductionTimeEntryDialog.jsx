@@ -266,6 +266,34 @@ export function ProductionTimeEntryDialog({ isOpen, onClose, user }) {
     return `${m}m`;
   }
 
+  function getSortedFilteredEntries() {
+    let filtered = timeEntries;
+    
+    // Filter by user
+    if (filterUser !== "all") {
+      filtered = filtered.filter(e => e.user_id === filterUser);
+    }
+    
+    // Sort entries
+    return filtered.sort((a, b) => {
+      if (sortBy === "user_date") {
+        // Primary: user name, Secondary: date desc
+        const nameCompare = (a.user_name || "").localeCompare(b.user_name || "");
+        if (nameCompare !== 0) return nameCompare;
+        const dateA = a.completed_at || a.created_at || "";
+        const dateB = b.completed_at || b.created_at || "";
+        return dateB.localeCompare(dateA);
+      } else if (sortBy === "date_desc") {
+        const dateA = a.completed_at || a.created_at || "";
+        const dateB = b.completed_at || b.created_at || "";
+        return dateB.localeCompare(dateA);
+      } else if (sortBy === "user_asc") {
+        return (a.user_name || "").localeCompare(b.user_name || "");
+      }
+      return 0;
+    });
+  }
+
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
