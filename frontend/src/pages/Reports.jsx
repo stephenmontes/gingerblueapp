@@ -9,6 +9,20 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Badge } from "@/components/ui/badge";
+import {
   BarChart3,
   Activity,
   Download,
@@ -19,10 +33,12 @@ import {
   RefreshCw,
   Layers,
   Package,
+  Calendar as CalendarIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { KpiCards, QualityTab, UsersTab, StagesTab, OverviewTab, StageUserKpis, BatchReports } from "@/components/reports";
 import { API } from "@/utils/api";
+import { format, subDays, startOfWeek, startOfMonth, endOfMonth, subMonths } from "date-fns";
 
 export default function Reports() {
   const [dashboardStats, setDashboardStats] = useState(null);
@@ -30,14 +46,67 @@ export default function Reports() {
   const [userStats, setUserStats] = useState([]);
   const [stageStats, setStageStats] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // Date filter state
+  const [dateRange, setDateRange] = useState("week"); // day, week, month, custom
+  const [customStartDate, setCustomStartDate] = useState(null);
+  const [customEndDate, setCustomEndDate] = useState(null);
+  const [showStartPicker, setShowStartPicker] = useState(false);
+  const [showEndPicker, setShowEndPicker] = useState(false);
+
+  // Calculate date range for API calls
+  const getDateParams = () => {
+    const now = new Date();
+    let startDate, endDate;
+    
+    switch (dateRange) {
+      case "day":
+        startDate = format(now, "yyyy-MM-dd");
+        endDate = format(now, "yyyy-MM-dd");
+        break;
+      case "week":
+        startDate = format(subDays(now, 7), "yyyy-MM-dd");
+        endDate = format(now, "yyyy-MM-dd");
+        break;
+      case "month":
+        startDate = format(startOfMonth(now), "yyyy-MM-dd");
+        endDate = format(now, "yyyy-MM-dd");
+        break;
+      case "last_month":
+        const lastMonth = subMonths(now, 1);
+        startDate = format(startOfMonth(lastMonth), "yyyy-MM-dd");
+        endDate = format(endOfMonth(lastMonth), "yyyy-MM-dd");
+        break;
+      case "custom":
+        startDate = customStartDate ? format(customStartDate, "yyyy-MM-dd") : null;
+        endDate = customEndDate ? format(customEndDate, "yyyy-MM-dd") : null;
+        break;
+      default:
+        startDate = format(subDays(now, 7), "yyyy-MM-dd");
+        endDate = format(now, "yyyy-MM-dd");
+    }
+    
+    return { startDate, endDate };
+  };
+
+  const getDateLabel = () => {
+    const { startDate, endDate } = getDateParams();
+    if (!startDate || !endDate) return "Select dates";
+    if (startDate === endDate) return startDate;
+    return `${startDate} to ${endDate}`;
+  };
 
   const fetchData = async () => {
+    setLoading(true);
     try {
+      const { startDate, endDate } = getDateParams();
+      const dateParams = startDate && endDate ? `?start_date=${startDate}&end_date=${endDate}` : "";
+      
       const [dashRes, kpisRes, usersRes, stagesRes] = await Promise.all([
-        fetch(`${API}/stats/dashboard`, { credentials: "include" }),
-        fetch(`${API}/stats/production-kpis`, { credentials: "include" }),
-        fetch(`${API}/stats/users`, { credentials: "include" }),
-        fetch(`${API}/stats/stages`, { credentials: "include" }),
+        fetch(`${API}/stats/dashboard${dateParams}`, { credentials: "include" }),
+        fetch(`${API}/stats/production-kpis${dateParams}`, { credentials: "include" }),
+        fetch(`${API}/stats/users${dateParams}`, { credentials: "include" }),
+        fetch(`${API}/stats/stages${dateParams}`, { credentials: "include" }),
       ]);
 
       if (dashRes.ok) setDashboardStats(await dashRes.json());
@@ -54,7 +123,7 @@ export default function Reports() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [dateRange, customStartDate, customEndDate]);
 
   const handleExport = (type) => {
     const urls = {
