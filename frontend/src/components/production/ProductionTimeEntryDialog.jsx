@@ -365,7 +365,7 @@ export function ProductionTimeEntryDialog({ isOpen, onClose, user }) {
                         <p>No time entries found</p>
                       </div>
                     ) : (
-                      timeEntries.map((entry) => (
+                      getSortedFilteredEntries().map((entry) => (
                         <div
                           key={entry.log_id}
                           className="p-4 bg-muted/30 rounded-lg border border-border hover:border-primary/30 transition-colors"
