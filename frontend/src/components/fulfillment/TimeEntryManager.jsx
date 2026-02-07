@@ -46,6 +46,10 @@ export function TimeEntryManager() {
   const [editEntry, setEditEntry] = useState(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [error, setError] = useState(null);
+  
+  // Sorting and filtering
+  const [sortBy, setSortBy] = useState("user_date"); // user_date, date_desc, user_asc
+  const [filterUser, setFilterUser] = useState("all");
 
   useEffect(() => {
     loadData();
