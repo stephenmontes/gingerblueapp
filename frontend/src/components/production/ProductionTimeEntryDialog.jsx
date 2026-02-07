@@ -252,8 +252,8 @@ export function ProductionTimeEntryDialog({ isOpen, onClose, user }) {
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
-          <DialogHeader>
+        <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <Clock className="w-5 h-5" />
               Production Time Entry Management
@@ -265,13 +265,13 @@ export function ProductionTimeEntryDialog({ isOpen, onClose, user }) {
               <Loader2 className="w-8 h-8 animate-spin" />
             </div>
           ) : (
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-              <TabsList className="grid w-full grid-cols-2">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 min-h-0 flex flex-col">
+              <TabsList className="grid w-full grid-cols-2 flex-shrink-0">
                 <TabsTrigger value="history" data-testid="time-history-tab">Time History</TabsTrigger>
                 <TabsTrigger value="kpis" data-testid="time-kpis-tab">KPIs & Stats</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="history" className="flex-1 overflow-hidden flex flex-col mt-4">
+              <TabsContent value="history" className="flex-1 min-h-0 mt-4 overflow-y-auto">
                 {/* Add Entry Button */}
                 {isAdmin && (
                   <div className="flex justify-end mb-4">
@@ -287,8 +287,7 @@ export function ProductionTimeEntryDialog({ isOpen, onClose, user }) {
                 )}
 
                 {/* Time Entries List */}
-                <ScrollArea className="flex-1 h-[calc(85vh-220px)]">
-                  <div className="space-y-2 pr-4">
+                <div className="space-y-2 pr-2">
                     {timeEntries.length === 0 ? (
                       <div className="text-center py-8 text-muted-foreground">
                         <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" />
