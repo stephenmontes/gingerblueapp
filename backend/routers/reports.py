@@ -125,8 +125,9 @@ async def get_dashboard_stats(
             }
         }
     else:
-        week_ago = datetime.now(timezone.utc) - timedelta(days=7)
-        daily_match = {"completed_at": {"$ne": None}}
+        # Default to last 7 days
+        default_start = datetime.now(timezone.utc) - timedelta(days=7)
+        daily_match = {"completed_at": {"$gte": default_start.isoformat()}}
     
     daily_pipeline = [
         {"$match": daily_match},
