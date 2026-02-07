@@ -357,8 +357,8 @@ export function ProductionTimeEntryDialog({ isOpen, onClose, user }) {
                 </ScrollArea>
               </TabsContent>
 
-              <TabsContent value="kpis" className="flex-1 overflow-hidden">
-                <ScrollArea className="h-full">
+              <TabsContent value="kpis" className="flex-1 overflow-hidden mt-4">
+                <ScrollArea className="h-[calc(85vh-220px)]">
                   {kpis && (
                     <div className="space-y-6 pr-4">
                       {/* Period Info */}
