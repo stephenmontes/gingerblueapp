@@ -200,18 +200,31 @@ function LiveTimer({ startedAt, isPaused, accumulatedMinutes }) {
   const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
+    // Handle invalid or missing startedAt
+    if (!startedAt) {
+      setElapsed(accumulatedMinutes ? accumulatedMinutes * 60 : 0);
+      return;
+    }
+
     if (isPaused) {
-      setElapsed(accumulatedMinutes * 60);
+      setElapsed((accumulatedMinutes || 0) * 60);
       return;
     }
 
     const start = new Date(startedAt).getTime();
-    const accSec = accumulatedMinutes * 60;
+    
+    // Check for invalid date
+    if (isNaN(start)) {
+      setElapsed((accumulatedMinutes || 0) * 60);
+      return;
+    }
+    
+    const accSec = (accumulatedMinutes || 0) * 60;
 
     function tick() {
       const now = Date.now();
       const secs = Math.floor((now - start) / 1000) + accSec;
-      setElapsed(secs);
+      setElapsed(Math.max(0, secs)); // Ensure non-negative
     }
 
     tick();
@@ -222,6 +235,11 @@ function LiveTimer({ startedAt, isPaused, accumulatedMinutes }) {
   const hrs = Math.floor(elapsed / 3600);
   const mins = Math.floor((elapsed % 3600) / 60);
   const secs = elapsed % 60;
+
+  // Handle NaN cases
+  if (isNaN(hrs) || isNaN(mins) || isNaN(secs)) {
+    return <span className="font-mono text-sm text-destructive">Invalid timer</span>;
+  }
 
   const formatted = hrs > 0 
     ? `${hrs}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
