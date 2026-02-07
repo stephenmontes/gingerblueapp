@@ -252,7 +252,7 @@ export function ProductionTimeEntryDialog({ isOpen, onClose, user }) {
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col">
+        <DialogContent className="max-w-4xl h-[85vh] flex flex-col">
           <DialogHeader className="flex-shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <Clock className="w-5 h-5" />
@@ -265,16 +265,16 @@ export function ProductionTimeEntryDialog({ isOpen, onClose, user }) {
               <Loader2 className="w-8 h-8 animate-spin" />
             </div>
           ) : (
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 min-h-0 flex flex-col">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
               <TabsList className="grid w-full grid-cols-2 flex-shrink-0">
                 <TabsTrigger value="history" data-testid="time-history-tab">Time History</TabsTrigger>
                 <TabsTrigger value="kpis" data-testid="time-kpis-tab">KPIs & Stats</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="history" className="flex-1 min-h-0 mt-4 overflow-y-auto">
+              <TabsContent value="history" className="flex-1 flex flex-col min-h-0 mt-4">
                 {/* Add Entry Button */}
                 {isAdmin && (
-                  <div className="flex justify-end mb-4">
+                  <div className="flex justify-end mb-4 flex-shrink-0">
                     <Button
                       onClick={() => setAddFormOpen(true)}
                       className="gap-2"
@@ -287,7 +287,8 @@ export function ProductionTimeEntryDialog({ isOpen, onClose, user }) {
                 )}
 
                 {/* Time Entries List */}
-                <div className="space-y-2 pr-2">
+                <ScrollArea className="flex-1">
+                  <div className="space-y-2 pr-4">
                     {timeEntries.length === 0 ? (
                       <div className="text-center py-8 text-muted-foreground">
                         <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" />
