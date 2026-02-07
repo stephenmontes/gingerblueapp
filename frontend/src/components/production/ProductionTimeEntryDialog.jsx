@@ -271,7 +271,7 @@ export function ProductionTimeEntryDialog({ isOpen, onClose, user }) {
                 <TabsTrigger value="kpis" data-testid="time-kpis-tab">KPIs & Stats</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="history" className="flex-1 overflow-hidden flex flex-col">
+              <TabsContent value="history" className="flex-1 overflow-hidden flex flex-col mt-4">
                 {/* Add Entry Button */}
                 {isAdmin && (
                   <div className="flex justify-end mb-4">
@@ -287,7 +287,7 @@ export function ProductionTimeEntryDialog({ isOpen, onClose, user }) {
                 )}
 
                 {/* Time Entries List */}
-                <ScrollArea className="flex-1">
+                <ScrollArea className="flex-1 h-[calc(85vh-220px)]">
                   <div className="space-y-2 pr-4">
                     {timeEntries.length === 0 ? (
                       <div className="text-center py-8 text-muted-foreground">
