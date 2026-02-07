@@ -423,6 +423,7 @@ export function ProductionTimeEntryDialog({ isOpen, onClose, user }) {
                       </div>
                     </div>
                   )}
+                </ScrollArea>
               </TabsContent>
             </Tabs>
           )}
