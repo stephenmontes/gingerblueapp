@@ -145,8 +145,15 @@ async def get_dashboard_stats(
     active_batches = await db.production_batches.count_documents({"status": "active"})
     
     # Calculate average frame production rate from production_logs
+    frame_rate_match = {"quantity": {"$gt": 0}}
+    if start_dt and end_dt:
+        frame_rate_match["created_at"] = {
+            "$gte": start_dt.isoformat(),
+            "$lte": end_dt.isoformat()
+        }
+    
     frame_rate_pipeline = [
-        {"$match": {"quantity": {"$gt": 0}}},
+        {"$match": frame_rate_match},
         {"$group": {
             "_id": None,
             "total_frames": {"$sum": "$quantity"}
@@ -155,9 +162,9 @@ async def get_dashboard_stats(
     frame_result = await db.production_logs.aggregate(frame_rate_pipeline).to_list(1)
     total_frames_produced = frame_result[0]["total_frames"] if frame_result else 0
     
-    # Get total production time in hours
+    # Get total production time in hours (reuse time_match from above)
     time_result = await db.time_logs.aggregate([
-        {"$match": {"duration_minutes": {"$gt": 0}}},
+        {"$match": time_match},
         {"$group": {"_id": None, "total_minutes": {"$sum": "$duration_minutes"}}}
     ]).to_list(1)
     total_hours = (time_result[0]["total_minutes"] / 60) if time_result else 0
