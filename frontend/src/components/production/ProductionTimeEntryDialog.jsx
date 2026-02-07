@@ -97,7 +97,20 @@ export function ProductionTimeEntryDialog({ isOpen, onClose, user }) {
         fetch(`${API}/production/stats/overall-kpis?period=this_week`, { credentials: "include" })
       ]);
       
-      if (entriesRes.ok) setTimeEntries(await entriesRes.json());
+      if (entriesRes.ok) {
+        const data = await entriesRes.json();
+        // Sort by user name first, then by date (most recent first)
+        const sorted = data.sort((a, b) => {
+          // Primary sort: user name
+          const nameCompare = (a.user_name || "").localeCompare(b.user_name || "");
+          if (nameCompare !== 0) return nameCompare;
+          // Secondary sort: date (most recent first)
+          const dateA = a.completed_at || a.created_at || "";
+          const dateB = b.completed_at || b.created_at || "";
+          return dateB.localeCompare(dateA);
+        });
+        setTimeEntries(sorted);
+      }
       if (usersRes.ok) setUsers(await usersRes.json());
       if (stagesRes.ok) setStages(await stagesRes.json());
       if (kpisRes.ok) setKpis(await kpisRes.json());
