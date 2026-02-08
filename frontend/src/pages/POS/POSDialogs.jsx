@@ -1,4 +1,4 @@
-import { User, UserPlus, Search, Loader2, X, Lock, Unlock, Trash2, Clock, Users } from "lucide-react";
+import { User, UserPlus, Search, Loader2, X, Lock, Unlock, Trash2, Clock, Users, Calendar, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
