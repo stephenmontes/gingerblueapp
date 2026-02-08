@@ -333,6 +333,24 @@ export function DraftsDialog({
   onDeleteDraft,
   onReleaseDraft
 }) {
+  // Helper to get customer name from draft
+  const getCustomerName = (draft) => {
+    if (draft.customer_name) return draft.customer_name;
+    if (draft.customer_data?.full_name) return draft.customer_data.full_name;
+    if (draft.customer_data?.name) return draft.customer_data.name;
+    if (draft.customer?.name) return draft.customer.name;
+    return null;
+  };
+
+  // Helper to get notes (strip auto-save prefix if present)
+  const getNotes = (draft) => {
+    const notes = draft.notes || draft.note || "";
+    if (!notes) return null;
+    // Remove auto-save timestamp line
+    const cleanNotes = notes.replace(/\[Auto-saved by .+?\]$/gm, "").trim();
+    return cleanNotes || null;
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[80vh]">
@@ -373,86 +391,120 @@ export function DraftsDialog({
           ) : (
             <ScrollArea className="h-[400px]">
               <div className="space-y-2">
-                {filteredDrafts.map((draft) => (
-                  <div
-                    key={draft.order_id}
-                    className="p-4 rounded-lg border hover:bg-muted/50 cursor-pointer relative overflow-hidden"
-                    onClick={() => onLoadDraft(draft, window.confirm)}
-                    style={draft.order_color ? {
-                      borderLeftWidth: '4px',
-                      borderLeftColor: draft.order_color.accent
-                    } : undefined}
-                  >
-                    {/* Color indicator strip */}
-                    {draft.order_color && (
-                      <div 
-                        className="absolute top-0 left-0 bottom-0 w-1"
-                        style={{ backgroundColor: draft.order_color.accent }}
-                      />
-                    )}
-                    
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1 min-w-0 pl-2">
-                        <div className="flex items-center gap-2">
-                          <p className="font-mono font-bold">{draft.pos_order_number}</p>
-                          {draft.is_locked && (
-                            <Badge variant={draft.is_mine ? "default" : "destructive"} className="text-xs">
-                              {draft.is_mine ? <Lock className="w-3 h-3 mr-1" /> : <Lock className="w-3 h-3 mr-1" />}
-                              {draft.is_mine ? "Editing" : draft.locked_by_name}
-                            </Badge>
+                {filteredDrafts.map((draft) => {
+                  const customerName = getCustomerName(draft);
+                  const notes = getNotes(draft);
+                  const itemCount = draft.total_items || draft.items?.length || 0;
+                  
+                  return (
+                    <div
+                      key={draft.order_id}
+                      className="p-3 rounded-lg border hover:bg-muted/50 cursor-pointer relative overflow-hidden"
+                      onClick={() => onLoadDraft(draft, window.confirm)}
+                      style={draft.order_color ? {
+                        borderLeftWidth: '4px',
+                        borderLeftColor: draft.order_color.accent
+                      } : undefined}
+                    >
+                      {/* Color indicator strip */}
+                      {draft.order_color && (
+                        <div 
+                          className="absolute top-0 left-0 bottom-0 w-1"
+                          style={{ backgroundColor: draft.order_color.accent }}
+                        />
+                      )}
+                      
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0 pl-2">
+                          {/* Header: Order number + badges */}
+                          <div className="flex items-center flex-wrap gap-2 mb-1">
+                            <p className="font-mono font-bold text-sm">{draft.pos_order_number}</p>
+                            {draft.is_locked && (
+                              <Badge variant={draft.is_mine ? "default" : "destructive"} className="text-xs">
+                                {draft.is_mine ? <Lock className="w-3 h-3 mr-1" /> : <Lock className="w-3 h-3 mr-1" />}
+                                {draft.is_mine ? "Editing" : draft.locked_by_name}
+                              </Badge>
+                            )}
+                            {draft.order_color && (
+                              <div 
+                                className="w-3 h-3 rounded-full border"
+                                style={{ backgroundColor: draft.order_color.accent }}
+                                title="Order color"
+                              />
+                            )}
+                          </div>
+                          
+                          {/* Customer */}
+                          <div className="flex items-center gap-2 text-sm">
+                            <User className="w-3 h-3 text-muted-foreground" />
+                            <span className={customerName ? "font-medium" : "text-muted-foreground italic"}>
+                              {customerName || "No customer"}
+                            </span>
+                            <span className="text-muted-foreground">•</span>
+                            <span className="text-muted-foreground">{itemCount} item(s)</span>
+                            <span className="font-semibold">${(draft.total_price || draft.total || 0).toFixed(2)}</span>
+                          </div>
+                          
+                          {/* Ship Date */}
+                          {draft.requested_ship_date && (
+                            <div className="flex items-center gap-2 text-xs text-orange-500 mt-1">
+                              <Calendar className="w-3 h-3" />
+                              <span>Ship: {draft.requested_ship_date}</span>
+                            </div>
                           )}
-                          {draft.order_color && (
-                            <div 
-                              className="w-3 h-3 rounded-full border"
-                              style={{ backgroundColor: draft.order_color.accent }}
-                              title="Order color"
-                            />
+                          
+                          {/* Notes preview */}
+                          {notes && (
+                            <div className="flex items-start gap-2 text-xs text-muted-foreground mt-1">
+                              <FileText className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                              <span className="line-clamp-1">{notes}</span>
+                            </div>
                           )}
+                          
+                          {/* Created info */}
+                          <div className="flex items-center gap-2 mt-1.5 text-xs text-muted-foreground">
+                            <Clock className="w-3 h-3" />
+                            {new Date(draft.created_at).toLocaleString()}
+                            {draft.created_by_name && (
+                              <span>• by {draft.created_by_name}</span>
+                            )}
+                          </div>
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                          {draft.customer_name || "No customer"} • {draft.item_count} item(s)
-                        </p>
-                        <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                          <Clock className="w-3 h-3" />
-                          {new Date(draft.created_at).toLocaleString()}
-                          {draft.created_by_name && (
-                            <span>• by {draft.created_by_name}</span>
+                        
+                        {/* Actions */}
+                        <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                          {draft.is_locked && draft.is_mine && (
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onReleaseDraft(draft.order_id);
+                              }}
+                              title="Release lock"
+                            >
+                              <Unlock className="w-4 h-4" />
+                            </Button>
                           )}
-                        </div>
-                        <p className="text-sm font-medium mt-1">${draft.total?.toFixed(2) || "0.00"}</p>
-                      </div>
-                      <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
-                        {draft.is_locked && draft.is_mine && (
                           <Button
                             size="icon"
                             variant="ghost"
+                            className="text-destructive hover:text-destructive"
                             onClick={(e) => {
                               e.stopPropagation();
-                              onReleaseDraft(draft.order_id);
+                              if (window.confirm("Delete this draft?")) {
+                                onDeleteDraft(draft.order_id);
+                              }
                             }}
-                            title="Release lock"
+                            title="Delete draft"
                           >
-                            <Unlock className="w-4 h-4" />
+                            <Trash2 className="w-4 h-4" />
                           </Button>
-                        )}
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="text-destructive hover:text-destructive"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (window.confirm("Delete this draft?")) {
-                              onDeleteDraft(draft.order_id);
-                            }
-                          }}
-                          title="Delete draft"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </ScrollArea>
           )}
