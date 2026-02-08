@@ -1286,14 +1286,6 @@ export default function POS({ user }) {
           </div>
         </div>
       </div>
-                  <Save className="w-4 h-4 mr-2" />
-                  Save as Draft
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
-      </div>
 
       {/* Customer Dialog */}
       <Dialog open={customerDialogOpen} onOpenChange={setCustomerDialogOpen}>
