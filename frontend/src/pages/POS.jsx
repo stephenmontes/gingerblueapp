@@ -5,7 +5,7 @@ import {
   ShoppingCart, Search, Barcode, User, Plus, Minus, Trash2, 
   Package, Store, DollarSign, Truck, Tag, X, Check, Loader2,
   ScanLine, UserPlus, RefreshCw, Printer, Percent, Save, FileText,
-  Image as ImageIcon, ZoomIn
+  Image as ImageIcon, ZoomIn, FolderOpen, Lock, Unlock, Clock, Users
 } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
