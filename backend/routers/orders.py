@@ -984,3 +984,160 @@ async def delete_order_note(
     
     return {"success": True, "message": "Note deleted"}
 
+
+@router.post("/{order_id}/send-email")
+async def send_order_email(
+    order_id: str,
+    request: SendOrderEmailRequest,
+    user: User = Depends(get_current_user)
+):
+    """Send order confirmation email to customer"""
+    # Get order from either fulfillment_orders or pos orders
+    order = await db.fulfillment_orders.find_one({"order_id": order_id}, {"_id": 0})
+    if not order:
+        order = await db.orders.find_one({"order_id": order_id}, {"_id": 0})
+    
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    # Get store info for branding
+    store_id = order.get("store_id")
+    store = await db.stores.find_one({"store_id": store_id}, {"_id": 0}) if store_id else None
+    store_name = store.get("name", "Store") if store else "Store"
+    store_phone = store.get("phone", "") if store else ""
+    store_email = store.get("email", "") if store else ""
+    store_address = store.get("address", "") if store else ""
+    
+    # Build order details
+    order_number = order.get("order_number") or order.get("pos_order_number") or order_id
+    customer_name = order.get("customer", {}).get("name") or order.get("name") or "Valued Customer"
+    line_items = order.get("line_items", [])
+    subtotal = order.get("subtotal", 0) or sum(item.get("price", 0) * item.get("quantity", 1) for item in line_items)
+    shipping = order.get("shipping", {}).get("price", 0) if order.get("shipping") else 0
+    total = order.get("total", subtotal + shipping)
+    
+    # Build items HTML
+    items_html = ""
+    for item in line_items:
+        qty = item.get("quantity", 1)
+        price = item.get("price", 0)
+        line_total = qty * price
+        items_html += f"""
+        <tr>
+            <td style="padding: 12px; border-bottom: 1px solid #eee;">
+                <strong>{item.get('title', item.get('name', 'Item'))}</strong>
+                {f"<br><span style='font-size: 12px; color: #666;'>SKU: {item.get('sku')}</span>" if item.get('sku') else ""}
+            </td>
+            <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: center;">{qty}</td>
+            <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right;">${price:.2f}</td>
+            <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right;">${line_total:.2f}</td>
+        </tr>
+        """
+    
+    # Build email HTML
+    html_body = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="text-align: center; padding-bottom: 20px; border-bottom: 2px solid #333; margin-bottom: 20px;">
+            <h1 style="margin: 0; font-size: 24px;">{store_name}</h1>
+            {f'<p style="margin: 5px 0; color: #666;">{store_phone}</p>' if store_phone else ''}
+            {f'<p style="margin: 5px 0; color: #666; font-size: 14px;">{store_email}</p>' if store_email else ''}
+            {f'<p style="margin: 5px 0; color: #666; font-size: 13px;">{store_address}</p>' if store_address else ''}
+        </div>
+        
+        <h2 style="color: #333; font-size: 20px;">Order Confirmation</h2>
+        <p>Dear {customer_name},</p>
+        <p>Thank you for your order! Here's a summary of your purchase:</p>
+        
+        <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <p style="margin: 0;"><strong>Order Number:</strong> {order_number}</p>
+            <p style="margin: 5px 0 0 0;"><strong>Date:</strong> {datetime.now().strftime('%B %d, %Y')}</p>
+        </div>
+        
+        <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+            <thead>
+                <tr style="background: #f5f5f5;">
+                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #333;">Item</th>
+                    <th style="padding: 12px; text-align: center; border-bottom: 2px solid #333;">Qty</th>
+                    <th style="padding: 12px; text-align: right; border-bottom: 2px solid #333;">Price</th>
+                    <th style="padding: 12px; text-align: right; border-bottom: 2px solid #333;">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {items_html}
+            </tbody>
+        </table>
+        
+        <div style="margin-left: auto; width: 250px; margin-top: 20px;">
+            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee;">
+                <span>Subtotal:</span>
+                <span>${subtotal:.2f}</span>
+            </div>
+            {f'<div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee;"><span>Shipping:</span><span>${shipping:.2f}</span></div>' if shipping > 0 else ''}
+            <div style="display: flex; justify-content: space-between; padding: 8px 0; font-weight: bold; font-size: 18px; border-top: 2px solid #333;">
+                <span>Total:</span>
+                <span>${total:.2f}</span>
+            </div>
+        </div>
+        
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; text-align: center; color: #666; font-size: 12px;">
+            <p>Thank you for your business!</p>
+            <p>If you have any questions, please contact us.</p>
+        </div>
+    </body>
+    </html>
+    """
+    
+    # Send via Resend
+    resend_key = os.environ.get("RESEND_API_KEY")
+    if not resend_key:
+        raise HTTPException(status_code=500, detail="Email service not configured")
+    
+    try:
+        params = {
+            "from": f"{store_name} <onboarding@resend.dev>",
+            "to": [request.to],
+            "subject": f"Order Confirmation - {order_number}",
+            "html": html_body,
+            "reply_to": store_email if store_email else None
+        }
+        
+        # Remove None values
+        params = {k: v for k, v in params.items() if v is not None}
+        
+        email_response = await asyncio.to_thread(resend.Emails.send, params)
+        
+        logger.info(f"Order email sent to {request.to} for order {order_number}, ID: {email_response.get('id')}")
+        
+        # Log the email
+        await db.email_logs.insert_one({
+            "email_id": email_response.get("id"),
+            "to": request.to,
+            "subject": f"Order Confirmation - {order_number}",
+            "order_id": order_id,
+            "order_number": order_number,
+            "store_id": store_id,
+            "total": total,
+            "items_count": len(line_items),
+            "sent_by": user.user_id,
+            "sent_by_name": user.name,
+            "status": "sent",
+            "provider": "resend",
+            "created_at": datetime.now(timezone.utc).isoformat()
+        })
+        
+        return {
+            "message": "Email sent successfully",
+            "to": request.to,
+            "email_id": email_response.get("id")
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to send order email: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to send email: {str(e)}")
+
