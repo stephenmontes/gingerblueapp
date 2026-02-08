@@ -142,17 +142,18 @@ Build a manufacturing and fulfillment app for Shopify websites with detailed tim
 ## Recent Changes (Feb 2026)
 - Implemented date range filtering on Reports page (backend + frontend)
 - Enhanced time-based aggregations across all report endpoints
-- **Timer Corruption Fix** - Added force cleanup for corrupted timers:
-  - New `/api/fulfillment/force-cleanup-my-timer` endpoint for self-service cleanup
-  - New `/api/admin/force-cleanup-user/{user_id}` endpoint for admin cleanup
-  - FulfillmentTimerBanner now detects and handles corrupted timer data (NaN display)
-  - Automatic fallback to force cleanup when regular stop fails
-  - Visual warning when timer data appears corrupted
-  - "Force Reset" button on Team page for admins
-- **Time Entry Management Sorting** - Added sort/filter controls (User → Date, Date desc, User A-Z)
+- **Timer Corruption Fix** - Added force cleanup for corrupted timers
+- **Time Entry Management Sorting** - Added sort/filter controls
 - **CSV Import Duplicate Handling** - Enhanced feedback for duplicate order updates
-- **Google Drive Export** - New feature to export selected orders directly to Google Drive:
-  - New `/api/drive/*` endpoints for OAuth and export
-  - Export button in Orders page selection bar
-  - Google Drive integration settings in Settings page
-  - Exports include order data + batch info as CSV
+- **CSV Export** - Local CSV download for selected orders (`/api/export/orders-selected`)
+- **Deployment Fixes** - Added `/health` endpoint, fixed hardcoded URLs
+- **Point of Sale (POS)** - New feature for in-store order creation with Shopify sync:
+  - Store selector for Shopify stores
+  - Product search by barcode, SKU, title, or tag
+  - Barcode scanner support (Enter key triggers search)
+  - Customer search and creation with full Shopify fields
+  - Tax exempt toggle, ship all items toggle
+  - Custom item creation for non-catalog products
+  - Shipping configuration
+  - Order notes and tags
+  - Auto-sync to Shopify on order creation
