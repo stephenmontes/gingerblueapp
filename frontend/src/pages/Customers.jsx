@@ -39,7 +39,9 @@ import {
   ArrowUp,
   ArrowDown,
   ArrowUpDown,
-  ListTodo
+  ListTodo,
+  ShoppingCart,
+  Calendar
 } from "lucide-react";
 import { toast } from "sonner";
 import { API } from "@/utils/api";
