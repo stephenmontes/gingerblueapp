@@ -85,8 +85,8 @@ export function POSProductSearch({
             <CardTitle className="text-sm">Search Results ({searchResults.length})</CardTitle>
           </CardHeader>
           <CardContent className="p-2 sm:p-6">
-            <ScrollArea className="h-[300px]">
-              <div className="space-y-2 pr-3">
+            <div className="h-[300px] overflow-y-auto overflow-x-hidden">
+              <div className="space-y-2">
                 {searchResults.map(product => (
                   <div
                     key={product.product_id}
@@ -101,7 +101,7 @@ export function POSProductSearch({
                           <Package className="w-5 h-5 text-muted-foreground" />
                         </div>
                       )}
-                      <div className="flex-1 min-w-0">
+                      <div className="flex-1 min-w-0 overflow-hidden">
                         <p className="font-medium text-sm truncate">{product.title}</p>
                         {product.sku && <p className="text-xs text-muted-foreground truncate">SKU: {product.sku}</p>}
                       </div>
@@ -110,10 +110,10 @@ export function POSProductSearch({
                           <span className="text-sm font-semibold">${(product.variants?.[0]?.price || product.price || 0).toFixed(2)}</span>
                           <Button 
                             size="sm" 
-                            className="h-7 px-2 text-xs"
+                            className="h-7 w-7 p-0"
                             onClick={() => onAddToCart(product)}
                           >
-                            <Plus className="w-3 h-3" />
+                            <Plus className="w-4 h-4" />
                           </Button>
                         </div>
                       )}
