@@ -1559,12 +1559,31 @@ export default function POS({ user }) {
             </CardContent>
           </Card>
 
-          {/* Notes & Tags */}
+          {/* Notes, Tags & Ship Date */}
           <Card className="bg-card border-border">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm">Notes & Tags</CardTitle>
+              <CardTitle className="text-sm">Order Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
+              <div>
+                <Label className="text-sm flex items-center gap-2">
+                  <Clock className="w-4 h-4" />
+                  Requested Ship Date
+                </Label>
+                <Input
+                  type="date"
+                  value={requestedShipDate}
+                  onChange={(e) => setRequestedShipDate(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                  className="mt-1"
+                  data-testid="ship-date-input"
+                />
+                {requestedShipDate && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Will appear on scheduling calendar
+                  </p>
+                )}
+              </div>
               <div>
                 <Label className="text-sm">Order Note</Label>
                 <Input
