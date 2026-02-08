@@ -682,6 +682,151 @@ function ShipStationSettings({ API, isManager }) {
   );
 }
 
+function GoogleDriveSettings({ API, isManager }) {
+  const [status, setStatus] = useState({ connected: false });
+  const [loading, setLoading] = useState(true);
+  const [connecting, setConnecting] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
+
+  useEffect(() => {
+    fetchStatus();
+    // Check for callback success
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("drive_connected") === "true") {
+      toast.success("Google Drive connected successfully!");
+      // Clean up URL
+      window.history.replaceState({}, "", window.location.pathname);
+      fetchStatus();
+    }
+  }, []);
+
+  const fetchStatus = async () => {
+    try {
+      const res = await fetch(`${API}/drive/status`, { credentials: "include" });
+      if (res.ok) {
+        const data = await res.json();
+        setStatus(data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch Drive status");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleConnect = async () => {
+    setConnecting(true);
+    try {
+      const res = await fetch(`${API}/drive/oauth/connect`, { credentials: "include" });
+      if (res.ok) {
+        const data = await res.json();
+        window.location.href = data.authorization_url;
+      } else {
+        const error = await res.json();
+        toast.error(error.detail || "Failed to start Drive connection");
+      }
+    } catch (err) {
+      toast.error("Failed to connect to Google Drive");
+    } finally {
+      setConnecting(false);
+    }
+  };
+
+  const handleDisconnect = async () => {
+    if (!confirm("Are you sure you want to disconnect Google Drive?")) return;
+    
+    setDisconnecting(true);
+    try {
+      const res = await fetch(`${API}/drive/disconnect`, {
+        method: "DELETE",
+        credentials: "include"
+      });
+      if (res.ok) {
+        toast.success("Google Drive disconnected");
+        setStatus({ connected: false });
+      } else {
+        const error = await res.json();
+        toast.error(error.detail || "Failed to disconnect");
+      }
+    } catch (err) {
+      toast.error("Failed to disconnect Google Drive");
+    } finally {
+      setDisconnecting(false);
+    }
+  };
+
+  return (
+    <Card className="bg-card border-border">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <svg className="w-5 h-5" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg">
+              <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
+              <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0 -1.2 4.5h27.5z" fill="#00ac47"/>
+              <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" fill="#ea4335"/>
+              <path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/>
+              <path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/>
+              <path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/>
+            </svg>
+            <CardTitle>Google Drive</CardTitle>
+          </div>
+          {loading ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : status.connected ? (
+            <Badge className="bg-green-500/20 text-green-400 border-green-500/30">Connected</Badge>
+          ) : (
+            <Badge className="bg-gray-500/20 text-gray-400 border-gray-500/30">Not Connected</Badge>
+          )}
+        </div>
+        <CardDescription>
+          Export orders and reports directly to your Google Drive
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          {status.connected ? (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Google Drive is connected. You can export orders from the Orders page.
+              </p>
+              {status.updated_at && (
+                <p className="text-xs text-muted-foreground">
+                  Connected: {new Date(status.updated_at).toLocaleDateString()}
+                </p>
+              )}
+              {isManager && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleDisconnect}
+                  disabled={disconnecting}
+                  className="text-destructive hover:text-destructive"
+                >
+                  {disconnecting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                  Disconnect Drive
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Connect Google Drive to export orders and reports as CSV files.
+                Files will be saved to a &quot;MFGFlow Exports&quot; folder.
+              </p>
+              {isManager && (
+                <Button onClick={handleConnect} disabled={connecting}>
+                  {connecting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                  Connect Google Drive
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 function WebhooksSettings({ API, stores, isManager }) {
   const [webhookStatus, setWebhookStatus] = useState(null);
   const [loading, setLoading] = useState(true);
