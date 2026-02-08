@@ -981,11 +981,11 @@ export default function POS({ user }) {
           </Card>
         </div>
 
-        {/* Right: Order Summary */}
-        <div className="space-y-4">
+        {/* Right: Order Summary - Fixed at bottom on mobile */}
+        <div className="space-y-3 md:space-y-4 order-2 lg:order-2">
           {/* Customer */}
           <Card className="bg-card border-border">
-            <CardHeader className="pb-3">
+            <CardHeader className="pb-2 md:pb-3">
               <CardTitle className="text-sm flex items-center justify-between">
                 <span className="flex items-center gap-2">
                   <User className="w-4 h-4" />
@@ -996,16 +996,17 @@ export default function POS({ user }) {
                   variant="outline"
                   onClick={() => setCustomerDialogOpen(true)}
                   data-testid="add-customer-btn"
+                  className="h-8"
                 >
                   {customer ? "Change" : "Add"}
                 </Button>
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-0">
               {customer ? (
-                <div className="space-y-2">
+                <div className="space-y-1 md:space-y-2">
                   <div className="flex items-center justify-between">
-                    <p className="font-medium">{customer.name}</p>
+                    <p className="font-medium text-sm md:text-base">{customer.name}</p>
                     <Button 
                       size="sm" 
                       variant="ghost" 
