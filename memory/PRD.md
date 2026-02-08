@@ -179,6 +179,7 @@ Build a manufacturing and fulfillment app for Shopify websites with detailed tim
 - **CSV Import Duplicate Handling** - Enhanced feedback for duplicate order updates
 - **CSV Export** - Local CSV download for selected orders (`/api/export/orders-selected`)
 - **Deployment Fixes** - Added `/health` endpoint, fixed hardcoded URLs
+- **Navigation Menu Scrollable Fix** - Made sidebar navigation scrollable on mobile/tablet devices so all menu items are accessible
 - **Point of Sale (POS)** - COMPLETE - In-store order creation with Shopify sync:
   - Store selector for Shopify stores
   - Product search by barcode, SKU, title, or tag
