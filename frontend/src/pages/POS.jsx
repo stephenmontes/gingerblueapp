@@ -793,7 +793,8 @@ export default function POS({ user }) {
         financial_status: "pending",
         order_discount: orderDiscount.value > 0 ? orderDiscount : null,
         is_draft: isDraft,
-        requested_ship_date: requestedShipDate || null
+        requested_ship_date: requestedShipDate || null,
+        order_color: orderColor
       };
 
       const res = await fetch(`${API}/pos/orders`, {
