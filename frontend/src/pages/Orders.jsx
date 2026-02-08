@@ -1131,6 +1131,16 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
                         >
                           <Eye className="w-4 h-4" />
                         </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEmailOrder(order)}
+                          data-testid={`email-order-${order.order_id}`}
+                          title="Email order to customer"
+                          className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                        >
+                          <Mail className="w-4 h-4" />
+                        </Button>
                         {order.archived ? (
                           <Button
                             variant="ghost"
