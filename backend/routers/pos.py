@@ -78,6 +78,7 @@ class POSOrderCreate(BaseModel):
     financial_status: str = "pending"  # pending, paid, partially_paid
     order_discount: Optional[POSDiscount] = None  # Order-level discount
     is_draft: bool = False  # Save as draft instead of syncing to Shopify
+    requested_ship_date: Optional[str] = None  # ISO date string for scheduling
 
 
 # Helper functions
