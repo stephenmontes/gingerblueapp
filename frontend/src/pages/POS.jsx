@@ -80,6 +80,13 @@ export default function POS({ user }) {
   const [orderNote, setOrderNote] = useState("");
   const [orderTags, setOrderTags] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
+
+  // Order-level discount
+  const [orderDiscount, setOrderDiscount] = useState({ type: "percentage", value: 0, reason: "" });
+  const [discountDialogOpen, setDiscountDialogOpen] = useState(false);
+  const [itemDiscountIndex, setItemDiscountIndex] = useState(null);
+  const [tempDiscount, setTempDiscount] = useState({ type: "percentage", value: 0 });
 
   // Last created order for printing
   const [lastOrder, setLastOrder] = useState(null);
