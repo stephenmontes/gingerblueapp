@@ -60,6 +60,20 @@ export default function POS({ user }) {
 
   // Shipping
   const [shipping, setShipping] = useState({ title: "Standard Shipping", price: 0, code: "standard" });
+  const [shippingPercent, setShippingPercent] = useState("");
+
+  // Shipping percentage presets
+  const shippingPresets = [
+    { label: "30% of order total", value: "30" },
+    { label: "25% of order total", value: "25" },
+    { label: "20% of order total", value: "20" },
+    { label: "18% of order total", value: "18" },
+    { label: "15% of order total", value: "15" },
+    { label: "12% of order total", value: "12" },
+    { label: "10% of order total", value: "10" },
+    { label: "Free Shipping (0%)", value: "0" },
+    { label: "Custom Amount", value: "custom" },
+  ];
 
   // Order
   const [orderNote, setOrderNote] = useState("");
