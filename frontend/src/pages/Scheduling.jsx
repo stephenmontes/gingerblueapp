@@ -461,9 +461,16 @@ export default function Scheduling({ user }) {
                       className="p-3 rounded-lg bg-muted/30 border border-border"
                     >
                       <div className="flex items-center justify-between mb-2">
-                        <span className="font-mono font-semibold">
-                          #{order.order_number}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono font-semibold">
+                            #{order.order_number}
+                          </span>
+                          {order.source === "pos" && (
+                            <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-400 border-blue-500/30">
+                              POS
+                            </Badge>
+                          )}
+                        </div>
                         {order.calendar_event_id ? (
                           <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs">
                             Synced
