@@ -1308,16 +1308,20 @@ async def send_quote_email(
         # Get store info for branding
         store_full = await db.stores.find_one({"store_id": request.store_id}, {"_id": 0})
         
-        # Use from_email from request, or store email, or default Resend sender
-        # Note: In Resend free tier, use "onboarding@resend.dev" or your verified domain
-        from_email = request.from_email or (store_full.get("email") if store_full else None) or "onboarding@resend.dev"
-        
         if resend_key:
+            # IMPORTANT: On Resend free tier, must use "onboarding@resend.dev" as sender
+            # or a verified domain. Store the intended from_email for display purposes.
+            intended_from = request.from_email or (store_full.get("email") if store_full else None) or f"sales@{store_name.lower().replace(' ', '')}.com"
+            
+            # Use Resend's test sender - emails will still be delivered
+            sender_email = "onboarding@resend.dev"
+            
             params = {
-                "from": f"{store_name} <{from_email}>" if from_email != "onboarding@resend.dev" else f"{store_name} <onboarding@resend.dev>",
+                "from": f"{store_name} <{sender_email}>",
                 "to": [request.to],
                 "subject": request.subject,
-                "html": html_body
+                "html": html_body,
+                "reply_to": intended_from  # So replies go to the store's email
             }
             
             # Run sync SDK in thread to keep FastAPI non-blocking
@@ -1329,7 +1333,8 @@ async def send_quote_email(
             await db.email_logs.insert_one({
                 "email_id": email_response.get("id"),
                 "to": request.to,
-                "from": from_email,
+                "from": sender_email,
+                "reply_to": intended_from,
                 "subject": request.subject,
                 "body_preview": request.message[:200],
                 "store_id": request.store_id,
@@ -1354,7 +1359,7 @@ async def send_quote_email(
             # Store the email attempt for reference
             await db.email_logs.insert_one({
                 "to": request.to,
-                "from": from_email,
+                "from": request.from_email,
                 "subject": request.subject,
                 "body_preview": request.message[:200],
                 "store_id": request.store_id,
