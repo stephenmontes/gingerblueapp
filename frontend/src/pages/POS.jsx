@@ -807,8 +807,12 @@ export default function POS({ user }) {
       return;
     }
     
+    const storeData = stores.find(s => s.store_id === selectedStore);
+    const storeName = storeData?.name || 'Store';
+    
+    setEmailFrom(storeData?.email || "");
     setEmailTo(customer?.email || "");
-    setEmailSubject(`Quote from ${stores.find(s => s.store_id === selectedStore)?.name || 'Store'}`);
+    setEmailSubject(`Quote from ${storeName}`);
     setEmailMessage(`Dear ${customer?.name || 'Customer'},\n\nPlease find attached your quote for ${cart.length} item(s) totaling $${total.toFixed(2)}.\n\nThank you for your business!\n\nBest regards,\n${user?.name || 'Staff'}`);
     setEmailDialogOpen(true);
   };
