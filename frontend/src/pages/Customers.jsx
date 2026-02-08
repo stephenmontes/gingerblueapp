@@ -92,6 +92,10 @@ export default function Customers({ user }) {
   
   // Tag form
   const [newTag, setNewTag] = useState("");
+  
+  // Customer drafts
+  const [customerDrafts, setCustomerDrafts] = useState([]);
+  const [loadingDrafts, setLoadingDrafts] = useState(false);
 
   const fetchCustomers = useCallback(async (page = 1, sortBy = sortColumn, sortDir = sortDirection) => {
     try {
