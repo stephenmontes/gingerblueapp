@@ -90,6 +90,10 @@ export default function Orders({ user }) {
   const [csvStoreId, setCsvStoreId] = useState("");
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
+  
+  // Google Drive Export state
+  const [exporting, setExporting] = useState(false);
+  const [driveStatus, setDriveStatus] = useState({ connected: false });
 
   const fetchOrders = async (page = currentPage, sortCol = sortColumn, sortDir = sortDirection, search = searchTerm) => {
     try {
