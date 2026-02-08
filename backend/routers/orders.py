@@ -6,6 +6,10 @@ from pydantic import BaseModel
 import uuid
 import csv
 import io
+import os
+import asyncio
+import logging
+import resend
 
 from database import db
 from models.user import User
@@ -17,11 +21,20 @@ from services.shopify_service import sync_orders_from_store
 from services.etsy_service import sync_orders_from_etsy_store
 from services.shipstation_sync import sync_orders_from_shipstation
 
+logger = logging.getLogger(__name__)
+
+# Initialize Resend
+resend.api_key = os.environ.get("RESEND_API_KEY")
+
 router = APIRouter(prefix="/orders", tags=["orders"])
 
 
 class ExportOrdersRequest(BaseModel):
     order_ids: List[str]
+
+
+class SendOrderEmailRequest(BaseModel):
+    to: str
 
 
 # Pydantic models for order notes
