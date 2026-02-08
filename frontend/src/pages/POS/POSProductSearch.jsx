@@ -129,8 +129,8 @@ export function POSProductSearch({
                               key={variant.variant_id || vIdx}
                               className="flex items-center gap-2 py-1"
                             >
-                              <span className="flex-1 text-xs truncate">{variant.title || `Variant ${vIdx + 1}`}</span>
-                              <span className="text-xs font-semibold flex-shrink-0">${parseFloat(variant.price || 0).toFixed(2)}</span>
+                              <span className="flex-1 text-xs truncate min-w-0">{variant.title || `Variant ${vIdx + 1}`}</span>
+                              <span className="text-xs font-semibold whitespace-nowrap">${parseFloat(variant.price || 0).toFixed(2)}</span>
                               <Button 
                                 size="sm" 
                                 className="h-6 w-6 p-0 flex-shrink-0"
@@ -147,7 +147,7 @@ export function POSProductSearch({
                   </div>
                 ))}
               </div>
-            </ScrollArea>
+            </div>
           </CardContent>
         </Card>
       )}
