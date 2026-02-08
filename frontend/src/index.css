@@ -182,6 +182,19 @@ h1, h2, h3, h4, .font-heading {
     @apply text-xs font-semibold uppercase tracking-widest text-muted-foreground;
 }
 
+/* Safe area padding for mobile devices with notches */
+.safe-area-pb {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Touch-friendly tap targets on mobile */
+@media (max-width: 1024px) {
+    .touch-target {
+        min-height: 44px;
+        min-width: 44px;
+    }
+}
+
 @layer base {
     [data-debug-wrapper="true"] {
         display: contents !important;
