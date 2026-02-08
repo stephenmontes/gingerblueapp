@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends, Query, UploadFile, File
+from fastapi.responses import StreamingResponse
 from typing import Optional, List
 from datetime import datetime, timezone
 from pydantic import BaseModel
@@ -17,6 +18,10 @@ from services.etsy_service import sync_orders_from_etsy_store
 from services.shipstation_sync import sync_orders_from_shipstation
 
 router = APIRouter(prefix="/orders", tags=["orders"])
+
+
+class ExportOrdersRequest(BaseModel):
+    order_ids: List[str]
 
 
 # Pydantic models for order notes
