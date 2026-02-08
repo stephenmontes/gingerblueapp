@@ -259,12 +259,36 @@ export default function POS({ user }) {
       quantity: customItem.quantity,
       price: parseFloat(customItem.price),
       taxable: customItem.taxable,
-      is_custom: true
+      is_custom: true,
+      image: null,
+      discount_type: null,
+      discount_value: 0
     }]);
     
     setCustomItem({ title: "", sku: "", price: 0, quantity: 1, taxable: true });
     setCustomItemDialogOpen(false);
     toast.success("Custom item added");
+  };
+
+  // Apply discount to item
+  const applyItemDiscount = (index) => {
+    const newCart = [...cart];
+    newCart[index].discount_type = tempDiscount.value > 0 ? tempDiscount.type : null;
+    newCart[index].discount_value = tempDiscount.value;
+    setCart(newCart);
+    setItemDiscountIndex(null);
+    setTempDiscount({ type: "percentage", value: 0 });
+  };
+
+  // Calculate item total with discount
+  const getItemTotal = (item) => {
+    const lineTotal = item.price * item.quantity;
+    if (!item.discount_type || item.discount_value <= 0) return lineTotal;
+    
+    if (item.discount_type === "percentage") {
+      return lineTotal * (1 - item.discount_value / 100);
+    }
+    return Math.max(0, lineTotal - item.discount_value);
   };
 
   // Customer search with auto-fill
