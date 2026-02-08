@@ -1,0 +1,916 @@
+import { useState, useEffect, useRef, useCallback } from "react";
+import { API } from "@/utils/api";
+import { toast } from "sonner";
+import { 
+  ShoppingCart, Search, Barcode, User, Plus, Minus, Trash2, 
+  Package, Store, DollarSign, Truck, Tag, X, Check, Loader2,
+  ScanLine, UserPlus, RefreshCw
+} from "lucide-react";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card";
+import { Badge } from "../components/ui/badge";
+import { Switch } from "../components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "../components/ui/dialog";
+import { ScrollArea } from "../components/ui/scroll-area";
+import { Separator } from "../components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+
+export default function POS({ user }) {
+  // Store selection
+  const [stores, setStores] = useState([]);
+  const [selectedStore, setSelectedStore] = useState("");
+  const [loadingStores, setLoadingStores] = useState(true);
+
+  // Product search
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [searching, setSearching] = useState(false);
+  const barcodeInputRef = useRef(null);
+
+  // Cart
+  const [cart, setCart] = useState([]);
+  const [taxExempt, setTaxExempt] = useState(false);
+  const [shipAllItems, setShipAllItems] = useState(true);
+
+  // Customer
+  const [customer, setCustomer] = useState(null);
+  const [customerDialogOpen, setCustomerDialogOpen] = useState(false);
+  const [customerSearch, setCustomerSearch] = useState("");
+  const [customerResults, setCustomerResults] = useState([]);
+  const [searchingCustomers, setSearchingCustomers] = useState(false);
+  const [newCustomerMode, setNewCustomerMode] = useState(false);
+  const [newCustomer, setNewCustomer] = useState({
+    first_name: "", last_name: "", email: "", phone: "",
+    company: "", address1: "", address2: "", city: "",
+    state: "", zip: "", country: "US", tax_exempt: false, note: ""
+  });
+
+  // Custom item
+  const [customItemDialogOpen, setCustomItemDialogOpen] = useState(false);
+  const [customItem, setCustomItem] = useState({
+    title: "", sku: "", price: 0, quantity: 1, taxable: true
+  });
+
+  // Shipping
+  const [shipping, setShipping] = useState({ title: "Standard Shipping", price: 0, code: "standard" });
+
+  // Order
+  const [orderNote, setOrderNote] = useState("");
+  const [orderTags, setOrderTags] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  // Fetch stores on mount
+  useEffect(() => {
+    fetchStores();
+  }, []);
+
+  const fetchStores = async () => {
+    try {
+      const res = await fetch(`${API}/pos/stores`, { credentials: "include" });
+      if (res.ok) {
+        const data = await res.json();
+        setStores(data.stores);
+        if (data.stores.length === 1) {
+          setSelectedStore(data.stores[0].store_id);
+        }
+      }
+    } catch (err) {
+      toast.error("Failed to load stores");
+    } finally {
+      setLoadingStores(false);
+    }
+  };
+
+  // Product search
+  const searchProducts = useCallback(async (query, isBarcode = false) => {
+    if (!selectedStore || !query.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    setSearching(true);
+    try {
+      const params = new URLSearchParams({ store_id: selectedStore });
+      if (isBarcode) {
+        params.append("barcode", query.trim());
+      } else {
+        params.append("query", query.trim());
+      }
+
+      const res = await fetch(`${API}/pos/products/search?${params}`, { credentials: "include" });
+      if (res.ok) {
+        const data = await res.json();
+        setSearchResults(data.products);
+
+        // Auto-add if barcode scan found exactly one product
+        if (isBarcode && data.products.length === 1) {
+          addToCart(data.products[0]);
+          setSearchQuery("");
+          setSearchResults([]);
+          toast.success(`Added: ${data.products[0].title}`);
+        } else if (isBarcode && data.products.length === 0) {
+          toast.error("Product not found");
+        }
+      }
+    } catch (err) {
+      toast.error("Search failed");
+    } finally {
+      setSearching(false);
+    }
+  }, [selectedStore]);
+
+  // Debounced search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchQuery.length >= 2) {
+        searchProducts(searchQuery, false);
+      } else {
+        setSearchResults([]);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery, searchProducts]);
+
+  // Handle barcode scan (Enter key)
+  const handleBarcodeKeyDown = (e) => {
+    if (e.key === "Enter" && searchQuery.trim()) {
+      e.preventDefault();
+      searchProducts(searchQuery, true);
+    }
+  };
+
+  // Add product to cart
+  const addToCart = (product, variant = null) => {
+    const existingIndex = cart.findIndex(item => 
+      item.product_id === product.product_id && 
+      (!variant || item.variant_id === variant?.variant_id)
+    );
+
+    if (existingIndex >= 0) {
+      const newCart = [...cart];
+      newCart[existingIndex].quantity += 1;
+      setCart(newCart);
+    } else {
+      const price = variant?.price || product.variants?.[0]?.price || product.price || 0;
+      const sku = variant?.sku || product.variants?.[0]?.sku || product.sku || "";
+      
+      setCart([...cart, {
+        product_id: product.product_id,
+        variant_id: variant?.variant_id || product.variants?.[0]?.variant_id,
+        sku: sku,
+        title: variant ? `${product.title} - ${variant.title}` : product.title,
+        quantity: 1,
+        price: parseFloat(price),
+        taxable: true,
+        is_custom: false,
+        image: product.images?.[0]?.src || null
+      }]);
+    }
+    setSearchQuery("");
+    setSearchResults([]);
+  };
+
+  // Update cart item quantity
+  const updateQuantity = (index, delta) => {
+    const newCart = [...cart];
+    newCart[index].quantity += delta;
+    if (newCart[index].quantity <= 0) {
+      newCart.splice(index, 1);
+    }
+    setCart(newCart);
+  };
+
+  // Remove from cart
+  const removeFromCart = (index) => {
+    const newCart = [...cart];
+    newCart.splice(index, 1);
+    setCart(newCart);
+  };
+
+  // Add custom item
+  const addCustomItem = () => {
+    if (!customItem.title || customItem.price <= 0) {
+      toast.error("Please enter title and price");
+      return;
+    }
+    
+    setCart([...cart, {
+      product_id: null,
+      variant_id: null,
+      sku: customItem.sku,
+      title: customItem.title,
+      quantity: customItem.quantity,
+      price: parseFloat(customItem.price),
+      taxable: customItem.taxable,
+      is_custom: true
+    }]);
+    
+    setCustomItem({ title: "", sku: "", price: 0, quantity: 1, taxable: true });
+    setCustomItemDialogOpen(false);
+    toast.success("Custom item added");
+  };
+
+  // Customer search
+  const searchCustomers = async () => {
+    if (!selectedStore || !customerSearch.trim()) {
+      setCustomerResults([]);
+      return;
+    }
+
+    setSearchingCustomers(true);
+    try {
+      const res = await fetch(
+        `${API}/pos/customers/search?store_id=${selectedStore}&query=${encodeURIComponent(customerSearch)}`,
+        { credentials: "include" }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setCustomerResults(data.customers);
+      }
+    } catch (err) {
+      toast.error("Customer search failed");
+    } finally {
+      setSearchingCustomers(false);
+    }
+  };
+
+  // Create new customer
+  const createCustomer = async () => {
+    if (!newCustomer.first_name || !newCustomer.last_name) {
+      toast.error("First and last name required");
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API}/pos/customers?store_id=${selectedStore}`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newCustomer)
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setCustomer(data.customer);
+        setTaxExempt(newCustomer.tax_exempt);
+        setCustomerDialogOpen(false);
+        setNewCustomerMode(false);
+        setNewCustomer({
+          first_name: "", last_name: "", email: "", phone: "",
+          company: "", address1: "", address2: "", city: "",
+          state: "", zip: "", country: "US", tax_exempt: false, note: ""
+        });
+        toast.success("Customer created");
+      } else {
+        const err = await res.json();
+        toast.error(err.detail || "Failed to create customer");
+      }
+    } catch (err) {
+      toast.error("Failed to create customer");
+    }
+  };
+
+  // Select existing customer
+  const selectCustomer = (cust) => {
+    setCustomer(cust);
+    setTaxExempt(cust.tax_exempt || false);
+    setCustomerDialogOpen(false);
+    toast.success(`Selected: ${cust.name}`);
+  };
+
+  // Calculate totals
+  const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const shippingTotal = shipAllItems ? shipping.price : 0;
+  const total = subtotal + shippingTotal;
+
+  // Submit order
+  const submitOrder = async () => {
+    if (!selectedStore) {
+      toast.error("Please select a store");
+      return;
+    }
+    if (cart.length === 0) {
+      toast.error("Cart is empty");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const orderData = {
+        store_id: selectedStore,
+        customer_id: customer?.customer_id || null,
+        customer: customer ? null : (newCustomer.first_name ? newCustomer : null),
+        line_items: cart.map(item => ({
+          product_id: item.product_id,
+          variant_id: item.variant_id,
+          sku: item.sku,
+          title: item.title,
+          quantity: item.quantity,
+          price: item.price,
+          taxable: item.taxable,
+          is_custom: item.is_custom
+        })),
+        shipping: shipAllItems ? shipping : null,
+        ship_all_items: shipAllItems,
+        tax_exempt: taxExempt,
+        note: orderNote,
+        tags: orderTags.split(",").map(t => t.trim()).filter(Boolean),
+        financial_status: "pending"
+      };
+
+      const res = await fetch(`${API}/pos/orders`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(orderData)
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        toast.success(`Order #${data.shopify_order_number} created!`);
+        
+        // Reset form
+        setCart([]);
+        setCustomer(null);
+        setTaxExempt(false);
+        setOrderNote("");
+        setOrderTags("");
+      } else {
+        const err = await res.json();
+        toast.error(err.detail || "Failed to create order");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to create order");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-background p-4 lg:p-6">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <ShoppingCart className="w-8 h-8 text-primary" />
+          <div>
+            <h1 className="text-2xl font-bold">Point of Sale</h1>
+            <p className="text-sm text-muted-foreground">Create orders with Shopify sync</p>
+          </div>
+        </div>
+        
+        {/* Store Selector */}
+        <div className="flex items-center gap-2">
+          <Store className="w-5 h-5 text-muted-foreground" />
+          <Select value={selectedStore} onValueChange={setSelectedStore}>
+            <SelectTrigger className="w-[200px]" data-testid="store-selector">
+              <SelectValue placeholder="Select Store" />
+            </SelectTrigger>
+            <SelectContent>
+              {stores.map(store => (
+                <SelectItem key={store.store_id} value={store.store_id}>
+                  {store.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left: Product Search & Results */}
+        <div className="lg:col-span-2 space-y-4">
+          {/* Search Bar */}
+          <Card className="bg-card border-border">
+            <CardContent className="pt-4">
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <ScanLine className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <Input
+                    ref={barcodeInputRef}
+                    placeholder="Scan barcode or search by SKU, title, tag..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={handleBarcodeKeyDown}
+                    className="pl-10"
+                    data-testid="product-search"
+                  />
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => setCustomItemDialogOpen(true)}
+                  data-testid="add-custom-item"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Custom Item
+                </Button>
+              </div>
+              
+              {searching && (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                  Searching...
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Search Results */}
+          {searchResults.length > 0 && (
+            <Card className="bg-card border-border">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">Search Results ({searchResults.length})</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[300px]">
+                  <div className="space-y-2">
+                    {searchResults.map(product => (
+                      <div
+                        key={product.product_id}
+                        className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-muted/50 cursor-pointer"
+                        onClick={() => addToCart(product)}
+                        data-testid={`product-${product.product_id}`}
+                      >
+                        {product.images?.[0]?.src ? (
+                          <img src={product.images[0].src} alt="" className="w-12 h-12 object-cover rounded" />
+                        ) : (
+                          <div className="w-12 h-12 bg-muted rounded flex items-center justify-center">
+                            <Package className="w-6 h-6 text-muted-foreground" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">{product.title}</p>
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            {product.sku && <span>SKU: {product.sku}</span>}
+                            {product.barcode && <span>• {product.barcode}</span>}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold">${(product.variants?.[0]?.price || product.price || 0).toFixed(2)}</p>
+                          {product.variants?.length > 1 && (
+                            <p className="text-xs text-muted-foreground">{product.variants.length} variants</p>
+                          )}
+                        </div>
+                        <Button size="sm" variant="ghost">
+                          <Plus className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Cart */}
+          <Card className="bg-card border-border">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ShoppingCart className="w-5 h-5" />
+                Cart ({cart.length} items)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {cart.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <ShoppingCart className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                  <p>Cart is empty</p>
+                  <p className="text-sm">Scan a barcode or search for products</p>
+                </div>
+              ) : (
+                <ScrollArea className="h-[300px]">
+                  <div className="space-y-3">
+                    {cart.map((item, index) => (
+                      <div key={index} className="flex items-center gap-3 p-3 rounded-lg border border-border">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">{item.title}</p>
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            {item.sku && <span>SKU: {item.sku}</span>}
+                            {item.is_custom && <Badge variant="secondary" className="text-xs">Custom</Badge>}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            className="h-8 w-8"
+                            onClick={() => updateQuantity(index, -1)}
+                          >
+                            <Minus className="w-3 h-3" />
+                          </Button>
+                          <span className="w-8 text-center font-medium">{item.quantity}</span>
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            className="h-8 w-8"
+                            onClick={() => updateQuantity(index, 1)}
+                          >
+                            <Plus className="w-3 h-3" />
+                          </Button>
+                        </div>
+                        <p className="w-20 text-right font-semibold">
+                          ${(item.price * item.quantity).toFixed(2)}
+                        </p>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8 text-destructive"
+                          onClick={() => removeFromCart(index)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right: Order Summary */}
+        <div className="space-y-4">
+          {/* Customer */}
+          <Card className="bg-card border-border">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <User className="w-4 h-4" />
+                  Customer
+                </span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setCustomerDialogOpen(true)}
+                  data-testid="add-customer-btn"
+                >
+                  {customer ? "Change" : "Add"}
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {customer ? (
+                <div className="space-y-1">
+                  <p className="font-medium">{customer.name}</p>
+                  {customer.email && <p className="text-sm text-muted-foreground">{customer.email}</p>}
+                  {customer.phone && <p className="text-sm text-muted-foreground">{customer.phone}</p>}
+                  {customer.tax_exempt && <Badge variant="secondary">Tax Exempt</Badge>}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No customer selected</p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Options */}
+          <Card className="bg-card border-border">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm">Options</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="tax-exempt" className="text-sm">Tax Exempt</Label>
+                <Switch
+                  id="tax-exempt"
+                  checked={taxExempt}
+                  onCheckedChange={setTaxExempt}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="ship-all" className="text-sm">Ship All Items</Label>
+                <Switch
+                  id="ship-all"
+                  checked={shipAllItems}
+                  onCheckedChange={setShipAllItems}
+                />
+              </div>
+              
+              {shipAllItems && (
+                <div className="space-y-2 pt-2 border-t border-border">
+                  <Label className="text-sm flex items-center gap-2">
+                    <Truck className="w-4 h-4" />
+                    Shipping
+                  </Label>
+                  <Input
+                    placeholder="Shipping method"
+                    value={shipping.title}
+                    onChange={(e) => setShipping({...shipping, title: e.target.value})}
+                  />
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">$</span>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="0.00"
+                      value={shipping.price || ""}
+                      onChange={(e) => setShipping({...shipping, price: parseFloat(e.target.value) || 0})}
+                    />
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Notes & Tags */}
+          <Card className="bg-card border-border">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm">Notes & Tags</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <Label className="text-sm">Order Note</Label>
+                <Input
+                  placeholder="Add a note..."
+                  value={orderNote}
+                  onChange={(e) => setOrderNote(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label className="text-sm flex items-center gap-2">
+                  <Tag className="w-4 h-4" />
+                  Tags (comma separated)
+                </Label>
+                <Input
+                  placeholder="tag1, tag2, tag3"
+                  value={orderTags}
+                  onChange={(e) => setOrderTags(e.target.value)}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Totals */}
+          <Card className="bg-card border-border">
+            <CardContent className="pt-4 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span>Subtotal</span>
+                <span>${subtotal.toFixed(2)}</span>
+              </div>
+              {shipAllItems && shipping.price > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span>Shipping</span>
+                  <span>${shipping.price.toFixed(2)}</span>
+                </div>
+              )}
+              {taxExempt && (
+                <div className="flex justify-between text-sm text-muted-foreground">
+                  <span>Tax</span>
+                  <span>Exempt</span>
+                </div>
+              )}
+              <Separator />
+              <div className="flex justify-between font-bold text-lg">
+                <span>Total</span>
+                <span>${total.toFixed(2)}</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Submit */}
+          <Button
+            className="w-full h-12 text-lg"
+            disabled={!selectedStore || cart.length === 0 || submitting}
+            onClick={submitOrder}
+            data-testid="submit-order"
+          >
+            {submitting ? (
+              <>
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                Creating Order...
+              </>
+            ) : (
+              <>
+                <Check className="w-5 h-5 mr-2" />
+                Create Order
+              </>
+            )}
+          </Button>
+        </div>
+      </div>
+
+      {/* Customer Dialog */}
+      <Dialog open={customerDialogOpen} onOpenChange={setCustomerDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <User className="w-5 h-5" />
+              {newCustomerMode ? "New Customer" : "Select Customer"}
+            </DialogTitle>
+          </DialogHeader>
+
+          <Tabs value={newCustomerMode ? "new" : "search"} onValueChange={(v) => setNewCustomerMode(v === "new")}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="search">Search Existing</TabsTrigger>
+              <TabsTrigger value="new">Create New</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="search" className="space-y-4">
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Search by name, email, or phone..."
+                  value={customerSearch}
+                  onChange={(e) => setCustomerSearch(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && searchCustomers()}
+                />
+                <Button onClick={searchCustomers} disabled={searchingCustomers}>
+                  {searchingCustomers ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                </Button>
+              </div>
+
+              <ScrollArea className="h-[300px]">
+                <div className="space-y-2">
+                  {customerResults.map(cust => (
+                    <div
+                      key={cust.customer_id}
+                      className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-muted/50 cursor-pointer"
+                      onClick={() => selectCustomer(cust)}
+                    >
+                      <div>
+                        <p className="font-medium">{cust.name}</p>
+                        <p className="text-sm text-muted-foreground">{cust.email} {cust.phone && `• ${cust.phone}`}</p>
+                      </div>
+                      {cust.tax_exempt && <Badge variant="secondary">Tax Exempt</Badge>}
+                    </div>
+                  ))}
+                  {customerResults.length === 0 && customerSearch && !searchingCustomers && (
+                    <p className="text-center text-muted-foreground py-4">No customers found</p>
+                  )}
+                </div>
+              </ScrollArea>
+            </TabsContent>
+
+            <TabsContent value="new" className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>First Name *</Label>
+                  <Input
+                    value={newCustomer.first_name}
+                    onChange={(e) => setNewCustomer({...newCustomer, first_name: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label>Last Name *</Label>
+                  <Input
+                    value={newCustomer.last_name}
+                    onChange={(e) => setNewCustomer({...newCustomer, last_name: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label>Email</Label>
+                  <Input
+                    type="email"
+                    value={newCustomer.email}
+                    onChange={(e) => setNewCustomer({...newCustomer, email: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label>Phone</Label>
+                  <Input
+                    value={newCustomer.phone}
+                    onChange={(e) => setNewCustomer({...newCustomer, phone: e.target.value})}
+                  />
+                </div>
+                <div className="col-span-2">
+                  <Label>Company</Label>
+                  <Input
+                    value={newCustomer.company}
+                    onChange={(e) => setNewCustomer({...newCustomer, company: e.target.value})}
+                  />
+                </div>
+                <div className="col-span-2">
+                  <Label>Address 1</Label>
+                  <Input
+                    value={newCustomer.address1}
+                    onChange={(e) => setNewCustomer({...newCustomer, address1: e.target.value})}
+                  />
+                </div>
+                <div className="col-span-2">
+                  <Label>Address 2</Label>
+                  <Input
+                    value={newCustomer.address2}
+                    onChange={(e) => setNewCustomer({...newCustomer, address2: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label>City</Label>
+                  <Input
+                    value={newCustomer.city}
+                    onChange={(e) => setNewCustomer({...newCustomer, city: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label>State</Label>
+                  <Input
+                    value={newCustomer.state}
+                    onChange={(e) => setNewCustomer({...newCustomer, state: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label>ZIP</Label>
+                  <Input
+                    value={newCustomer.zip}
+                    onChange={(e) => setNewCustomer({...newCustomer, zip: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label>Country</Label>
+                  <Input
+                    value={newCustomer.country}
+                    onChange={(e) => setNewCustomer({...newCustomer, country: e.target.value})}
+                  />
+                </div>
+                <div className="col-span-2 flex items-center justify-between">
+                  <Label>Tax Exempt</Label>
+                  <Switch
+                    checked={newCustomer.tax_exempt}
+                    onCheckedChange={(v) => setNewCustomer({...newCustomer, tax_exempt: v})}
+                  />
+                </div>
+                <div className="col-span-2">
+                  <Label>Note</Label>
+                  <Input
+                    value={newCustomer.note}
+                    onChange={(e) => setNewCustomer({...newCustomer, note: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              <Button onClick={createCustomer} className="w-full">
+                <UserPlus className="w-4 h-4 mr-2" />
+                Create Customer
+              </Button>
+            </TabsContent>
+          </Tabs>
+        </DialogContent>
+      </Dialog>
+
+      {/* Custom Item Dialog */}
+      <Dialog open={customItemDialogOpen} onOpenChange={setCustomItemDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Custom Item</DialogTitle>
+            <DialogDescription>
+              Add a custom line item that doesn&apos;t exist in your product catalog
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <Label>Title *</Label>
+              <Input
+                value={customItem.title}
+                onChange={(e) => setCustomItem({...customItem, title: e.target.value})}
+                placeholder="Custom product name"
+              />
+            </div>
+            <div>
+              <Label>SKU</Label>
+              <Input
+                value={customItem.sku}
+                onChange={(e) => setCustomItem({...customItem, sku: e.target.value})}
+                placeholder="Optional SKU"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Price *</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={customItem.price || ""}
+                  onChange={(e) => setCustomItem({...customItem, price: parseFloat(e.target.value) || 0})}
+                />
+              </div>
+              <div>
+                <Label>Quantity</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  value={customItem.quantity}
+                  onChange={(e) => setCustomItem({...customItem, quantity: parseInt(e.target.value) || 1})}
+                />
+              </div>
+            </div>
+            <div className="flex items-center justify-between">
+              <Label>Taxable</Label>
+              <Switch
+                checked={customItem.taxable}
+                onCheckedChange={(v) => setCustomItem({...customItem, taxable: v})}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCustomItemDialogOpen(false)}>Cancel</Button>
+            <Button onClick={addCustomItem}>Add to Cart</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
