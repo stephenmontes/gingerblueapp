@@ -161,6 +161,7 @@ async def get_drive_status(user: User = Depends(get_current_user)):
     return {
         "connected": True,
         "connected_by": settings.get("connected_by"),
+        "connected_email": settings.get("connected_email"),
         "updated_at": settings.get("updated_at")
     }
 
