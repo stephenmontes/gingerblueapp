@@ -1236,17 +1236,17 @@ export default function POS({ user }) {
                 </div>
               )}
               <Separator />
-              <div className="flex justify-between font-bold text-lg">
+              <div className="flex justify-between font-bold text-base md:text-lg">
                 <span>Total</span>
                 <span>${total.toFixed(2)}</span>
               </div>
             </CardContent>
           </Card>
 
-          {/* Submit Buttons */}
-          <div className="space-y-2">
+          {/* Submit Buttons - Sticky on mobile */}
+          <div className="space-y-2 sticky bottom-0 bg-background pt-2 pb-4 -mx-4 px-4 md:relative md:mx-0 md:px-0 md:pt-0 md:pb-0">
             <Button
-              className="w-full h-12 text-lg"
+              className="w-full h-12 md:h-12 text-base md:text-lg touch-manipulation"
               disabled={!selectedStore || cart.length === 0 || submitting || savingDraft}
               onClick={() => submitOrder(false)}
               data-testid="create-order-btn"
@@ -1254,7 +1254,7 @@ export default function POS({ user }) {
               {submitting ? (
                 <>
                   <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Creating Order...
+                  Creating...
                 </>
               ) : (
                 <>
@@ -1266,7 +1266,7 @@ export default function POS({ user }) {
             
             <Button
               variant="outline"
-              className="w-full"
+              className="w-full h-10 touch-manipulation"
               disabled={!selectedStore || cart.length === 0 || submitting || savingDraft}
               onClick={() => submitOrder(true)}
               data-testid="save-draft-btn"
@@ -1274,10 +1274,18 @@ export default function POS({ user }) {
               {savingDraft ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Saving Draft...
+                  Saving...
                 </>
               ) : (
                 <>
+                  <Save className="w-4 h-4 mr-2" />
+                  Save Draft
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      </div>
                   <Save className="w-4 h-4 mr-2" />
                   Save as Draft
                 </>
