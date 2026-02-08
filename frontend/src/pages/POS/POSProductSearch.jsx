@@ -122,27 +122,23 @@ export function POSProductSearch({
                     {/* Variants Dropdown */}
                     {product.variants && product.variants.length > 1 && (
                       <div className="mt-2 pt-2 border-t border-border">
-                        <p className="text-xs text-muted-foreground mb-2">{product.variants.length} variants:</p>
-                        <div className="space-y-1.5">
+                        <p className="text-xs text-muted-foreground mb-1">{product.variants.length} variants:</p>
+                        <div className="space-y-1">
                           {product.variants.map((variant, vIdx) => (
                             <div 
                               key={variant.variant_id || vIdx}
-                              className="flex items-center justify-between gap-2 p-1.5 rounded bg-muted/30"
+                              className="flex items-center gap-2 py-1"
                             >
-                              <div className="min-w-0 flex-1">
-                                <p className="text-xs font-medium truncate">{variant.title || `Variant ${vIdx + 1}`}</p>
-                              </div>
-                              <div className="flex items-center gap-1.5 flex-shrink-0">
-                                <span className="text-xs font-semibold">${parseFloat(variant.price || 0).toFixed(2)}</span>
-                                <Button 
-                                  size="sm" 
-                                  className="h-6 px-2 text-xs"
-                                  onClick={() => onAddToCart(product, variant)}
-                                  data-testid={`add-variant-${vIdx}`}
-                                >
-                                  +
-                                </Button>
-                              </div>
+                              <span className="flex-1 text-xs truncate">{variant.title || `Variant ${vIdx + 1}`}</span>
+                              <span className="text-xs font-semibold flex-shrink-0">${parseFloat(variant.price || 0).toFixed(2)}</span>
+                              <Button 
+                                size="sm" 
+                                className="h-6 w-6 p-0 flex-shrink-0"
+                                onClick={() => onAddToCart(product, variant)}
+                                data-testid={`add-variant-${vIdx}`}
+                              >
+                                <Plus className="w-3 h-3" />
+                              </Button>
                             </div>
                           ))}
                         </div>
