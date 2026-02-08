@@ -375,16 +375,20 @@ async def create_customer(
 
 async def get_next_pos_order_number() -> str:
     """Generate next POS order number (pos21000, pos21001, etc.)"""
-    # Find the highest existing POS order number
+    # Find the highest existing POS order number (including drafts with D prefix)
+    # Match both "pos21000" and "Dpos21000" patterns
     last_pos_order = await db.orders.find_one(
-        {"pos_order_number": {"$regex": "^pos\\d+$"}},
+        {"pos_order_number": {"$regex": "^D?pos\\d+$"}},
         {"pos_order_number": 1},
         sort=[("pos_order_number", -1)]
     )
     
     if last_pos_order and last_pos_order.get("pos_order_number"):
-        # Extract the number part and increment
-        last_num = int(last_pos_order["pos_order_number"].replace("pos", ""))
+        # Extract the number part (remove D prefix if present, then remove "pos")
+        order_num_str = last_pos_order["pos_order_number"]
+        if order_num_str.startswith("D"):
+            order_num_str = order_num_str[1:]  # Remove D prefix
+        last_num = int(order_num_str.replace("pos", ""))
         next_num = last_num + 1
     else:
         # Start at 21000
