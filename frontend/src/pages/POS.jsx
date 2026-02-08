@@ -440,7 +440,7 @@ export default function POS({ user }) {
             body { 
               font-family: 'Courier New', monospace; 
               padding: 20px; 
-              max-width: 300px; 
+              max-width: 350px; 
               margin: 0 auto;
               font-size: 12px;
             }
@@ -451,10 +451,16 @@ export default function POS({ user }) {
             .order-info p { margin: 3px 0; }
             .order-number { font-size: 16px; font-weight: bold; }
             .items { border-top: 1px dashed #000; border-bottom: 1px dashed #000; padding: 10px 0; margin: 10px 0; }
-            .item { display: flex; justify-content: space-between; margin: 5px 0; }
-            .item-name { flex: 1; }
-            .item-qty { width: 30px; text-align: center; }
-            .item-price { width: 60px; text-align: right; }
+            .item { display: flex; align-items: flex-start; gap: 8px; margin: 8px 0; padding-bottom: 8px; border-bottom: 1px dotted #ddd; }
+            .item:last-child { border-bottom: none; padding-bottom: 0; }
+            .item-image { width: 40px; height: 40px; object-fit: cover; border-radius: 4px; flex-shrink: 0; }
+            .item-image-placeholder { width: 40px; height: 40px; background: #eee; border-radius: 4px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #999; }
+            .item-details { flex: 1; min-width: 0; }
+            .item-name { font-weight: bold; font-size: 11px; word-wrap: break-word; }
+            .item-sku { font-size: 10px; color: #666; }
+            .item-meta { display: flex; justify-content: space-between; margin-top: 3px; }
+            .item-qty { font-size: 11px; }
+            .item-price { font-size: 11px; font-weight: bold; }
             .totals { margin-top: 10px; }
             .total-row { display: flex; justify-content: space-between; margin: 3px 0; }
             .total-row.grand { font-weight: bold; font-size: 14px; border-top: 1px solid #000; padding-top: 5px; margin-top: 5px; }
@@ -463,6 +469,7 @@ export default function POS({ user }) {
             .note { margin-top: 10px; padding: 5px; background: #f5f5f5; font-size: 11px; }
             @media print {
               body { padding: 0; }
+              .item-image { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             }
           </style>
         </head>
