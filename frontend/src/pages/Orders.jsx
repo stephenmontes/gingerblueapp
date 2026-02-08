@@ -102,18 +102,15 @@ export default function Orders({ user }) {
 
     setExporting(true);
     try {
-      const response = await fetch(API + "/export/selected-orders", {
-        method: "POST",
+      // Use GET with query params (more compatible with deployments)
+      const orderIdsParam = selectedOrders.join(',');
+      const response = await fetch(`${API}/export/orders-selected?ids=${encodeURIComponent(orderIdsParam)}`, {
+        method: "GET",
         credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ order_ids: selectedOrders }),
       });
 
       if (response.ok) {
-        // Get the CSV blob
         const blob = await response.blob();
-        
-        // Create download link
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
