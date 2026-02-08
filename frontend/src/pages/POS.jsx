@@ -827,6 +827,11 @@ export default function POS({ user }) {
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             {item.sku && <span>SKU: {item.sku}</span>}
                             {item.is_custom && <Badge variant="secondary" className="text-xs">Custom</Badge>}
+                            {item.discount_type && item.discount_value > 0 && (
+                              <Badge variant="destructive" className="text-xs">
+                                -{item.discount_value}{item.discount_type === "percentage" ? "%" : "$"}
+                              </Badge>
+                            )}
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
@@ -848,9 +853,83 @@ export default function POS({ user }) {
                             <Plus className="w-3 h-3" />
                           </Button>
                         </div>
-                        <p className="w-20 text-right font-semibold">
-                          ${(item.price * item.quantity).toFixed(2)}
-                        </p>
+                        <div className="w-20 text-right">
+                          {item.discount_type && item.discount_value > 0 && (
+                            <p className="text-xs text-muted-foreground line-through">
+                              ${(item.price * item.quantity).toFixed(2)}
+                            </p>
+                          )}
+                          <p className="font-semibold">
+                            ${getItemTotal(item).toFixed(2)}
+                          </p>
+                        </div>
+                        <Popover open={itemDiscountIndex === index} onOpenChange={(open) => {
+                          if (open) {
+                            setItemDiscountIndex(index);
+                            setTempDiscount({ 
+                              type: item.discount_type || "percentage", 
+                              value: item.discount_value || 0 
+                            });
+                          } else {
+                            setItemDiscountIndex(null);
+                          }
+                        }}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              size="icon"
+                              variant={item.discount_value > 0 ? "default" : "outline"}
+                              className="h-8 w-8"
+                              data-testid={`item-discount-${index}`}
+                            >
+                              <Percent className="w-3 h-3" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-56" align="end">
+                            <div className="space-y-3">
+                              <p className="font-medium text-sm">Item Discount</p>
+                              <Select 
+                                value={tempDiscount.type} 
+                                onValueChange={(v) => setTempDiscount({...tempDiscount, type: v})}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="percentage">Percentage (%)</SelectItem>
+                                  <SelectItem value="fixed">Fixed Amount ($)</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <Input
+                                type="number"
+                                min="0"
+                                step={tempDiscount.type === "percentage" ? "1" : "0.01"}
+                                placeholder={tempDiscount.type === "percentage" ? "10" : "5.00"}
+                                value={tempDiscount.value || ""}
+                                onChange={(e) => setTempDiscount({...tempDiscount, value: parseFloat(e.target.value) || 0})}
+                              />
+                              <div className="flex gap-2">
+                                <Button 
+                                  size="sm" 
+                                  variant="outline" 
+                                  className="flex-1"
+                                  onClick={() => {
+                                    setTempDiscount({ type: "percentage", value: 0 });
+                                    applyItemDiscount(index);
+                                  }}
+                                >
+                                  Clear
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  className="flex-1"
+                                  onClick={() => applyItemDiscount(index)}
+                                >
+                                  Apply
+                                </Button>
+                              </div>
+                            </div>
+                          </PopoverContent>
+                        </Popover>
                         <Button
                           size="icon"
                           variant="ghost"
