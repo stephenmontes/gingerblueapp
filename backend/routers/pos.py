@@ -141,6 +141,9 @@ async def search_products(
     user: User = Depends(get_current_user)
 ):
     """Search products by barcode, SKU, title, or tag"""
+    # Check if store has any products
+    total_products = await db.products.count_documents({"store_id": store_id})
+    
     search_filter = {"store_id": store_id}
     
     if barcode:
@@ -171,7 +174,12 @@ async def search_products(
         {"_id": 0}
     ).limit(limit).to_list(limit)
     
-    return {"products": products, "count": len(products)}
+    return {
+        "products": products, 
+        "count": len(products),
+        "total_in_store": total_products,
+        "store_id": store_id
+    }
 
 
 @router.get("/products/barcode/{barcode}")
