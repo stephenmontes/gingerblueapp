@@ -16,7 +16,9 @@ import { usePOSCustomers } from "@/hooks/usePOSCustomers";
 import { usePOSDrafts } from "@/hooks/usePOSDrafts";
 
 // Components
-import { POSCart, POSProductSearch, POSOrderSummary } from "./POS";
+import { POSCart } from "./POS/POSCart";
+import { POSProductSearch } from "./POS/POSProductSearch";
+import { POSOrderSummary } from "./POS/POSOrderSummary";
 import { 
   CustomerDialog, 
   CustomItemDialog, 
@@ -24,7 +26,7 @@ import {
   PrintReceiptDialog, 
   EmailDialog,
   ImagePreviewDialog 
-} from "./POS";
+} from "./POS/POSDialogs";
 
 export default function POS({ user }) {
   // Stores
