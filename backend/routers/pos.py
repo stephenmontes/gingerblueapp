@@ -1165,6 +1165,7 @@ async def sync_order_from_shopify(
 
 class QuoteEmailRequest(BaseModel):
     to: str
+    from_email: Optional[str] = None
     subject: str
     message: str
     store_id: str
