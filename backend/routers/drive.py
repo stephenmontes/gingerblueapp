@@ -405,8 +405,12 @@ async def export_orders_to_drive(
             "orders_exported": len(orders)
         }
         
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Failed to export to Drive: {str(e)}")
+        import traceback
+        error_detail = traceback.format_exc()
+        logger.error(f"Failed to export to Drive: {str(e)}\n{error_detail}")
         raise HTTPException(status_code=500, detail=f"Export failed: {str(e)}")
 
 
