@@ -1229,6 +1229,103 @@ export default function POS({ user }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Print Order Dialog */}
+      <Dialog open={printDialogOpen} onOpenChange={setPrintDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Printer className="w-5 h-5" />
+              Order Created Successfully
+            </DialogTitle>
+            <DialogDescription>
+              Would you like to print a receipt for this order?
+            </DialogDescription>
+          </DialogHeader>
+
+          {lastOrder && (
+            <div className="border rounded-lg p-4 bg-muted/30 max-h-[400px] overflow-y-auto">
+              {/* Hidden print content */}
+              <div ref={printRef}>
+                <div className="header">
+                  <h1>{lastOrder.store_name || "Store"}</h1>
+                  <p>Order Receipt</p>
+                </div>
+                
+                <div className="order-info">
+                  <p className="order-number">Order: {lastOrder.pos_order_number}</p>
+                  <p>Shopify: #{lastOrder.shopify_order_number}</p>
+                  <p>Date: {lastOrder.created_at}</p>
+                  <p>Staff: {lastOrder.created_by}</p>
+                </div>
+
+                {lastOrder.customer && (
+                  <div className="customer">
+                    <p><strong>Customer:</strong></p>
+                    <p>{lastOrder.customer.name}</p>
+                    {lastOrder.customer.email && <p>{lastOrder.customer.email}</p>}
+                    {lastOrder.customer.phone && <p>{lastOrder.customer.phone}</p>}
+                  </div>
+                )}
+
+                <div className="items">
+                  <p><strong>Items:</strong></p>
+                  {lastOrder.items.map((item, idx) => (
+                    <div key={idx} className="item">
+                      <span className="item-name">{item.title}</span>
+                      <span className="item-qty">x{item.quantity}</span>
+                      <span className="item-price">${(item.price * item.quantity).toFixed(2)}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="totals">
+                  <div className="total-row">
+                    <span>Subtotal:</span>
+                    <span>${lastOrder.subtotal.toFixed(2)}</span>
+                  </div>
+                  {lastOrder.shipping && lastOrder.shipping.price > 0 && (
+                    <div className="total-row">
+                      <span>Shipping:</span>
+                      <span>${lastOrder.shipping.price.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {lastOrder.tax_exempt && (
+                    <div className="total-row">
+                      <span>Tax:</span>
+                      <span>Exempt</span>
+                    </div>
+                  )}
+                  <div className="total-row grand">
+                    <span>TOTAL:</span>
+                    <span>${lastOrder.total.toFixed(2)}</span>
+                  </div>
+                </div>
+
+                {lastOrder.note && (
+                  <div className="note">
+                    <p><strong>Note:</strong> {lastOrder.note}</p>
+                  </div>
+                )}
+
+                <div className="footer">
+                  <p>Thank you for your purchase!</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="flex gap-2 sm:gap-2">
+            <Button variant="outline" onClick={() => setPrintDialogOpen(false)}>
+              Skip
+            </Button>
+            <Button onClick={handlePrint} data-testid="print-receipt-btn">
+              <Printer className="w-4 h-4 mr-2" />
+              Print Receipt
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
