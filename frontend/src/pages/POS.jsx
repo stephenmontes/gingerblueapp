@@ -1301,6 +1301,8 @@ export default function POS({ user }) {
       <EmailDialog
         open={emailDialogOpen}
         onOpenChange={setEmailDialogOpen}
+        emailFrom={emailFrom}
+        setEmailFrom={setEmailFrom}
         emailTo={emailTo}
         setEmailTo={setEmailTo}
         emailSubject={emailSubject}
@@ -1309,6 +1311,7 @@ export default function POS({ user }) {
         setEmailMessage={setEmailMessage}
         sendingEmail={sendingEmail}
         onSendEmail={sendEmail}
+        storeName={stores.find(s => s.store_id === selectedStore)?.name}
       />
 
       <ImagePreviewDialog
