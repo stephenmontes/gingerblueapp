@@ -511,6 +511,7 @@ export default function Products() {
                     product={product}
                     stores={stores}
                     onViewDetails={() => setSelectedProduct(product)}
+                    onPrintLabel={(e) => openLabelDialog(product, e)}
                   />
                 ))}
               </TableBody>
