@@ -228,6 +228,10 @@ async def get_orders(
         inactive_statuses = ["shipped", "cancelled", "completed"]
         if status == "active":
             query["status"] = {"$nin": inactive_statuses}
+        elif status == "draft":
+            # For draft status, query the orders collection (where POS drafts are stored)
+            query["status"] = "draft"
+            query["is_draft"] = True
         elif status and status != "all":
             query["status"] = status
         # If status is "all" or None, no status filter is applied
@@ -241,8 +245,11 @@ async def get_orders(
         if not include_archived:
             query["archived"] = {"$ne": True}
     
+    # Determine which collection to query
+    collection = db.orders if status == "draft" else db.fulfillment_orders
+    
     # Get total count for pagination info
-    total_count = await db.fulfillment_orders.count_documents(query)
+    total_count = await collection.count_documents(query)
     
     # Calculate skip for pagination
     skip = (page - 1) * page_size
