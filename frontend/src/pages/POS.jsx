@@ -830,14 +830,14 @@ export default function POS({ user }) {
             </Badge>
           )}
           
-          {/* Quote/Email buttons - Hidden on small mobile, icon only on larger mobile */}
+          {/* Quote/Email buttons - Always visible when cart has items */}
           {cart.length > 0 && (
             <>
-              <Button variant="outline" size="icon" onClick={printQuote} data-testid="print-quote-btn" className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 hidden xs:flex">
+              <Button variant="outline" size="icon" onClick={printQuote} data-testid="print-quote-btn" className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3">
                 <FileDown className="w-4 h-4 sm:mr-1" />
                 <span className="hidden sm:inline">Quote</span>
               </Button>
-              <Button variant="outline" size="icon" onClick={openEmailDialog} data-testid="email-quote-btn" className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 hidden xs:flex">
+              <Button variant="outline" size="icon" onClick={openEmailDialog} data-testid="email-quote-btn" className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3">
                 <Mail className="w-4 h-4 sm:mr-1" />
                 <span className="hidden sm:inline">Email</span>
               </Button>
@@ -859,17 +859,17 @@ export default function POS({ user }) {
             <span className="hidden sm:inline">Drafts</span>
           </Button>
           
-          {/* Reprint button - Desktop only */}
+          {/* Reprint button - Visible when last order exists */}
           {lastOrder && (
             <Button 
               variant="outline" 
-              size="sm"
+              size="icon"
               onClick={() => setPrintDialogOpen(true)}
               data-testid="reprint-last-order"
-              className="hidden md:flex"
+              className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3"
             >
-              <Printer className="w-4 h-4 mr-2" />
-              Reprint
+              <Printer className="w-4 h-4 sm:mr-1" />
+              <span className="hidden sm:inline">Reprint</span>
             </Button>
           )}
           
