@@ -1302,7 +1302,9 @@ async def send_quote_email(
         
         # Try using SendGrid if available
         sendgrid_key = os.environ.get("SENDGRID_API_KEY")
-        from_email = os.environ.get("SENDGRID_FROM_EMAIL", f"noreply@{store_name.lower().replace(' ', '')}.com")
+        
+        # Use from_email from request, or store email, or generate default
+        from_email = request.from_email or store.get("email") or os.environ.get("SENDGRID_FROM_EMAIL", f"noreply@{store_name.lower().replace(' ', '')}.com")
         
         if sendgrid_key:
             async with httpx.AsyncClient() as client:
