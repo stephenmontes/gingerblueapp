@@ -24,6 +24,9 @@ export default function POS({ user }) {
   const [selectedStore, setSelectedStore] = useState("");
   const [loadingStores, setLoadingStores] = useState(true);
 
+  // Next order number preview
+  const [nextOrderNumber, setNextOrderNumber] = useState("");
+
   // Product search
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
