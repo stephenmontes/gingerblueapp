@@ -399,9 +399,34 @@ export default function Orders({ user }) {
 
       if (response.ok) {
         const result = await response.json();
-        toast.success(
-          `Uploaded ${result.total_orders} orders (${result.created} new, ${result.updated} updated)`
-        );
+        
+        // Show detailed results
+        if (result.created > 0 || result.updated > 0) {
+          toast.success(
+            `CSV Import Complete: ${result.total_orders} orders processed`,
+            { duration: 5000 }
+          );
+          
+          if (result.created > 0) {
+            toast.info(`✓ ${result.created} new order(s) created`, { duration: 4000 });
+          }
+          if (result.updated > 0) {
+            toast.info(`↻ ${result.updated} existing order(s) updated (duplicates)`, { duration: 4000 });
+          }
+        } else if (result.skipped > 0) {
+          toast.warning(`No orders imported. ${result.skipped} skipped.`);
+        }
+        
+        // Show errors if any
+        if (result.errors && result.errors.length > 0) {
+          result.errors.slice(0, 3).forEach(err => {
+            toast.error(err, { duration: 6000 });
+          });
+          if (result.errors.length > 3) {
+            toast.error(`...and ${result.errors.length - 3} more errors`);
+          }
+        }
+        
         setCsvUploadOpen(false);
         setCsvFile(null);
         setCsvStoreId("");
