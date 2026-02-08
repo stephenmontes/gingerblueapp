@@ -80,43 +80,40 @@ export function POSProductSearch({
 
       {/* Search Results */}
       {searchResults.length > 0 && (
-        <Card className="bg-card border-border overflow-hidden">
+        <Card className="bg-card border-border">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">Search Results ({searchResults.length})</CardTitle>
           </CardHeader>
-          <CardContent className="px-2 sm:px-6">
+          <CardContent className="p-2 sm:p-6">
             <ScrollArea className="h-[300px]">
-              <div className="space-y-2 pr-2">
+              <div className="space-y-2 pr-3">
                 {searchResults.map(product => (
                   <div
                     key={product.product_id}
-                    className="p-2 sm:p-3 rounded-lg border border-border hover:bg-muted/50"
+                    className="p-2 rounded-lg border border-border hover:bg-muted/50"
                     data-testid={`product-${product.product_id}`}
                   >
-                    <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="flex items-center gap-2">
                       {product.images?.[0]?.src ? (
-                        <img src={product.images[0].src} alt="" className="w-10 h-10 sm:w-12 sm:h-12 object-cover rounded flex-shrink-0" />
+                        <img src={product.images[0].src} alt="" className="w-10 h-10 object-cover rounded flex-shrink-0" />
                       ) : (
-                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-muted rounded flex items-center justify-center flex-shrink-0">
-                          <Package className="w-5 h-5 sm:w-6 sm:h-6 text-muted-foreground" />
+                        <div className="w-10 h-10 bg-muted rounded flex items-center justify-center flex-shrink-0">
+                          <Package className="w-5 h-5 text-muted-foreground" />
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm truncate">{product.title}</p>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {product.sku && <span>SKU: {product.sku}</span>}
-                        </p>
+                        {product.sku && <p className="text-xs text-muted-foreground truncate">SKU: {product.sku}</p>}
                       </div>
                       {(!product.variants || product.variants.length <= 1) && (
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          <span className="font-semibold text-sm">${(product.variants?.[0]?.price || product.price || 0).toFixed(2)}</span>
+                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                          <span className="text-sm font-semibold">${(product.variants?.[0]?.price || product.price || 0).toFixed(2)}</span>
                           <Button 
                             size="sm" 
                             className="h-7 px-2 text-xs"
                             onClick={() => onAddToCart(product)}
                           >
-                            <Plus className="w-3 h-3 mr-1" />
-                            Add
+                            <Plus className="w-3 h-3" />
                           </Button>
                         </div>
                       )}
