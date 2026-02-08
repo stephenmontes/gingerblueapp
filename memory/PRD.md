@@ -180,6 +180,11 @@ Build a manufacturing and fulfillment app for Shopify websites with detailed tim
 - **CSV Export** - Local CSV download for selected orders (`/api/export/orders-selected`)
 - **Deployment Fixes** - Added `/health` endpoint, fixed hardcoded URLs
 - **Navigation Menu Scrollable Fix** - Made sidebar navigation scrollable on mobile/tablet devices so all menu items are accessible
+- **POS Refactoring (Feb 2026)** - Broke down monolithic 2782-line POS.jsx into modular components:
+  - Custom hooks: `usePOSCart`, `usePOSDrafts`, `usePOSProducts`, `usePOSCustomers`
+  - Components: `POSCart`, `POSProductSearch`, `POSOrderSummary`, `POSDialogs`
+  - Main POS.jsx reduced from 2782 to 1053 lines
+  - Improved maintainability and testability
 - **Point of Sale (POS)** - COMPLETE - In-store order creation with Shopify sync:
   - Store selector for Shopify stores
   - Product search by barcode, SKU, title, or tag
