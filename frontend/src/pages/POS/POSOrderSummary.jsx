@@ -1,4 +1,4 @@
-import { User, UserPlus, DollarSign, Truck, Tag, X, Percent, Loader2 } from "lucide-react";
+import { User, UserPlus, DollarSign, Truck, Tag, X, Percent, Loader2, CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,6 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
+import { Calendar } from "@/components/ui/calendar";
+import { format, parseISO } from "date-fns";
 
 const shippingPresets = [
   { label: "30% of order total", value: "30" },
