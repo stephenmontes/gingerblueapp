@@ -218,7 +218,9 @@ export default function POS({ user }) {
         price: parseFloat(price),
         taxable: true,
         is_custom: false,
-        image: product.images?.[0]?.src || null
+        image: product.images?.[0]?.src || null,
+        discount_type: null,
+        discount_value: 0
       }]);
     }
     setSearchQuery("");
