@@ -521,6 +521,31 @@ export default function POS({ user }) {
             </Card>
           )}
 
+          {/* No Results Message */}
+          {searchQuery.length >= 2 && searchResults.length === 0 && !searching && (
+            <Card className="bg-card border-border">
+              <CardContent className="py-8">
+                <div className="text-center text-muted-foreground">
+                  <Package className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                  {storeProductCount === 0 ? (
+                    <>
+                      <p className="font-medium text-foreground">No products in this store</p>
+                      <p className="text-sm mt-1">This store has no synced products. Please sync products from Shopify first.</p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="font-medium text-foreground">No products found for "{searchQuery}"</p>
+                      <p className="text-sm mt-1">Try a different search term, SKU, or barcode</p>
+                      {storeProductCount && (
+                        <p className="text-xs mt-2">{storeProductCount.toLocaleString()} products available in this store</p>
+                      )}
+                    </>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Cart */}
           <Card className="bg-card border-border">
             <CardHeader>
