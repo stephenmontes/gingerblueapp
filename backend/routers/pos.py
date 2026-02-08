@@ -624,6 +624,11 @@ async def create_pos_order(
     logger.info(f"Creating Shopify order: {shopify_order_data}")
     shopify_order = await create_shopify_order(shop_url, access_token, shopify_order_data)
     
+    # Handle Shopify order creation failure
+    if not shopify_order:
+        logger.error("Failed to create Shopify order - response was None")
+        raise HTTPException(status_code=500, detail="Failed to create order in Shopify. Please check store credentials and try again.")
+    
     # Save locally
     local_order = {
         "order_id": order_id,
