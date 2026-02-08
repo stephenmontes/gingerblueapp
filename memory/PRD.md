@@ -152,7 +152,13 @@ Build a manufacturing and fulfillment app for Shopify websites with detailed tim
   - Product search by barcode, SKU, title, or tag
   - Variant selection dropdown for multi-variant products
   - Barcode scanner support (Enter key triggers search)
-  - Customer search and creation with full Shopify fields
+  - **Enhanced Customer Search (Feb 2026):**
+    - Auto-fill/autocomplete with 300ms debounce
+    - Search by name, first/last name, email, phone, company, city, state, address
+    - Results display company, email, phone, address, orders count, total spent
+    - Tax Exempt badge, Select button per result
+    - X button to remove selected customer
+  - Customer creation with full Shopify fields
   - Tax exempt toggle, ship all items toggle
   - Custom item creation for non-catalog products
   - Cart management with quantity controls (+/-)
