@@ -245,6 +245,8 @@ async def search_customers(
     user: User = Depends(get_current_user)
 ):
     """Search customers by name, email, phone, company, or address"""
+    logger.info(f"Customer search: store_id={store_id}, query={query}, user={user.email}")
+    
     search_filter = {"store_id": store_id}
     
     if query:
@@ -267,6 +269,8 @@ async def search_customers(
          "tax_exempt": 1, "note": 1, "tags": 1, "orders_count": 1, 
          "total_spent": 1, "created_at": 1}
     ).sort([("full_name", 1)]).limit(limit).to_list(limit)
+    
+    logger.info(f"Customer search found {len(customers)} results for store_id={store_id}")
     
     # Normalize fields for frontend compatibility
     for cust in customers:
