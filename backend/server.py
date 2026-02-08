@@ -91,6 +91,7 @@ api_router.include_router(fulfillment_batches_router)
 api_router.include_router(production_timers_router)
 api_router.include_router(timer_recovery_router)
 api_router.include_router(drive_router)
+api_router.include_router(pos_router)
 
 # Root endpoint
 @api_router.get("/")
