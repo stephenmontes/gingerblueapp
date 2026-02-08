@@ -85,6 +85,38 @@ Build a manufacturing and fulfillment app for Shopify websites with detailed tim
 ### 7. Scheduling
 - Google Calendar integration for order ship dates
 
+### 8. Point of Sale (POS) - COMPLETE (Feb 2026)
+- **Store Selection** - Choose from connected Shopify stores
+- **Product Search** - Search by barcode, SKU, title, or tag with auto-fill
+- **Variant Selection** - Dropdown to select product variants
+- **Barcode Scanner** - Enter key triggers barcode search
+- **Enhanced Customer Search** - Auto-fill search by name, email, phone, company, city, address
+  - Results show company, address, orders count, total spent
+- **Custom Items** - Add non-catalog products
+- **Cart Management** - Quantity controls (+/-), remove items
+- **Item Discounts** - Apply percentage or fixed discount per item
+- **Order Discount** - Apply percentage or fixed discount to entire order
+- **Shipping Presets** - Dropdown with percentage-based shipping (30%, 25%, 20%, 18%, 15%, 12%, 10%, Free)
+- **Tax Exempt Toggle** - Mark order as tax exempt
+- **Order Notes & Tags** - Add notes and custom tags
+- **Auto-Generated Order Numbers** - Format: pos21000, pos21001, etc.
+- **Draft Orders** - Save order as draft without syncing to Shopify
+- **Print Receipt** - Thermal-printer-friendly receipt with item thumbnails
+- **Reprint Button** - Reprint last order receipt
+- **Shopify Sync** - Live orders sync automatically to selected Shopify store
+
+### POS API Endpoints
+- `GET /api/pos/stores` - List Shopify stores
+- `GET /api/pos/next-order-number` - Get next POS order number
+- `GET /api/pos/products/search` - Search products with variant info
+- `GET /api/pos/customers/search` - Search customers with enhanced fields
+- `POST /api/pos/customers` - Create new customer
+- `POST /api/pos/orders` - Create order (live or draft)
+- `GET /api/pos/drafts` - List draft orders
+- `GET /api/pos/drafts/{id}` - Get draft order details
+- `DELETE /api/pos/drafts/{id}` - Delete draft order
+- `POST /api/pos/drafts/{id}/complete` - Convert draft to live order
+
 ## API Endpoints
 
 ### Customers (NEW)
