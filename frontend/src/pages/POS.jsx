@@ -2074,6 +2074,139 @@ export default function POS({ user }) {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Drafts Dialog */}
+      <Dialog open={draftsDialogOpen} onOpenChange={setDraftsDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FolderOpen className="w-5 h-5" />
+              Draft Orders
+            </DialogTitle>
+            <DialogDescription>
+              View and load saved draft orders. Drafts are auto-saved every minute.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex flex-col sm:flex-row gap-3 mb-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search drafts..."
+                value={draftsSearch}
+                onChange={(e) => setDraftsSearch(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && fetchDrafts()}
+                className="pl-10"
+              />
+            </div>
+            <Select value={draftsFilter} onValueChange={setDraftsFilter}>
+              <SelectTrigger className="w-full sm:w-[150px]">
+                <Users className="w-4 h-4 mr-2" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Drafts</SelectItem>
+                <SelectItem value="mine">My Drafts</SelectItem>
+                <SelectItem value="others">Others' Drafts</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button variant="outline" size="icon" onClick={fetchDrafts} disabled={loadingDrafts}>
+              <RefreshCw className={`w-4 h-4 ${loadingDrafts ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
+
+          <ScrollArea className="flex-1 -mx-6 px-6">
+            {loadingDrafts ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : filteredDrafts.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p className="font-medium">No draft orders found</p>
+                <p className="text-sm mt-1">Drafts are auto-saved when you add items to the cart</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {filteredDrafts.map(draft => (
+                  <div
+                    key={draft.order_id}
+                    onClick={() => loadDraft(draft)}
+                    className={`p-4 rounded-lg border cursor-pointer transition-colors ${
+                      currentDraftId === draft.order_id 
+                        ? 'border-primary bg-primary/5' 
+                        : draft.is_locked && !draft.is_mine
+                          ? 'border-orange-500/30 bg-orange-500/5 cursor-not-allowed'
+                          : 'border-border hover:bg-muted/50'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-mono font-bold text-primary">{draft.pos_order_number}</span>
+                          {currentDraftId === draft.order_id && (
+                            <Badge variant="default" className="text-[10px]">Current</Badge>
+                          )}
+                          {draft.is_locked && (
+                            <Badge variant={draft.is_mine ? "secondary" : "destructive"} className="text-[10px]">
+                              <Lock className="w-3 h-3 mr-1" />
+                              {draft.is_mine ? "Locked by you" : `Locked`}
+                            </Badge>
+                          )}
+                        </div>
+                        
+                        <div className="text-sm text-muted-foreground space-y-0.5">
+                          {draft.customer_name && <p>Customer: {draft.customer_name}</p>}
+                          <p>{draft.items?.length || 0} item(s) • ${(draft.total_price || 0).toFixed(2)}</p>
+                          <p className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {new Date(draft.created_at).toLocaleString()}
+                          </p>
+                          <p className="text-xs">
+                            Created by: {draft.created_by_name || 'Unknown'}
+                            {draft.is_locked && !draft.is_mine && draft.locked_by_name && (
+                              <span className="text-orange-500"> • Editing: {draft.locked_by_name}</span>
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex flex-col gap-1">
+                        {draft.is_mine && draft.is_locked && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={(e) => releaseDraft(draft.order_id, e)}
+                            title="Release lock"
+                          >
+                            <Unlock className="w-4 h-4" />
+                          </Button>
+                        )}
+                        {(draft.is_mine || !draft.is_locked) && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-destructive hover:text-destructive"
+                            onClick={(e) => deleteDraft(draft.order_id, e)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </ScrollArea>
+
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => setDraftsDialogOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
