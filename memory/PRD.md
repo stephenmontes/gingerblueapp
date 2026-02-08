@@ -198,6 +198,16 @@ Build a manufacturing and fulfillment app for Shopify websites with detailed tim
   - UI shows source badges (blue=POS, orange=Shopify, green=synced)
   - Updated legend, table with Source column
   - Color-coded calendar events (orange for Shopify, green for POS)
+- **Ship Date Calendar Picker (Feb 2026)** - Replaced date input with visual calendar picker:
+  - Shows month view with navigation
+  - Disables past dates
+  - Clear date button
+  - Formatted date display (e.g., "February 20th, 2026")
+- **Customer Draft Orders Tab (Feb 2026)** - Added Draft Orders tab to Customer detail:
+  - New backend endpoint `/api/pos/drafts/by-customer/{customer_id}`
+  - Shows all POS draft orders for selected customer
+  - Displays order number, items, total, ship date, notes, store
+  - Order color indicator preserved
 - **Point of Sale (POS)** - COMPLETE - In-store order creation with Shopify sync:
   - Store selector for Shopify stores
   - Product search by barcode, SKU, title, or tag
