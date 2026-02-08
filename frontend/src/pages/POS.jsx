@@ -807,6 +807,7 @@ export default function POS({ user }) {
         setOrderTags("");
         setOrderDiscount({ type: "percentage", value: 0, reason: "" });
         setShippingPercent("");
+        setRequestedShipDate("");
         
         // Clear persisted order from localStorage
         clearPersistedOrder();
@@ -838,6 +839,7 @@ export default function POS({ user }) {
       setOrderTags("");
       setOrderDiscount({ type: "percentage", value: 0, reason: "" });
       setShippingPercent("");
+      setRequestedShipDate("");
       clearPersistedOrder();
       toast.success("Order cleared");
     }
