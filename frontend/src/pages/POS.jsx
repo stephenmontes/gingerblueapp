@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { 
   ShoppingCart, Search, Barcode, User, Plus, Minus, Trash2, 
   Package, Store, DollarSign, Truck, Tag, X, Check, Loader2,
-  ScanLine, UserPlus, RefreshCw, Printer
+  ScanLine, UserPlus, RefreshCw, Printer, Percent, Save, FileText
 } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -17,6 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { ScrollArea } from "../components/ui/scroll-area";
 import { Separator } from "../components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { Popover, PopoverContent, PopoverTrigger } from "../components/ui/popover";
 
 export default function POS({ user }) {
   // Store selection
