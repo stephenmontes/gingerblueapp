@@ -1107,8 +1107,8 @@ export default function POS({ user }) {
         </div>
       </div>
 
-      {/* Mobile Floating Action Bar */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-background border-t border-border p-2 sm:p-3 z-40 shadow-lg safe-area-pb">
+      {/* Mobile Floating Action Bar - positioned above Emergent badge */}
+      <div className="lg:hidden fixed bottom-12 left-0 right-0 bg-background border-t border-border p-2 sm:p-3 z-40 shadow-lg">
         <div className="flex items-center justify-between gap-2">
           {/* Left: Total & Customer Info */}
           <div className="flex-1 min-w-0">
