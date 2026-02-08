@@ -240,12 +240,17 @@ async def search_customers(
          "total_spent": 1, "created_at": 1}
     ).sort([("full_name", 1)]).limit(limit).to_list(limit)
     
-    # Normalize name field (use full_name if name is not present)
+    # Normalize fields for frontend compatibility
     for cust in customers:
+        # Normalize name field (use full_name if name is not present)
         if not cust.get("name") and cust.get("full_name"):
             cust["name"] = cust["full_name"]
         elif not cust.get("name"):
             cust["name"] = f"{cust.get('first_name', '')} {cust.get('last_name', '')}".strip()
+        
+        # Populate company from default_address if not present at top level
+        if not cust.get("company") and cust.get("default_address", {}).get("company"):
+            cust["company"] = cust["default_address"]["company"]
     
     return {"customers": customers, "count": len(customers)}
 
