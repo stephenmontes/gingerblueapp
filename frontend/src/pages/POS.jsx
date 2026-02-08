@@ -184,6 +184,7 @@ export default function POS({ user }) {
       setOrderTags(loadedDraft.tags?.filter(t => !t.startsWith("pos-")).join(", ") || "");
       setOrderDiscount(loadedDraft.order_discount || { type: "percentage", value: 0, reason: "" });
       setShipping(loadedDraft.shipping || { title: "Standard Shipping", price: 0, code: "standard" });
+      setRequestedShipDate(loadedDraft.requested_ship_date || "");
       setCurrentDraftId(loadedDraft.order_id);
       
       // Save to localStorage
@@ -192,6 +193,7 @@ export default function POS({ user }) {
         customer: loadedDraft.customer_data,
         selectedStore: loadedDraft.store_id,
         currentDraftId: loadedDraft.order_id,
+        requestedShipDate: loadedDraft.requested_ship_date,
         savedAt: new Date().toISOString()
       }));
       
