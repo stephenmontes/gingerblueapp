@@ -29,6 +29,153 @@ class OrderNote(BaseModel):
     content: str
     note_type: str = "general"  # general, task, issue, update
 
+
+@router.post("/export-csv")
+async def export_orders_to_csv(
+    request: ExportOrdersRequest,
+    user: User = Depends(get_current_user)
+):
+    """Export selected orders to CSV file for download"""
+    if not request.order_ids:
+        raise HTTPException(status_code=400, detail="No orders selected for export")
+    
+    # Get orders with batch info
+    orders = await db.orders.find(
+        {"order_id": {"$in": request.order_ids}},
+        {"_id": 0}
+    ).to_list(len(request.order_ids))
+    
+    if not orders:
+        raise HTTPException(status_code=404, detail="No orders found")
+    
+    # Get batch info for each order
+    batch_ids = set()
+    for order in orders:
+        if order.get("fulfillment_batch_id"):
+            batch_ids.add(order["fulfillment_batch_id"])
+        if order.get("production_batch_id"):
+            batch_ids.add(order["production_batch_id"])
+    
+    batches = {}
+    if batch_ids:
+        # Get fulfillment batches
+        fulfillment_batches = await db.fulfillment_batches.find(
+            {"fulfillment_batch_id": {"$in": list(batch_ids)}},
+            {"_id": 0}
+        ).to_list(100)
+        for b in fulfillment_batches:
+            batches[b["fulfillment_batch_id"]] = b
+        
+        # Get production batches
+        production_batches = await db.production_batches.find(
+            {"batch_id": {"$in": list(batch_ids)}},
+            {"_id": 0}
+        ).to_list(100)
+        for b in production_batches:
+            batches[b["batch_id"]] = b
+    
+    # Create CSV content
+    csv_buffer = io.StringIO()
+    writer = csv.writer(csv_buffer)
+    
+    # Header row
+    headers = [
+        "Order Number", "Order ID", "Store", "Platform",
+        "Customer Name", "Customer Email", "Customer Phone",
+        "Ship To Name", "Address 1", "Address 2", "City", "State", "Zip", "Country",
+        "Order Date", "Requested Ship Date", "Status",
+        "Total Items", "Items Completed",
+        "Item SKU", "Item Name", "Item Quantity", "Item Done",
+        "Fulfillment Batch", "Fulfillment Batch Status", "Fulfillment Stage",
+        "Production Batch", "Production Batch Status",
+        "Notes", "Tags",
+        "Created At", "Updated At"
+    ]
+    writer.writerow(headers)
+    
+    # Data rows - one row per item
+    for order in orders:
+        # Get batch info
+        fulfill_batch = batches.get(order.get("fulfillment_batch_id"), {})
+        prod_batch = batches.get(order.get("production_batch_id"), {})
+        
+        # Get address
+        addr = order.get("shipping_address", {})
+        
+        # Base order data
+        base_row = [
+            order.get("order_number", ""),
+            order.get("order_id", ""),
+            order.get("store_name", ""),
+            order.get("platform", ""),
+            order.get("customer_name", ""),
+            order.get("customer_email", ""),
+            order.get("customer_phone", ""),
+            addr.get("name", order.get("customer_name", "")),
+            addr.get("address1", ""),
+            addr.get("address2", ""),
+            addr.get("city", ""),
+            addr.get("state", ""),
+            addr.get("zip", ""),
+            addr.get("country", ""),
+            order.get("order_date", ""),
+            order.get("requested_ship_date", ""),
+            order.get("status", ""),
+            order.get("total_items", 0),
+            order.get("items_completed", 0),
+        ]
+        
+        # Add rows for each item
+        items = order.get("items", [])
+        if items:
+            for item in items:
+                row = base_row + [
+                    item.get("sku", ""),
+                    item.get("name", ""),
+                    item.get("quantity", 0),
+                    item.get("qty_done", 0),
+                    fulfill_batch.get("batch_name", ""),
+                    fulfill_batch.get("status", ""),
+                    fulfill_batch.get("current_stage", ""),
+                    prod_batch.get("name", ""),
+                    prod_batch.get("status", ""),
+                    order.get("notes", ""),
+                    ", ".join(order.get("tags", [])),
+                    order.get("created_at", ""),
+                    order.get("updated_at", "")
+                ]
+                writer.writerow(row)
+        else:
+            # No items - still write order row
+            row = base_row + [
+                "", "", 0, 0,
+                fulfill_batch.get("batch_name", ""),
+                fulfill_batch.get("status", ""),
+                fulfill_batch.get("current_stage", ""),
+                prod_batch.get("name", ""),
+                prod_batch.get("status", ""),
+                order.get("notes", ""),
+                ", ".join(order.get("tags", [])),
+                order.get("created_at", ""),
+                order.get("updated_at", "")
+            ]
+            writer.writerow(row)
+    
+    # Get CSV content and create response
+    csv_content = csv_buffer.getvalue()
+    csv_buffer.close()
+    
+    # Return as downloadable file
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"orders_export_{timestamp}.csv"
+    
+    return StreamingResponse(
+        io.BytesIO(csv_content.encode('utf-8')),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+
 @router.get("")
 async def get_orders(
     store_id: Optional[str] = None,
