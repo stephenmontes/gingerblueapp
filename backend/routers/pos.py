@@ -131,6 +131,13 @@ async def get_pos_stores(user: User = Depends(get_current_user)):
     return {"stores": stores}
 
 
+@router.get("/next-order-number")
+async def get_next_order_number(user: User = Depends(get_current_user)):
+    """Get the next POS order number for preview"""
+    next_number = await get_next_pos_order_number()
+    return {"next_order_number": next_number}
+
+
 @router.get("/products/search")
 async def search_products(
     store_id: str,
