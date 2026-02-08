@@ -213,9 +213,9 @@ export default function POS({ user }) {
     toast.success("Custom item added");
   };
 
-  // Customer search
-  const searchCustomers = async () => {
-    if (!selectedStore || !customerSearch.trim()) {
+  // Customer search with auto-fill
+  const searchCustomers = async (searchValue = customerSearch) => {
+    if (!selectedStore || !searchValue.trim()) {
       setCustomerResults([]);
       return;
     }
@@ -223,7 +223,7 @@ export default function POS({ user }) {
     setSearchingCustomers(true);
     try {
       const res = await fetch(
-        `${API}/pos/customers/search?store_id=${selectedStore}&query=${encodeURIComponent(customerSearch)}`,
+        `${API}/pos/customers/search?store_id=${selectedStore}&query=${encodeURIComponent(searchValue)}`,
         { credentials: "include" }
       );
       if (res.ok) {
@@ -236,6 +236,19 @@ export default function POS({ user }) {
       setSearchingCustomers(false);
     }
   };
+
+  // Debounced auto-fill customer search
+  useEffect(() => {
+    if (!customerDialogOpen) return;
+    const timer = setTimeout(() => {
+      if (customerSearch.length >= 2) {
+        searchCustomers(customerSearch);
+      } else {
+        setCustomerResults([]);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [customerSearch, customerDialogOpen, selectedStore]);
 
   // Create new customer
   const createCustomer = async () => {
