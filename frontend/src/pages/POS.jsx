@@ -743,7 +743,8 @@ export default function POS({ user }) {
         tags: orderTags.split(",").map(t => t.trim()).filter(Boolean),
         financial_status: "pending",
         order_discount: orderDiscount.value > 0 ? orderDiscount : null,
-        is_draft: isDraft
+        is_draft: isDraft,
+        requested_ship_date: requestedShipDate || null
       };
 
       const res = await fetch(`${API}/pos/orders`, {
