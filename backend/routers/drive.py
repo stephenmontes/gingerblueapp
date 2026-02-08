@@ -40,11 +40,6 @@ COMPANY_DRIVE_ID = "company_drive"
 
 def get_redirect_uri():
     """Get the OAuth redirect URI based on environment"""
-    # Check for preview environment first
-    # The preview URL is set via request headers or can be detected
-    import socket
-    hostname = socket.gethostname()
-    
     # For Emergent preview environments
     # Read from backend .env or use detected URL
     auth_url = os.environ.get("AUTH_SERVICE_URL", "")
