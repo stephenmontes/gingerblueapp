@@ -822,6 +822,9 @@ export default function Customers({ user }) {
               <TabsList className="bg-muted/50">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="orders">Orders ({customerDetail.orders?.length || 0})</TabsTrigger>
+                <TabsTrigger value="drafts">
+                  Draft Orders {customerDrafts.length > 0 && `(${customerDrafts.length})`}
+                </TabsTrigger>
                 <TabsTrigger value="notes">Notes & Activity</TabsTrigger>
               </TabsList>
 
