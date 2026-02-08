@@ -68,6 +68,13 @@ export default function POS({ user }) {
     fetchStores();
   }, []);
 
+  // Reset search when store changes
+  useEffect(() => {
+    setSearchQuery("");
+    setSearchResults([]);
+    setStoreProductCount(null);
+  }, [selectedStore]);
+
   const fetchStores = async () => {
     try {
       const res = await fetch(`${API}/pos/stores`, { credentials: "include" });
