@@ -117,3 +117,58 @@ async def logout(request: Request, response: Response):
     
     response.delete_cookie(key="session_token", path="/", samesite="lax", secure=True)
     return {"message": "Logged out"}
+
+@router.get("/dev-login")
+async def dev_login(response: Response):
+    """Development-only endpoint to create a test session for UI testing"""
+    from database import TRAINING_MODE
+    
+    # Only allow in training/preview mode
+    if not TRAINING_MODE:
+        raise HTTPException(status_code=403, detail="Only available in training mode")
+    
+    # Create or get test user
+    test_email = "test@example.com"
+    test_user = await db.users.find_one({"email": test_email}, {"_id": 0})
+    
+    if not test_user:
+        user_id = f"user_test_{uuid.uuid4().hex[:8]}"
+        test_user = {
+            "user_id": user_id,
+            "email": test_email,
+            "name": "Test User",
+            "picture": "",
+            "role": "admin",
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.users.insert_one(test_user)
+        test_user = await db.users.find_one({"email": test_email}, {"_id": 0})
+    
+    user_id = test_user["user_id"]
+    
+    # Create session
+    session_token = f"test_sess_{uuid.uuid4().hex}"
+    expires_at = datetime.now(timezone.utc) + timedelta(hours=2)
+    
+    session_doc = {
+        "user_id": user_id,
+        "session_token": session_token,
+        "expires_at": expires_at.isoformat(),
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.user_sessions.delete_many({"user_id": user_id})
+    await db.user_sessions.insert_one(session_doc)
+    
+    # Set cookie
+    response.set_cookie(
+        key="session_token",
+        value=session_token,
+        httponly=True,
+        secure=True,
+        samesite="none",
+        path="/",
+        max_age=2 * 60 * 60
+    )
+    
+    return {"message": "Test session created", "redirect": "/pos"}
