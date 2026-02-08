@@ -30,7 +30,7 @@ class OrderNote(BaseModel):
     note_type: str = "general"  # general, task, issue, update
 
 
-@router.post("/export-csv")
+@router.post("/download-csv")
 async def export_orders_to_csv(
     request: ExportOrdersRequest,
     user: User = Depends(get_current_user)
