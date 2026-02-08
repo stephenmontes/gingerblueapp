@@ -119,7 +119,14 @@ async def calendar_oauth_callback(code: str, state: str):
     )
     
     # Redirect back to the scheduling page
-    return RedirectResponse("https://gingerblueapp.com/scheduling?connected=true")
+    frontend_url = os.environ.get("APP_URL", "")
+    if not frontend_url:
+        auth_url = os.environ.get("AUTH_SERVICE_URL", "")
+        if auth_url:
+            frontend_url = "https://gingerblueapp.com"
+        else:
+            frontend_url = "https://mfgflow-2.preview.emergentagent.com"
+    return RedirectResponse(f"{frontend_url}/scheduling?connected=true")
 
 
 async def get_company_calendar_credentials() -> Optional[Credentials]:
