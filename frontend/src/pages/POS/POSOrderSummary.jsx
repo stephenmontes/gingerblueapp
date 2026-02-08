@@ -55,10 +55,11 @@ export function POSOrderSummary({
   submitting,
   savingDraft,
   onSubmitOrder,
-  onSubmitDraft
+  onSubmitDraft,
+  isMobile = false
 }) {
   return (
-    <div className="space-y-4 order-2 lg:order-2">
+    <div className={`space-y-4 ${isMobile ? '' : 'order-2 lg:order-2'}`}>
       {/* Customer */}
       <Card className="bg-card border-border">
         <CardHeader className="pb-3">
