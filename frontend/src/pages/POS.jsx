@@ -2640,7 +2640,6 @@ export default function POS({ user }) {
                               Has notes
                             </span>
                           )}
-                          </p>
                         </div>
                       </div>
                       
