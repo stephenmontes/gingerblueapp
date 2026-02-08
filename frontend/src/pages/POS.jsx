@@ -660,7 +660,10 @@ export default function POS({ user }) {
           </div>
           
           <div class="header">
-            <h1>${storeName}</h1>
+            ${storeData?.logo ? `<img src="${storeData.logo}" alt="${storeName}" class="logo" />` : `<h1>${storeName}</h1>`}
+            ${storeData?.phone ? `<p class="phone">${storeData.phone}</p>` : ''}
+            ${storeData?.email ? `<p class="store-email">${storeData.email}</p>` : ''}
+            ${storeData?.address ? `<p class="store-address">${storeData.address}</p>` : ''}
             <div class="quote-type">${currentDraftId ? 'Draft Order' : 'Quote'}</div>
           </div>
           
