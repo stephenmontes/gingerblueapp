@@ -21,6 +21,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs"
 import { Popover, PopoverContent, PopoverTrigger } from "../components/ui/popover";
 
 export default function POS({ user }) {
+  // Local storage key for this user
+  const STORAGE_KEY = `pos_order_${user?.user_id || 'guest'}`;
+  
   // Store selection
   const [stores, setStores] = useState([]);
   const [selectedStore, setSelectedStore] = useState("");
