@@ -1195,14 +1195,38 @@ export default function POS({ user }) {
   };
 
   return (
-    <div className="min-h-screen bg-background p-4 lg:p-6">
+    <div 
+      className="min-h-screen p-4 lg:p-6 transition-colors duration-300"
+      style={orderColor && cart.length > 0 ? {
+        backgroundColor: `var(--order-bg, ${orderColor.bg})`,
+        '--order-bg-dark': orderColor.bgDark
+      } : undefined}
+    >
+      {/* Order color indicator bar */}
+      {orderColor && cart.length > 0 && (
+        <div 
+          className="fixed top-0 left-0 right-0 h-1 z-50"
+          style={{ backgroundColor: orderColor.accent }}
+        />
+      )}
+      
       {/* Header */}
       <div className="flex items-center justify-between mb-4 md:mb-6">
         <div className="flex items-center gap-3">
-          <ShoppingCart className="w-6 h-6 md:w-8 md:h-8 text-primary" />
+          <div 
+            className="p-2 rounded-lg"
+            style={orderColor && cart.length > 0 ? { backgroundColor: `${orderColor.accent}20` } : undefined}
+          >
+            <ShoppingCart 
+              className="w-6 h-6 md:w-8 md:h-8" 
+              style={orderColor && cart.length > 0 ? { color: orderColor.accent } : undefined}
+            />
+          </div>
           <div>
             <h1 className="text-xl md:text-2xl font-bold">Point of Sale</h1>
-            <p className="text-xs md:text-sm text-muted-foreground hidden sm:block">Create orders with Shopify sync</p>
+            <p className="text-xs md:text-sm text-muted-foreground hidden sm:block">
+              {currentDraftId ? `Editing Draft` : 'Create orders with Shopify sync'}
+            </p>
           </div>
         </div>
         
