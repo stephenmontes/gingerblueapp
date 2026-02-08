@@ -475,6 +475,11 @@ export default function POS({ user }) {
     if (!printContent) return;
 
     const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      toast.error("Please allow pop-ups to print receipts");
+      return;
+    }
+    
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
@@ -509,20 +514,47 @@ export default function POS({ user }) {
             .customer { margin: 10px 0; padding: 10px 0; border-top: 1px dashed #000; }
             .footer { text-align: center; margin-top: 15px; font-size: 10px; color: #666; }
             .note { margin-top: 10px; padding: 5px; background: #f5f5f5; font-size: 11px; }
-            @media print { body { padding: 0; } }
+            .print-actions { 
+              position: fixed; 
+              top: 10px; 
+              right: 10px; 
+              display: flex; 
+              gap: 8px;
+              z-index: 1000;
+            }
+            .print-actions button {
+              padding: 10px 20px;
+              font-size: 14px;
+              cursor: pointer;
+              border: none;
+              border-radius: 6px;
+              font-weight: 500;
+            }
+            .btn-print {
+              background: #2563eb;
+              color: white;
+            }
+            .btn-close {
+              background: #e5e7eb;
+              color: #374151;
+            }
+            @media print { 
+              body { padding: 0; }
+              .print-actions { display: none; }
+            }
           </style>
         </head>
         <body>
+          <div class="print-actions">
+            <button class="btn-print" onclick="window.print()">Print</button>
+            <button class="btn-close" onclick="window.close()">Close</button>
+          </div>
           ${printContent.innerHTML}
         </body>
       </html>
     `);
     printWindow.document.close();
     printWindow.focus();
-    setTimeout(() => {
-      printWindow.print();
-      printWindow.close();
-    }, 250);
   };
 
   // Print current cart as quote/draft
