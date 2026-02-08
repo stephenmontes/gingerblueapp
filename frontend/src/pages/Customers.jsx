@@ -170,11 +170,31 @@ export default function Customers({ user }) {
       });
       if (response.ok) {
         setCustomerDetail(await response.json());
+        // Also fetch drafts for this customer
+        fetchCustomerDrafts(customerId);
       }
     } catch (error) {
       toast.error("Failed to load customer details");
     } finally {
       setDetailLoading(false);
+    }
+  };
+
+  const fetchCustomerDrafts = async (customerId) => {
+    try {
+      setLoadingDrafts(true);
+      const response = await fetch(`${API}/pos/drafts/by-customer/${customerId}`, {
+        credentials: "include",
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setCustomerDrafts(data.drafts || []);
+      }
+    } catch (error) {
+      console.error("Failed to load customer drafts:", error);
+      setCustomerDrafts([]);
+    } finally {
+      setLoadingDrafts(false);
     }
   };
 
