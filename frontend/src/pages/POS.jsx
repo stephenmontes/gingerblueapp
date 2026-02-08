@@ -667,6 +667,9 @@ export default function POS({ user }) {
         setOrderDiscount({ type: "percentage", value: 0, reason: "" });
         setShippingPercent("");
         
+        // Clear persisted order from localStorage
+        clearPersistedOrder();
+        
         // Refresh next order number
         fetchNextOrderNumber();
       } else {
@@ -679,6 +682,23 @@ export default function POS({ user }) {
     } finally {
       setSubmitting(false);
       setSavingDraft(false);
+    }
+  };
+
+  // Clear current order (with confirmation)
+  const clearCurrentOrder = () => {
+    if (cart.length === 0) return;
+    
+    if (window.confirm("Are you sure you want to clear the current order? This will remove all items and unsaved changes.")) {
+      setCart([]);
+      setCustomer(null);
+      setTaxExempt(false);
+      setOrderNote("");
+      setOrderTags("");
+      setOrderDiscount({ type: "percentage", value: 0, reason: "" });
+      setShippingPercent("");
+      clearPersistedOrder();
+      toast.success("Order cleared");
     }
   };
 
