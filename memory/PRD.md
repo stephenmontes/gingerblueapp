@@ -192,6 +192,12 @@ Build a manufacturing and fulfillment app for Shopify websites with detailed tim
   - Responsive breakpoints for iPhone SE (375px) to iPhone 14 Pro Max (430px)
   - Fixed variant Add buttons not visible on mobile (removed ScrollArea, optimized flex layout)
   - Desktop layout unchanged (3-column grid)
+- **Scheduling Calendar Enhancement (Feb 2026)** - Integrated POS orders with ship dates:
+  - Backend `/api/calendar/orders-with-dates` now returns both Shopify and POS orders
+  - Calendar sync `/api/calendar/sync-orders` handles both order sources
+  - UI shows source badges (blue=POS, orange=Shopify, green=synced)
+  - Updated legend, table with Source column
+  - Color-coded calendar events (orange for Shopify, green for POS)
 - **Point of Sale (POS)** - COMPLETE - In-store order creation with Shopify sync:
   - Store selector for Shopify stores
   - Product search by barcode, SKU, title, or tag
