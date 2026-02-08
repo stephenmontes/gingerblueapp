@@ -147,7 +147,7 @@ export default function Layout({ children, user, setUser }) {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 p-4 space-y-1">
+          <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
             {navItems
               .filter((item) => !item.roles || item.roles.includes(user?.role))
               .map((item) => (
