@@ -171,7 +171,7 @@ export default function Layout({ children, user, setUser }) {
           </nav>
 
           {/* User section */}
-          <div className="p-4 border-t border-border">
+          <div className="p-4 border-t border-border flex-shrink-0">
             <div className="flex items-center justify-between mb-3 px-3">
               <span className="text-xs text-muted-foreground">Theme</span>
               <ThemeToggle />
