@@ -85,8 +85,22 @@ async def connect_drive(user: User = Depends(get_current_user)):
 
 
 @router.get("/oauth/callback")
-async def drive_oauth_callback(code: str, state: str):
+async def drive_oauth_callback(
+    code: str = None, 
+    state: str = None,
+    error: str = None,
+    error_description: str = None
+):
     """Handle Google Drive OAuth callback - stores company-wide credentials"""
+    # Handle OAuth errors
+    if error:
+        logger.error(f"OAuth error: {error} - {error_description}")
+        frontend_url = os.environ.get("REACT_APP_BACKEND_URL", "https://mfgflow-2.preview.emergentagent.com")
+        return RedirectResponse(url=f"{frontend_url}/settings?drive_error={error}")
+    
+    if not code or not state:
+        raise HTTPException(status_code=400, detail="Missing code or state parameter")
+    
     redirect_uri = get_redirect_uri()
     
     # Exchange code for tokens
