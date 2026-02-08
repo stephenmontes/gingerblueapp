@@ -848,6 +848,220 @@ function GoogleDriveSettings({ API, isManager }) {
   );
 }
 
+function StoreBrandingSettings({ API, stores, setStores, isManager }) {
+  const [editingStore, setEditingStore] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [brandingForm, setBrandingForm] = useState({
+    logo: "",
+    phone: "",
+    email: "",
+    address: ""
+  });
+
+  // Only show Shopify stores that can be used for POS
+  const shopifyStores = stores.filter(s => s.platform === "shopify");
+
+  const openBrandingDialog = (store) => {
+    setBrandingForm({
+      logo: store.logo || "",
+      phone: store.phone || "",
+      email: store.email || "",
+      address: store.address || ""
+    });
+    setEditingStore(store);
+  };
+
+  const handleSaveBranding = async () => {
+    if (!editingStore) return;
+    
+    setSaving(true);
+    try {
+      const res = await fetch(`${API}/stores/${editingStore.store_id}/branding`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(brandingForm)
+      });
+
+      if (res.ok) {
+        const updatedStore = await res.json();
+        setStores(stores.map(s => s.store_id === updatedStore.store_id ? { ...s, ...updatedStore } : s));
+        toast.success("Store branding updated");
+        setEditingStore(null);
+      } else {
+        const error = await res.json();
+        toast.error(error.detail || "Failed to update branding");
+      }
+    } catch (err) {
+      toast.error("Failed to save branding");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (shopifyStores.length === 0) return null;
+
+  return (
+    <>
+      <Card className="bg-card border-border">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Image className="w-5 h-5" />
+            Store Branding
+          </CardTitle>
+          <CardDescription>
+            Configure logo, phone, and address shown on quotes and receipts
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {shopifyStores.map((store) => (
+              <div 
+                key={store.store_id} 
+                className="flex items-center justify-between p-4 rounded-lg bg-muted/30 border border-border"
+              >
+                <div className="flex items-center gap-4">
+                  {store.logo ? (
+                    <img 
+                      src={store.logo} 
+                      alt={store.name} 
+                      className="w-12 h-12 object-contain rounded border bg-white"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded border bg-muted flex items-center justify-center">
+                      <Image className="w-6 h-6 text-muted-foreground" />
+                    </div>
+                  )}
+                  <div>
+                    <p className="font-semibold">{store.name}</p>
+                    <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground mt-1">
+                      {store.phone && (
+                        <span className="flex items-center gap-1">
+                          <Phone className="w-3 h-3" />
+                          {store.phone}
+                        </span>
+                      )}
+                      {store.email && (
+                        <span className="flex items-center gap-1">
+                          <Mail className="w-3 h-3" />
+                          {store.email}
+                        </span>
+                      )}
+                    </div>
+                    {store.address && (
+                      <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                        <MapPin className="w-3 h-3" />
+                        {store.address}
+                      </p>
+                    )}
+                    {!store.phone && !store.email && !store.address && !store.logo && (
+                      <p className="text-xs text-amber-500">No branding configured</p>
+                    )}
+                  </div>
+                </div>
+                {isManager && (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => openBrandingDialog(store)}
+                    data-testid={`edit-branding-${store.store_id}`}
+                  >
+                    <Edit className="w-4 h-4 mr-1" />
+                    Edit
+                  </Button>
+                )}
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Branding Edit Dialog */}
+      <Dialog open={!!editingStore} onOpenChange={(open) => !open && setEditingStore(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Store Branding</DialogTitle>
+            <DialogDescription>
+              Configure how {editingStore?.name} appears on quotes and receipts
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label className="flex items-center gap-2">
+                <Image className="w-4 h-4" />
+                Logo URL
+              </Label>
+              <Input 
+                value={brandingForm.logo} 
+                onChange={(e) => setBrandingForm({ ...brandingForm, logo: e.target.value })}
+                placeholder="https://example.com/logo.png"
+                data-testid="branding-logo-input"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Direct URL to your logo image (PNG, JPG). Leave blank to show store name as text.
+              </p>
+              {brandingForm.logo && (
+                <div className="mt-2 p-2 bg-muted rounded border">
+                  <p className="text-xs text-muted-foreground mb-1">Preview:</p>
+                  <img 
+                    src={brandingForm.logo} 
+                    alt="Logo preview" 
+                    className="max-h-16 object-contain"
+                    onError={(e) => e.target.style.display = 'none'}
+                  />
+                </div>
+              )}
+            </div>
+            <div>
+              <Label className="flex items-center gap-2">
+                <Phone className="w-4 h-4" />
+                Phone Number
+              </Label>
+              <Input 
+                value={brandingForm.phone} 
+                onChange={(e) => setBrandingForm({ ...brandingForm, phone: e.target.value })}
+                placeholder="(555) 123-4567"
+                data-testid="branding-phone-input"
+              />
+            </div>
+            <div>
+              <Label className="flex items-center gap-2">
+                <Mail className="w-4 h-4" />
+                Email
+              </Label>
+              <Input 
+                value={brandingForm.email} 
+                onChange={(e) => setBrandingForm({ ...brandingForm, email: e.target.value })}
+                placeholder="sales@example.com"
+                data-testid="branding-email-input"
+              />
+            </div>
+            <div>
+              <Label className="flex items-center gap-2">
+                <MapPin className="w-4 h-4" />
+                Address
+              </Label>
+              <Input 
+                value={brandingForm.address} 
+                onChange={(e) => setBrandingForm({ ...brandingForm, address: e.target.value })}
+                placeholder="123 Main St, City, State 12345"
+                data-testid="branding-address-input"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingStore(null)}>Cancel</Button>
+            <Button onClick={handleSaveBranding} disabled={saving} data-testid="save-branding-btn">
+              {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+              Save Branding
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
 function WebhooksSettings({ API, stores, isManager }) {
   const [webhookStatus, setWebhookStatus] = useState(null);
   const [loading, setLoading] = useState(true);
