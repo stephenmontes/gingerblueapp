@@ -393,7 +393,9 @@ export default function Scheduling({ user }) {
                             className={`text-xs truncate px-1 py-0.5 rounded ${
                               order.calendar_event_id 
                                 ? "bg-green-500/20 text-green-400" 
-                                : "bg-orange-500/20 text-orange-400"
+                                : order.source === "pos"
+                                  ? "bg-blue-500/20 text-blue-400"
+                                  : "bg-orange-500/20 text-orange-400"
                             }`}
                           >
                             #{order.order_number}
