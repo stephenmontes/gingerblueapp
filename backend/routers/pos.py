@@ -396,19 +396,150 @@ async def create_pos_order(
     order: POSOrderCreate,
     user: User = Depends(get_current_user)
 ):
-    """Create a new POS order and sync to Shopify"""
-    shop_url, access_token, store = await get_shopify_credentials(order.store_id)
+    """Create a new POS order - either draft or sync to Shopify"""
+    store = await db.stores.find_one({"store_id": order.store_id}, {"_id": 0})
+    if not store:
+        raise HTTPException(status_code=404, detail="Store not found")
     
     # Generate POS order number
     pos_order_number = await get_next_pos_order_number()
     
+    # Calculate totals with discounts
+    subtotal = 0
+    items_for_db = []
+    for item in order.line_items:
+        item_total = item.price * item.quantity
+        item_discount = 0
+        
+        if item.discount_type and item.discount_value > 0:
+            if item.discount_type == "percentage":
+                item_discount = item_total * (item.discount_value / 100)
+            else:  # fixed
+                item_discount = min(item.discount_value, item_total)
+        
+        final_item_total = item_total - item_discount
+        subtotal += final_item_total
+        
+        items_for_db.append({
+            "product_id": item.product_id,
+            "variant_id": item.variant_id,
+            "sku": item.sku or "",
+            "name": item.title,
+            "quantity": item.quantity,
+            "price": item.price,
+            "discount_type": item.discount_type,
+            "discount_value": item.discount_value,
+            "discount_amount": item_discount,
+            "line_total": final_item_total,
+            "image": item.image,
+            "qty_done": 0
+        })
+    
+    # Apply order-level discount
+    order_discount_amount = 0
+    if order.order_discount and order.order_discount.value > 0:
+        if order.order_discount.type == "percentage":
+            order_discount_amount = subtotal * (order.order_discount.value / 100)
+        else:  # fixed
+            order_discount_amount = min(order.order_discount.value, subtotal)
+    
+    subtotal_after_discount = subtotal - order_discount_amount
+    shipping_total = order.shipping.price if order.shipping and order.ship_all_items else 0
+    total_price = subtotal_after_discount + shipping_total
+    
+    order_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc).isoformat()
+    
+    # Build customer info
+    customer_name = ""
+    customer_email = ""
+    customer_data = None
+    
+    if order.customer_id:
+        existing_customer = await db.customers.find_one(
+            {"customer_id": order.customer_id},
+            {"_id": 0}
+        )
+        if existing_customer:
+            customer_name = existing_customer.get("name", "")
+            customer_email = existing_customer.get("email", "")
+            customer_data = existing_customer
+    elif order.customer:
+        customer_name = f"{order.customer.first_name} {order.customer.last_name}"
+        customer_email = order.customer.email or ""
+        customer_data = order.customer.dict()
+    
+    # If draft, save locally only
+    if order.is_draft:
+        local_order = {
+            "order_id": order_id,
+            "pos_order_number": pos_order_number,
+            "store_id": order.store_id,
+            "store_name": store.get("name", ""),
+            "platform": "pos",
+            "external_id": None,
+            "order_number": pos_order_number,
+            "customer_id": order.customer_id,
+            "customer_name": customer_name,
+            "customer_email": customer_email,
+            "customer_data": customer_data,
+            "status": "draft",
+            "financial_status": "pending",
+            "fulfillment_status": None,
+            "subtotal": subtotal,
+            "order_discount": order.order_discount.dict() if order.order_discount else None,
+            "order_discount_amount": order_discount_amount,
+            "shipping": order.shipping.dict() if order.shipping else None,
+            "shipping_total": shipping_total,
+            "total_price": round(total_price, 2),
+            "items": items_for_db,
+            "total_items": sum(item.quantity for item in order.line_items),
+            "items_completed": 0,
+            "shipping_address": {},
+            "tags": ["pos-draft", pos_order_number] + order.tags,
+            "notes": order.note,
+            "tax_exempt": order.tax_exempt,
+            "ship_all_items": order.ship_all_items,
+            "source": "pos",
+            "is_draft": True,
+            "created_by": user.user_id,
+            "created_by_name": user.name,
+            "order_date": now,
+            "created_at": now,
+            "updated_at": now
+        }
+        
+        await db.orders.insert_one(local_order)
+        del local_order["_id"]
+        
+        logger.info(f"POS draft order created: {pos_order_number} ({order_id})")
+        
+        return {
+            "order": local_order,
+            "pos_order_number": pos_order_number,
+            "is_draft": True,
+            "shopify_order_id": None,
+            "shopify_order_number": None
+        }
+    
+    # For live orders, sync to Shopify
+    shop_url, access_token, store = await get_shopify_credentials(order.store_id)
+    
     # Build Shopify order
     shopify_line_items = []
     for item in order.line_items:
+        # Calculate discounted price for Shopify
+        item_price = item.price
+        if item.discount_type and item.discount_value > 0:
+            if item.discount_type == "percentage":
+                item_price = item.price * (1 - item.discount_value / 100)
+            else:
+                item_price = max(0, item.price - (item.discount_value / item.quantity))
+        
         line_item = {
             "title": item.title,
             "quantity": item.quantity,
-            "price": str(item.price),
+            "price": str(round(item_price, 2)),
             "taxable": item.taxable
         }
         
@@ -428,9 +559,16 @@ async def create_pos_order(
         "note": f"POS Order #{pos_order_number}" + (f" - {order.note}" if order.note else "")
     }
     
+    # Add order-level discount to Shopify
+    if order_discount_amount > 0:
+        shopify_order_data["discount_codes"] = [{
+            "code": f"POS-{order.order_discount.type.upper()}-{order.order_discount.value}",
+            "amount": str(round(order_discount_amount, 2)),
+            "type": "fixed_amount"
+        }]
+    
     # Add customer
     if order.customer_id:
-        # Get existing customer's Shopify ID
         existing_customer = await db.customers.find_one(
             {"customer_id": order.customer_id},
             {"_id": 0, "external_id": 1}
@@ -477,9 +615,6 @@ async def create_pos_order(
     shopify_order = await create_shopify_order(shop_url, access_token, shopify_order_data)
     
     # Save locally
-    order_id = str(uuid.uuid4())
-    now = datetime.now(timezone.utc).isoformat()
-    
     local_order = {
         "order_id": order_id,
         "pos_order_number": pos_order_number,
@@ -488,28 +623,26 @@ async def create_pos_order(
         "platform": "shopify",
         "external_id": str(shopify_order.get("id", "")),
         "order_number": str(shopify_order.get("order_number", "")),
+        "customer_id": order.customer_id,
         "customer_name": shopify_order.get("customer", {}).get("first_name", "") + " " + shopify_order.get("customer", {}).get("last_name", ""),
         "customer_email": shopify_order.get("customer", {}).get("email", ""),
         "status": "active",
         "financial_status": shopify_order.get("financial_status", order.financial_status),
         "fulfillment_status": shopify_order.get("fulfillment_status"),
-        "total_price": float(shopify_order.get("total_price", 0)),
-        "items": [
-            {
-                "sku": item.get("sku", ""),
-                "name": item.get("title", ""),
-                "quantity": item.get("quantity", 1),
-                "price": float(item.get("price", 0)),
-                "qty_done": 0
-            }
-            for item in shopify_order.get("line_items", [])
-        ],
-        "total_items": sum(item.get("quantity", 1) for item in shopify_order.get("line_items", [])),
+        "subtotal": subtotal,
+        "order_discount": order.order_discount.dict() if order.order_discount else None,
+        "order_discount_amount": order_discount_amount,
+        "shipping_total": shipping_total,
+        "total_price": float(shopify_order.get("total_price", total_price)),
+        "items": items_for_db,
+        "total_items": sum(item.quantity for item in order.line_items),
         "items_completed": 0,
         "shipping_address": shopify_order.get("shipping_address", {}),
         "tags": ["pos-order", pos_order_number] + order.tags,
         "notes": order.note,
+        "tax_exempt": order.tax_exempt,
         "source": "pos",
+        "is_draft": False,
         "created_by": user.user_id,
         "created_by_name": user.name,
         "order_date": now,
@@ -525,9 +658,131 @@ async def create_pos_order(
     return {
         "order": local_order,
         "pos_order_number": pos_order_number,
+        "is_draft": False,
         "shopify_order_id": shopify_order.get("id"),
         "shopify_order_number": shopify_order.get("order_number")
     }
+
+
+@router.get("/drafts")
+async def get_draft_orders(
+    store_id: Optional[str] = None,
+    search: Optional[str] = None,
+    limit: int = 50,
+    user: User = Depends(get_current_user)
+):
+    """Get draft POS orders"""
+    query = {"is_draft": True, "status": "draft"}
+    
+    if store_id:
+        query["store_id"] = store_id
+    
+    if search:
+        query["$or"] = [
+            {"pos_order_number": {"$regex": search, "$options": "i"}},
+            {"customer_name": {"$regex": search, "$options": "i"}},
+            {"customer_email": {"$regex": search, "$options": "i"}},
+            {"notes": {"$regex": search, "$options": "i"}}
+        ]
+    
+    drafts = await db.orders.find(
+        query,
+        {"_id": 0}
+    ).sort([("created_at", -1)]).limit(limit).to_list(limit)
+    
+    return {"drafts": drafts, "count": len(drafts)}
+
+
+@router.get("/drafts/{order_id}")
+async def get_draft_order(
+    order_id: str,
+    user: User = Depends(get_current_user)
+):
+    """Get a single draft order for editing"""
+    draft = await db.orders.find_one(
+        {"order_id": order_id, "is_draft": True},
+        {"_id": 0}
+    )
+    
+    if not draft:
+        raise HTTPException(status_code=404, detail="Draft order not found")
+    
+    return {"draft": draft}
+
+
+@router.delete("/drafts/{order_id}")
+async def delete_draft_order(
+    order_id: str,
+    user: User = Depends(get_current_user)
+):
+    """Delete a draft order"""
+    result = await db.orders.delete_one({"order_id": order_id, "is_draft": True})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Draft order not found")
+    
+    return {"message": "Draft deleted", "order_id": order_id}
+
+
+@router.post("/drafts/{order_id}/complete")
+async def complete_draft_order(
+    order_id: str,
+    user: User = Depends(get_current_user)
+):
+    """Convert a draft order to a live Shopify order"""
+    draft = await db.orders.find_one({"order_id": order_id, "is_draft": True}, {"_id": 0})
+    
+    if not draft:
+        raise HTTPException(status_code=404, detail="Draft order not found")
+    
+    # Rebuild order data from draft
+    line_items = [
+        POSLineItem(
+            product_id=item.get("product_id"),
+            variant_id=item.get("variant_id"),
+            sku=item.get("sku"),
+            title=item.get("name"),
+            quantity=item.get("quantity"),
+            price=item.get("price"),
+            image=item.get("image"),
+            discount_type=item.get("discount_type"),
+            discount_value=item.get("discount_value", 0)
+        )
+        for item in draft.get("items", [])
+    ]
+    
+    order_discount = None
+    if draft.get("order_discount"):
+        order_discount = POSDiscount(**draft["order_discount"])
+    
+    shipping = None
+    if draft.get("shipping"):
+        shipping = POSShipping(**draft["shipping"])
+    
+    customer = None
+    if draft.get("customer_data") and isinstance(draft["customer_data"], dict):
+        if "first_name" in draft["customer_data"]:
+            customer = POSCustomer(**draft["customer_data"])
+    
+    order_data = POSOrderCreate(
+        store_id=draft["store_id"],
+        customer=customer,
+        customer_id=draft.get("customer_id"),
+        line_items=line_items,
+        shipping=shipping,
+        ship_all_items=draft.get("ship_all_items", True),
+        tax_exempt=draft.get("tax_exempt", False),
+        note=draft.get("notes"),
+        tags=[t for t in draft.get("tags", []) if t not in ["pos-draft", draft.get("pos_order_number", "")]],
+        order_discount=order_discount,
+        is_draft=False
+    )
+    
+    # Delete the draft
+    await db.orders.delete_one({"order_id": order_id})
+    
+    # Create the live order (reuse existing logic)
+    return await create_pos_order(order_data, user)
 
 
 @router.get("/orders/{order_id}/sync")
