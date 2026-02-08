@@ -810,6 +810,36 @@ async def get_draft_orders(
     return {"drafts": drafts, "count": len(drafts), "current_user_id": user.user_id}
 
 
+@router.get("/drafts/by-customer/{customer_id}")
+async def get_drafts_by_customer(
+    customer_id: str,
+    user: User = Depends(get_current_user)
+):
+    """Get draft POS orders for a specific customer"""
+    logger.info(f"Fetching drafts for customer_id={customer_id}")
+    
+    drafts = await db.orders.find(
+        {
+            "is_draft": True,
+            "$or": [
+                {"customer_id": customer_id},
+                {"customer_data.customer_id": customer_id},
+                {"customer.customer_id": customer_id}
+            ]
+        },
+        {"_id": 0}
+    ).sort([("created_at", -1)]).to_list(100)
+    
+    logger.info(f"Found {len(drafts)} drafts for customer {customer_id}")
+    
+    # Add additional info
+    for draft in drafts:
+        draft["is_mine"] = draft.get("locked_by") == user.user_id or draft.get("created_by") == user.user_id
+        draft["is_locked"] = bool(draft.get("locked_by"))
+    
+    return {"drafts": drafts, "count": len(drafts)}
+
+
 @router.get("/drafts/{order_id}")
 async def get_draft_order(
     order_id: str,
