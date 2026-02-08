@@ -96,6 +96,11 @@ api_router.include_router(drive_router)
 async def root():
     return {"message": "ShopFactory API", "status": "running", "version": "2.0.0"}
 
+# Health check endpoint for Kubernetes
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"}
+
 # Include the main router
 app.include_router(api_router)
 
