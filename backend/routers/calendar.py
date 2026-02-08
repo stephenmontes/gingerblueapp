@@ -361,7 +361,7 @@ async def sync_orders_to_calendar(
     order_ids: Optional[List[str]] = None,
     user: User = Depends(get_current_user)
 ):
-    """Sync orders with requested ship dates to company Google Calendar"""
+    """Sync orders with requested ship dates to company Google Calendar (includes both Shopify and POS orders)"""
     creds = await get_company_calendar_credentials()
     if not creds:
         raise HTTPException(status_code=401, detail="Company calendar not connected")
@@ -369,40 +369,58 @@ async def sync_orders_to_calendar(
     try:
         service = build("calendar", "v3", credentials=creds)
         
-        # Get orders with ship dates
+        # Get orders with ship dates from fulfillment_orders
         query = {"requested_ship_date": {"$exists": True, "$ne": None, "$ne": ""}}
         if order_ids:
             query["order_id"] = {"$in": order_ids}
         
-        orders = await db.fulfillment_orders.find(query, {"_id": 0}).to_list(500)
+        fulfillment_orders = await db.fulfillment_orders.find(query, {"_id": 0}).to_list(500)
+        
+        # Get POS orders with ship dates
+        pos_query = {
+            **query,
+            "is_draft": {"$ne": True}
+        }
+        pos_orders = await db.orders.find(pos_query, {"_id": 0}).to_list(500)
         
         created = 0
         updated = 0
         skipped = 0
         
-        for order in orders:
+        async def sync_order(order, collection_name):
+            nonlocal created, updated, skipped
+            
             ship_date = order.get("requested_ship_date")
             if not ship_date:
                 skipped += 1
-                continue
+                return
             
-            order_number = order.get("order_number", order.get("order_id", "")[:8])
-            customer = order.get("customer_name", "Unknown")
-            items_count = len(order.get("items", []))
+            # Get order number (handle both Shopify and POS orders)
+            order_number = order.get("pos_order_number") or order.get("order_number") or order.get("order_id", "")[:8]
+            
+            # Get customer name
+            customer = order.get("customer_name")
+            if not customer and order.get("customer"):
+                customer = order["customer"].get("name", "Walk-in")
+            customer = customer or "Unknown"
+            
+            items_count = len(order.get("items", []) or order.get("line_items", []))
             store_name = order.get("store_name", "")
+            total_price = order.get("total_price") or order.get("total") or 0
+            source = "POS" if collection_name == "orders" else "Shopify"
             
             event_title = f"🚚 Ship #{order_number} - {customer}"
             event_description = (
                 f"Order: #{order_number}\n"
                 f"Customer: {customer}\n"
                 f"Store: {store_name}\n"
+                f"Source: {source}\n"
                 f"Items: {items_count}\n"
-                f"Total: ${order.get('total_price', 0):.2f}\n"
+                f"Total: ${total_price:.2f}\n"
                 f"---\n"
                 f"Synced by: {user.name or user.email}"
             )
             
-            # Check if event already exists for this order
             existing_event_id = order.get("calendar_event_id")
             
             event_body = {
@@ -410,18 +428,17 @@ async def sync_orders_to_calendar(
                 "description": event_description,
                 "start": {"date": ship_date},
                 "end": {"date": ship_date},
-                "colorId": "6",  # Orange color
+                "colorId": "6" if collection_name == "fulfillment_orders" else "10",  # Orange for Shopify, Green for POS
                 "extendedProperties": {
                     "private": {
                         "order_id": order.get("order_id"),
-                        "source": "shopfactory"
+                        "source": source.lower()
                     }
                 }
             }
             
             try:
                 if existing_event_id:
-                    # Update existing event
                     service.events().update(
                         calendarId="primary",
                         eventId=existing_event_id,
@@ -429,11 +446,10 @@ async def sync_orders_to_calendar(
                     ).execute()
                     updated += 1
                 else:
-                    # Create new event
                     event = service.events().insert(calendarId="primary", body=event_body).execute()
                     
                     # Save event ID to order
-                    await db.fulfillment_orders.update_one(
+                    await db[collection_name].update_one(
                         {"order_id": order.get("order_id")},
                         {"$set": {"calendar_event_id": event.get("id")}}
                     )
@@ -442,12 +458,20 @@ async def sync_orders_to_calendar(
                 print(f"Failed to sync order {order_number}: {e}")
                 skipped += 1
         
+        # Sync fulfillment orders
+        for order in fulfillment_orders:
+            await sync_order(order, "fulfillment_orders")
+        
+        # Sync POS orders
+        for order in pos_orders:
+            await sync_order(order, "orders")
+        
         return {
             "success": True,
             "created": created,
             "updated": updated,
             "skipped": skipped,
-            "total": len(orders)
+            "total": len(fulfillment_orders) + len(pos_orders)
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to sync orders: {str(e)}")
