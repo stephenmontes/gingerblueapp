@@ -267,6 +267,7 @@ export default function POS({ user }) {
             setOrderNote(data.orderNote || "");
             setOrderTags(data.orderTags || "");
             setCurrentDraftId(data.currentDraftId || null);
+            setRequestedShipDate(data.requestedShipDate || "");
             toast.info(`Restored ${data.cart.length} item(s) from previous session`);
           }
         }
@@ -291,13 +292,14 @@ export default function POS({ user }) {
         orderDiscount,
         orderNote,
         orderTags,
+        requestedShipDate,
         currentDraftId,
         savedAt: new Date().toISOString(),
         savedBy: user?.name || 'Unknown'
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(orderData));
     }
-  }, [cart, customer, selectedStore, taxExempt, shipAllItems, shipping, shippingPercent, orderDiscount, orderNote, orderTags, currentDraftId, STORAGE_KEY, user]);
+  }, [cart, customer, selectedStore, taxExempt, shipAllItems, shipping, shippingPercent, orderDiscount, orderNote, orderTags, requestedShipDate, currentDraftId, STORAGE_KEY, user]);
 
   // Auto-save as draft every 60 seconds if cart has items
   useEffect(() => {
