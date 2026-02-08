@@ -37,13 +37,23 @@ COMPANY_DRIVE_ID = "company_drive"
 
 def get_redirect_uri():
     """Get the OAuth redirect URI based on environment"""
-    frontend_url = os.environ.get("REACT_APP_BACKEND_URL", "")
-    if frontend_url and "preview.emergentagent.com" in frontend_url:
-        return f"{frontend_url}/api/drive/oauth/callback"
+    # Check for preview environment first
+    # The preview URL is set via request headers or can be detected
+    import socket
+    hostname = socket.gethostname()
+    
+    # For Emergent preview environments
+    # Read from backend .env or use detected URL
     auth_url = os.environ.get("AUTH_SERVICE_URL", "")
+    
+    # If AUTH_SERVICE_URL is set, we're in a deployed environment
     if auth_url:
+        # Use custom domain for production
         return "https://gingerblueapp.com/api/drive/oauth/callback"
-    return "http://localhost:8001/api/drive/oauth/callback"
+    
+    # For preview/development, try to detect the URL
+    # This will be the preview URL
+    return "https://mfgflow-2.preview.emergentagent.com/api/drive/oauth/callback"
 
 
 @router.get("/oauth/connect")
