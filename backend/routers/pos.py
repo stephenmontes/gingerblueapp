@@ -381,6 +381,9 @@ async def create_pos_order(
     """Create a new POS order and sync to Shopify"""
     shop_url, access_token, store = await get_shopify_credentials(order.store_id)
     
+    # Generate POS order number
+    pos_order_number = await get_next_pos_order_number()
+    
     # Build Shopify order
     shopify_line_items = []
     for item in order.line_items:
@@ -403,8 +406,8 @@ async def create_pos_order(
         "line_items": shopify_line_items,
         "financial_status": order.financial_status,
         "send_receipt": order.send_receipt,
-        "tags": ", ".join(["pos-order"] + order.tags),
-        "note": order.note or "Created via POS"
+        "tags": ", ".join(["pos-order", pos_order_number] + order.tags),
+        "note": f"POS Order #{pos_order_number}" + (f" - {order.note}" if order.note else "")
     }
     
     # Add customer
