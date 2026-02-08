@@ -26,16 +26,27 @@ export function usePOSCustomers(selectedStore) {
 
     setSearchingCustomers(true);
     try {
-      const res = await fetch(
-        `${API}/pos/customers/search?store_id=${selectedStore}&query=${encodeURIComponent(searchValue)}`,
-        { credentials: "include" }
-      );
+      const url = `${API}/pos/customers/search?store_id=${selectedStore}&query=${encodeURIComponent(searchValue)}`;
+      console.log('[POS] Searching customers:', url);
+      
+      const res = await fetch(url, { credentials: "include" });
+      
+      console.log('[POS] Customer search response status:', res.status);
+      
       if (res.ok) {
         const data = await res.json();
-        setCustomerResults(data.customers);
+        console.log('[POS] Found customers:', data.customers?.length || 0);
+        setCustomerResults(data.customers || []);
+      } else {
+        const errorText = await res.text();
+        console.error('[POS] Customer search error:', res.status, errorText);
+        toast.error(`Customer search failed: ${res.status}`);
+        setCustomerResults([]);
       }
     } catch (err) {
-      toast.error("Customer search failed");
+      console.error('[POS] Customer search exception:', err);
+      toast.error("Customer search failed: " + err.message);
+      setCustomerResults([]);
     } finally {
       setSearchingCustomers(false);
     }
