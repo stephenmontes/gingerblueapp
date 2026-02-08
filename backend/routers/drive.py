@@ -105,6 +105,20 @@ async def drive_oauth_callback(code: str, state: str):
     
     tokens = token_response.json()
     
+    # Get user info to store connected email
+    connected_email = None
+    try:
+        userinfo_response = requests.get(
+            "https://www.googleapis.com/oauth2/v2/userinfo",
+            headers={"Authorization": f"Bearer {tokens.get('access_token')}"}
+        )
+        if userinfo_response.status_code == 200:
+            userinfo = userinfo_response.json()
+            connected_email = userinfo.get("email")
+            logger.info(f"Drive connected to account: {connected_email}")
+    except Exception as e:
+        logger.warning(f"Could not fetch user info: {e}")
+    
     # Store company-wide credentials
     await db[COMPANY_SETTINGS_COLLECTION].update_one(
         {"setting_id": COMPANY_DRIVE_ID},
@@ -118,6 +132,7 @@ async def drive_oauth_callback(code: str, state: str):
             "scopes": DRIVE_SCOPES,
             "expiry": datetime.now(timezone.utc).isoformat(),
             "connected_by": state,
+            "connected_email": connected_email,
             "updated_at": datetime.now(timezone.utc).isoformat()
         }},
         upsert=True
@@ -127,6 +142,8 @@ async def drive_oauth_callback(code: str, state: str):
     
     # Redirect to frontend settings page
     frontend_url = os.environ.get("REACT_APP_BACKEND_URL", "http://localhost:3000")
+    if not frontend_url or frontend_url == "http://localhost:3000":
+        frontend_url = "https://mfgflow-2.preview.emergentagent.com"
     return RedirectResponse(url=f"{frontend_url}/settings?drive_connected=true")
 
 
