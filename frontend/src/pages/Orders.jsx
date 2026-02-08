@@ -927,6 +927,21 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
             <Button variant="ghost" size="sm" onClick={() => setSelectedOrders([])}>
               Clear Selection
             </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleExportToDrive}
+              disabled={exporting}
+              className="gap-2"
+              data-testid="export-to-drive-btn"
+            >
+              {exporting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <CloudDownload className="w-4 h-4" />
+              )}
+              {driveStatus.connected ? "Export to Drive" : "Connect Drive & Export"}
+            </Button>
             <Button size="sm" onClick={() => setCreateBatchOpen(true)} className="gap-2" data-testid="send-to-production-btn">
               <ArrowRight className="w-4 h-4" />
               Send to Production
