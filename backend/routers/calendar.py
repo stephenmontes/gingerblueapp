@@ -49,6 +49,9 @@ async def connect_calendar(user: User = Depends(get_current_user)):
     
     redirect_uri = get_redirect_uri()
     
+    # Suggest the company account for login
+    login_hint = "info@gingerbluehome.com"
+    
     # Build authorization URL
     auth_url = (
         "https://accounts.google.com/o/oauth2/v2/auth?"
@@ -58,6 +61,7 @@ async def connect_calendar(user: User = Depends(get_current_user)):
         f"scope={'%20'.join(CALENDAR_SCOPES)}&"
         "access_type=offline&"
         "prompt=consent&"
+        f"login_hint={login_hint}&"
         f"state={user.user_id}"
     )
     
