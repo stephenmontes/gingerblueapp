@@ -832,6 +832,7 @@ export default function POS({ user }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           to: emailTo,
+          from_email: emailFrom || undefined,
           subject: emailSubject,
           message: emailMessage,
           store_id: selectedStore,
@@ -855,7 +856,12 @@ export default function POS({ user }) {
       });
       
       if (res.ok) {
-        toast.success(`Quote sent to ${emailTo}`);
+        const result = await res.json();
+        if (result.note) {
+          toast.success(result.message, { description: result.note });
+        } else {
+          toast.success(`Quote sent to ${emailTo}`);
+        }
         setEmailDialogOpen(false);
       } else {
         const err = await res.json();
