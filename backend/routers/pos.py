@@ -21,6 +21,43 @@ router = APIRouter(prefix="/pos", tags=["pos"])
 API_VERSION = "2024-10"
 
 
+# Debug endpoint to check POS data status
+@router.get("/debug/status")
+async def pos_debug_status(
+    store_id: Optional[str] = None,
+    user: User = Depends(get_current_user)
+):
+    """Debug endpoint to check POS data availability"""
+    result = {
+        "user": user.email,
+        "stores": [],
+        "customers_count": 0,
+        "products_count": 0
+    }
+    
+    # Get stores
+    stores = await db.stores.find(
+        {"platform": "shopify", "is_active": True},
+        {"_id": 0, "store_id": 1, "name": 1}
+    ).to_list(100)
+    result["stores"] = stores
+    
+    # If store_id provided, get counts
+    if store_id:
+        result["selected_store"] = store_id
+        result["customers_count"] = await db.customers.count_documents({"store_id": store_id})
+        result["products_count"] = await db.products.count_documents({"store_id": store_id})
+        
+        # Sample customer
+        sample_customer = await db.customers.find_one(
+            {"store_id": store_id},
+            {"_id": 0, "customer_id": 1, "name": 1, "email": 1}
+        )
+        result["sample_customer"] = sample_customer
+    
+    return result
+
+
 # Pydantic Models
 class POSCustomer(BaseModel):
     first_name: str
