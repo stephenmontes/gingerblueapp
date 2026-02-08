@@ -9,12 +9,18 @@ from pydantic import BaseModel
 import uuid
 import httpx
 import logging
+import os
+import asyncio
+import resend
 
 from database import db
 from models.user import User
 from dependencies import get_current_user
 
 logger = logging.getLogger(__name__)
+
+# Initialize Resend with API key
+resend.api_key = os.environ.get("RESEND_API_KEY")
 
 router = APIRouter(prefix="/pos", tags=["pos"])
 
