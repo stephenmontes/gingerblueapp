@@ -404,7 +404,9 @@ async def create_pos_order(
         raise HTTPException(status_code=404, detail="Store not found")
     
     # Generate POS order number
-    pos_order_number = await get_next_pos_order_number()
+    base_order_number = await get_next_pos_order_number()
+    # Add "D" prefix for drafts
+    pos_order_number = f"D{base_order_number}" if order.is_draft else base_order_number
     
     # Calculate totals with discounts
     subtotal = 0
