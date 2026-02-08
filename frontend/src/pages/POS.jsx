@@ -352,7 +352,14 @@ export default function POS({ user }) {
 
       if (res.ok) {
         const data = await res.json();
-        toast.success(`Order #${data.shopify_order_number} created!`);
+        toast.success(
+          <div>
+            <p className="font-semibold">Order Created!</p>
+            <p className="text-sm">POS: {data.pos_order_number}</p>
+            <p className="text-sm">Shopify: #{data.shopify_order_number}</p>
+          </div>,
+          { duration: 5000 }
+        );
         
         // Reset form
         setCart([]);
