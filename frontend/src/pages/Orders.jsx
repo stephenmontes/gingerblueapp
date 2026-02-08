@@ -91,9 +91,52 @@ export default function Orders({ user }) {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
   
-  // Google Drive Export state
+  // CSV Export state
   const [exporting, setExporting] = useState(false);
-  const [driveStatus, setDriveStatus] = useState({ connected: false });
+
+  const handleExportToCSV = async () => {
+    if (selectedOrders.length === 0) {
+      toast.error("Please select orders to export");
+      return;
+    }
+
+    setExporting(true);
+    try {
+      const response = await fetch(API + "/orders/export-csv", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ order_ids: selectedOrders }),
+      });
+
+      if (response.ok) {
+        // Get the CSV blob
+        const blob = await response.blob();
+        
+        // Create download link
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const timestamp = new Date().toISOString().slice(0, 10);
+        a.download = `orders_export_${timestamp}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        
+        toast.success(`Exported ${selectedOrders.length} orders to CSV`);
+        setSelectedOrders([]);
+      } else {
+        const error = await response.json();
+        toast.error(error.detail || "Export failed");
+      }
+    } catch (error) {
+      console.error("Export failed:", error);
+      toast.error("Failed to export orders");
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const fetchOrders = async (page = currentPage, sortCol = sortColumn, sortDir = sortDirection, search = searchTerm) => {
     try {
