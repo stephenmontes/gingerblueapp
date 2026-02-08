@@ -503,6 +503,7 @@ async def create_pos_order(
             "tax_exempt": order.tax_exempt,
             "ship_all_items": order.ship_all_items,
             "requested_ship_date": order.requested_ship_date,
+            "order_color": order.order_color,
             "source": "pos",
             "is_draft": True,
             "created_by": user.user_id,
