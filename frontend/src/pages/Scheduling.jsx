@@ -414,10 +414,14 @@ export default function Scheduling({ user }) {
             </div>
 
             {/* Legend */}
-            <div className="flex items-center gap-4 mt-4 pt-4 border-t border-border">
+            <div className="flex flex-wrap items-center gap-4 mt-4 pt-4 border-t border-border">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded bg-orange-500/20 border border-orange-500/50" />
-                <span className="text-xs text-muted-foreground">Not synced</span>
+                <span className="text-xs text-muted-foreground">Shopify (not synced)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded bg-blue-500/20 border border-blue-500/50" />
+                <span className="text-xs text-muted-foreground">POS (not synced)</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded bg-green-500/20 border border-green-500/50" />
