@@ -1089,6 +1089,64 @@ export default function POS({ user }) {
             </CardContent>
           </Card>
 
+          {/* Order Discount */}
+          <Card className="bg-card border-border">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <Percent className="w-4 h-4" />
+                  Order Discount
+                </span>
+                {orderDiscount.value > 0 && (
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    className="h-6 text-xs text-destructive"
+                    onClick={() => setOrderDiscount({ type: "percentage", value: 0, reason: "" })}
+                  >
+                    Clear
+                  </Button>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex gap-2">
+                <Select 
+                  value={orderDiscount.type} 
+                  onValueChange={(v) => setOrderDiscount({...orderDiscount, type: v})}
+                >
+                  <SelectTrigger className="w-[130px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="percentage">Percent (%)</SelectItem>
+                    <SelectItem value="fixed">Fixed ($)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Input
+                  type="number"
+                  min="0"
+                  step={orderDiscount.type === "percentage" ? "1" : "0.01"}
+                  placeholder={orderDiscount.type === "percentage" ? "10" : "5.00"}
+                  value={orderDiscount.value || ""}
+                  onChange={(e) => setOrderDiscount({...orderDiscount, value: parseFloat(e.target.value) || 0})}
+                  data-testid="order-discount-input"
+                />
+              </div>
+              {orderDiscount.value > 0 && subtotal > 0 && (
+                <div className="text-sm bg-destructive/10 text-destructive p-2 rounded">
+                  Discount: -{orderDiscount.type === "percentage" ? `${orderDiscount.value}%` : `$${orderDiscount.value.toFixed(2)}`} 
+                  = <span className="font-semibold">-${orderDiscountAmount.toFixed(2)}</span>
+                </div>
+              )}
+              <Input
+                placeholder="Discount reason (optional)"
+                value={orderDiscount.reason}
+                onChange={(e) => setOrderDiscount({...orderDiscount, reason: e.target.value})}
+              />
+            </CardContent>
+          </Card>
+
           {/* Notes & Tags */}
           <Card className="bg-card border-border">
             <CardHeader className="pb-3">
@@ -1121,9 +1179,15 @@ export default function POS({ user }) {
           <Card className="bg-card border-border">
             <CardContent className="pt-4 space-y-2">
               <div className="flex justify-between text-sm">
-                <span>Subtotal</span>
-                <span>${subtotal.toFixed(2)}</span>
+                <span>Subtotal ({cart.length} items)</span>
+                <span>${(subtotal + orderDiscountAmount).toFixed(2)}</span>
               </div>
+              {orderDiscountAmount > 0 && (
+                <div className="flex justify-between text-sm text-destructive">
+                  <span>Order Discount</span>
+                  <span>-${orderDiscountAmount.toFixed(2)}</span>
+                </div>
+              )}
               {shipAllItems && shipping.price > 0 && (
                 <div className="flex justify-between text-sm">
                   <span>Shipping</span>
@@ -1144,10 +1208,49 @@ export default function POS({ user }) {
             </CardContent>
           </Card>
 
-          {/* Submit */}
-          <Button
-            className="w-full h-12 text-lg"
-            disabled={!selectedStore || cart.length === 0 || submitting}
+          {/* Submit Buttons */}
+          <div className="space-y-2">
+            <Button
+              className="w-full h-12 text-lg"
+              disabled={!selectedStore || cart.length === 0 || submitting || savingDraft}
+              onClick={() => submitOrder(false)}
+              data-testid="create-order-btn"
+            >
+              {submitting ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  Creating Order...
+                </>
+              ) : (
+                <>
+                  <Check className="w-5 h-5 mr-2" />
+                  Create Order
+                </>
+              )}
+            </Button>
+            
+            <Button
+              variant="outline"
+              className="w-full"
+              disabled={!selectedStore || cart.length === 0 || submitting || savingDraft}
+              onClick={() => submitOrder(true)}
+              data-testid="save-draft-btn"
+            >
+              {savingDraft ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Saving Draft...
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4 mr-2" />
+                  Save as Draft
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      </div>
             onClick={submitOrder}
             data-testid="submit-order"
           >
