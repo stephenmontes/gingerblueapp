@@ -707,7 +707,44 @@ async def get_draft_order(
     if not draft:
         raise HTTPException(status_code=404, detail="Draft order not found")
     
+    # Check if draft is locked by another user
+    locked_by = draft.get("locked_by")
+    if locked_by and locked_by != user.user_id:
+        locked_by_name = draft.get("locked_by_name", "another user")
+        locked_at = draft.get("locked_at", "")
+        raise HTTPException(
+            status_code=423, 
+            detail=f"Draft is currently being edited by {locked_by_name} (since {locked_at})"
+        )
+    
+    # Lock the draft for this user
+    await db.orders.update_one(
+        {"order_id": order_id},
+        {"$set": {
+            "locked_by": user.user_id,
+            "locked_by_name": user.name,
+            "locked_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
     return {"draft": draft}
+
+
+@router.post("/drafts/{order_id}/release")
+async def release_draft_order(
+    order_id: str,
+    user: User = Depends(get_current_user)
+):
+    """Release/unlock a draft order so others can edit it"""
+    result = await db.orders.update_one(
+        {"order_id": order_id, "is_draft": True},
+        {"$unset": {"locked_by": "", "locked_by_name": "", "locked_at": ""}}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Draft order not found")
+    
+    return {"message": "Draft released", "order_id": order_id}
 
 
 @router.delete("/drafts/{order_id}")
