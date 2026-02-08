@@ -924,6 +924,243 @@ export default function POS({ user }) {
     }, 250);
   };
 
+  // Print current cart as quote/draft
+  const printQuote = () => {
+    if (cart.length === 0) {
+      toast.error("Cart is empty");
+      return;
+    }
+
+    const storeName = stores.find(s => s.store_id === selectedStore)?.name || "Store";
+    const quoteDate = new Date().toLocaleDateString();
+    const quoteNumber = currentDraftId ? `Draft-${nextOrderNumber}` : `Quote-${Date.now().toString(36).toUpperCase()}`;
+
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Quote - ${quoteNumber}</title>
+          <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { font-family: Arial, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; }
+            .header { text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #333; }
+            .header h1 { font-size: 28px; margin-bottom: 5px; }
+            .header .quote-type { font-size: 18px; color: #666; text-transform: uppercase; letter-spacing: 2px; }
+            .info-row { display: flex; justify-content: space-between; margin-bottom: 20px; }
+            .info-box { flex: 1; }
+            .info-box h3 { font-size: 12px; color: #666; text-transform: uppercase; margin-bottom: 5px; }
+            .info-box p { font-size: 14px; }
+            table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+            th { background: #f5f5f5; padding: 12px; text-align: left; font-size: 12px; text-transform: uppercase; border-bottom: 2px solid #333; }
+            td { padding: 12px; border-bottom: 1px solid #ddd; vertical-align: top; }
+            .item-image { width: 50px; height: 50px; object-fit: cover; border-radius: 4px; }
+            .item-title { font-weight: 600; }
+            .item-sku { font-size: 12px; color: #666; }
+            .text-right { text-align: right; }
+            .totals { margin-top: 20px; margin-left: auto; width: 300px; }
+            .totals .row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
+            .totals .row.grand { font-weight: bold; font-size: 18px; border-bottom: 2px solid #333; border-top: 2px solid #333; }
+            .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; text-align: center; color: #666; font-size: 12px; }
+            .terms { margin-top: 30px; padding: 15px; background: #f9f9f9; border-radius: 4px; font-size: 12px; }
+            .terms h4 { margin-bottom: 10px; }
+            .discount { color: #dc2626; }
+            @media print { body { padding: 20px; } }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>${storeName}</h1>
+            <div class="quote-type">${currentDraftId ? 'Draft Order' : 'Quote'}</div>
+          </div>
+          
+          <div class="info-row">
+            <div class="info-box">
+              <h3>Quote Number</h3>
+              <p><strong>${quoteNumber}</strong></p>
+            </div>
+            <div class="info-box">
+              <h3>Date</h3>
+              <p>${quoteDate}</p>
+            </div>
+            <div class="info-box">
+              <h3>Valid Until</h3>
+              <p>${new Date(Date.now() + 30*24*60*60*1000).toLocaleDateString()}</p>
+            </div>
+          </div>
+          
+          ${customer ? `
+          <div class="info-row">
+            <div class="info-box">
+              <h3>Customer</h3>
+              <p><strong>${customer.name}</strong></p>
+              ${customer.email ? `<p>${customer.email}</p>` : ''}
+              ${customer.phone ? `<p>${customer.phone}</p>` : ''}
+              ${customer.company ? `<p>${customer.company}</p>` : ''}
+            </div>
+          </div>
+          ` : ''}
+          
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 60px;"></th>
+                <th>Item</th>
+                <th class="text-right" style="width: 80px;">Price</th>
+                <th class="text-right" style="width: 60px;">Qty</th>
+                <th class="text-right" style="width: 100px;">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${cart.map(item => {
+                const lineTotal = item.price * item.quantity;
+                const discountAmt = item.discount_type && item.discount_value > 0 
+                  ? (item.discount_type === 'percentage' ? lineTotal * item.discount_value / 100 : item.discount_value)
+                  : 0;
+                const finalTotal = lineTotal - discountAmt;
+                return `
+                <tr>
+                  <td>${item.image ? `<img src="${item.image}" class="item-image" />` : ''}</td>
+                  <td>
+                    <div class="item-title">${item.title}</div>
+                    ${item.sku ? `<div class="item-sku">SKU: ${item.sku}</div>` : ''}
+                    ${discountAmt > 0 ? `<div class="item-sku discount">Discount: -$${discountAmt.toFixed(2)}</div>` : ''}
+                  </td>
+                  <td class="text-right">$${item.price.toFixed(2)}</td>
+                  <td class="text-right">${item.quantity}</td>
+                  <td class="text-right">$${finalTotal.toFixed(2)}</td>
+                </tr>
+              `}).join('')}
+            </tbody>
+          </table>
+          
+          <div class="totals">
+            <div class="row">
+              <span>Subtotal</span>
+              <span>$${(subtotal + orderDiscountAmount).toFixed(2)}</span>
+            </div>
+            ${orderDiscountAmount > 0 ? `
+            <div class="row discount">
+              <span>Discount</span>
+              <span>-$${orderDiscountAmount.toFixed(2)}</span>
+            </div>
+            ` : ''}
+            ${shipAllItems && shipping.price > 0 ? `
+            <div class="row">
+              <span>Shipping (${shipping.title})</span>
+              <span>$${shipping.price.toFixed(2)}</span>
+            </div>
+            ` : ''}
+            ${taxExempt ? `
+            <div class="row">
+              <span>Tax</span>
+              <span>Exempt</span>
+            </div>
+            ` : ''}
+            <div class="row grand">
+              <span>Total</span>
+              <span>$${total.toFixed(2)}</span>
+            </div>
+          </div>
+          
+          ${requestedShipDate ? `
+          <div class="terms">
+            <h4>Requested Ship Date</h4>
+            <p>${new Date(requestedShipDate).toLocaleDateString()}</p>
+          </div>
+          ` : ''}
+          
+          ${orderNote ? `
+          <div class="terms">
+            <h4>Notes</h4>
+            <p>${orderNote}</p>
+          </div>
+          ` : ''}
+          
+          <div class="terms">
+            <h4>Terms & Conditions</h4>
+            <p>This quote is valid for 30 days from the date of issue. Prices are subject to change without notice. Payment terms: Due upon receipt unless otherwise agreed.</p>
+          </div>
+          
+          <div class="footer">
+            <p>Generated by ${user?.name || 'Staff'} on ${new Date().toLocaleString()}</p>
+            <p>Thank you for your business!</p>
+          </div>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 250);
+  };
+
+  // Open email dialog
+  const openEmailDialog = () => {
+    if (cart.length === 0) {
+      toast.error("Cart is empty");
+      return;
+    }
+    
+    setEmailTo(customer?.email || "");
+    setEmailSubject(`Quote from ${stores.find(s => s.store_id === selectedStore)?.name || 'Store'}`);
+    setEmailMessage(`Dear ${customer?.name || 'Customer'},\n\nPlease find attached your quote for ${cart.length} item(s) totaling $${total.toFixed(2)}.\n\nThank you for your business!\n\nBest regards,\n${user?.name || 'Staff'}`);
+    setEmailDialogOpen(true);
+  };
+
+  // Send email
+  const sendEmail = async () => {
+    if (!emailTo) {
+      toast.error("Please enter an email address");
+      return;
+    }
+    
+    setSendingEmail(true);
+    try {
+      const res = await fetch(`${API}/pos/send-quote-email`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: emailTo,
+          subject: emailSubject,
+          message: emailMessage,
+          store_id: selectedStore,
+          customer_name: customer?.name,
+          items: cart.map(item => ({
+            title: item.title,
+            sku: item.sku,
+            quantity: item.quantity,
+            price: item.price,
+            discount_type: item.discount_type,
+            discount_value: item.discount_value
+          })),
+          subtotal: subtotal,
+          order_discount: orderDiscount,
+          shipping: shipAllItems ? shipping : null,
+          tax_exempt: taxExempt,
+          total: total,
+          requested_ship_date: requestedShipDate,
+          note: orderNote
+        })
+      });
+      
+      if (res.ok) {
+        toast.success(`Quote sent to ${emailTo}`);
+        setEmailDialogOpen(false);
+      } else {
+        const err = await res.json();
+        toast.error(err.detail || "Failed to send email");
+      }
+    } catch (err) {
+      toast.error("Failed to send email");
+    } finally {
+      setSendingEmail(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background p-4 lg:p-6">
       {/* Header */}
@@ -943,6 +1180,34 @@ export default function POS({ user }) {
               <p className="text-xs text-muted-foreground">Next Order</p>
               <p className="font-mono font-bold text-primary text-sm md:text-base" data-testid="next-order-number">{nextOrderNumber}</p>
             </div>
+          )}
+          
+          {/* Print Quote Button */}
+          {cart.length > 0 && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={printQuote}
+              data-testid="print-quote-btn"
+              className="h-9"
+            >
+              <FileDown className="w-4 h-4 mr-1 md:mr-2" />
+              <span className="hidden sm:inline">Quote</span>
+            </Button>
+          )}
+          
+          {/* Email Quote Button */}
+          {cart.length > 0 && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={openEmailDialog}
+              data-testid="email-quote-btn"
+              className="h-9"
+            >
+              <Mail className="w-4 h-4 mr-1 md:mr-2" />
+              <span className="hidden sm:inline">Email</span>
+            </Button>
           )}
           
           {/* View Drafts Button */}
