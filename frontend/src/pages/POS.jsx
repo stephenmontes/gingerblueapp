@@ -607,11 +607,34 @@ export default function POS({ user }) {
             </CardHeader>
             <CardContent>
               {customer ? (
-                <div className="space-y-1">
-                  <p className="font-medium">{customer.name}</p>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="font-medium">{customer.name}</p>
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
+                      onClick={() => { setCustomer(null); setTaxExempt(false); }}
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </div>
+                  {customer.company && (
+                    <p className="text-sm text-primary">{customer.company}</p>
+                  )}
                   {customer.email && <p className="text-sm text-muted-foreground">{customer.email}</p>}
                   {customer.phone && <p className="text-sm text-muted-foreground">{customer.phone}</p>}
-                  {customer.tax_exempt && <Badge variant="secondary">Tax Exempt</Badge>}
+                  {customer.default_address && (customer.default_address.city || customer.default_address.state) && (
+                    <p className="text-xs text-muted-foreground">
+                      {[customer.default_address.city, customer.default_address.state].filter(Boolean).join(", ")}
+                    </p>
+                  )}
+                  <div className="flex flex-wrap gap-1 pt-1">
+                    {customer.tax_exempt && <Badge variant="secondary" className="text-xs">Tax Exempt</Badge>}
+                    {customer.orders_count > 0 && (
+                      <Badge variant="outline" className="text-xs">{customer.orders_count} orders</Badge>
+                    )}
+                  </div>
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground">No customer selected</p>
