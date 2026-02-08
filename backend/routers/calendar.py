@@ -490,26 +490,64 @@ async def get_orders_with_ship_dates(
     end_date: Optional[str] = None,
     user: User = Depends(get_current_user)
 ):
-    """Get orders with requested ship dates for calendar display"""
+    """Get orders with requested ship dates for calendar display (includes both Shopify and POS orders)"""
     query = {"requested_ship_date": {"$exists": True, "$ne": None, "$ne": ""}}
     
     if start_date and end_date:
         query["requested_ship_date"] = {"$gte": start_date, "$lte": end_date}
     
-    orders = await db.fulfillment_orders.find(
+    projection = {
+        "_id": 0,
+        "order_id": 1,
+        "order_number": 1,
+        "pos_order_number": 1,
+        "customer_name": 1,
+        "store_name": 1,
+        "requested_ship_date": 1,
+        "items": 1,
+        "total_price": 1,
+        "status": 1,
+        "calendar_event_id": 1,
+        "is_draft": 1,
+        "source": 1
+    }
+    
+    # Get orders from fulfillment_orders (Shopify orders)
+    fulfillment_orders = await db.fulfillment_orders.find(
         query,
-        {
-            "_id": 0,
-            "order_id": 1,
-            "order_number": 1,
-            "customer_name": 1,
-            "store_name": 1,
-            "requested_ship_date": 1,
-            "items": 1,
-            "total_price": 1,
-            "status": 1,
-            "calendar_event_id": 1
-        }
+        projection
     ).sort("requested_ship_date", 1).to_list(500)
     
-    return {"orders": orders}
+    # Add source identifier
+    for order in fulfillment_orders:
+        order["source"] = "shopify"
+        if not order.get("order_number"):
+            order["order_number"] = order.get("order_id", "")[:8]
+    
+    # Get orders from orders collection (POS orders)
+    pos_query = {
+        **query,
+        "is_draft": {"$ne": True}  # Exclude draft orders
+    }
+    pos_orders = await db.orders.find(
+        pos_query,
+        projection
+    ).sort("requested_ship_date", 1).to_list(500)
+    
+    # Format POS orders
+    for order in pos_orders:
+        order["source"] = "pos"
+        # Use pos_order_number as order_number for display
+        if order.get("pos_order_number"):
+            order["order_number"] = order["pos_order_number"]
+        elif not order.get("order_number"):
+            order["order_number"] = order.get("order_id", "")[:8]
+        # Get customer name from customer data
+        if not order.get("customer_name") and order.get("customer"):
+            order["customer_name"] = order["customer"].get("name", "Walk-in")
+    
+    # Combine and sort all orders
+    all_orders = fulfillment_orders + pos_orders
+    all_orders.sort(key=lambda x: x.get("requested_ship_date", ""))
+    
+    return {"orders": all_orders}
