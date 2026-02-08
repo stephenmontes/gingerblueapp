@@ -833,11 +833,23 @@ export default function POS({ user }) {
           {/* Quote/Email buttons - Always visible when cart has items */}
           {cart.length > 0 && (
             <>
-              <Button variant="outline" size="icon" onClick={printQuote} data-testid="print-quote-btn" className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3">
+              <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={printQuote} 
+                data-testid="print-quote-btn" 
+                className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 border-blue-500 text-blue-600 hover:bg-blue-50 hover:text-blue-700 dark:border-blue-400 dark:text-blue-400 dark:hover:bg-blue-950"
+              >
                 <FileDown className="w-4 h-4 sm:mr-1" />
                 <span className="hidden sm:inline">Quote</span>
               </Button>
-              <Button variant="outline" size="icon" onClick={openEmailDialog} data-testid="email-quote-btn" className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3">
+              <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={openEmailDialog} 
+                data-testid="email-quote-btn" 
+                className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 border-green-500 text-green-600 hover:bg-green-50 hover:text-green-700 dark:border-green-400 dark:text-green-400 dark:hover:bg-green-950"
+              >
                 <Mail className="w-4 h-4 sm:mr-1" />
                 <span className="hidden sm:inline">Email</span>
               </Button>
@@ -853,7 +865,7 @@ export default function POS({ user }) {
               fetchDrafts();
             }}
             data-testid="view-drafts-btn"
-            className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3"
+            className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 border-amber-500 text-amber-600 hover:bg-amber-50 hover:text-amber-700 dark:border-amber-400 dark:text-amber-400 dark:hover:bg-amber-950"
           >
             <FolderOpen className="w-4 h-4 sm:mr-1" />
             <span className="hidden sm:inline">Drafts</span>
@@ -866,7 +878,7 @@ export default function POS({ user }) {
               size="icon"
               onClick={() => setPrintDialogOpen(true)}
               data-testid="reprint-last-order"
-              className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3"
+              className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 border-purple-500 text-purple-600 hover:bg-purple-50 hover:text-purple-700 dark:border-purple-400 dark:text-purple-400 dark:hover:bg-purple-950"
             >
               <Printer className="w-4 h-4 sm:mr-1" />
               <span className="hidden sm:inline">Reprint</span>
