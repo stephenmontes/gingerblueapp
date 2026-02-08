@@ -778,7 +778,7 @@ export default function POS({ user }) {
 
   return (
     <div 
-      className="min-h-screen p-2 sm:p-4 lg:p-6 pb-20 sm:pb-4 transition-colors duration-300"
+      className="min-h-screen p-2 sm:p-4 lg:p-6 pb-24 sm:pb-4 transition-colors duration-300"
       style={orderColor && cart.length > 0 ? {
         backgroundColor: `var(--order-bg, ${orderColor.bg})`,
         '--order-bg-dark': orderColor.bgDark
