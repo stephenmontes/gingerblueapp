@@ -383,6 +383,9 @@ export default function POS({ user }) {
         setTaxExempt(false);
         setOrderNote("");
         setOrderTags("");
+        
+        // Refresh next order number
+        fetchNextOrderNumber();
       } else {
         const err = await res.json();
         toast.error(err.detail || "Failed to create order");
