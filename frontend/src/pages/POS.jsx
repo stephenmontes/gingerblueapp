@@ -215,6 +215,10 @@ export default function POS({ user }) {
       setRequestedShipDate(loadedDraft.requested_ship_date || "");
       setCurrentDraftId(loadedDraft.order_id);
       
+      // Generate new color for this draft (each draft gets unique color when loaded)
+      const newColor = loadedDraft.order_color || generateOrderColor();
+      setOrderColor(newColor);
+      
       // Save to localStorage
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
         cart: loadedDraft.items,
@@ -222,6 +226,7 @@ export default function POS({ user }) {
         selectedStore: loadedDraft.store_id,
         currentDraftId: loadedDraft.order_id,
         requestedShipDate: loadedDraft.requested_ship_date,
+        orderColor: newColor,
         savedAt: new Date().toISOString()
       }));
       
