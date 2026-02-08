@@ -901,10 +901,11 @@ export default function POS({ user }) {
             ) : lastAutoSave ? (
               <>
                 <Check className="w-3 h-3 text-green-500" />
-                <span>Auto-saved {lastAutoSave.toLocaleTimeString()}</span>
+                <span className="hidden xs:inline">Auto-saved {lastAutoSave.toLocaleTimeString()}</span>
+                <span className="xs:hidden">Saved</span>
               </>
             ) : cart.length > 0 ? (
-              <span>{cart.length} item(s) in cart • Will auto-save in 1 min</span>
+              <span className="hidden xs:inline">{cart.length} item(s) in cart • Will auto-save in 1 min</span>
             ) : null}
             {currentDraftId && (
               <Badge variant="outline" className="text-[10px]">Draft</Badge>
@@ -919,16 +920,16 @@ export default function POS({ user }) {
               data-testid="clear-order-btn"
             >
               <X className="w-3 h-3 mr-1" />
-              Clear Order
+              <span className="hidden xs:inline">Clear</span>
             </Button>
           )}
         </div>
       )}
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
         {/* Left: Product Search & Cart */}
-        <div className="lg:col-span-2 space-y-4 order-1">
+        <div className="lg:col-span-2 space-y-3 sm:space-y-4 order-1">
           <POSProductSearch
             selectedStore={selectedStore}
             searchQuery={searchQuery}
@@ -952,43 +953,169 @@ export default function POS({ user }) {
           />
         </div>
 
-        {/* Right: Order Summary */}
-        <POSOrderSummary
-          cart={cart}
-          customer={customer}
-          onOpenCustomerDialog={() => setCustomerDialogOpen(true)}
-          onClearCustomer={clearCustomer}
-          taxExempt={taxExempt}
-          setTaxExempt={setTaxExempt}
-          shipAllItems={shipAllItems}
-          setShipAllItems={setShipAllItems}
-          shipping={shipping}
-          setShipping={setShipping}
-          shippingPercent={shippingPercent}
-          setShippingPercent={setShippingPercent}
-          orderDiscount={orderDiscount}
-          setOrderDiscount={setOrderDiscount}
-          discountDialogOpen={discountDialogOpen}
-          setDiscountDialogOpen={setDiscountDialogOpen}
-          tempDiscount={tempDiscount}
-          setTempDiscount={setTempDiscount}
-          orderNote={orderNote}
-          setOrderNote={setOrderNote}
-          orderTags={orderTags}
-          setOrderTags={setOrderTags}
-          requestedShipDate={requestedShipDate}
-          setRequestedShipDate={setRequestedShipDate}
-          subtotal={subtotal}
-          orderDiscountAmount={orderDiscountAmount}
-          subtotalAfterDiscount={subtotalAfterDiscount}
-          shippingTotal={shippingTotal}
-          total={total}
-          submitting={submitting}
-          savingDraft={savingDraft}
-          onSubmitOrder={submitOrder}
-          onSubmitDraft={submitOrder}
-        />
+        {/* Right: Order Summary - Hidden on mobile, shown via floating panel */}
+        <div className="hidden lg:block">
+          <POSOrderSummary
+            cart={cart}
+            customer={customer}
+            onOpenCustomerDialog={() => setCustomerDialogOpen(true)}
+            onClearCustomer={clearCustomer}
+            taxExempt={taxExempt}
+            setTaxExempt={setTaxExempt}
+            shipAllItems={shipAllItems}
+            setShipAllItems={setShipAllItems}
+            shipping={shipping}
+            setShipping={setShipping}
+            shippingPercent={shippingPercent}
+            setShippingPercent={setShippingPercent}
+            orderDiscount={orderDiscount}
+            setOrderDiscount={setOrderDiscount}
+            discountDialogOpen={discountDialogOpen}
+            setDiscountDialogOpen={setDiscountDialogOpen}
+            tempDiscount={tempDiscount}
+            setTempDiscount={setTempDiscount}
+            orderNote={orderNote}
+            setOrderNote={setOrderNote}
+            orderTags={orderTags}
+            setOrderTags={setOrderTags}
+            requestedShipDate={requestedShipDate}
+            setRequestedShipDate={setRequestedShipDate}
+            subtotal={subtotal}
+            orderDiscountAmount={orderDiscountAmount}
+            subtotalAfterDiscount={subtotalAfterDiscount}
+            shippingTotal={shippingTotal}
+            total={total}
+            submitting={submitting}
+            savingDraft={savingDraft}
+            onSubmitOrder={submitOrder}
+            onSubmitDraft={submitOrder}
+          />
+        </div>
       </div>
+
+      {/* Mobile Floating Action Bar */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-background border-t border-border p-2 sm:p-3 z-40 shadow-lg">
+        <div className="flex items-center justify-between gap-2">
+          {/* Left: Total & Customer Info */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              {customer ? (
+                <span className="text-xs text-muted-foreground truncate">{customer.name}</span>
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 text-xs px-2"
+                  onClick={() => setCustomerDialogOpen(true)}
+                >
+                  + Customer
+                </Button>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-lg font-bold">${total.toFixed(2)}</span>
+              <span className="text-xs text-muted-foreground">({cart.length} items)</span>
+            </div>
+          </div>
+          
+          {/* Right: Action Buttons */}
+          <div className="flex gap-1.5 sm:gap-2">
+            {/* More Options Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-10 px-2 sm:px-3"
+              onClick={() => setMobileOrderOpen(true)}
+            >
+              <Settings className="w-4 h-4" />
+            </Button>
+            
+            {/* Save Draft */}
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-10 px-2 sm:px-3"
+              onClick={() => submitOrder(true)}
+              disabled={cart.length === 0 || savingDraft}
+              data-testid="mobile-save-draft-btn"
+            >
+              {savingDraft ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            </Button>
+            
+            {/* Create Order */}
+            <Button
+              size="sm"
+              className="h-10 px-3 sm:px-4"
+              onClick={() => submitOrder(false)}
+              disabled={cart.length === 0 || submitting}
+              data-testid="mobile-create-order-btn"
+            >
+              {submitting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <>
+                  <Check className="w-4 h-4 mr-1" />
+                  <span className="hidden xs:inline">Order</span>
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile Order Options Sheet */}
+      <Dialog open={mobileOrderOpen} onOpenChange={setMobileOrderOpen}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Order Options</DialogTitle>
+          </DialogHeader>
+          <POSOrderSummary
+            cart={cart}
+            customer={customer}
+            onOpenCustomerDialog={() => {
+              setMobileOrderOpen(false);
+              setCustomerDialogOpen(true);
+            }}
+            onClearCustomer={clearCustomer}
+            taxExempt={taxExempt}
+            setTaxExempt={setTaxExempt}
+            shipAllItems={shipAllItems}
+            setShipAllItems={setShipAllItems}
+            shipping={shipping}
+            setShipping={setShipping}
+            shippingPercent={shippingPercent}
+            setShippingPercent={setShippingPercent}
+            orderDiscount={orderDiscount}
+            setOrderDiscount={setOrderDiscount}
+            discountDialogOpen={discountDialogOpen}
+            setDiscountDialogOpen={setDiscountDialogOpen}
+            tempDiscount={tempDiscount}
+            setTempDiscount={setTempDiscount}
+            orderNote={orderNote}
+            setOrderNote={setOrderNote}
+            orderTags={orderTags}
+            setOrderTags={setOrderTags}
+            requestedShipDate={requestedShipDate}
+            setRequestedShipDate={setRequestedShipDate}
+            subtotal={subtotal}
+            orderDiscountAmount={orderDiscountAmount}
+            subtotalAfterDiscount={subtotalAfterDiscount}
+            shippingTotal={shippingTotal}
+            total={total}
+            submitting={submitting}
+            savingDraft={savingDraft}
+            onSubmitOrder={(isDraft) => {
+              setMobileOrderOpen(false);
+              submitOrder(isDraft);
+            }}
+            onSubmitDraft={(isDraft) => {
+              setMobileOrderOpen(false);
+              submitOrder(isDraft);
+            }}
+            isMobile={true}
+          />
+        </DialogContent>
+      </Dialog>
 
       {/* Dialogs */}
       <CustomerDialog
