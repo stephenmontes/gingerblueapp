@@ -643,6 +643,7 @@ async def create_pos_order(
         "tags": ["pos-order", pos_order_number] + order.tags,
         "notes": order.note,
         "tax_exempt": order.tax_exempt,
+        "requested_ship_date": order.requested_ship_date,
         "source": "pos",
         "is_draft": False,
         "created_by": user.user_id,
@@ -655,6 +656,13 @@ async def create_pos_order(
     await db.orders.insert_one(local_order)
     del local_order["_id"]
     
+    # If ship date is set, create calendar event
+    if order.requested_ship_date:
+        try:
+            await create_calendar_event_for_order(local_order)
+        except Exception as e:
+            logger.warning(f"Failed to create calendar event: {e}")
+    
     logger.info(f"POS order created: {pos_order_number} ({order_id}) -> Shopify #{shopify_order.get('order_number')}")
     
     return {
@@ -664,6 +672,53 @@ async def create_pos_order(
         "shopify_order_id": shopify_order.get("id"),
         "shopify_order_number": shopify_order.get("order_number")
     }
+
+
+async def create_calendar_event_for_order(order: dict):
+    """Create a Google Calendar event for order ship date"""
+    from routers.calendar import get_calendar_credentials
+    
+    try:
+        credentials = await get_calendar_credentials()
+        if not credentials:
+            logger.info("No calendar credentials configured, skipping calendar event")
+            return
+        
+        import httpx
+        
+        ship_date = order.get("requested_ship_date")
+        if not ship_date:
+            return
+        
+        # Build event
+        event = {
+            "summary": f"POS Order {order.get('pos_order_number', '')} - Ship",
+            "description": f"Customer: {order.get('customer_name', 'N/A')}\nTotal: ${order.get('total_price', 0):.2f}\nItems: {order.get('total_items', 0)}\n\nOrder ID: {order.get('order_id', '')}",
+            "start": {
+                "date": ship_date
+            },
+            "end": {
+                "date": ship_date
+            },
+            "colorId": "6"  # Orange for POS orders
+        }
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                "https://www.googleapis.com/calendar/v3/calendars/primary/events",
+                headers={
+                    "Authorization": f"Bearer {credentials['access_token']}",
+                    "Content-Type": "application/json"
+                },
+                json=event
+            )
+            
+            if response.status_code == 200:
+                logger.info(f"Calendar event created for order {order.get('pos_order_number')}")
+            else:
+                logger.warning(f"Failed to create calendar event: {response.text}")
+    except Exception as e:
+        logger.warning(f"Calendar event creation failed: {e}")
 
 
 @router.get("/drafts")
