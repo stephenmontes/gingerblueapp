@@ -210,6 +210,9 @@ async def get_calendar_events(
     user: User = Depends(get_current_user)
 ):
     """Get calendar events from company calendar"""
+    import logging
+    logger = logging.getLogger(__name__)
+    
     creds = await get_company_calendar_credentials()
     if not creds:
         raise HTTPException(status_code=401, detail="Company calendar not connected")
@@ -218,29 +221,44 @@ async def get_calendar_events(
         service = build("calendar", "v3", credentials=creds)
         
         # Default to current month if no dates specified
+        now = datetime.now(timezone.utc)
         if not start_date:
-            start_date = datetime.now(timezone.utc).replace(day=1).isoformat()
+            start_dt = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            start_date = start_dt.isoformat()
+        else:
+            # Ensure proper ISO format with timezone
+            if not start_date.endswith('Z') and '+' not in start_date:
+                start_date = start_date + 'Z' if 'T' in start_date else start_date + 'T00:00:00Z'
+        
         if not end_date:
             # End of next month
-            now = datetime.now(timezone.utc)
             if now.month == 12:
-                end_date = now.replace(year=now.year + 1, month=2, day=1).isoformat()
+                end_dt = now.replace(year=now.year + 1, month=2, day=1, hour=0, minute=0, second=0, microsecond=0)
             else:
-                end_date = now.replace(month=now.month + 2, day=1).isoformat()
+                end_dt = now.replace(month=now.month + 2, day=1, hour=0, minute=0, second=0, microsecond=0)
+            end_date = end_dt.isoformat()
+        else:
+            # Ensure proper ISO format with timezone
+            if not end_date.endswith('Z') and '+' not in end_date:
+                end_date = end_date + 'Z' if 'T' in end_date else end_date + 'T23:59:59Z'
+        
+        logger.info(f"Fetching calendar events from {start_date} to {end_date}")
         
         events_result = service.events().list(
             calendarId="primary",
             timeMin=start_date,
             timeMax=end_date,
-            maxResults=250,
+            maxResults=500,
             singleEvents=True,
             orderBy="startTime"
         ).execute()
         
         events = events_result.get("items", [])
+        logger.info(f"Found {len(events)} calendar events")
         
-        return {"events": events}
+        return {"events": events, "count": len(events)}
     except Exception as e:
+        logger.error(f"Failed to fetch calendar events: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to fetch events: {str(e)}")
 
 
