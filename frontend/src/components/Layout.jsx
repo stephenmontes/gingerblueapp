@@ -1,4 +1,4 @@
-import { Factory, Menu, X } from "lucide-react";
+import { Factory, Menu, X, ShoppingCart } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import {
@@ -35,6 +35,7 @@ import { API } from "@/utils/api";
 const navItems = [
   { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { path: "/orders", label: "Orders", icon: Package },
+  { path: "/pos", label: "Point of Sale", icon: ShoppingCart },
   { path: "/customers", label: "Customers", icon: UserCircle },
   { path: "/tasks", label: "Tasks", icon: ListTodo },
   { path: "/products", label: "Products", icon: ShoppingBag },
