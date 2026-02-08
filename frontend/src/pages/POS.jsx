@@ -763,35 +763,103 @@ export default function POS({ user }) {
             </TabsList>
 
             <TabsContent value="search" className="space-y-4">
-              <div className="flex gap-2">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search by name, email, or phone..."
+                  placeholder="Type to search by name, email, phone, company, city..."
                   value={customerSearch}
                   onChange={(e) => setCustomerSearch(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && searchCustomers()}
+                  className="pl-10"
+                  data-testid="customer-search-input"
                 />
-                <Button onClick={searchCustomers} disabled={searchingCustomers}>
-                  {searchingCustomers ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-                </Button>
+                {searchingCustomers && (
+                  <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
+                )}
               </div>
+              
+              {customerSearch.length > 0 && customerSearch.length < 2 && (
+                <p className="text-xs text-muted-foreground text-center">Type at least 2 characters to search</p>
+              )}
 
-              <ScrollArea className="h-[300px]">
+              <ScrollArea className="h-[350px]">
                 <div className="space-y-2">
                   {customerResults.map(cust => (
                     <div
                       key={cust.customer_id}
-                      className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-muted/50 cursor-pointer"
+                      className="p-3 rounded-lg border border-border hover:bg-muted/50 cursor-pointer transition-colors"
                       onClick={() => selectCustomer(cust)}
+                      data-testid={`customer-result-${cust.customer_id}`}
                     >
-                      <div>
-                        <p className="font-medium">{cust.name}</p>
-                        <p className="text-sm text-muted-foreground">{cust.email} {cust.phone && `• ${cust.phone}`}</p>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium text-base">{cust.name}</p>
+                            {cust.tax_exempt && (
+                              <Badge variant="secondary" className="text-xs">Tax Exempt</Badge>
+                            )}
+                          </div>
+                          
+                          {cust.company && (
+                            <p className="text-sm text-primary font-medium mt-0.5">{cust.company}</p>
+                          )}
+                          
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-sm text-muted-foreground">
+                            {cust.email && (
+                              <span className="flex items-center gap-1">
+                                <span className="truncate max-w-[200px]">{cust.email}</span>
+                              </span>
+                            )}
+                            {cust.phone && (
+                              <span>{cust.phone}</span>
+                            )}
+                          </div>
+                          
+                          {cust.default_address && (cust.default_address.city || cust.default_address.state) && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {[
+                                cust.default_address.address1,
+                                cust.default_address.city,
+                                cust.default_address.state,
+                                cust.default_address.zip
+                              ].filter(Boolean).join(", ")}
+                            </p>
+                          )}
+                          
+                          {(cust.orders_count > 0 || cust.total_spent > 0) && (
+                            <div className="flex items-center gap-3 mt-2 text-xs">
+                              {cust.orders_count > 0 && (
+                                <span className="text-muted-foreground">
+                                  {cust.orders_count} order{cust.orders_count !== 1 ? 's' : ''}
+                                </span>
+                              )}
+                              {cust.total_spent > 0 && (
+                                <span className="text-green-600 font-medium">
+                                  ${parseFloat(cust.total_spent).toFixed(2)} spent
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        
+                        <Button size="sm" variant="outline" className="shrink-0">
+                          Select
+                        </Button>
                       </div>
-                      {cust.tax_exempt && <Badge variant="secondary">Tax Exempt</Badge>}
                     </div>
                   ))}
-                  {customerResults.length === 0 && customerSearch && !searchingCustomers && (
-                    <p className="text-center text-muted-foreground py-4">No customers found</p>
+                  {customerResults.length === 0 && customerSearch.length >= 2 && !searchingCustomers && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <User className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                      <p>No customers found for "{customerSearch}"</p>
+                      <p className="text-sm mt-1">Try a different search or create a new customer</p>
+                    </div>
+                  )}
+                  {customerResults.length === 0 && !customerSearch && !searchingCustomers && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Search className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                      <p>Start typing to search customers</p>
+                      <p className="text-sm mt-1">Search by name, email, phone, company, or city</p>
+                    </div>
                   )}
                 </div>
               </ScrollArea>
