@@ -216,22 +216,29 @@ async def search_customers(
     limit: int = 20,
     user: User = Depends(get_current_user)
 ):
-    """Search customers by name, email, or phone"""
+    """Search customers by name, email, phone, company, or address"""
     search_filter = {"store_id": store_id}
     
     if query:
         search_filter["$or"] = [
             {"name": {"$regex": query, "$options": "i"}},
+            {"first_name": {"$regex": query, "$options": "i"}},
+            {"last_name": {"$regex": query, "$options": "i"}},
             {"email": {"$regex": query, "$options": "i"}},
             {"phone": {"$regex": query, "$options": "i"}},
-            {"company": {"$regex": query, "$options": "i"}}
+            {"company": {"$regex": query, "$options": "i"}},
+            {"default_address.city": {"$regex": query, "$options": "i"}},
+            {"default_address.state": {"$regex": query, "$options": "i"}},
+            {"default_address.address1": {"$regex": query, "$options": "i"}}
         ]
     
     customers = await db.customers.find(
         search_filter,
-        {"_id": 0, "customer_id": 1, "name": 1, "email": 1, "phone": 1, 
-         "company": 1, "default_address": 1, "tax_exempt": 1}
-    ).limit(limit).to_list(limit)
+        {"_id": 0, "customer_id": 1, "name": 1, "first_name": 1, "last_name": 1,
+         "email": 1, "phone": 1, "company": 1, "default_address": 1, 
+         "tax_exempt": 1, "note": 1, "tags": 1, "orders_count": 1, 
+         "total_spent": 1, "created_at": 1}
+    ).sort([("name", 1)]).limit(limit).to_list(limit)
     
     return {"customers": customers, "count": len(customers)}
 
