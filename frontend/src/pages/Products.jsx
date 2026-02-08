@@ -632,7 +632,7 @@ export default function Products() {
   );
 }
 
-function ProductTableRow({ product, stores, onViewDetails }) {
+function ProductTableRow({ product, stores, onViewDetails, onPrintLabel }) {
   const store = stores.find(s => s.store_id === product.store_id);
   const firstImage = product.images?.[0]?.src;
   const variantCount = product.variants?.length || 0;
@@ -695,7 +695,18 @@ function ProductTableRow({ product, stores, onViewDetails }) {
         </Badge>
       </TableCell>
       <TableCell className="text-right">
-        <Button variant="ghost" size="sm">View</Button>
+        <div className="flex items-center justify-end gap-1">
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={onPrintLabel}
+            title="Print barcode labels"
+            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+          >
+            <Barcode className="w-4 h-4" />
+          </Button>
+          <Button variant="ghost" size="sm" onClick={onViewDetails}>View</Button>
+        </div>
       </TableCell>
     </TableRow>
   );
