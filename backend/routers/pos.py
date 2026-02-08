@@ -682,7 +682,8 @@ async def get_draft_orders(
             {"pos_order_number": {"$regex": search, "$options": "i"}},
             {"customer_name": {"$regex": search, "$options": "i"}},
             {"customer_email": {"$regex": search, "$options": "i"}},
-            {"notes": {"$regex": search, "$options": "i"}}
+            {"notes": {"$regex": search, "$options": "i"}},
+            {"created_by_name": {"$regex": search, "$options": "i"}}
         ]
     
     drafts = await db.orders.find(
@@ -690,7 +691,12 @@ async def get_draft_orders(
         {"_id": 0}
     ).sort([("created_at", -1)]).limit(limit).to_list(limit)
     
-    return {"drafts": drafts, "count": len(drafts)}
+    # Add lock status for each draft
+    for draft in drafts:
+        draft["is_locked"] = bool(draft.get("locked_by"))
+        draft["is_mine"] = draft.get("locked_by") == user.user_id or draft.get("created_by") == user.user_id
+    
+    return {"drafts": drafts, "count": len(drafts), "current_user_id": user.user_id}
 
 
 @router.get("/drafts/{order_id}")
