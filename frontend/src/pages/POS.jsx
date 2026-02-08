@@ -623,9 +623,15 @@ export default function POS({ user }) {
               background: #2563eb;
               color: white;
             }
+            .btn-print:hover {
+              background: #1d4ed8;
+            }
             .btn-close {
               background: #e5e7eb;
               color: #374151;
+            }
+            .btn-close:hover {
+              background: #d1d5db;
             }
             @media print { 
               body { padding: 20px; }
@@ -635,8 +641,8 @@ export default function POS({ user }) {
         </head>
         <body>
           <div class="print-actions">
-            <button class="btn-print" onclick="window.print()">Print</button>
-            <button class="btn-close" onclick="window.close()">Close</button>
+            <button class="btn-print" id="printBtn">Print</button>
+            <button class="btn-close" id="closeBtn">Close</button>
           </div>
           
           <div class="header">
