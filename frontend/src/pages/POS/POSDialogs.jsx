@@ -118,7 +118,11 @@ export function CustomerDialog({
             {customerSearch.length >= 2 && customerResults.length === 0 && !searchingCustomers && (
               <div className="text-center py-8 text-muted-foreground">
                 <User className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                <p>No customers found</p>
+                <p className="font-medium">No customers found for "{customerSearch}"</p>
+                <p className="text-sm mt-1">Try a different search term or create a new customer</p>
+                <p className="text-xs mt-2 text-muted-foreground/60">
+                  Tip: Search by name, email, phone, or company
+                </p>
                 <Button
                   variant="link"
                   onClick={() => setNewCustomerMode(true)}
