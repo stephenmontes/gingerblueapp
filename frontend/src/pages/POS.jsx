@@ -296,6 +296,8 @@ export default function POS({ user }) {
             setOrderTags(data.orderTags || "");
             setCurrentDraftId(data.currentDraftId || null);
             setRequestedShipDate(data.requestedShipDate || "");
+            // Restore or generate order color
+            setOrderColor(data.orderColor || generateOrderColor());
             toast.info(`Restored ${data.cart.length} item(s) from previous session`);
           }
         }
@@ -305,6 +307,13 @@ export default function POS({ user }) {
     };
     loadPersistedOrder();
   }, [STORAGE_KEY]);
+
+  // Generate new color when cart goes from empty to having items
+  useEffect(() => {
+    if (cart.length > 0 && !orderColor) {
+      setOrderColor(generateOrderColor());
+    }
+  }, [cart.length, orderColor]);
 
   // Save to localStorage whenever cart or order details change
   useEffect(() => {
