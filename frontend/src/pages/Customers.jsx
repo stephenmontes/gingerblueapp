@@ -1032,6 +1032,76 @@ export default function Customers({ user }) {
                   )}
                 </TabsContent>
 
+                <TabsContent value="drafts" className="mt-0 space-y-4">
+                  {loadingDrafts ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="w-6 h-6 animate-spin" />
+                    </div>
+                  ) : customerDrafts.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <ShoppingCart className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                      <p className="font-medium">No draft orders</p>
+                      <p className="text-sm">Draft orders created for this customer in POS will appear here</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {customerDrafts.map((draft) => (
+                        <Card 
+                          key={draft.order_id} 
+                          className="bg-muted/30 hover:bg-muted/50 cursor-pointer transition-colors"
+                          style={draft.order_color ? {
+                            borderLeftWidth: '4px',
+                            borderLeftColor: draft.order_color.accent
+                          } : undefined}
+                        >
+                          <CardContent className="p-4">
+                            <div className="flex items-start justify-between">
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-mono font-bold">{draft.pos_order_number}</span>
+                                  {draft.is_locked && (
+                                    <Badge variant={draft.is_mine ? "default" : "destructive"} className="text-xs">
+                                      {draft.is_mine ? "Editing" : "Locked"}
+                                    </Badge>
+                                  )}
+                                </div>
+                                <p className="text-sm text-muted-foreground">
+                                  {draft.total_items || draft.items?.length || 0} item(s) • ${(draft.total_price || draft.total || 0).toFixed(2)}
+                                </p>
+                                {draft.requested_ship_date && (
+                                  <p className="text-xs text-orange-500 flex items-center gap-1">
+                                    <Calendar className="w-3 h-3" />
+                                    Ship: {draft.requested_ship_date}
+                                  </p>
+                                )}
+                                {draft.notes && (
+                                  <p className="text-xs text-muted-foreground line-clamp-1">
+                                    {draft.notes.replace(/\[Auto-saved by .+?\]$/gm, "").trim()}
+                                  </p>
+                                )}
+                                <p className="text-xs text-muted-foreground">
+                                  Created: {new Date(draft.created_at).toLocaleString()}
+                                </p>
+                              </div>
+                              <div className="flex flex-col items-end gap-1">
+                                <Badge variant="outline" className="text-xs">
+                                  {draft.store_name || "Store"}
+                                </Badge>
+                                {draft.order_color && (
+                                  <div 
+                                    className="w-4 h-4 rounded-full border"
+                                    style={{ backgroundColor: draft.order_color.accent }}
+                                  />
+                                )}
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </TabsContent>
+
                 <TabsContent value="notes" className="mt-0 space-y-4">
                   <Button 
                     variant="outline" 
