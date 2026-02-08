@@ -147,13 +147,16 @@ Build a manufacturing and fulfillment app for Shopify websites with detailed tim
 - **CSV Import Duplicate Handling** - Enhanced feedback for duplicate order updates
 - **CSV Export** - Local CSV download for selected orders (`/api/export/orders-selected`)
 - **Deployment Fixes** - Added `/health` endpoint, fixed hardcoded URLs
-- **Point of Sale (POS)** - New feature for in-store order creation with Shopify sync:
+- **Point of Sale (POS)** - COMPLETE - In-store order creation with Shopify sync:
   - Store selector for Shopify stores
   - Product search by barcode, SKU, title, or tag
+  - Variant selection dropdown for multi-variant products
   - Barcode scanner support (Enter key triggers search)
   - Customer search and creation with full Shopify fields
   - Tax exempt toggle, ship all items toggle
   - Custom item creation for non-catalog products
-  - Shipping configuration
+  - Cart management with quantity controls (+/-)
+  - Shipping method and cost configuration
   - Order notes and tags
   - Auto-sync to Shopify on order creation
+  - **Testing: 100% pass rate (Feb 2026)**
