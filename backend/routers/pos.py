@@ -234,11 +234,18 @@ async def search_customers(
     
     customers = await db.customers.find(
         search_filter,
-        {"_id": 0, "customer_id": 1, "name": 1, "first_name": 1, "last_name": 1,
+        {"_id": 0, "customer_id": 1, "name": 1, "full_name": 1, "first_name": 1, "last_name": 1,
          "email": 1, "phone": 1, "company": 1, "default_address": 1, 
          "tax_exempt": 1, "note": 1, "tags": 1, "orders_count": 1, 
          "total_spent": 1, "created_at": 1}
-    ).sort([("name", 1)]).limit(limit).to_list(limit)
+    ).sort([("full_name", 1)]).limit(limit).to_list(limit)
+    
+    # Normalize name field (use full_name if name is not present)
+    for cust in customers:
+        if not cust.get("name") and cust.get("full_name"):
+            cust["name"] = cust["full_name"]
+        elif not cust.get("name"):
+            cust["name"] = f"{cust.get('first_name', '')} {cust.get('last_name', '')}".strip()
     
     return {"customers": customers, "count": len(customers)}
 
