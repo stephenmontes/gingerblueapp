@@ -1251,23 +1251,6 @@ export default function POS({ user }) {
           </div>
         </div>
       </div>
-            onClick={submitOrder}
-            data-testid="submit-order"
-          >
-            {submitting ? (
-              <>
-                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                Creating Order...
-              </>
-            ) : (
-              <>
-                <Check className="w-5 h-5 mr-2" />
-                Create Order
-              </>
-            )}
-          </Button>
-        </div>
-      </div>
 
       {/* Customer Dialog */}
       <Dialog open={customerDialogOpen} onOpenChange={setCustomerDialogOpen}>
