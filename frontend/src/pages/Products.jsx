@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -18,6 +19,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { 
   RefreshCw, 
   Search, 
@@ -31,13 +40,15 @@ import {
   Loader2,
   ArrowUp,
   ArrowDown,
-  ArrowUpDown
+  ArrowUpDown,
+  Printer
 } from "lucide-react";
 import { toast } from "sonner";
 import { ProductDetails } from "@/components/products/ProductDetails";
 import { SyncStatus } from "@/components/products/SyncStatus";
 import { ProductStats } from "@/components/products/ProductStats";
 import { API } from "@/utils/api";
+import JsBarcode from "jsbarcode";
 
 export default function Products() {
   const [products, setProducts] = useState([]);
