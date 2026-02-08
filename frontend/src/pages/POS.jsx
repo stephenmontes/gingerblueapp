@@ -410,21 +410,29 @@ export default function POS({ user }) {
           </div>
         </div>
         
-        {/* Store Selector */}
-        <div className="flex items-center gap-2">
-          <Store className="w-5 h-5 text-muted-foreground" />
-          <Select value={selectedStore} onValueChange={setSelectedStore}>
-            <SelectTrigger className="w-[200px]" data-testid="store-selector">
-              <SelectValue placeholder="Select Store" />
-            </SelectTrigger>
-            <SelectContent>
-              {stores.map(store => (
-                <SelectItem key={store.store_id} value={store.store_id}>
-                  {store.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        {/* Next Order Number & Store Selector */}
+        <div className="flex items-center gap-4">
+          {nextOrderNumber && (
+            <div className="text-right">
+              <p className="text-xs text-muted-foreground">Next Order</p>
+              <p className="font-mono font-bold text-primary" data-testid="next-order-number">{nextOrderNumber}</p>
+            </div>
+          )}
+          <div className="flex items-center gap-2">
+            <Store className="w-5 h-5 text-muted-foreground" />
+            <Select value={selectedStore} onValueChange={setSelectedStore}>
+              <SelectTrigger className="w-[200px]" data-testid="store-selector">
+                <SelectValue placeholder="Select Store" />
+              </SelectTrigger>
+              <SelectContent>
+                {stores.map(store => (
+                  <SelectItem key={store.store_id} value={store.store_id}>
+                    {store.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
 
