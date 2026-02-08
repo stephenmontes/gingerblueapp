@@ -515,7 +515,7 @@ async def get_orders_with_ship_dates(
     user: User = Depends(get_current_user)
 ):
     """Get orders with requested ship dates for calendar display (includes both Shopify and POS orders)"""
-    query = {"requested_ship_date": {"$exists": True, "$ne": None, "$ne": ""}}
+    query = {"requested_ship_date": {"$exists": True, "$nin": [None, ""]}}
     
     if start_date and end_date:
         query["requested_ship_date"] = {"$gte": start_date, "$lte": end_date}
