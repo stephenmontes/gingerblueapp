@@ -79,6 +79,7 @@ class POSOrderCreate(BaseModel):
     order_discount: Optional[POSDiscount] = None  # Order-level discount
     is_draft: bool = False  # Save as draft instead of syncing to Shopify
     requested_ship_date: Optional[str] = None  # ISO date string for scheduling
+    order_color: Optional[Dict[str, Any]] = None  # Color theme for visual identification
 
 
 # Helper functions
