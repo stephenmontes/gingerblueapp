@@ -578,7 +578,8 @@ export default function POS({ user }) {
       return;
     }
 
-    const storeName = stores.find(s => s.store_id === selectedStore)?.name || "Store";
+    const storeData = stores.find(s => s.store_id === selectedStore);
+    const storeName = storeData?.name || "Store";
     const quoteDate = new Date().toLocaleDateString();
     const quoteNumber = currentDraftId ? `Draft-${nextOrderNumber}` : `Quote-${Date.now().toString(36).toUpperCase()}`;
 
@@ -597,8 +598,12 @@ export default function POS({ user }) {
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body { font-family: Arial, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; }
             .header { text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #333; }
+            .header .logo { max-height: 80px; max-width: 250px; margin-bottom: 10px; object-fit: contain; }
             .header h1 { font-size: 28px; margin-bottom: 5px; }
-            .header .quote-type { font-size: 18px; color: #666; text-transform: uppercase; letter-spacing: 2px; }
+            .header .phone { font-size: 16px; color: #333; margin: 5px 0; font-weight: 500; }
+            .header .store-email { font-size: 14px; color: #666; margin: 3px 0; }
+            .header .store-address { font-size: 13px; color: #666; margin: 3px 0; }
+            .header .quote-type { font-size: 18px; color: #666; text-transform: uppercase; letter-spacing: 2px; margin-top: 10px; }
             .info-row { display: flex; justify-content: space-between; margin-bottom: 20px; }
             .info-box { flex: 1; }
             .info-box h3 { font-size: 12px; color: #666; text-transform: uppercase; margin-bottom: 5px; }
