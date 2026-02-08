@@ -353,6 +353,26 @@ async def create_customer(
     return {"customer": local_customer, "shopify_id": shopify_customer.get("id")}
 
 
+async def get_next_pos_order_number() -> str:
+    """Generate next POS order number (pos21000, pos21001, etc.)"""
+    # Find the highest existing POS order number
+    last_pos_order = await db.orders.find_one(
+        {"pos_order_number": {"$regex": "^pos\\d+$"}},
+        {"pos_order_number": 1},
+        sort=[("pos_order_number", -1)]
+    )
+    
+    if last_pos_order and last_pos_order.get("pos_order_number"):
+        # Extract the number part and increment
+        last_num = int(last_pos_order["pos_order_number"].replace("pos", ""))
+        next_num = last_num + 1
+    else:
+        # Start at 21000
+        next_num = 21000
+    
+    return f"pos{next_num}"
+
+
 @router.post("/orders")
 async def create_pos_order(
     order: POSOrderCreate,
