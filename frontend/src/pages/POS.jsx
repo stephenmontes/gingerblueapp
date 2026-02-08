@@ -2420,7 +2420,7 @@ export default function POS({ user }) {
             </Button>
           </div>
 
-          <ScrollArea className="flex-1 -mx-6 px-6">
+          <ScrollArea className="h-[400px] md:h-[450px] -mx-6 px-6">
             {loadingDrafts ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
@@ -2432,7 +2432,7 @@ export default function POS({ user }) {
                 <p className="text-sm mt-1">Drafts are auto-saved when you add items to the cart</p>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-3 pb-4">
                 {filteredDrafts.map(draft => (
                   <div
                     key={draft.order_id}
