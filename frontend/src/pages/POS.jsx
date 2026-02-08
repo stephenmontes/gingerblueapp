@@ -83,6 +83,7 @@ export default function POS({ user }) {
   // Order
   const [orderNote, setOrderNote] = useState("");
   const [orderTags, setOrderTags] = useState("");
+  const [requestedShipDate, setRequestedShipDate] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [savingDraft, setSavingDraft] = useState(false);
 
