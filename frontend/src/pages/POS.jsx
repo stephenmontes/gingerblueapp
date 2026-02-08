@@ -119,6 +119,7 @@ export default function POS({ user }) {
 
   // Email state
   const [emailTo, setEmailTo] = useState("");
+  const [emailFrom, setEmailFrom] = useState("");
   const [emailSubject, setEmailSubject] = useState("");
   const [emailMessage, setEmailMessage] = useState("");
   const [sendingEmail, setSendingEmail] = useState(false);
