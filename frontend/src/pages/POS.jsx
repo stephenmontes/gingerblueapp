@@ -888,6 +888,7 @@ export default function POS({ user }) {
       setOrderDiscount({ type: "percentage", value: 0, reason: "" });
       setShippingPercent("");
       setRequestedShipDate("");
+      setOrderColor(null); // Reset color for next order
       clearPersistedOrder();
       toast.success("Order cleared");
     }
