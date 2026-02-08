@@ -343,6 +343,19 @@ export default function POS({ user }) {
   const shippingTotal = shipAllItems ? shipping.price : 0;
   const total = subtotal + shippingTotal;
 
+  // Update shipping price when percentage or subtotal changes
+  useEffect(() => {
+    if (shippingPercent && shippingPercent !== "custom") {
+      const percent = parseFloat(shippingPercent);
+      const calculatedPrice = (subtotal * percent) / 100;
+      setShipping(prev => ({
+        ...prev,
+        price: Math.round(calculatedPrice * 100) / 100,
+        title: percent === 0 ? "Free Shipping" : `Shipping (${percent}%)`
+      }));
+    }
+  }, [shippingPercent, subtotal]);
+
   // Submit order
   const submitOrder = async () => {
     if (!selectedStore) {
