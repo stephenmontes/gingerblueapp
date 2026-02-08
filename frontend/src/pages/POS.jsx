@@ -772,9 +772,12 @@ export default function POS({ user }) {
     return () => clearTimeout(timer);
   }, [customerSearch, customerDialogOpen, searchCustomers]);
 
+  // Mobile order summary panel state
+  const [mobileOrderOpen, setMobileOrderOpen] = useState(false);
+
   return (
     <div 
-      className="min-h-screen p-4 lg:p-6 transition-colors duration-300"
+      className="min-h-screen p-2 sm:p-4 lg:p-6 pb-20 sm:pb-4 transition-colors duration-300"
       style={orderColor && cart.length > 0 ? {
         backgroundColor: `var(--order-bg, ${orderColor.bg})`,
         '--order-bg-dark': orderColor.bgDark
@@ -788,78 +791,91 @@ export default function POS({ user }) {
         />
       )}
       
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4 md:mb-6">
-        <div className="flex items-center gap-3">
+      {/* Header - Optimized for iPhone */}
+      <div className="flex items-center justify-between mb-3 sm:mb-4 md:mb-6">
+        {/* Left: Title */}
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <div 
-            className="p-2 rounded-lg"
+            className="p-1.5 sm:p-2 rounded-lg flex-shrink-0"
             style={orderColor && cart.length > 0 ? { backgroundColor: `${orderColor.accent}20` } : undefined}
           >
             <ShoppingCart 
-              className="w-6 h-6 md:w-8 md:h-8" 
+              className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8" 
               style={orderColor && cart.length > 0 ? { color: orderColor.accent } : undefined}
             />
           </div>
-          <div>
-            <h1 className="text-xl md:text-2xl font-bold">Point of Sale</h1>
-            <p className="text-xs md:text-sm text-muted-foreground hidden sm:block">
-              {currentDraftId ? `Editing Draft` : 'Create orders with Shopify sync'}
+          <div className="min-w-0">
+            <h1 className="text-base sm:text-xl md:text-2xl font-bold truncate">POS</h1>
+            <p className="text-[10px] sm:text-xs md:text-sm text-muted-foreground hidden sm:block truncate">
+              {currentDraftId ? `Editing Draft` : 'Shopify sync'}
             </p>
           </div>
         </div>
         
-        {/* Header Actions */}
-        <div className="flex flex-wrap items-center justify-end gap-2 md:gap-3">
+        {/* Right: Actions - Compact on mobile */}
+        <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3">
+          {/* Next Order Number - Desktop only */}
           {nextOrderNumber && (
-            <div className="text-right hidden sm:block">
+            <div className="text-right hidden md:block">
               <p className="text-xs text-muted-foreground">Next Order</p>
               <p className="font-mono font-bold text-primary text-sm md:text-base" data-testid="next-order-number">{nextOrderNumber}</p>
             </div>
           )}
           
+          {/* Mobile: Show order number badge */}
+          {nextOrderNumber && (
+            <Badge variant="outline" className="font-mono text-[10px] sm:hidden" data-testid="next-order-number-mobile">
+              {nextOrderNumber}
+            </Badge>
+          )}
+          
+          {/* Quote/Email buttons - Hidden on small mobile, icon only on larger mobile */}
           {cart.length > 0 && (
             <>
-              <Button variant="outline" size="sm" onClick={printQuote} data-testid="print-quote-btn" className="h-9">
-                <FileDown className="w-4 h-4 mr-1 md:mr-2" />
+              <Button variant="outline" size="icon" onClick={printQuote} data-testid="print-quote-btn" className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 hidden xs:flex">
+                <FileDown className="w-4 h-4 sm:mr-1" />
                 <span className="hidden sm:inline">Quote</span>
               </Button>
-              <Button variant="outline" size="sm" onClick={openEmailDialog} data-testid="email-quote-btn" className="h-9">
-                <Mail className="w-4 h-4 mr-1 md:mr-2" />
+              <Button variant="outline" size="icon" onClick={openEmailDialog} data-testid="email-quote-btn" className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 hidden xs:flex">
+                <Mail className="w-4 h-4 sm:mr-1" />
                 <span className="hidden sm:inline">Email</span>
               </Button>
             </>
           )}
           
+          {/* Drafts button - Always visible */}
           <Button 
             variant="outline" 
-            size="sm"
+            size="icon"
             onClick={() => {
               setDraftsDialogOpen(true);
               fetchDrafts();
             }}
             data-testid="view-drafts-btn"
-            className="h-9"
+            className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3"
           >
-            <FolderOpen className="w-4 h-4 mr-1 md:mr-2" />
+            <FolderOpen className="w-4 h-4 sm:mr-1" />
             <span className="hidden sm:inline">Drafts</span>
           </Button>
           
+          {/* Reprint button - Desktop only */}
           {lastOrder && (
             <Button 
               variant="outline" 
               size="sm"
               onClick={() => setPrintDialogOpen(true)}
               data-testid="reprint-last-order"
-              className="hidden sm:flex"
+              className="hidden md:flex"
             >
               <Printer className="w-4 h-4 mr-2" />
               Reprint
             </Button>
           )}
           
+          {/* Store Selector - Responsive width */}
           <Select value={selectedStore} onValueChange={setSelectedStore}>
-            <SelectTrigger className="w-[140px] md:w-[200px]" data-testid="store-selector">
-              <Store className="w-4 h-4 mr-1 md:mr-2 text-muted-foreground" />
+            <SelectTrigger className="w-[100px] sm:w-[140px] md:w-[200px] h-8 sm:h-9 text-xs sm:text-sm" data-testid="store-selector">
+              <Store className="w-3 h-3 sm:w-4 sm:h-4 mr-1 text-muted-foreground flex-shrink-0" />
               <SelectValue placeholder="Store" />
             </SelectTrigger>
             <SelectContent>
