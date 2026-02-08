@@ -430,33 +430,74 @@ export default function POS({ user }) {
                     {searchResults.map(product => (
                       <div
                         key={product.product_id}
-                        className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-muted/50 cursor-pointer"
-                        onClick={() => addToCart(product)}
+                        className="p-3 rounded-lg border border-border hover:bg-muted/50"
                         data-testid={`product-${product.product_id}`}
                       >
-                        {product.images?.[0]?.src ? (
-                          <img src={product.images[0].src} alt="" className="w-12 h-12 object-cover rounded" />
-                        ) : (
-                          <div className="w-12 h-12 bg-muted rounded flex items-center justify-center">
-                            <Package className="w-6 h-6 text-muted-foreground" />
+                        <div className="flex items-center gap-3">
+                          {product.images?.[0]?.src ? (
+                            <img src={product.images[0].src} alt="" className="w-12 h-12 object-cover rounded" />
+                          ) : (
+                            <div className="w-12 h-12 bg-muted rounded flex items-center justify-center">
+                              <Package className="w-6 h-6 text-muted-foreground" />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium truncate">{product.title}</p>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              {product.sku && <span>SKU: {product.sku}</span>}
+                              {product.barcode && <span>• {product.barcode}</span>}
+                            </div>
                           </div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate">{product.title}</p>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            {product.sku && <span>SKU: {product.sku}</span>}
-                            {product.barcode && <span>• {product.barcode}</span>}
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-semibold">${(product.variants?.[0]?.price || product.price || 0).toFixed(2)}</p>
-                          {product.variants?.length > 1 && (
-                            <p className="text-xs text-muted-foreground">{product.variants.length} variants</p>
+                          {(!product.variants || product.variants.length <= 1) && (
+                            <>
+                              <div className="text-right">
+                                <p className="font-semibold">${(product.variants?.[0]?.price || product.price || 0).toFixed(2)}</p>
+                              </div>
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => addToCart(product)}
+                              >
+                                <Plus className="w-4 h-4 mr-1" />
+                                Add
+                              </Button>
+                            </>
                           )}
                         </div>
-                        <Button size="sm" variant="ghost">
-                          <Plus className="w-4 h-4" />
-                        </Button>
+                        
+                        {/* Variants Dropdown */}
+                        {product.variants && product.variants.length > 1 && (
+                          <div className="mt-3 pt-3 border-t border-border">
+                            <p className="text-xs text-muted-foreground mb-2">{product.variants.length} variants available:</p>
+                            <div className="grid gap-2">
+                              {product.variants.map((variant, vIdx) => (
+                                <div 
+                                  key={variant.variant_id || vIdx}
+                                  className="flex items-center justify-between p-2 rounded bg-muted/30 hover:bg-muted/50"
+                                >
+                                  <div className="flex-1">
+                                    <p className="text-sm font-medium">{variant.title || `Variant ${vIdx + 1}`}</p>
+                                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                      {variant.sku && <span>SKU: {variant.sku}</span>}
+                                      {variant.barcode && <span>• {variant.barcode}</span>}
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-3">
+                                    <span className="font-semibold">${parseFloat(variant.price || 0).toFixed(2)}</span>
+                                    <Button 
+                                      size="sm" 
+                                      variant="outline"
+                                      onClick={() => addToCart(product, variant)}
+                                    >
+                                      <Plus className="w-4 h-4 mr-1" />
+                                      Add
+                                    </Button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
