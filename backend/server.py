@@ -35,6 +35,7 @@ from routers.notifications import router as notifications_router
 from routers.fulfillment_batches import router as fulfillment_batches_router
 from routers.production_timers import router as production_timers_router
 from routers.timer_recovery import router as timer_recovery_router
+from routers.drive import router as drive_router
 from database import create_indexes
 from services.scheduler import start_scheduler, stop_scheduler
 
