@@ -66,6 +66,11 @@ export default function POS({ user }) {
   const [orderTags, setOrderTags] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  // Last created order for printing
+  const [lastOrder, setLastOrder] = useState(null);
+  const [printDialogOpen, setPrintDialogOpen] = useState(false);
+  const printRef = useRef(null);
+
   // Fetch stores on mount
   useEffect(() => {
     fetchStores();
