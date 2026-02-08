@@ -3,11 +3,12 @@ import { API } from "@/utils/api";
 import { toast } from "sonner";
 import { 
   ShoppingCart, Store, Printer, Save, FileDown, Mail, FolderOpen,
-  X, Check, Loader2
+  X, Check, Loader2, Settings
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 // Custom hooks
 import { usePOSCart } from "@/hooks/usePOSCart";
