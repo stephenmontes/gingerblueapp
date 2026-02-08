@@ -68,6 +68,167 @@ export default function Products() {
   const [sortColumn, setSortColumn] = useState("updated_at");
   const [sortDirection, setSortDirection] = useState("desc");
 
+  // Barcode label printing state
+  const [labelDialogOpen, setLabelDialogOpen] = useState(false);
+  const [selectedProductForLabel, setSelectedProductForLabel] = useState(null);
+  const [labelQuantity, setLabelQuantity] = useState(1);
+
+  // Print barcode labels
+  const printBarcodeLabels = (product, variant, quantity = 1) => {
+    const barcodeValue = variant?.barcode || variant?.sku || product.product_id;
+    const title = variant?.title && variant.title !== "Default Title" 
+      ? `${product.title} - ${variant.title}` 
+      : product.title;
+    const sku = variant?.sku || "N/A";
+    
+    // Truncate title if too long
+    const displayTitle = title.length > 30 ? title.substring(0, 27) + "..." : title;
+    
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      toast.error("Please allow pop-ups to print labels");
+      return;
+    }
+    
+    // Generate labels HTML
+    let labelsHtml = '';
+    for (let i = 0; i < quantity; i++) {
+      labelsHtml += `
+        <div class="label">
+          <div class="title">${displayTitle}</div>
+          <svg class="barcode" id="barcode-${i}"></svg>
+          <div class="barcode-number">${barcodeValue}</div>
+          <div class="sku">SKU: ${sku}</div>
+        </div>
+      `;
+    }
+    
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Barcode Labels - ${product.title}</title>
+          <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            @page {
+              size: 2in 1in;
+              margin: 0;
+            }
+            body {
+              font-family: Arial, sans-serif;
+            }
+            .label {
+              width: 2in;
+              height: 1in;
+              padding: 0.05in;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: space-between;
+              page-break-after: always;
+              overflow: hidden;
+            }
+            .label:last-child {
+              page-break-after: auto;
+            }
+            .title {
+              font-size: 8pt;
+              font-weight: bold;
+              text-align: center;
+              line-height: 1.1;
+              max-height: 0.22in;
+              overflow: hidden;
+              width: 100%;
+            }
+            .barcode {
+              max-width: 1.8in;
+              height: 0.4in;
+            }
+            .barcode-number {
+              font-size: 7pt;
+              font-family: monospace;
+              letter-spacing: 0.5px;
+            }
+            .sku {
+              font-size: 6pt;
+              color: #333;
+            }
+            .print-actions {
+              position: fixed;
+              top: 10px;
+              right: 10px;
+              display: flex;
+              gap: 8px;
+              z-index: 1000;
+            }
+            .print-actions button {
+              padding: 10px 20px;
+              font-size: 14px;
+              cursor: pointer;
+              border: none;
+              border-radius: 6px;
+              font-weight: 500;
+            }
+            .btn-print { background: #2563eb; color: white; }
+            .btn-close { background: #e5e7eb; color: #374151; }
+            @media print {
+              .print-actions { display: none; }
+            }
+            @media screen {
+              body { padding: 20px; background: #f5f5f5; }
+              .label { 
+                background: white; 
+                border: 1px solid #ddd; 
+                margin-bottom: 10px;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+              }
+            }
+          </style>
+          <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+        </head>
+        <body>
+          <div class="print-actions">
+            <button class="btn-print" id="printBtn">Print Labels</button>
+            <button class="btn-close" id="closeBtn">Close</button>
+          </div>
+          ${labelsHtml}
+          <script>
+            // Generate barcodes
+            document.querySelectorAll('.barcode').forEach((svg, index) => {
+              try {
+                JsBarcode(svg, "${barcodeValue}", {
+                  format: "CODE128",
+                  width: 1.5,
+                  height: 35,
+                  displayValue: false,
+                  margin: 0
+                });
+              } catch (e) {
+                console.error("Barcode error:", e);
+                svg.outerHTML = '<div style="font-size:10px;color:red;">Invalid barcode</div>';
+              }
+            });
+            
+            document.getElementById('printBtn').addEventListener('click', function() {
+              window.print();
+            });
+            document.getElementById('closeBtn').addEventListener('click', function() {
+              window.close();
+            });
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
+  const openLabelDialog = (product, e) => {
+    e?.stopPropagation();
+    setSelectedProductForLabel(product);
+    setLabelQuantity(1);
+    setLabelDialogOpen(true);
+  };
+
   const loadStores = useCallback(async () => {
     try {
       const res = await fetch(`${API}/stores`, { credentials: "include" });
