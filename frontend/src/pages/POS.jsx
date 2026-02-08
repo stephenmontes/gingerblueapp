@@ -2157,10 +2157,12 @@ export default function POS({ user }) {
                     onClick={() => loadDraft(draft)}
                     className={`p-4 rounded-lg border cursor-pointer transition-colors ${
                       currentDraftId === draft.order_id 
-                        ? 'border-primary bg-primary/5' 
+                        ? 'border-primary bg-primary/10 ring-2 ring-primary/30' 
                         : draft.is_locked && !draft.is_mine
                           ? 'border-orange-500/30 bg-orange-500/5 cursor-not-allowed'
-                          : 'border-border hover:bg-muted/50'
+                          : draft.is_mine
+                            ? 'border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/15'
+                            : 'border-border hover:bg-muted/50'
                     }`}
                   >
                     <div className="flex items-start justify-between gap-3">
@@ -2170,10 +2172,15 @@ export default function POS({ user }) {
                           {currentDraftId === draft.order_id && (
                             <Badge variant="default" className="text-[10px]">Current</Badge>
                           )}
+                          {draft.is_mine && currentDraftId !== draft.order_id && (
+                            <Badge variant="outline" className="text-[10px] border-emerald-500 text-emerald-600">
+                              My Draft
+                            </Badge>
+                          )}
                           {draft.is_locked && (
                             <Badge variant={draft.is_mine ? "secondary" : "destructive"} className="text-[10px]">
                               <Lock className="w-3 h-3 mr-1" />
-                              {draft.is_mine ? "Locked by you" : `Locked`}
+                              {draft.is_mine ? "Editing" : `Locked`}
                             </Badge>
                           )}
                         </div>
@@ -2181,6 +2188,12 @@ export default function POS({ user }) {
                         <div className="text-sm text-muted-foreground space-y-0.5">
                           {draft.customer_name && <p>Customer: {draft.customer_name}</p>}
                           <p>{draft.items?.length || 0} item(s) • ${(draft.total_price || 0).toFixed(2)}</p>
+                          {draft.requested_ship_date && (
+                            <p className="flex items-center gap-1 text-blue-500">
+                              <Truck className="w-3 h-3" />
+                              Ship: {new Date(draft.requested_ship_date).toLocaleDateString()}
+                            </p>
+                          )}
                           <p className="flex items-center gap-1">
                             <Clock className="w-3 h-3" />
                             {new Date(draft.created_at).toLocaleString()}
