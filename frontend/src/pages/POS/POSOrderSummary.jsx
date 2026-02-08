@@ -138,12 +138,40 @@ export function POSOrderSummary({
           {/* Requested Ship Date */}
           <div className="space-y-1.5">
             <Label className="text-sm">Requested Ship Date</Label>
-            <Input
-              type="date"
-              value={requestedShipDate}
-              onChange={(e) => setRequestedShipDate(e.target.value)}
-              data-testid="ship-date-input"
-            />
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={`w-full justify-start text-left font-normal ${!requestedShipDate ? "text-muted-foreground" : ""}`}
+                  data-testid="ship-date-input"
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {requestedShipDate ? format(parseISO(requestedShipDate), "PPP") : "Select date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={requestedShipDate ? parseISO(requestedShipDate) : undefined}
+                  onSelect={(date) => setRequestedShipDate(date ? format(date, "yyyy-MM-dd") : "")}
+                  initialFocus
+                  disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                />
+                {requestedShipDate && (
+                  <div className="p-2 border-t">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full text-destructive hover:text-destructive"
+                      onClick={() => setRequestedShipDate("")}
+                    >
+                      <X className="w-3 h-3 mr-1" />
+                      Clear date
+                    </Button>
+                  </div>
+                )}
+              </PopoverContent>
+            </Popover>
           </div>
 
           {/* Shipping */}
