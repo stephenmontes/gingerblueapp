@@ -227,3 +227,16 @@ Build a manufacturing and fulfillment app for Shopify websites with detailed tim
   - Order notes and tags
   - Auto-sync to Shopify on order creation
   - **Testing: 100% pass rate (Feb 2026)**
+  - **Android Scrolling & Cart Optimization (Feb 2026):**
+    - Fixed page scrolling issue on Android devices
+    - Removed fixed max-height on mobile cart container
+    - Cart items flow naturally, allowing full page scroll
+    - Optimized cart item layout for mobile:
+      - Smaller thumbnails (32px vs 48px on desktop)
+      - Compact text sizes and spacing
+      - Inline quantity controls and actions
+      - Responsive icons and buttons
+    - Moved floating action bar to bottom-0 with safe-area padding
+    - Increased page bottom padding (pb-32) for action bar clearance
+    - Desktop retains internal cart scroll (lg:max-h-[400px])
+
