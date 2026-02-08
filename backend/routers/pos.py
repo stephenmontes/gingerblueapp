@@ -464,6 +464,7 @@ async def create_pos_order(
     
     local_order = {
         "order_id": order_id,
+        "pos_order_number": pos_order_number,
         "store_id": order.store_id,
         "store_name": store.get("name", ""),
         "platform": "shopify",
@@ -488,7 +489,7 @@ async def create_pos_order(
         "total_items": sum(item.get("quantity", 1) for item in shopify_order.get("line_items", [])),
         "items_completed": 0,
         "shipping_address": shopify_order.get("shipping_address", {}),
-        "tags": ["pos-order"] + order.tags,
+        "tags": ["pos-order", pos_order_number] + order.tags,
         "notes": order.note,
         "source": "pos",
         "created_by": user.user_id,
@@ -501,10 +502,11 @@ async def create_pos_order(
     await db.orders.insert_one(local_order)
     del local_order["_id"]
     
-    logger.info(f"POS order created: {order_id} -> Shopify #{shopify_order.get('order_number')}")
+    logger.info(f"POS order created: {pos_order_number} ({order_id}) -> Shopify #{shopify_order.get('order_number')}")
     
     return {
         "order": local_order,
+        "pos_order_number": pos_order_number,
         "shopify_order_id": shopify_order.get("id"),
         "shopify_order_number": shopify_order.get("order_number")
     }
