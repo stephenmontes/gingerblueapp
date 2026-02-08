@@ -185,6 +185,12 @@ Build a manufacturing and fulfillment app for Shopify websites with detailed tim
   - Components: `POSCart`, `POSProductSearch`, `POSOrderSummary`, `POSDialogs`
   - Main POS.jsx reduced from 2782 to 1053 lines
   - Improved maintainability and testability
+- **POS iPhone Optimization (Feb 2026)** - Mobile-first redesign for iPhone/small screens:
+  - Compact header with "POS" title, order number badge, drafts button, store selector
+  - Floating action bar at bottom with: total, item count, settings, save draft, create order buttons
+  - "Order Options" dialog accessible via settings button for customer, shipping, discounts
+  - Responsive breakpoints for iPhone SE (375px) to iPhone 14 Pro Max (430px)
+  - Desktop layout unchanged (3-column grid)
 - **Point of Sale (POS)** - COMPLETE - In-store order creation with Shopify sync:
   - Store selector for Shopify stores
   - Product search by barcode, SKU, title, or tag
