@@ -23,6 +23,7 @@ function StatusBadge({ status }) {
     completed: { label: "Completed", color: "text-green-400 bg-green-400/10 border-green-400/20" },
     cancelled: { label: "Cancelled", color: "text-red-400 bg-red-400/10 border-red-400/20" },
     on_hold: { label: "On Hold", color: "text-purple-400 bg-purple-400/10 border-purple-400/20" },
+    draft: { label: "Draft", color: "text-blue-400 bg-blue-400/10 border-blue-400/20" },
   };
   
   const config = statusConfig[status] || { label: status?.replace("_", " ") || "Unknown", color: "text-gray-400 bg-gray-400/10 border-gray-400/20" };
@@ -40,6 +41,7 @@ function PlatformBadge({ platform }) {
     etsy: "text-orange-400 bg-orange-400/10 border-orange-400/20",
     dropship: "text-cyan-400 bg-cyan-400/10 border-cyan-400/20",
     csv: "text-purple-400 bg-purple-400/10 border-purple-400/20",
+    pos: "text-pink-400 bg-pink-400/10 border-pink-400/20",
   };
 
   return (
