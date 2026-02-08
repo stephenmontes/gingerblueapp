@@ -413,23 +413,47 @@ export default function POS({ user }) {
                   <ScanLine className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                   <Input
                     ref={barcodeInputRef}
-                    placeholder="Scan barcode or search by SKU, title, tag..."
+                    placeholder={selectedStore ? "Scan barcode or search by SKU, title, tag..." : "Select a store first..."}
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={(e) => {
+                      if (!selectedStore) {
+                        toast.error("Please select a store first");
+                        return;
+                      }
+                      setSearchQuery(e.target.value);
+                    }}
                     onKeyDown={handleBarcodeKeyDown}
-                    className="pl-10"
+                    onClick={() => {
+                      if (!selectedStore) {
+                        toast.error("Please select a store first");
+                      }
+                    }}
+                    className={`pl-10 ${!selectedStore ? 'cursor-not-allowed opacity-60' : ''}`}
                     data-testid="product-search"
                   />
                 </div>
                 <Button
                   variant="outline"
-                  onClick={() => setCustomItemDialogOpen(true)}
+                  onClick={() => {
+                    if (!selectedStore) {
+                      toast.error("Please select a store first");
+                      return;
+                    }
+                    setCustomItemDialogOpen(true);
+                  }}
                   data-testid="add-custom-item"
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Custom Item
                 </Button>
               </div>
+              
+              {!selectedStore && (
+                <div className="flex items-center gap-2 mt-3 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                  <Store className="w-5 h-5 text-amber-500" />
+                  <p className="text-sm text-amber-600 dark:text-amber-400">Please select a store from the dropdown above to search products</p>
+                </div>
+              )}
               
               {searching && (
                 <div className="flex items-center justify-center py-4">
