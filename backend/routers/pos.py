@@ -47,6 +47,15 @@ class POSLineItem(BaseModel):
     price: float
     taxable: bool = True
     is_custom: bool = False
+    image: Optional[str] = None
+    discount_type: Optional[str] = None  # "percentage" or "fixed"
+    discount_value: float = 0
+
+
+class POSDiscount(BaseModel):
+    type: str = "percentage"  # "percentage" or "fixed"
+    value: float = 0
+    reason: Optional[str] = None
 
 
 class POSShipping(BaseModel):
@@ -67,6 +76,8 @@ class POSOrderCreate(BaseModel):
     tags: List[str] = []
     send_receipt: bool = False
     financial_status: str = "pending"  # pending, paid, partially_paid
+    order_discount: Optional[POSDiscount] = None  # Order-level discount
+    is_draft: bool = False  # Save as draft instead of syncing to Shopify
 
 
 # Helper functions
