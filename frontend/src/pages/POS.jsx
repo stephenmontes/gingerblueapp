@@ -100,6 +100,147 @@ export default function POS({ user }) {
   const [printDialogOpen, setPrintDialogOpen] = useState(false);
   const printRef = useRef(null);
 
+  // Draft management
+  const [currentDraftId, setCurrentDraftId] = useState(null);
+  const [lastAutoSave, setLastAutoSave] = useState(null);
+  const [autoSaving, setAutoSaving] = useState(false);
+  const autoSaveTimerRef = useRef(null);
+
+  // Load persisted order from localStorage on mount
+  useEffect(() => {
+    const loadPersistedOrder = () => {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const data = JSON.parse(saved);
+          if (data.cart && data.cart.length > 0) {
+            setCart(data.cart || []);
+            setCustomer(data.customer || null);
+            setSelectedStore(data.selectedStore || "");
+            setTaxExempt(data.taxExempt || false);
+            setShipAllItems(data.shipAllItems !== false);
+            setShipping(data.shipping || { title: "Standard Shipping", price: 0, code: "standard" });
+            setShippingPercent(data.shippingPercent || "");
+            setOrderDiscount(data.orderDiscount || { type: "percentage", value: 0, reason: "" });
+            setOrderNote(data.orderNote || "");
+            setOrderTags(data.orderTags || "");
+            setCurrentDraftId(data.currentDraftId || null);
+            toast.info(`Restored ${data.cart.length} item(s) from previous session`);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load persisted order:", err);
+      }
+    };
+    loadPersistedOrder();
+  }, [STORAGE_KEY]);
+
+  // Save to localStorage whenever cart or order details change
+  useEffect(() => {
+    if (cart.length > 0 || customer || orderNote) {
+      const orderData = {
+        cart,
+        customer,
+        selectedStore,
+        taxExempt,
+        shipAllItems,
+        shipping,
+        shippingPercent,
+        orderDiscount,
+        orderNote,
+        orderTags,
+        currentDraftId,
+        savedAt: new Date().toISOString(),
+        savedBy: user?.name || 'Unknown'
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(orderData));
+    }
+  }, [cart, customer, selectedStore, taxExempt, shipAllItems, shipping, shippingPercent, orderDiscount, orderNote, orderTags, currentDraftId, STORAGE_KEY, user]);
+
+  // Auto-save as draft every 60 seconds if cart has items
+  useEffect(() => {
+    if (cart.length > 0 && selectedStore) {
+      autoSaveTimerRef.current = setInterval(() => {
+        autoSaveDraft();
+      }, 60000); // 60 seconds
+    }
+    
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearInterval(autoSaveTimerRef.current);
+      }
+    };
+  }, [cart.length, selectedStore]);
+
+  // Auto-save draft function
+  const autoSaveDraft = async () => {
+    if (!selectedStore || cart.length === 0 || autoSaving) return;
+    
+    setAutoSaving(true);
+    try {
+      const createdByNote = `[Auto-saved by ${user?.name || 'Unknown'} on ${new Date().toLocaleString()}]`;
+      const fullNote = orderNote ? `${orderNote}\n${createdByNote}` : createdByNote;
+      
+      const orderData = {
+        store_id: selectedStore,
+        customer_id: customer?.customer_id || null,
+        line_items: cart.map(item => ({
+          product_id: item.product_id,
+          variant_id: item.variant_id,
+          sku: item.sku,
+          title: item.title,
+          quantity: item.quantity,
+          price: item.price,
+          taxable: item.taxable,
+          is_custom: item.is_custom,
+          image: item.image,
+          discount_type: item.discount_type,
+          discount_value: item.discount_value || 0
+        })),
+        shipping: shipAllItems ? shipping : null,
+        ship_all_items: shipAllItems,
+        tax_exempt: taxExempt,
+        note: fullNote,
+        tags: orderTags.split(",").map(t => t.trim()).filter(Boolean),
+        financial_status: "pending",
+        order_discount: orderDiscount.value > 0 ? orderDiscount : null,
+        is_draft: true
+      };
+
+      // If we have an existing draft, update it
+      if (currentDraftId) {
+        // Delete old draft and create new one (simpler than implementing update)
+        await fetch(`${API}/pos/drafts/${currentDraftId}`, {
+          method: "DELETE",
+          credentials: "include"
+        });
+      }
+
+      const res = await fetch(`${API}/pos/orders`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(orderData)
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setCurrentDraftId(data.order?.order_id);
+        setLastAutoSave(new Date());
+      }
+    } catch (err) {
+      console.error("Auto-save failed:", err);
+    } finally {
+      setAutoSaving(false);
+    }
+  };
+
+  // Clear persisted order from localStorage
+  const clearPersistedOrder = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    setCurrentDraftId(null);
+  };
+
   // Fetch stores on mount
   useEffect(() => {
     fetchStores();
@@ -119,7 +260,8 @@ export default function POS({ user }) {
       if (res.ok) {
         const data = await res.json();
         setStores(data.stores);
-        if (data.stores.length === 1) {
+        // Don't auto-select store if we have a persisted one
+        if (data.stores.length === 1 && !selectedStore) {
           setSelectedStore(data.stores[0].store_id);
         }
       }
