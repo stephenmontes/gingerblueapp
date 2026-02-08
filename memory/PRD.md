@@ -149,3 +149,10 @@ Build a manufacturing and fulfillment app for Shopify websites with detailed tim
   - Automatic fallback to force cleanup when regular stop fails
   - Visual warning when timer data appears corrupted
   - "Force Reset" button on Team page for admins
+- **Time Entry Management Sorting** - Added sort/filter controls (User → Date, Date desc, User A-Z)
+- **CSV Import Duplicate Handling** - Enhanced feedback for duplicate order updates
+- **Google Drive Export** - New feature to export selected orders directly to Google Drive:
+  - New `/api/drive/*` endpoints for OAuth and export
+  - Export button in Orders page selection bar
+  - Google Drive integration settings in Settings page
+  - Exports include order data + batch info as CSV
