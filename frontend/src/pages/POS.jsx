@@ -373,6 +373,24 @@ export default function POS({ user }) {
 
       if (res.ok) {
         const data = await res.json();
+        
+        // Save order details for printing
+        const selectedStoreName = stores.find(s => s.store_id === selectedStore)?.name || "";
+        setLastOrder({
+          pos_order_number: data.pos_order_number,
+          shopify_order_number: data.shopify_order_number,
+          store_name: selectedStoreName,
+          customer: customer,
+          items: cart,
+          subtotal: subtotal,
+          shipping: shipAllItems ? shipping : null,
+          tax_exempt: taxExempt,
+          total: total,
+          note: orderNote,
+          created_at: new Date().toLocaleString(),
+          created_by: user?.name || "Staff"
+        });
+        
         toast.success(
           <div>
             <p className="font-semibold">Order Created!</p>
@@ -381,6 +399,9 @@ export default function POS({ user }) {
           </div>,
           { duration: 5000 }
         );
+        
+        // Show print dialog
+        setPrintDialogOpen(true);
         
         // Reset form
         setCart([]);
@@ -401,6 +422,61 @@ export default function POS({ user }) {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  // Print order receipt
+  const handlePrint = () => {
+    const printContent = printRef.current;
+    if (!printContent) return;
+
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Order Receipt - ${lastOrder?.pos_order_number}</title>
+          <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { 
+              font-family: 'Courier New', monospace; 
+              padding: 20px; 
+              max-width: 300px; 
+              margin: 0 auto;
+              font-size: 12px;
+            }
+            .header { text-align: center; margin-bottom: 15px; border-bottom: 1px dashed #000; padding-bottom: 10px; }
+            .header h1 { font-size: 18px; margin-bottom: 5px; }
+            .header p { font-size: 11px; color: #666; }
+            .order-info { margin-bottom: 15px; }
+            .order-info p { margin: 3px 0; }
+            .order-number { font-size: 16px; font-weight: bold; }
+            .items { border-top: 1px dashed #000; border-bottom: 1px dashed #000; padding: 10px 0; margin: 10px 0; }
+            .item { display: flex; justify-content: space-between; margin: 5px 0; }
+            .item-name { flex: 1; }
+            .item-qty { width: 30px; text-align: center; }
+            .item-price { width: 60px; text-align: right; }
+            .totals { margin-top: 10px; }
+            .total-row { display: flex; justify-content: space-between; margin: 3px 0; }
+            .total-row.grand { font-weight: bold; font-size: 14px; border-top: 1px solid #000; padding-top: 5px; margin-top: 5px; }
+            .customer { margin: 10px 0; padding: 10px 0; border-top: 1px dashed #000; }
+            .footer { text-align: center; margin-top: 15px; font-size: 10px; color: #666; }
+            .note { margin-top: 10px; padding: 5px; background: #f5f5f5; font-size: 11px; }
+            @media print {
+              body { padding: 0; }
+            }
+          </style>
+        </head>
+        <body>
+          ${printContent.innerHTML}
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 250);
   };
 
   return (
