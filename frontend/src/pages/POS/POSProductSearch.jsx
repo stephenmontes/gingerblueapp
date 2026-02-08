@@ -133,27 +133,26 @@ export function POSProductSearch({
                           {product.variants.map((variant, vIdx) => (
                             <div 
                               key={variant.variant_id || vIdx}
-                              className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-2 rounded bg-muted/30 hover:bg-muted/50"
+                              className="p-2 rounded bg-muted/30 hover:bg-muted/50"
                             >
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium truncate">{variant.title || `Variant ${vIdx + 1}`}</p>
-                                <p className="text-xs text-muted-foreground truncate">
-                                  {variant.sku && <span>SKU: {variant.sku}</span>}
-                                  {variant.sku && variant.barcode && <span> • </span>}
-                                  {variant.barcode && <span>{variant.barcode}</span>}
-                                </p>
-                              </div>
-                              <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-3">
-                                <span className="font-semibold text-sm">${parseFloat(variant.price || 0).toFixed(2)}</span>
-                                <Button 
-                                  size="sm" 
-                                  variant="outline"
-                                  className="h-8 px-3"
-                                  onClick={() => onAddToCart(product, variant)}
-                                >
-                                  <Plus className="w-4 h-4 mr-1" />
-                                  Add
-                                </Button>
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium">{variant.title || `Variant ${vIdx + 1}`}</p>
+                                  <p className="text-xs text-muted-foreground truncate">
+                                    {variant.sku || variant.barcode || ''}
+                                  </p>
+                                </div>
+                                <div className="flex items-center gap-2 flex-shrink-0">
+                                  <span className="font-semibold text-sm">${parseFloat(variant.price || 0).toFixed(2)}</span>
+                                  <Button 
+                                    size="sm" 
+                                    className="h-7 px-2 text-xs"
+                                    onClick={() => onAddToCart(product, variant)}
+                                  >
+                                    <Plus className="w-3 h-3 mr-1" />
+                                    Add
+                                  </Button>
+                                </div>
                               </div>
                             </div>
                           ))}
