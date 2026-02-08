@@ -175,7 +175,7 @@ async def get_pos_stores(user: User = Depends(get_current_user)):
     """Get Shopify stores available for POS"""
     stores = await db.stores.find(
         {"platform": "shopify", "is_active": {"$ne": False}},
-        {"_id": 0, "store_id": 1, "name": 1, "shop_url": 1}
+        {"_id": 0, "store_id": 1, "name": 1, "shop_url": 1, "logo": 1, "phone": 1, "email": 1, "address": 1}
     ).to_list(100)
     
     return {"stores": stores}
