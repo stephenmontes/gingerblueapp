@@ -372,26 +372,32 @@ export default function POS({ user }) {
     toast.success(`Selected: ${cust.name}`);
   };
 
-  // Calculate totals
-  const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  // Calculate totals with discounts
+  const subtotal = cart.reduce((sum, item) => sum + getItemTotal(item), 0);
+  const orderDiscountAmount = orderDiscount.value > 0 
+    ? (orderDiscount.type === "percentage" 
+        ? subtotal * (orderDiscount.value / 100) 
+        : Math.min(orderDiscount.value, subtotal))
+    : 0;
+  const subtotalAfterDiscount = subtotal - orderDiscountAmount;
   const shippingTotal = shipAllItems ? shipping.price : 0;
-  const total = subtotal + shippingTotal;
+  const total = subtotalAfterDiscount + shippingTotal;
 
   // Update shipping price when percentage or subtotal changes
   useEffect(() => {
     if (shippingPercent && shippingPercent !== "custom") {
       const percent = parseFloat(shippingPercent);
-      const calculatedPrice = (subtotal * percent) / 100;
+      const calculatedPrice = (subtotalAfterDiscount * percent) / 100;
       setShipping(prev => ({
         ...prev,
         price: Math.round(calculatedPrice * 100) / 100,
         title: percent === 0 ? "Free Shipping" : `Shipping (${percent}%)`
       }));
     }
-  }, [shippingPercent, subtotal]);
+  }, [shippingPercent, subtotalAfterDiscount]);
 
-  // Submit order
-  const submitOrder = async () => {
+  // Submit order (live or draft)
+  const submitOrder = async (isDraft = false) => {
     if (!selectedStore) {
       toast.error("Please select a store");
       return;
