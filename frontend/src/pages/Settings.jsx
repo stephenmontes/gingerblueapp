@@ -526,6 +526,9 @@ export default function Settings({ user }) {
 
       {/* ShipStation Integration */}
       <ShipStationSettings API={API} isManager={isManager} />
+      
+      {/* Google Drive Integration */}
+      <GoogleDriveSettings API={API} isManager={isManager} />
     </div>
   );
 }
