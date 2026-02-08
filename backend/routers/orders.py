@@ -1099,12 +1099,15 @@ async def send_order_email(
         raise HTTPException(status_code=500, detail="Email service not configured")
     
     try:
+        # Use verified domain email
+        verified_from_email = os.environ.get("RESEND_FROM_EMAIL", "onboarding@resend.dev")
+        
         params = {
-            "from": f"{store_name} <onboarding@resend.dev>",
+            "from": f"{store_name} <{verified_from_email}>",
             "to": [request.to],
             "subject": f"Order Confirmation - {order_number}",
             "html": html_body,
-            "reply_to": store_email if store_email else None
+            "reply_to": store_email if store_email and store_email != verified_from_email else None
         }
         
         # Remove None values
