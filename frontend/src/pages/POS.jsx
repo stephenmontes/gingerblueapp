@@ -856,6 +856,7 @@ export default function POS({ user }) {
         setOrderDiscount({ type: "percentage", value: 0, reason: "" });
         setShippingPercent("");
         setRequestedShipDate("");
+        setOrderColor(null); // Reset color for next order
         
         // Clear persisted order from localStorage
         clearPersistedOrder();
