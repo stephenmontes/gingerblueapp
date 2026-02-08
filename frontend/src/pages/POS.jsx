@@ -109,6 +109,16 @@ export default function POS({ user }) {
   const [autoSaving, setAutoSaving] = useState(false);
   const autoSaveTimerRef = useRef(null);
 
+  // Email dialog
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  const [emailTo, setEmailTo] = useState("");
+  const [emailSubject, setEmailSubject] = useState("");
+  const [emailMessage, setEmailMessage] = useState("");
+  const [sendingEmail, setSendingEmail] = useState(false);
+
+  // Quote print ref
+  const quoteRef = useRef(null);
+
   // Drafts dialog
   const [draftsDialogOpen, setDraftsDialogOpen] = useState(false);
   const [drafts, setDrafts] = useState([]);
