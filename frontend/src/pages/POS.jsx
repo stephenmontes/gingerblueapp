@@ -106,6 +106,145 @@ export default function POS({ user }) {
   const [autoSaving, setAutoSaving] = useState(false);
   const autoSaveTimerRef = useRef(null);
 
+  // Drafts dialog
+  const [draftsDialogOpen, setDraftsDialogOpen] = useState(false);
+  const [drafts, setDrafts] = useState([]);
+  const [loadingDrafts, setLoadingDrafts] = useState(false);
+  const [draftsFilter, setDraftsFilter] = useState("all"); // "all", "mine", "others"
+  const [draftsSearch, setDraftsSearch] = useState("");
+
+  // Fetch drafts
+  const fetchDrafts = async () => {
+    setLoadingDrafts(true);
+    try {
+      const params = new URLSearchParams();
+      if (selectedStore) params.append("store_id", selectedStore);
+      if (draftsSearch) params.append("search", draftsSearch);
+      
+      const res = await fetch(`${API}/pos/drafts?${params}`, { credentials: "include" });
+      if (res.ok) {
+        const data = await res.json();
+        setDrafts(data.drafts || []);
+      }
+    } catch (err) {
+      toast.error("Failed to load drafts");
+    } finally {
+      setLoadingDrafts(false);
+    }
+  };
+
+  // Load a draft into the current order
+  const loadDraft = async (draft) => {
+    // Check if draft is locked by another user
+    if (draft.is_locked && !draft.is_mine) {
+      toast.error(`This draft is being edited by ${draft.locked_by_name}`);
+      return;
+    }
+    
+    // Confirm if current cart has items
+    if (cart.length > 0) {
+      if (!window.confirm("Loading this draft will replace your current cart. Continue?")) {
+        return;
+      }
+    }
+    
+    try {
+      // Lock the draft
+      const res = await fetch(`${API}/pos/drafts/${draft.order_id}`, { credentials: "include" });
+      if (!res.ok) {
+        const err = await res.json();
+        toast.error(err.detail || "Failed to load draft");
+        return;
+      }
+      
+      const data = await res.json();
+      const loadedDraft = data.draft;
+      
+      // Load draft data into state
+      setCart(loadedDraft.items?.map(item => ({
+        product_id: item.product_id,
+        variant_id: item.variant_id,
+        sku: item.sku || "",
+        title: item.name,
+        quantity: item.quantity,
+        price: item.price,
+        taxable: true,
+        is_custom: !item.product_id,
+        image: item.image,
+        discount_type: item.discount_type,
+        discount_value: item.discount_value || 0
+      })) || []);
+      
+      setSelectedStore(loadedDraft.store_id);
+      setCustomer(loadedDraft.customer_data || null);
+      setTaxExempt(loadedDraft.tax_exempt || false);
+      setShipAllItems(loadedDraft.ship_all_items !== false);
+      setOrderNote(loadedDraft.notes?.replace(/\n?\[.*?\]$/g, '') || ""); // Remove auto-save notes
+      setOrderTags(loadedDraft.tags?.filter(t => !t.startsWith("pos-")).join(", ") || "");
+      setOrderDiscount(loadedDraft.order_discount || { type: "percentage", value: 0, reason: "" });
+      setShipping(loadedDraft.shipping || { title: "Standard Shipping", price: 0, code: "standard" });
+      setCurrentDraftId(loadedDraft.order_id);
+      
+      // Save to localStorage
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        cart: loadedDraft.items,
+        customer: loadedDraft.customer_data,
+        selectedStore: loadedDraft.store_id,
+        currentDraftId: loadedDraft.order_id,
+        savedAt: new Date().toISOString()
+      }));
+      
+      setDraftsDialogOpen(false);
+      toast.success(`Loaded draft: ${loadedDraft.pos_order_number}`);
+    } catch (err) {
+      toast.error("Failed to load draft");
+    }
+  };
+
+  // Delete a draft
+  const deleteDraft = async (draftId, e) => {
+    e?.stopPropagation();
+    if (!window.confirm("Are you sure you want to delete this draft?")) return;
+    
+    try {
+      const res = await fetch(`${API}/pos/drafts/${draftId}`, {
+        method: "DELETE",
+        credentials: "include"
+      });
+      if (res.ok) {
+        toast.success("Draft deleted");
+        fetchDrafts();
+        if (currentDraftId === draftId) {
+          setCurrentDraftId(null);
+        }
+      }
+    } catch (err) {
+      toast.error("Failed to delete draft");
+    }
+  };
+
+  // Release/unlock a draft
+  const releaseDraft = async (draftId, e) => {
+    e?.stopPropagation();
+    try {
+      await fetch(`${API}/pos/drafts/${draftId}/release`, {
+        method: "POST",
+        credentials: "include"
+      });
+      toast.success("Draft released");
+      fetchDrafts();
+    } catch (err) {
+      toast.error("Failed to release draft");
+    }
+  };
+
+  // Filter drafts
+  const filteredDrafts = drafts.filter(draft => {
+    if (draftsFilter === "mine") return draft.is_mine;
+    if (draftsFilter === "others") return !draft.is_mine;
+    return true;
+  });
+
   // Load persisted order from localStorage on mount
   useEffect(() => {
     const loadPersistedOrder = () => {
