@@ -540,12 +540,13 @@ export default function Scheduling({ user }) {
                 <thead>
                   <tr className="border-b border-border">
                     <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Order</th>
+                    <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Source</th>
                     <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Customer</th>
-                    <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Store</th>
+                    <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground hidden sm:table-cell">Store</th>
                     <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Ship Date</th>
-                    <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Items</th>
+                    <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground hidden sm:table-cell">Items</th>
                     <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Total</th>
-                    <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Calendar</th>
+                    <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground hidden md:table-cell">Calendar</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -554,14 +555,26 @@ export default function Scheduling({ user }) {
                       <td className="py-3 px-2">
                         <span className="font-mono font-medium">#{order.order_number}</span>
                       </td>
-                      <td className="py-3 px-2">{order.customer_name}</td>
-                      <td className="py-3 px-2 text-sm text-muted-foreground">{order.store_name}</td>
+                      <td className="py-3 px-2">
+                        <Badge 
+                          variant="outline" 
+                          className={`text-xs ${
+                            order.source === "pos" 
+                              ? "bg-blue-500/10 text-blue-400 border-blue-500/30" 
+                              : "bg-orange-500/10 text-orange-400 border-orange-500/30"
+                          }`}
+                        >
+                          {order.source === "pos" ? "POS" : "Shopify"}
+                        </Badge>
+                      </td>
+                      <td className="py-3 px-2 max-w-[120px] truncate">{order.customer_name || "Walk-in"}</td>
+                      <td className="py-3 px-2 text-sm text-muted-foreground hidden sm:table-cell">{order.store_name}</td>
                       <td className="py-3 px-2">
                         <span className="text-orange-400 font-medium">{order.requested_ship_date}</span>
                       </td>
-                      <td className="py-3 px-2 text-sm">{order.items?.length || 0}</td>
-                      <td className="py-3 px-2 font-semibold">${order.total_price?.toFixed(2)}</td>
-                      <td className="py-3 px-2">
+                      <td className="py-3 px-2 text-sm hidden sm:table-cell">{order.items?.length || 0}</td>
+                      <td className="py-3 px-2 font-semibold">${(order.total_price || 0).toFixed(2)}</td>
+                      <td className="py-3 px-2 hidden md:table-cell">
                         {order.calendar_event_id ? (
                           <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
                             <Check className="w-3 h-3 mr-1" />
