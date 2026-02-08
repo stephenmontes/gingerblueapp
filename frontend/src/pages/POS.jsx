@@ -906,7 +906,7 @@ export default function POS({ user }) {
   return (
     <div className="min-h-screen bg-background p-4 lg:p-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4 md:mb-6">
         <div className="flex items-center gap-3">
           <ShoppingCart className="w-6 h-6 md:w-8 md:h-8 text-primary" />
           <div>
@@ -916,13 +916,29 @@ export default function POS({ user }) {
         </div>
         
         {/* Next Order Number & Store Selector */}
-        <div className="flex flex-wrap items-center justify-end gap-2 md:gap-4">
+        <div className="flex flex-wrap items-center justify-end gap-2 md:gap-3">
           {nextOrderNumber && (
-            <div className="text-right">
+            <div className="text-right hidden sm:block">
               <p className="text-xs text-muted-foreground">Next Order</p>
               <p className="font-mono font-bold text-primary text-sm md:text-base" data-testid="next-order-number">{nextOrderNumber}</p>
             </div>
           )}
+          
+          {/* View Drafts Button */}
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => {
+              setDraftsDialogOpen(true);
+              fetchDrafts();
+            }}
+            data-testid="view-drafts-btn"
+            className="h-9"
+          >
+            <FolderOpen className="w-4 h-4 mr-1 md:mr-2" />
+            <span className="hidden sm:inline">Drafts</span>
+          </Button>
+          
           {lastOrder && (
             <Button 
               variant="outline" 
