@@ -370,7 +370,7 @@ async def sync_orders_to_calendar(
         service = build("calendar", "v3", credentials=creds)
         
         # Get orders with ship dates from fulfillment_orders
-        query = {"requested_ship_date": {"$exists": True, "$ne": None, "$ne": ""}}
+        query = {"requested_ship_date": {"$exists": True, "$nin": [None, ""]}}
         if order_ids:
             query["order_id"] = {"$in": order_ids}
         
