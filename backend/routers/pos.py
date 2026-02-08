@@ -944,3 +944,201 @@ async def sync_order_from_shopify(
         "fulfillment_status": updates["fulfillment_status"],
         "status": updates.get("status", order.get("status"))
     }
+
+
+class QuoteEmailRequest(BaseModel):
+    to: str
+    subject: str
+    message: str
+    store_id: str
+    customer_name: Optional[str] = None
+    items: List[Dict[str, Any]]
+    subtotal: float
+    order_discount: Optional[Dict[str, Any]] = None
+    shipping: Optional[Dict[str, Any]] = None
+    tax_exempt: bool = False
+    total: float
+    requested_ship_date: Optional[str] = None
+    note: Optional[str] = None
+
+
+@router.post("/send-quote-email")
+async def send_quote_email(
+    request: QuoteEmailRequest,
+    user: User = Depends(get_current_user)
+):
+    """Send quote email to customer"""
+    import os
+    
+    # Get store info
+    store = await db.stores.find_one({"store_id": request.store_id}, {"_id": 0, "name": 1})
+    store_name = store.get("name", "Store") if store else "Store"
+    
+    # Build HTML email
+    items_html = ""
+    for item in request.items:
+        line_total = item.get("price", 0) * item.get("quantity", 1)
+        discount_amt = 0
+        if item.get("discount_type") and item.get("discount_value", 0) > 0:
+            if item["discount_type"] == "percentage":
+                discount_amt = line_total * item["discount_value"] / 100
+            else:
+                discount_amt = item["discount_value"]
+        final_total = line_total - discount_amt
+        
+        items_html += f"""
+        <tr>
+            <td style="padding: 12px; border-bottom: 1px solid #eee;">{item.get('title', 'Item')}</td>
+            <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: center;">{item.get('quantity', 1)}</td>
+            <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right;">${item.get('price', 0):.2f}</td>
+            <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right;">${final_total:.2f}</td>
+        </tr>
+        """
+    
+    discount_html = ""
+    if request.order_discount and request.order_discount.get("value", 0) > 0:
+        discount_html = f"""
+        <tr>
+            <td colspan="3" style="padding: 8px; text-align: right; color: #dc2626;">Discount:</td>
+            <td style="padding: 8px; text-align: right; color: #dc2626;">
+                -{request.order_discount.get('type', 'percentage') == 'percentage' and f"{request.order_discount.get('value')}%" or f"${request.order_discount.get('value'):.2f}"}
+            </td>
+        </tr>
+        """
+    
+    shipping_html = ""
+    if request.shipping and request.shipping.get("price", 0) > 0:
+        shipping_html = f"""
+        <tr>
+            <td colspan="3" style="padding: 8px; text-align: right;">Shipping:</td>
+            <td style="padding: 8px; text-align: right;">${request.shipping.get('price', 0):.2f}</td>
+        </tr>
+        """
+    
+    html_body = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <style>
+            body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+            .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+            .header {{ text-align: center; border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 20px; }}
+            .header h1 {{ margin: 0; color: #333; }}
+            table {{ width: 100%; border-collapse: collapse; margin: 20px 0; }}
+            th {{ background: #f5f5f5; padding: 12px; text-align: left; font-size: 12px; text-transform: uppercase; }}
+            .total-row {{ font-weight: bold; font-size: 18px; border-top: 2px solid #333; }}
+            .message {{ background: #f9f9f9; padding: 15px; border-radius: 4px; margin: 20px 0; white-space: pre-wrap; }}
+            .footer {{ text-align: center; margin-top: 30px; color: #666; font-size: 12px; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>{store_name}</h1>
+                <p style="color: #666; margin: 5px 0;">QUOTE</p>
+            </div>
+            
+            <div class="message">{request.message}</div>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th style="text-align: center;">Qty</th>
+                        <th style="text-align: right;">Price</th>
+                        <th style="text-align: right;">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {items_html}
+                    {discount_html}
+                    {shipping_html}
+                    <tr class="total-row">
+                        <td colspan="3" style="padding: 12px; text-align: right;">TOTAL:</td>
+                        <td style="padding: 12px; text-align: right;">${request.total:.2f}</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            {f'<p><strong>Requested Ship Date:</strong> {request.requested_ship_date}</p>' if request.requested_ship_date else ''}
+            {f'<p><strong>Note:</strong> {request.note}</p>' if request.note else ''}
+            
+            <p style="background: #f5f5f5; padding: 10px; border-radius: 4px; font-size: 12px;">
+                This quote is valid for 30 days. Prices subject to change.
+            </p>
+            
+            <div class="footer">
+                <p>Sent by {user.name} on {datetime.now().strftime('%Y-%m-%d %H:%M')}</p>
+                <p>Thank you for your business!</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    
+    # Try to send email via available method
+    try:
+        # Check if we have email service configured
+        # For now, we'll use a simple SMTP approach or log the email
+        
+        # Try using SendGrid if available
+        sendgrid_key = os.environ.get("SENDGRID_API_KEY")
+        from_email = os.environ.get("SENDGRID_FROM_EMAIL", f"noreply@{store_name.lower().replace(' ', '')}.com")
+        
+        if sendgrid_key:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    "https://api.sendgrid.com/v3/mail/send",
+                    headers={
+                        "Authorization": f"Bearer {sendgrid_key}",
+                        "Content-Type": "application/json"
+                    },
+                    json={
+                        "personalizations": [{"to": [{"email": request.to}]}],
+                        "from": {"email": from_email, "name": store_name},
+                        "subject": request.subject,
+                        "content": [
+                            {"type": "text/html", "value": html_body}
+                        ]
+                    },
+                    timeout=30.0
+                )
+                
+                if response.status_code in [200, 202]:
+                    logger.info(f"Quote email sent to {request.to}")
+                    return {"message": "Email sent successfully", "to": request.to}
+                else:
+                    logger.error(f"SendGrid error: {response.text}")
+                    raise HTTPException(status_code=500, detail="Failed to send email via SendGrid")
+        else:
+            # No email service configured - log and return success for demo
+            logger.warning(f"Email service not configured. Would send to: {request.to}")
+            logger.info(f"Email subject: {request.subject}")
+            
+            # Store the email attempt for reference
+            await db.email_logs.insert_one({
+                "to": request.to,
+                "subject": request.subject,
+                "body_preview": request.message[:200],
+                "store_id": request.store_id,
+                "total": request.total,
+                "items_count": len(request.items),
+                "sent_by": user.user_id,
+                "sent_by_name": user.name,
+                "status": "logged_only",
+                "created_at": datetime.now(timezone.utc).isoformat()
+            })
+            
+            return {
+                "message": "Email logged (email service not configured)",
+                "to": request.to,
+                "note": "Configure SENDGRID_API_KEY to enable email sending"
+            }
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Email send error: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to send email: {str(e)}")
+
