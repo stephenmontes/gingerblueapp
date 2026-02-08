@@ -96,6 +96,48 @@ export default function Orders({ user }) {
   // CSV Export state
   const [exporting, setExporting] = useState(false);
 
+  // Email order state
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  const [emailingOrder, setEmailingOrder] = useState(null);
+  const [emailTo, setEmailTo] = useState("");
+  const [sendingEmail, setSendingEmail] = useState(false);
+
+  const handleEmailOrder = (order) => {
+    setEmailingOrder(order);
+    setEmailTo(order.customer?.email || order.email || "");
+    setEmailDialogOpen(true);
+  };
+
+  const sendOrderEmail = async () => {
+    if (!emailTo) {
+      toast.error("Please enter an email address");
+      return;
+    }
+    
+    setSendingEmail(true);
+    try {
+      const res = await fetch(`${API}/orders/${emailingOrder.order_id}/send-email`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ to: emailTo })
+      });
+      
+      if (res.ok) {
+        toast.success(`Order confirmation sent to ${emailTo}`);
+        setEmailDialogOpen(false);
+        setEmailingOrder(null);
+      } else {
+        const err = await res.json();
+        toast.error(err.detail || "Failed to send email");
+      }
+    } catch (err) {
+      toast.error("Failed to send email");
+    } finally {
+      setSendingEmail(false);
+    }
+  };
+
   const handleExportToCSV = async () => {
     if (selectedOrders.length === 0) {
       toast.error("Please select orders to export");
