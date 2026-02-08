@@ -630,18 +630,19 @@ export default function POS({ user }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Mobile-optimized grid: stack on mobile, side-by-side on tablet+ */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
         {/* Left: Product Search & Results */}
-        <div className="lg:col-span-2 space-y-4">
+        <div className="lg:col-span-2 space-y-4 order-1">
           {/* Search Bar */}
           <Card className="bg-card border-border">
-            <CardContent className="pt-4">
-              <div className="flex gap-2">
+            <CardContent className="pt-4 pb-4">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <div className="relative flex-1">
                   <ScanLine className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                   <Input
                     ref={barcodeInputRef}
-                    placeholder={selectedStore ? "Scan barcode or search by SKU, title, tag..." : "Select a store first..."}
+                    placeholder={selectedStore ? "Scan or search..." : "Select store first..."}
                     value={searchQuery}
                     onChange={(e) => {
                       if (!selectedStore) {
@@ -656,7 +657,7 @@ export default function POS({ user }) {
                         toast.error("Please select a store first");
                       }
                     }}
-                    className={`pl-10 ${!selectedStore ? 'cursor-not-allowed opacity-60' : ''}`}
+                    className={`pl-10 h-12 text-base ${!selectedStore ? 'cursor-not-allowed opacity-60' : ''}`}
                     data-testid="product-search"
                   />
                 </div>
