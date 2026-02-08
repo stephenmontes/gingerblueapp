@@ -158,9 +158,13 @@ async def drive_oauth_callback(
     logger.info(f"Google Drive connected by user {state}")
     
     # Redirect to frontend settings page
-    frontend_url = os.environ.get("REACT_APP_BACKEND_URL", "http://localhost:3000")
-    if not frontend_url or frontend_url == "http://localhost:3000":
-        frontend_url = "https://mfgflow-2.preview.emergentagent.com"
+    frontend_url = os.environ.get("APP_URL", "")
+    if not frontend_url:
+        auth_url = os.environ.get("AUTH_SERVICE_URL", "")
+        if auth_url:
+            frontend_url = "https://gingerblueapp.com"
+        else:
+            frontend_url = "https://mfgflow-2.preview.emergentagent.com"
     return RedirectResponse(url=f"{frontend_url}/settings?drive_connected=true")
 
 
