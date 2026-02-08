@@ -822,126 +822,156 @@ export default function POS({ user }) {
                   <p className="text-sm">Scan a barcode or search for products</p>
                 </div>
               ) : (
-                <ScrollArea className="h-[300px]">
-                  <div className="space-y-3">
+                <ScrollArea className="h-[250px] md:h-[300px]">
+                  <div className="space-y-2 md:space-y-3">
                     {cart.map((item, index) => (
-                      <div key={index} className="flex items-center gap-3 p-3 rounded-lg border border-border">
+                      <div key={index} className="flex items-center gap-2 md:gap-3 p-2 md:p-3 rounded-lg border border-border">
+                        {/* Clickable thumbnail */}
+                        <button
+                          onClick={() => item.image && setPreviewImage({ src: item.image, title: item.title })}
+                          className={`relative flex-shrink-0 w-12 h-12 md:w-14 md:h-14 rounded-md overflow-hidden border border-border ${item.image ? 'cursor-pointer hover:ring-2 hover:ring-primary' : 'cursor-default'}`}
+                          disabled={!item.image}
+                        >
+                          {item.image ? (
+                            <>
+                              <img src={item.image} alt="" className="w-full h-full object-cover" />
+                              <div className="absolute inset-0 bg-black/0 hover:bg-black/20 flex items-center justify-center transition-colors">
+                                <ZoomIn className="w-4 h-4 text-white opacity-0 hover:opacity-100" />
+                              </div>
+                            </>
+                          ) : (
+                            <div className="w-full h-full bg-muted flex items-center justify-center">
+                              <ImageIcon className="w-5 h-5 text-muted-foreground" />
+                            </div>
+                          )}
+                        </button>
+                        
+                        {/* Item details */}
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate">{item.title}</p>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            {item.sku && <span>SKU: {item.sku}</span>}
-                            {item.is_custom && <Badge variant="secondary" className="text-xs">Custom</Badge>}
+                          <p className="font-medium text-sm md:text-base truncate">{item.title}</p>
+                          <div className="flex flex-wrap items-center gap-1 md:gap-2 text-xs md:text-sm text-muted-foreground">
+                            {item.sku && <span className="hidden sm:inline">SKU: {item.sku}</span>}
+                            <span className="font-medium">${item.price.toFixed(2)}</span>
+                            {item.is_custom && <Badge variant="secondary" className="text-[10px] md:text-xs">Custom</Badge>}
                             {item.discount_type && item.discount_value > 0 && (
-                              <Badge variant="destructive" className="text-xs">
+                              <Badge variant="destructive" className="text-[10px] md:text-xs">
                                 -{item.discount_value}{item.discount_type === "percentage" ? "%" : "$"}
                               </Badge>
                             )}
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
+                        
+                        {/* Quantity controls */}
+                        <div className="flex items-center gap-1 md:gap-2">
                           <Button
                             size="icon"
                             variant="outline"
-                            className="h-8 w-8"
+                            className="h-8 w-8 md:h-8 md:w-8"
                             onClick={() => updateQuantity(index, -1)}
                           >
                             <Minus className="w-3 h-3" />
                           </Button>
-                          <span className="w-8 text-center font-medium">{item.quantity}</span>
+                          <span className="w-6 md:w-8 text-center font-medium text-sm md:text-base">{item.quantity}</span>
                           <Button
                             size="icon"
                             variant="outline"
-                            className="h-8 w-8"
+                            className="h-8 w-8 md:h-8 md:w-8"
                             onClick={() => updateQuantity(index, 1)}
                           >
                             <Plus className="w-3 h-3" />
                           </Button>
                         </div>
-                        <div className="w-20 text-right">
+                        
+                        {/* Price */}
+                        <div className="w-16 md:w-20 text-right">
                           {item.discount_type && item.discount_value > 0 && (
-                            <p className="text-xs text-muted-foreground line-through">
+                            <p className="text-[10px] md:text-xs text-muted-foreground line-through">
                               ${(item.price * item.quantity).toFixed(2)}
                             </p>
                           )}
-                          <p className="font-semibold">
+                          <p className="font-semibold text-sm md:text-base">
                             ${getItemTotal(item).toFixed(2)}
                           </p>
                         </div>
-                        <Popover open={itemDiscountIndex === index} onOpenChange={(open) => {
-                          if (open) {
-                            setItemDiscountIndex(index);
-                            setTempDiscount({ 
-                              type: item.discount_type || "percentage", 
-                              value: item.discount_value || 0 
-                            });
-                          } else {
-                            setItemDiscountIndex(null);
-                          }
-                        }}>
-                          <PopoverTrigger asChild>
-                            <Button
-                              size="icon"
-                              variant={item.discount_value > 0 ? "default" : "outline"}
-                              className="h-8 w-8"
-                              data-testid={`item-discount-${index}`}
-                            >
-                              <Percent className="w-3 h-3" />
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-56" align="end">
-                            <div className="space-y-3">
-                              <p className="font-medium text-sm">Item Discount</p>
-                              <Select 
-                                value={tempDiscount.type} 
-                                onValueChange={(v) => setTempDiscount({...tempDiscount, type: v})}
+                        
+                        {/* Actions - stacked on mobile */}
+                        <div className="flex flex-col sm:flex-row gap-1">
+                          <Popover open={itemDiscountIndex === index} onOpenChange={(open) => {
+                            if (open) {
+                              setItemDiscountIndex(index);
+                              setTempDiscount({ 
+                                type: item.discount_type || "percentage", 
+                                value: item.discount_value || 0 
+                              });
+                            } else {
+                              setItemDiscountIndex(null);
+                            }
+                          }}>
+                            <PopoverTrigger asChild>
+                              <Button
+                                size="icon"
+                                variant={item.discount_value > 0 ? "default" : "outline"}
+                                className="h-7 w-7 md:h-8 md:w-8"
+                                data-testid={`item-discount-${index}`}
                               >
-                                <SelectTrigger>
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="percentage">Percentage (%)</SelectItem>
-                                  <SelectItem value="fixed">Fixed Amount ($)</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <Input
-                                type="number"
-                                min="0"
-                                step={tempDiscount.type === "percentage" ? "1" : "0.01"}
-                                placeholder={tempDiscount.type === "percentage" ? "10" : "5.00"}
-                                value={tempDiscount.value || ""}
-                                onChange={(e) => setTempDiscount({...tempDiscount, value: parseFloat(e.target.value) || 0})}
-                              />
-                              <div className="flex gap-2">
-                                <Button 
-                                  size="sm" 
-                                  variant="outline" 
-                                  className="flex-1"
-                                  onClick={() => {
-                                    setTempDiscount({ type: "percentage", value: 0 });
-                                    applyItemDiscount(index);
-                                  }}
+                                <Percent className="w-3 h-3" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-56" align="end">
+                              <div className="space-y-3">
+                                <p className="font-medium text-sm">Item Discount</p>
+                                <Select 
+                                  value={tempDiscount.type} 
+                                  onValueChange={(v) => setTempDiscount({...tempDiscount, type: v})}
                                 >
-                                  Clear
-                                </Button>
-                                <Button 
-                                  size="sm" 
-                                  className="flex-1"
-                                  onClick={() => applyItemDiscount(index)}
-                                >
-                                  Apply
-                                </Button>
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="percentage">Percentage (%)</SelectItem>
+                                    <SelectItem value="fixed">Fixed Amount ($)</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  step={tempDiscount.type === "percentage" ? "1" : "0.01"}
+                                  placeholder={tempDiscount.type === "percentage" ? "10" : "5.00"}
+                                  value={tempDiscount.value || ""}
+                                  onChange={(e) => setTempDiscount({...tempDiscount, value: parseFloat(e.target.value) || 0})}
+                                />
+                                <div className="flex gap-2">
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline" 
+                                    className="flex-1"
+                                    onClick={() => {
+                                      setTempDiscount({ type: "percentage", value: 0 });
+                                      applyItemDiscount(index);
+                                    }}
+                                  >
+                                    Clear
+                                  </Button>
+                                  <Button 
+                                    size="sm" 
+                                    className="flex-1"
+                                    onClick={() => applyItemDiscount(index)}
+                                  >
+                                    Apply
+                                  </Button>
+                                </div>
                               </div>
-                            </div>
-                          </PopoverContent>
-                        </Popover>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8 text-destructive"
-                          onClick={() => removeFromCart(index)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                            </PopoverContent>
+                          </Popover>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7 md:h-8 md:w-8 text-destructive"
+                            onClick={() => removeFromCart(index)}
+                          >
+                            <Trash2 className="w-3 h-3 md:w-4 md:h-4" />
+                          </Button>
+                        </div>
                       </div>
                     ))}
                   </div>
