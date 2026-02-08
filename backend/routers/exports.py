@@ -113,6 +113,102 @@ async def export_selected_orders_csv(
     )
 
 
+@router.get("/orders-selected")
+async def export_selected_orders_get(
+    ids: str,
+    user: User = Depends(get_current_user)
+):
+    """Export selected orders to CSV (GET version for better deployment compatibility)"""
+    order_ids = [oid.strip() for oid in ids.split(',') if oid.strip()]
+    
+    if not order_ids:
+        raise HTTPException(status_code=400, detail="No orders selected")
+    
+    orders = await db.orders.find(
+        {"order_id": {"$in": order_ids}},
+        {"_id": 0}
+    ).to_list(len(order_ids))
+    
+    if not orders:
+        raise HTTPException(status_code=404, detail="No orders found")
+    
+    # Get batch info
+    batch_ids = set()
+    for order in orders:
+        if order.get("fulfillment_batch_id"):
+            batch_ids.add(order["fulfillment_batch_id"])
+    
+    batches = {}
+    if batch_ids:
+        fulfillment_batches = await db.fulfillment_batches.find(
+            {"fulfillment_batch_id": {"$in": list(batch_ids)}},
+            {"_id": 0}
+        ).to_list(100)
+        for b in fulfillment_batches:
+            batches[b["fulfillment_batch_id"]] = b
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    writer.writerow([
+        "Order Number", "Order ID", "Store", "Platform",
+        "Customer Name", "Customer Email", "Phone",
+        "Address 1", "City", "State", "Zip", "Country",
+        "Order Date", "Ship Date", "Status",
+        "Item SKU", "Item Name", "Qty", "Qty Done",
+        "Batch Name", "Batch Status", "Notes", "Tags"
+    ])
+    
+    for order in orders:
+        batch = batches.get(order.get("fulfillment_batch_id"), {})
+        addr = order.get("shipping_address", {})
+        items = order.get("items", [])
+        
+        base = [
+            order.get("order_number", ""),
+            order.get("order_id", ""),
+            order.get("store_name", ""),
+            order.get("platform", ""),
+            order.get("customer_name", ""),
+            order.get("customer_email", ""),
+            order.get("customer_phone", ""),
+            addr.get("address1", ""),
+            addr.get("city", ""),
+            addr.get("state", ""),
+            addr.get("zip", ""),
+            addr.get("country", ""),
+            order.get("order_date", ""),
+            order.get("requested_ship_date", ""),
+            order.get("status", ""),
+        ]
+        
+        if items:
+            for item in items:
+                row = base + [
+                    item.get("sku", ""),
+                    item.get("name", ""),
+                    item.get("quantity", 0),
+                    item.get("qty_done", 0),
+                    batch.get("batch_name", ""),
+                    batch.get("status", ""),
+                    order.get("notes", ""),
+                    ", ".join(order.get("tags", []))
+                ]
+                writer.writerow(row)
+        else:
+            row = base + ["", "", 0, 0, batch.get("batch_name", ""), batch.get("status", ""), order.get("notes", ""), ""]
+            writer.writerow(row)
+    
+    output.seek(0)
+    filename = f"orders_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+
 @router.get("/orders")
 async def export_orders_csv(user: User = Depends(get_current_user)):
     """Export orders to CSV"""
