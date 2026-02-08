@@ -2512,21 +2512,47 @@ export default function POS({ user }) {
                   <div
                     key={draft.order_id}
                     onClick={() => loadDraft(draft)}
-                    className={`p-4 rounded-lg border cursor-pointer transition-colors ${
+                    className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
                       currentDraftId === draft.order_id 
-                        ? 'border-primary bg-primary/10 ring-2 ring-primary/30' 
+                        ? 'ring-2 ring-primary/30' 
                         : draft.is_locked && !draft.is_mine
                           ? 'border-orange-500/30 bg-orange-500/5 cursor-not-allowed'
-                          : draft.is_mine
-                            ? 'border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/15'
-                            : 'border-border hover:bg-muted/50'
+                          : 'hover:shadow-md'
                     }`}
+                    style={draft.order_color ? {
+                      borderColor: currentDraftId === draft.order_id ? draft.order_color.accent : draft.order_color.border,
+                      backgroundColor: draft.order_color.bg
+                    } : undefined}
                   >
                     <div className="flex items-start justify-between gap-3">
+                      {/* Color indicator bar on the left */}
+                      {draft.order_color && (
+                        <div 
+                          className="w-1.5 self-stretch rounded-full flex-shrink-0"
+                          style={{ backgroundColor: draft.order_color.accent }}
+                        />
+                      )}
+                      
                       <div className="flex-1 min-w-0">
                         {/* Header row with order number and badges */}
                         <div className="flex flex-wrap items-center gap-2 mb-2">
-                          <span className="font-mono font-bold text-primary text-lg">{draft.pos_order_number}</span>
+                          <span 
+                            className="font-mono font-bold text-lg"
+                            style={draft.order_color ? { color: draft.order_color.accent } : undefined}
+                          >
+                            {draft.pos_order_number}
+                          </span>
+                          {/* Color swatch */}
+                          {draft.order_color && (
+                            <div 
+                              className="w-4 h-4 rounded-full border-2"
+                              style={{ 
+                                backgroundColor: draft.order_color.bg,
+                                borderColor: draft.order_color.accent
+                              }}
+                              title="Order color"
+                            />
+                          )}
                           {currentDraftId === draft.order_id && (
                             <Badge variant="default" className="text-[10px]">Current</Badge>
                           )}
