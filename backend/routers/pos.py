@@ -872,6 +872,10 @@ async def complete_draft_order(
         if "first_name" in draft["customer_data"]:
             customer = POSCustomer(**draft["customer_data"])
     
+    # Get the order number without D prefix for the live order
+    draft_order_number = draft.get("pos_order_number", "")
+    live_order_number = draft_order_number[1:] if draft_order_number.startswith("D") else draft_order_number
+    
     order_data = POSOrderCreate(
         store_id=draft["store_id"],
         customer=customer,
@@ -883,14 +887,143 @@ async def complete_draft_order(
         note=draft.get("notes"),
         tags=[t for t in draft.get("tags", []) if t not in ["pos-draft", draft.get("pos_order_number", "")]],
         order_discount=order_discount,
+        order_color=draft.get("order_color"),
+        requested_ship_date=draft.get("requested_ship_date"),
         is_draft=False
     )
     
     # Delete the draft
     await db.orders.delete_one({"order_id": order_id})
     
-    # Create the live order (reuse existing logic)
-    return await create_pos_order(order_data, user)
+    # Create the live order but override the order number to keep the same number (without D)
+    # We'll call create_pos_order but the number generation will give a new number
+    # So instead, let's create the order directly here with the preserved number
+    
+    shop_url, access_token, store = await get_shopify_credentials(order_data.store_id)
+    
+    # Calculate totals (simplified - reusing draft values)
+    subtotal = draft.get("subtotal", 0)
+    order_discount_amount = draft.get("order_discount_amount", 0)
+    shipping_total = draft.get("shipping_total", 0)
+    total_price = draft.get("total_price", 0)
+    
+    # Build Shopify order
+    shopify_line_items = []
+    for item in order_data.line_items:
+        item_price = item.price
+        if item.discount_type and item.discount_value > 0:
+            if item.discount_type == "percentage":
+                item_price = item.price * (1 - item.discount_value / 100)
+            else:
+                item_price = max(0, item.price - (item.discount_value / item.quantity))
+        
+        line_item = {
+            "title": item.title,
+            "quantity": item.quantity,
+            "price": str(round(item_price, 2)),
+            "taxable": item.taxable
+        }
+        
+        if item.variant_id and not item.is_custom:
+            line_item["variant_id"] = int(item.variant_id)
+        
+        if item.sku:
+            line_item["sku"] = item.sku
+        
+        shopify_line_items.append(line_item)
+    
+    shopify_order_data = {
+        "line_items": shopify_line_items,
+        "financial_status": "pending",
+        "send_receipt": False,
+        "tags": ", ".join(["pos-order", live_order_number] + order_data.tags),
+        "note": f"POS Order #{live_order_number}" + (f" - {order_data.note}" if order_data.note else "")
+    }
+    
+    # Add customer if available
+    if order_data.customer_id:
+        existing_customer = await db.customers.find_one(
+            {"customer_id": order_data.customer_id},
+            {"_id": 0, "external_id": 1}
+        )
+        if existing_customer and existing_customer.get("external_id"):
+            shopify_order_data["customer"] = {"id": int(existing_customer["external_id"])}
+    
+    # Add shipping
+    if order_data.shipping and order_data.ship_all_items:
+        shopify_order_data["shipping_lines"] = [{
+            "title": order_data.shipping.title,
+            "price": str(order_data.shipping.price),
+            "code": order_data.shipping.code
+        }]
+    
+    if order_data.tax_exempt:
+        shopify_order_data["tax_exempt"] = True
+    
+    # Create in Shopify
+    shopify_order = await create_shopify_order(shop_url, access_token, shopify_order_data)
+    
+    # Save locally with the preserved order number (without D prefix)
+    new_order_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc).isoformat()
+    
+    local_order = {
+        "order_id": new_order_id,
+        "pos_order_number": live_order_number,  # Without D prefix
+        "store_id": order_data.store_id,
+        "store_name": store.get("name", ""),
+        "platform": "shopify",
+        "external_id": str(shopify_order.get("id", "")),
+        "order_number": str(shopify_order.get("order_number", "")),
+        "customer_id": order_data.customer_id,
+        "customer_name": draft.get("customer_name", ""),
+        "customer_email": draft.get("customer_email", ""),
+        "status": "active",
+        "financial_status": shopify_order.get("financial_status", "pending"),
+        "fulfillment_status": shopify_order.get("fulfillment_status"),
+        "subtotal": subtotal,
+        "order_discount": order_data.order_discount.dict() if order_data.order_discount else None,
+        "order_discount_amount": order_discount_amount,
+        "shipping_total": shipping_total,
+        "total_price": float(shopify_order.get("total_price", total_price)),
+        "items": draft.get("items", []),
+        "total_items": draft.get("total_items", 0),
+        "items_completed": 0,
+        "shipping_address": shopify_order.get("shipping_address", {}),
+        "tags": ["pos-order", live_order_number] + order_data.tags,
+        "notes": order_data.note,
+        "tax_exempt": order_data.tax_exempt,
+        "requested_ship_date": order_data.requested_ship_date,
+        "source": "pos",
+        "is_draft": False,
+        "created_by": user.user_id,
+        "created_by_name": user.name,
+        "converted_from_draft": draft_order_number,
+        "order_date": now,
+        "created_at": now,
+        "updated_at": now
+    }
+    
+    await db.orders.insert_one(local_order)
+    del local_order["_id"]
+    
+    # Create calendar event if ship date is set
+    if order_data.requested_ship_date:
+        try:
+            await create_calendar_event_for_order(local_order)
+        except Exception as e:
+            logger.warning(f"Failed to create calendar event: {e}")
+    
+    logger.info(f"Draft {draft_order_number} converted to live order {live_order_number} -> Shopify #{shopify_order.get('order_number')}")
+    
+    return {
+        "order": local_order,
+        "pos_order_number": live_order_number,
+        "converted_from": draft_order_number,
+        "is_draft": False,
+        "shopify_order_id": shopify_order.get("id"),
+        "shopify_order_number": shopify_order.get("order_number")
+    }
 
 
 @router.get("/orders/{order_id}/sync")
