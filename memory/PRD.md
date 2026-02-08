@@ -190,6 +190,7 @@ Build a manufacturing and fulfillment app for Shopify websites with detailed tim
   - Floating action bar at bottom with: total, item count, settings, save draft, create order buttons
   - "Order Options" dialog accessible via settings button for customer, shipping, discounts
   - Responsive breakpoints for iPhone SE (375px) to iPhone 14 Pro Max (430px)
+  - Fixed variant Add buttons not visible on mobile (removed ScrollArea, optimized flex layout)
   - Desktop layout unchanged (3-column grid)
 - **Point of Sale (POS)** - COMPLETE - In-store order creation with Shopify sync:
   - Store selector for Shopify stores
