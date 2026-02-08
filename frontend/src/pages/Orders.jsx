@@ -1633,6 +1633,63 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Email Order Dialog */}
+      <Dialog open={emailDialogOpen} onOpenChange={(open) => { if (!open) { setEmailDialogOpen(false); setEmailingOrder(null); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Mail className="w-5 h-5 text-green-600" />
+              Email Order Confirmation
+            </DialogTitle>
+            <DialogDescription>
+              Send a copy of this order to the customer
+            </DialogDescription>
+          </DialogHeader>
+          {emailingOrder && (
+            <div className="space-y-4 py-4">
+              <div className="bg-muted/30 rounded-lg p-3 space-y-1">
+                <p className="text-sm font-medium">Order #{emailingOrder.order_number || emailingOrder.pos_order_number}</p>
+                <p className="text-xs text-muted-foreground">
+                  {emailingOrder.customer?.name || emailingOrder.name || "No customer"}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {emailingOrder.line_items?.length || 0} items • ${(emailingOrder.total || 0).toFixed(2)}
+                </p>
+              </div>
+              <div>
+                <Label>Send To *</Label>
+                <Input
+                  type="email"
+                  value={emailTo}
+                  onChange={(e) => setEmailTo(e.target.value)}
+                  placeholder="customer@email.com"
+                  className="mt-1"
+                  data-testid="order-email-to"
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setEmailDialogOpen(false); setEmailingOrder(null); }}>
+              Cancel
+            </Button>
+            <Button onClick={sendOrderEmail} disabled={sendingEmail} className="bg-green-600 hover:bg-green-700">
+              {sendingEmail ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <Mail className="w-4 h-4 mr-2" />
+                  Send Email
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
