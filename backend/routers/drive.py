@@ -66,8 +66,8 @@ async def connect_drive(user: User = Depends(get_current_user)):
     
     redirect_uri = get_redirect_uri()
     
-    # Suggest the company account for login
-    login_hint = "info@gingerbluehome.com"
+    # Suggest the company account for login (configurable via env)
+    login_hint = os.environ.get("COMPANY_GOOGLE_EMAIL", "info@gingerbluehome.com")
     
     # Build authorization URL
     auth_url = (
