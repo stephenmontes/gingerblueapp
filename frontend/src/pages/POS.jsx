@@ -105,6 +105,7 @@ export default function POS({ user }) {
       if (res.ok) {
         const data = await res.json();
         setSearchResults(data.products);
+        setStoreProductCount(data.total_in_store);
 
         // Auto-add if barcode scan found exactly one product
         if (isBarcode && data.products.length === 1) {
