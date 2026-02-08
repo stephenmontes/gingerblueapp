@@ -977,12 +977,21 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
                         onClick={() => setSelectedOrder(order)}
                         className="font-mono text-sm font-medium hover:text-primary hover:underline cursor-pointer"
                       >
-                        #{order.order_number || order.order_id}
+                        {order.pos_order_number ? (
+                          <span className="flex flex-col">
+                            <span>{order.pos_order_number}</span>
+                            {order.order_number && order.order_number !== order.pos_order_number && (
+                              <span className="text-xs text-muted-foreground">#{order.order_number}</span>
+                            )}
+                          </span>
+                        ) : (
+                          <>#{order.order_number || order.order_id}</>
+                        )}
                       </button>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <PlatformBadge platform={order.platform} />
+                        <PlatformBadge platform={order.source === "pos" ? "pos" : order.platform} />
                         <span className="text-sm">{order.store_name}</span>
                       </div>
                     </TableCell>
