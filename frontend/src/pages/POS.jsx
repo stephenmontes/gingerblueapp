@@ -1523,11 +1523,27 @@ export default function POS({ user }) {
           )}
 
           {/* Cart */}
-          <Card className="bg-card border-border">
+          <Card 
+            className="border-2 transition-colors"
+            style={orderColor && cart.length > 0 ? { 
+              borderColor: orderColor.border,
+              backgroundColor: `${orderColor.bg}` 
+            } : undefined}
+          >
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <ShoppingCart className="w-5 h-5" />
+                <ShoppingCart 
+                  className="w-5 h-5" 
+                  style={orderColor && cart.length > 0 ? { color: orderColor.accent } : undefined}
+                />
                 Cart ({cart.length} items)
+                {orderColor && cart.length > 0 && (
+                  <div 
+                    className="w-3 h-3 rounded-full ml-2"
+                    style={{ backgroundColor: orderColor.accent }}
+                    title="Order color indicator"
+                  />
+                )}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -1541,7 +1557,7 @@ export default function POS({ user }) {
                 <ScrollArea className="h-[250px] md:h-[300px]">
                   <div className="space-y-2 md:space-y-3">
                     {cart.map((item, index) => (
-                      <div key={index} className="flex items-center gap-2 md:gap-3 p-2 md:p-3 rounded-lg border border-border">
+                      <div key={index} className="flex items-center gap-2 md:gap-3 p-2 md:p-3 rounded-lg border bg-background/80">
                         {/* Clickable thumbnail */}
                         <button
                           onClick={() => item.image && setPreviewImage({ src: item.image, title: item.title })}
