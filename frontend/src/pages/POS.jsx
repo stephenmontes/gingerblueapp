@@ -1681,6 +1681,26 @@ export default function POS({ user }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Image Preview Dialog */}
+      <Dialog open={!!previewImage} onOpenChange={() => setPreviewImage(null)}>
+        <DialogContent className="max-w-lg p-0 overflow-hidden">
+          <DialogHeader className="p-4 pb-2">
+            <DialogTitle className="text-sm font-medium truncate pr-8">
+              {previewImage?.title}
+            </DialogTitle>
+          </DialogHeader>
+          {previewImage && (
+            <div className="px-4 pb-4">
+              <img
+                src={previewImage.src}
+                alt={previewImage.title}
+                className="w-full h-auto max-h-[60vh] object-contain rounded-lg bg-muted"
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
