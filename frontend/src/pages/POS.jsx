@@ -407,7 +407,12 @@ export default function POS({ user }) {
       return;
     }
 
-    setSubmitting(true);
+    if (isDraft) {
+      setSavingDraft(true);
+    } else {
+      setSubmitting(true);
+    }
+    
     try {
       const orderData = {
         store_id: selectedStore,
@@ -421,14 +426,19 @@ export default function POS({ user }) {
           quantity: item.quantity,
           price: item.price,
           taxable: item.taxable,
-          is_custom: item.is_custom
+          is_custom: item.is_custom,
+          image: item.image,
+          discount_type: item.discount_type,
+          discount_value: item.discount_value || 0
         })),
         shipping: shipAllItems ? shipping : null,
         ship_all_items: shipAllItems,
         tax_exempt: taxExempt,
         note: orderNote,
         tags: orderTags.split(",").map(t => t.trim()).filter(Boolean),
-        financial_status: "pending"
+        financial_status: "pending",
+        order_discount: orderDiscount.value > 0 ? orderDiscount : null,
+        is_draft: isDraft
       };
 
       const res = await fetch(`${API}/pos/orders`, {
@@ -441,34 +451,46 @@ export default function POS({ user }) {
       if (res.ok) {
         const data = await res.json();
         
-        // Save order details for printing
-        const selectedStoreName = stores.find(s => s.store_id === selectedStore)?.name || "";
-        setLastOrder({
-          pos_order_number: data.pos_order_number,
-          shopify_order_number: data.shopify_order_number,
-          store_name: selectedStoreName,
-          customer: customer,
-          items: cart,
-          subtotal: subtotal,
-          shipping: shipAllItems ? shipping : null,
-          tax_exempt: taxExempt,
-          total: total,
-          note: orderNote,
-          created_at: new Date().toLocaleString(),
-          created_by: user?.name || "Staff"
-        });
-        
-        toast.success(
-          <div>
-            <p className="font-semibold">Order Created!</p>
-            <p className="text-sm">POS: {data.pos_order_number}</p>
-            <p className="text-sm">Shopify: #{data.shopify_order_number}</p>
-          </div>,
-          { duration: 5000 }
-        );
-        
-        // Show print dialog
-        setPrintDialogOpen(true);
+        if (isDraft) {
+          toast.success(
+            <div>
+              <p className="font-semibold">Draft Saved!</p>
+              <p className="text-sm">Order: {data.pos_order_number}</p>
+            </div>,
+            { duration: 3000 }
+          );
+        } else {
+          // Save order details for printing
+          const selectedStoreName = stores.find(s => s.store_id === selectedStore)?.name || "";
+          setLastOrder({
+            pos_order_number: data.pos_order_number,
+            shopify_order_number: data.shopify_order_number,
+            store_name: selectedStoreName,
+            customer: customer,
+            items: cart,
+            subtotal: subtotal,
+            order_discount: orderDiscount,
+            order_discount_amount: orderDiscountAmount,
+            shipping: shipAllItems ? shipping : null,
+            tax_exempt: taxExempt,
+            total: total,
+            note: orderNote,
+            created_at: new Date().toLocaleString(),
+            created_by: user?.name || "Staff"
+          });
+          
+          toast.success(
+            <div>
+              <p className="font-semibold">Order Created!</p>
+              <p className="text-sm">POS: {data.pos_order_number}</p>
+              <p className="text-sm">Shopify: #{data.shopify_order_number}</p>
+            </div>,
+            { duration: 5000 }
+          );
+          
+          // Show print dialog
+          setPrintDialogOpen(true);
+        }
         
         // Reset form
         setCart([]);
@@ -476,6 +498,8 @@ export default function POS({ user }) {
         setTaxExempt(false);
         setOrderNote("");
         setOrderTags("");
+        setOrderDiscount({ type: "percentage", value: 0, reason: "" });
+        setShippingPercent("");
         
         // Refresh next order number
         fetchNextOrderNumber();
@@ -488,6 +512,7 @@ export default function POS({ user }) {
       toast.error("Failed to create order");
     } finally {
       setSubmitting(false);
+      setSavingDraft(false);
     }
   };
 
