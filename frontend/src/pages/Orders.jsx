@@ -159,6 +159,82 @@ export default function Orders({ user }) {
     }
   };
 
+  const fetchDriveStatus = async () => {
+    try {
+      const response = await fetch(API + "/drive/status", { credentials: "include" });
+      if (response.ok) {
+        const data = await response.json();
+        setDriveStatus(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch drive status:", error);
+    }
+  };
+
+  const handleExportToDrive = async () => {
+    if (selectedOrders.length === 0) {
+      toast.error("Please select orders to export");
+      return;
+    }
+
+    if (!driveStatus.connected) {
+      // Redirect to connect Drive
+      toast.info("Connecting to Google Drive...");
+      try {
+        const response = await fetch(API + "/drive/oauth/connect", { credentials: "include" });
+        if (response.ok) {
+          const data = await response.json();
+          window.location.href = data.authorization_url;
+        } else {
+          toast.error("Failed to initiate Drive connection");
+        }
+      } catch (error) {
+        toast.error("Failed to connect to Google Drive");
+      }
+      return;
+    }
+
+    setExporting(true);
+    try {
+      const response = await fetch(API + "/drive/export-orders", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ order_ids: selectedOrders }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        toast.success(result.message, { duration: 5000 });
+        if (result.file_url) {
+          toast.info(
+            <div className="flex items-center gap-2">
+              <span>View in Drive</span>
+              <a 
+                href={result.file_url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-primary underline"
+              >
+                Open File
+              </a>
+            </div>,
+            { duration: 10000 }
+          );
+        }
+        setSelectedOrders([]);
+      } else {
+        const error = await response.json();
+        toast.error(error.detail || "Export failed");
+      }
+    } catch (error) {
+      console.error("Export failed:", error);
+      toast.error("Failed to export to Google Drive");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const fetchOrderActivities = async (orderId) => {
     try {
       setActivitiesLoading(true);
