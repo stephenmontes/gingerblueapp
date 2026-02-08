@@ -587,19 +587,19 @@ export default function POS({ user }) {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <ShoppingCart className="w-8 h-8 text-primary" />
+          <ShoppingCart className="w-6 h-6 md:w-8 md:h-8 text-primary" />
           <div>
-            <h1 className="text-2xl font-bold">Point of Sale</h1>
-            <p className="text-sm text-muted-foreground">Create orders with Shopify sync</p>
+            <h1 className="text-xl md:text-2xl font-bold">Point of Sale</h1>
+            <p className="text-xs md:text-sm text-muted-foreground hidden sm:block">Create orders with Shopify sync</p>
           </div>
         </div>
         
         {/* Next Order Number & Store Selector */}
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center justify-end gap-2 md:gap-4">
           {nextOrderNumber && (
             <div className="text-right">
               <p className="text-xs text-muted-foreground">Next Order</p>
-              <p className="font-mono font-bold text-primary" data-testid="next-order-number">{nextOrderNumber}</p>
+              <p className="font-mono font-bold text-primary text-sm md:text-base" data-testid="next-order-number">{nextOrderNumber}</p>
             </div>
           )}
           {lastOrder && (
@@ -608,26 +608,25 @@ export default function POS({ user }) {
               size="sm"
               onClick={() => setPrintDialogOpen(true)}
               data-testid="reprint-last-order"
+              className="hidden sm:flex"
             >
               <Printer className="w-4 h-4 mr-2" />
-              Reprint {lastOrder.pos_order_number}
+              Reprint
             </Button>
           )}
-          <div className="flex items-center gap-2">
-            <Store className="w-5 h-5 text-muted-foreground" />
-            <Select value={selectedStore} onValueChange={setSelectedStore}>
-              <SelectTrigger className="w-[200px]" data-testid="store-selector">
-                <SelectValue placeholder="Select Store" />
-              </SelectTrigger>
-              <SelectContent>
-                {stores.map(store => (
-                  <SelectItem key={store.store_id} value={store.store_id}>
-                    {store.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <Select value={selectedStore} onValueChange={setSelectedStore}>
+            <SelectTrigger className="w-[140px] md:w-[200px]" data-testid="store-selector">
+              <Store className="w-4 h-4 mr-1 md:mr-2 text-muted-foreground" />
+              <SelectValue placeholder="Store" />
+            </SelectTrigger>
+            <SelectContent>
+              {stores.map(store => (
+                <SelectItem key={store.store_id} value={store.store_id}>
+                  {store.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
