@@ -295,12 +295,15 @@ async def get_orders(
         "note_attributes": 1,
         "created_at": 1,
         "order_date": 1,
-        "updated_at": 1
+        "updated_at": 1,
+        "pos_order_number": 1,
+        "is_draft": 1,
+        "source": 1
     }
     
-    # Fetch from fulfillment_orders with pagination
+    # Fetch from appropriate collection with pagination
     # Sort by requested field - created_at is the most reliable date field
-    orders = await db.fulfillment_orders.find(query, order_projection).sort([
+    orders = await collection.find(query, order_projection).sort([
         (primary_sort_field, sort_direction)
     ]).skip(skip).limit(page_size).to_list(page_size)
     
