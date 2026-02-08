@@ -31,6 +31,10 @@ COMPANY_CALENDAR_ID = "company_calendar"
 
 def get_redirect_uri():
     """Get the OAuth redirect URI based on environment"""
+    app_url = os.environ.get("APP_URL", "")
+    if app_url:
+        return f"{app_url}/api/calendar/oauth/callback"
+    
     auth_url = os.environ.get("AUTH_SERVICE_URL", "")
     if auth_url:
         # For deployed environment, use the custom domain
@@ -49,8 +53,8 @@ async def connect_calendar(user: User = Depends(get_current_user)):
     
     redirect_uri = get_redirect_uri()
     
-    # Suggest the company account for login
-    login_hint = "info@gingerbluehome.com"
+    # Suggest the company account for login (configurable via env)
+    login_hint = os.environ.get("COMPANY_GOOGLE_EMAIL", "info@gingerbluehome.com")
     
     # Build authorization URL
     auth_url = (
