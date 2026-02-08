@@ -5,7 +5,8 @@ import {
   ShoppingCart, Search, Barcode, User, Plus, Minus, Trash2, 
   Package, Store, DollarSign, Truck, Tag, X, Check, Loader2,
   ScanLine, UserPlus, RefreshCw, Printer, Percent, Save, FileText,
-  Image as ImageIcon, ZoomIn, FolderOpen, Lock, Unlock, Clock, Users
+  Image as ImageIcon, ZoomIn, FolderOpen, Lock, Unlock, Clock, Users,
+  Mail, FileDown
 } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -19,6 +20,7 @@ import { ScrollArea } from "../components/ui/scroll-area";
 import { Separator } from "../components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "../components/ui/popover";
+import { Textarea } from "../components/ui/textarea";
 
 export default function POS({ user }) {
   // Local storage key for this user
