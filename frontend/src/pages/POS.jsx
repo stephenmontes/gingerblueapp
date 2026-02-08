@@ -2525,6 +2525,76 @@ export default function POS({ user }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Email Quote Dialog */}
+      <Dialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Mail className="w-5 h-5" />
+              Email Quote
+            </DialogTitle>
+            <DialogDescription>
+              Send this quote to the customer via email
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <Label>To</Label>
+              <Input
+                type="email"
+                placeholder="customer@email.com"
+                value={emailTo}
+                onChange={(e) => setEmailTo(e.target.value)}
+                data-testid="email-to-input"
+              />
+            </div>
+            <div>
+              <Label>Subject</Label>
+              <Input
+                placeholder="Quote from Store"
+                value={emailSubject}
+                onChange={(e) => setEmailSubject(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label>Message</Label>
+              <Textarea
+                placeholder="Enter your message..."
+                value={emailMessage}
+                onChange={(e) => setEmailMessage(e.target.value)}
+                rows={5}
+              />
+            </div>
+            
+            <div className="bg-muted/50 rounded-lg p-3 text-sm">
+              <p className="font-medium mb-2">Quote Summary:</p>
+              <p>{cart.length} item(s) • ${total.toFixed(2)}</p>
+              {customer && <p>Customer: {customer.name}</p>}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEmailDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={sendEmail} disabled={sendingEmail || !emailTo}>
+              {sendingEmail ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <Mail className="w-4 h-4 mr-2" />
+                  Send Email
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
