@@ -563,6 +563,22 @@ export default function POS({ user }) {
     }
     
     try {
+      // Add created by info to note
+      const createdByNote = `[Created by ${user?.name || 'Unknown'} on ${new Date().toLocaleString()}]`;
+      const fullNote = orderNote ? `${orderNote}\n${createdByNote}` : createdByNote;
+      
+      // Delete existing auto-saved draft if creating final order
+      if (!isDraft && currentDraftId) {
+        try {
+          await fetch(`${API}/pos/drafts/${currentDraftId}`, {
+            method: "DELETE",
+            credentials: "include"
+          });
+        } catch (e) {
+          console.log("Could not delete previous draft:", e);
+        }
+      }
+      
       const orderData = {
         store_id: selectedStore,
         customer_id: customer?.customer_id || null,
@@ -583,7 +599,7 @@ export default function POS({ user }) {
         shipping: shipAllItems ? shipping : null,
         ship_all_items: shipAllItems,
         tax_exempt: taxExempt,
-        note: orderNote,
+        note: fullNote,
         tags: orderTags.split(",").map(t => t.trim()).filter(Boolean),
         financial_status: "pending",
         order_discount: orderDiscount.value > 0 ? orderDiscount : null,
@@ -601,6 +617,7 @@ export default function POS({ user }) {
         const data = await res.json();
         
         if (isDraft) {
+          setCurrentDraftId(data.order?.order_id);
           toast.success(
             <div>
               <p className="font-semibold">Draft Saved!</p>
