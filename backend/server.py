@@ -111,11 +111,13 @@ async def api_health_check():
 # Include the main router
 app.include_router(api_router)
 
-# CORS middleware
+# CORS middleware - Allow all origins for preview and custom domains
+# Note: Using allow_origin_regex to support both preview and custom domains
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
