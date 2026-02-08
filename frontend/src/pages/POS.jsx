@@ -89,6 +89,9 @@ export default function POS({ user }) {
   const [itemDiscountIndex, setItemDiscountIndex] = useState(null);
   const [tempDiscount, setTempDiscount] = useState({ type: "percentage", value: 0 });
 
+  // Image preview
+  const [previewImage, setPreviewImage] = useState(null);
+
   // Last created order for printing
   const [lastOrder, setLastOrder] = useState(null);
   const [printDialogOpen, setPrintDialogOpen] = useState(false);
