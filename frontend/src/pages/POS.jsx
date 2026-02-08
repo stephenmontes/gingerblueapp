@@ -884,27 +884,62 @@ export default function POS({ user }) {
               </div>
               
               {shipAllItems && (
-                <div className="space-y-2 pt-2 border-t border-border">
+                <div className="space-y-3 pt-2 border-t border-border">
                   <Label className="text-sm flex items-center gap-2">
                     <Truck className="w-4 h-4" />
                     Shipping
                   </Label>
-                  <Input
-                    placeholder="Shipping method"
-                    value={shipping.title}
-                    onChange={(e) => setShipping({...shipping, title: e.target.value})}
-                  />
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">$</span>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      placeholder="0.00"
-                      value={shipping.price || ""}
-                      onChange={(e) => setShipping({...shipping, price: parseFloat(e.target.value) || 0})}
-                    />
-                  </div>
+                  
+                  {/* Shipping Percentage Preset Dropdown */}
+                  <Select 
+                    value={shippingPercent} 
+                    onValueChange={(val) => {
+                      setShippingPercent(val);
+                      if (val === "custom") {
+                        setShipping(prev => ({ ...prev, title: "Custom Shipping", price: 0 }));
+                      }
+                    }}
+                  >
+                    <SelectTrigger data-testid="shipping-preset-dropdown">
+                      <SelectValue placeholder="Select shipping rate..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {shippingPresets.map(preset => (
+                        <SelectItem key={preset.value} value={preset.value}>
+                          {preset.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  {/* Calculated shipping display */}
+                  {shippingPercent && shippingPercent !== "custom" && subtotal > 0 && (
+                    <div className="text-sm text-muted-foreground bg-muted/50 p-2 rounded">
+                      {shippingPercent}% of ${subtotal.toFixed(2)} = <span className="font-semibold text-foreground">${shipping.price.toFixed(2)}</span>
+                    </div>
+                  )}
+
+                  {/* Custom shipping inputs - show when custom selected or no preset */}
+                  {(shippingPercent === "custom" || !shippingPercent) && (
+                    <>
+                      <Input
+                        placeholder="Shipping method name"
+                        value={shipping.title}
+                        onChange={(e) => setShipping({...shipping, title: e.target.value})}
+                      />
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground">$</span>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="0.00"
+                          value={shipping.price || ""}
+                          onChange={(e) => setShipping({...shipping, price: parseFloat(e.target.value) || 0})}
+                        />
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
             </CardContent>
