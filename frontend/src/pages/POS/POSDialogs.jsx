@@ -662,6 +662,8 @@ export function PrintReceiptDialog({
 export function EmailDialog({
   open,
   onOpenChange,
+  emailFrom,
+  setEmailFrom,
   emailTo,
   setEmailTo,
   emailSubject,
@@ -669,7 +671,8 @@ export function EmailDialog({
   emailMessage,
   setEmailMessage,
   sendingEmail,
-  onSendEmail
+  onSendEmail,
+  storeName
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -681,6 +684,19 @@ export function EmailDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>From</Label>
+            <Input
+              type="email"
+              value={emailFrom}
+              onChange={(e) => setEmailFrom(e.target.value)}
+              placeholder={`sales@${storeName?.toLowerCase().replace(/\s+/g, '') || 'store'}.com`}
+              data-testid="email-from"
+            />
+            <p className="text-xs text-muted-foreground">
+              Sender email address (requires email service configuration)
+            </p>
+          </div>
           <div className="space-y-2">
             <Label>To *</Label>
             <Input
