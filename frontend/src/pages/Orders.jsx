@@ -225,11 +225,12 @@ export default function Orders({ user }) {
         setSelectedOrders([]);
       } else {
         const error = await response.json();
+        console.error("Export error response:", error);
         toast.error(error.detail || "Export failed");
       }
     } catch (error) {
       console.error("Export failed:", error);
-      toast.error("Failed to export to Google Drive");
+      toast.error(`Failed to export: ${error.message || "Network error"}`);
     } finally {
       setExporting(false);
     }
