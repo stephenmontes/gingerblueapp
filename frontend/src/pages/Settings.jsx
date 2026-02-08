@@ -473,6 +473,9 @@ export default function Settings({ user }) {
         </DialogContent>
       </Dialog>
 
+      {/* Store Branding Section */}
+      <StoreBrandingSettings API={API} stores={stores} setStores={setStores} isManager={isManager} />
+
       <Card className="bg-card border-border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><Workflow className="w-5 h-5" />Production Stages</CardTitle>
