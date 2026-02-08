@@ -537,6 +537,11 @@ export default function POS({ user }) {
     const quoteNumber = currentDraftId ? `Draft-${nextOrderNumber}` : `Quote-${Date.now().toString(36).toUpperCase()}`;
 
     const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      toast.error("Please allow pop-ups to print quotes");
+      return;
+    }
+    
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
@@ -566,10 +571,42 @@ export default function POS({ user }) {
             .terms { margin-top: 30px; padding: 15px; background: #f9f9f9; border-radius: 4px; font-size: 12px; }
             .terms h4 { margin-bottom: 10px; }
             .discount { color: #dc2626; }
-            @media print { body { padding: 20px; } }
+            .print-actions { 
+              position: fixed; 
+              top: 10px; 
+              right: 10px; 
+              display: flex; 
+              gap: 8px;
+              z-index: 1000;
+            }
+            .print-actions button {
+              padding: 10px 20px;
+              font-size: 14px;
+              cursor: pointer;
+              border: none;
+              border-radius: 6px;
+              font-weight: 500;
+            }
+            .btn-print {
+              background: #2563eb;
+              color: white;
+            }
+            .btn-close {
+              background: #e5e7eb;
+              color: #374151;
+            }
+            @media print { 
+              body { padding: 20px; }
+              .print-actions { display: none; }
+            }
           </style>
         </head>
         <body>
+          <div class="print-actions">
+            <button class="btn-print" onclick="window.print()">Print</button>
+            <button class="btn-close" onclick="window.close()">Close</button>
+          </div>
+          
           <div class="header">
             <h1>${storeName}</h1>
             <div class="quote-type">${currentDraftId ? 'Draft Order' : 'Quote'}</div>
@@ -692,10 +729,6 @@ export default function POS({ user }) {
     `);
     printWindow.document.close();
     printWindow.focus();
-    setTimeout(() => {
-      printWindow.print();
-      printWindow.close();
-    }, 250);
   };
 
   // Open email dialog
