@@ -69,6 +69,7 @@ export default function POS({ user }) {
   // Fetch stores on mount
   useEffect(() => {
     fetchStores();
+    fetchNextOrderNumber();
   }, []);
 
   // Reset search when store changes
@@ -92,6 +93,18 @@ export default function POS({ user }) {
       toast.error("Failed to load stores");
     } finally {
       setLoadingStores(false);
+    }
+  };
+
+  const fetchNextOrderNumber = async () => {
+    try {
+      const res = await fetch(`${API}/pos/next-order-number`, { credentials: "include" });
+      if (res.ok) {
+        const data = await res.json();
+        setNextOrderNumber(data.next_order_number);
+      }
+    } catch (err) {
+      console.error("Failed to fetch next order number");
     }
   };
 
