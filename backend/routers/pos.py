@@ -1309,20 +1309,23 @@ async def send_quote_email(
         store_full = await db.stores.find_one({"store_id": request.store_id}, {"_id": 0})
         
         if resend_key:
-            # IMPORTANT: On Resend free tier, must use "onboarding@resend.dev" as sender
-            # or a verified domain. Store the intended from_email for display purposes.
-            intended_from = request.from_email or (store_full.get("email") if store_full else None) or f"sales@{store_name.lower().replace(' ', '')}.com"
+            # Use verified domain email or fall back to Resend test sender
+            verified_from_email = os.environ.get("RESEND_FROM_EMAIL", "onboarding@resend.dev")
+            intended_from = request.from_email or (store_full.get("email") if store_full else None) or verified_from_email
             
-            # Use Resend's test sender - emails will still be delivered
-            sender_email = "onboarding@resend.dev"
+            # Use verified domain email as sender
+            sender_email = verified_from_email
             
             params = {
                 "from": f"{store_name} <{sender_email}>",
                 "to": [request.to],
                 "subject": request.subject,
                 "html": html_body,
-                "reply_to": intended_from  # So replies go to the store's email
+                "reply_to": intended_from if intended_from != sender_email else None
             }
+            
+            # Remove None values
+            params = {k: v for k, v in params.items() if v is not None}
             
             # Run sync SDK in thread to keep FastAPI non-blocking
             email_response = await asyncio.to_thread(resend.Emails.send, params)
