@@ -262,7 +262,6 @@ export default function Orders({ user }) {
     fetchOrders(1, "created_at", "desc", "");
     fetchStores();
     fetchSyncStatus();
-    fetchDriveStatus();
   }, [storeFilter, statusFilter, showOnlyUnbatched]);
 
   // Debounced search - triggers server-side search including archived orders
