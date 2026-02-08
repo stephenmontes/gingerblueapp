@@ -525,6 +525,109 @@ export default function Products() {
         product={selectedProduct}
         onClose={() => setSelectedProduct(null)}
       />
+
+      {/* Barcode Label Print Dialog */}
+      <Dialog open={labelDialogOpen} onOpenChange={setLabelDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Barcode className="w-5 h-5" />
+              Print Barcode Labels
+            </DialogTitle>
+            <DialogDescription>
+              Print 2" x 1" barcode labels for this product
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedProductForLabel && (
+            <div className="space-y-4 py-4">
+              <div className="bg-muted/30 rounded-lg p-3">
+                <p className="font-medium text-sm">{selectedProductForLabel.title}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {selectedProductForLabel.variants?.length || 0} variant(s)
+                </p>
+              </div>
+              
+              <div>
+                <Label>Select Variant</Label>
+                <Select 
+                  defaultValue="0"
+                  onValueChange={(val) => {
+                    // Store selected variant index
+                    selectedProductForLabel._selectedVariantIndex = parseInt(val);
+                  }}
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select variant" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {selectedProductForLabel.variants?.map((variant, idx) => (
+                      <SelectItem key={idx} value={idx.toString()}>
+                        <div className="flex items-center gap-2">
+                          <span>{variant.title || "Default"}</span>
+                          {variant.sku && (
+                            <span className="text-xs text-muted-foreground">({variant.sku})</span>
+                          )}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label>Number of Labels</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  max="100"
+                  value={labelQuantity}
+                  onChange={(e) => setLabelQuantity(Math.max(1, Math.min(100, parseInt(e.target.value) || 1)))}
+                  className="mt-1"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Print up to 100 labels at a time
+                </p>
+              </div>
+              
+              {/* Preview */}
+              <div className="border rounded-lg p-3 bg-white">
+                <p className="text-xs text-muted-foreground mb-2">Label Preview (2" x 1")</p>
+                <div className="border-2 border-dashed rounded p-2 text-center" style={{ width: '192px', height: '96px' }}>
+                  <p className="text-[8px] font-bold truncate">{selectedProductForLabel.title}</p>
+                  <div className="my-1 flex justify-center">
+                    <Barcode className="w-24 h-8 text-gray-800" />
+                  </div>
+                  <p className="text-[7px] font-mono">
+                    {selectedProductForLabel.variants?.[0]?.barcode || selectedProductForLabel.variants?.[0]?.sku || "BARCODE"}
+                  </p>
+                  <p className="text-[6px] text-gray-600">
+                    SKU: {selectedProductForLabel.variants?.[0]?.sku || "N/A"}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setLabelDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => {
+                const variantIndex = selectedProductForLabel._selectedVariantIndex || 0;
+                const variant = selectedProductForLabel.variants?.[variantIndex];
+                printBarcodeLabels(selectedProductForLabel, variant, labelQuantity);
+                setLabelDialogOpen(false);
+              }}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              <Printer className="w-4 h-4 mr-2" />
+              Print {labelQuantity} Label{labelQuantity > 1 ? 's' : ''}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
