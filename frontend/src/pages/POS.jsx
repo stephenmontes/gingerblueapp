@@ -2522,8 +2522,9 @@ export default function POS({ user }) {
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-mono font-bold text-primary">{draft.pos_order_number}</span>
+                        {/* Header row with order number and badges */}
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
+                          <span className="font-mono font-bold text-primary text-lg">{draft.pos_order_number}</span>
                           {currentDraftId === draft.order_id && (
                             <Badge variant="default" className="text-[10px]">Current</Badge>
                           )}
@@ -2538,26 +2539,107 @@ export default function POS({ user }) {
                               {draft.is_mine ? "Editing" : `Locked`}
                             </Badge>
                           )}
+                          <Badge variant="outline" className="text-[10px]">
+                            {draft.store_name || 'Store'}
+                          </Badge>
                         </div>
                         
-                        <div className="text-sm text-muted-foreground space-y-0.5">
-                          {draft.customer_name && <p>Customer: {draft.customer_name}</p>}
-                          <p>{draft.items?.length || 0} item(s) • ${(draft.total_price || 0).toFixed(2)}</p>
+                        {/* Customer info - prominent display */}
+                        {draft.customer_name ? (
+                          <div className="bg-background/60 rounded-md p-2 mb-2">
+                            <div className="flex items-center gap-2">
+                              <User className="w-4 h-4 text-muted-foreground" />
+                              <span className="font-medium">{draft.customer_name}</span>
+                            </div>
+                            {draft.customer_email && (
+                              <p className="text-xs text-muted-foreground ml-6">{draft.customer_email}</p>
+                            )}
+                            {draft.customer_data?.phone && (
+                              <p className="text-xs text-muted-foreground ml-6">{draft.customer_data.phone}</p>
+                            )}
+                            {draft.customer_data?.company && (
+                              <p className="text-xs text-muted-foreground ml-6">{draft.customer_data.company}</p>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                            <User className="w-4 h-4" />
+                            <span className="italic">No customer assigned</span>
+                          </div>
+                        )}
+                        
+                        {/* Items preview */}
+                        <div className="grid grid-cols-2 gap-2 text-sm mb-2">
+                          <div className="flex items-center gap-2">
+                            <Package className="w-4 h-4 text-muted-foreground" />
+                            <span>{draft.total_items || draft.items?.length || 0} item(s)</span>
+                          </div>
+                          <div className="flex items-center gap-2 font-semibold">
+                            <DollarSign className="w-4 h-4 text-muted-foreground" />
+                            <span>${(draft.total_price || 0).toFixed(2)}</span>
+                          </div>
+                        </div>
+                        
+                        {/* First few items preview */}
+                        {draft.items && draft.items.length > 0 && (
+                          <div className="text-xs text-muted-foreground bg-muted/30 rounded p-2 mb-2">
+                            {draft.items.slice(0, 3).map((item, idx) => (
+                              <div key={idx} className="truncate">
+                                • {item.quantity}x {item.name || item.title}
+                              </div>
+                            ))}
+                            {draft.items.length > 3 && (
+                              <div className="text-muted-foreground/70">+ {draft.items.length - 3} more items...</div>
+                            )}
+                          </div>
+                        )}
+                        
+                        {/* Ship date and discount info */}
+                        <div className="flex flex-wrap gap-3 text-xs">
                           {draft.requested_ship_date && (
-                            <p className="flex items-center gap-1 text-blue-500">
+                            <span className="flex items-center gap-1 text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded">
                               <Truck className="w-3 h-3" />
                               Ship: {new Date(draft.requested_ship_date).toLocaleDateString()}
-                            </p>
+                            </span>
                           )}
-                          <p className="flex items-center gap-1">
+                          {draft.order_discount_amount > 0 && (
+                            <span className="flex items-center gap-1 text-red-500 bg-red-500/10 px-2 py-0.5 rounded">
+                              <Percent className="w-3 h-3" />
+                              -${draft.order_discount_amount.toFixed(2)} discount
+                            </span>
+                          )}
+                          {draft.tax_exempt && (
+                            <span className="text-orange-500 bg-orange-500/10 px-2 py-0.5 rounded">
+                              Tax Exempt
+                            </span>
+                          )}
+                          {draft.shipping_total > 0 && (
+                            <span className="text-muted-foreground bg-muted px-2 py-0.5 rounded">
+                              +${draft.shipping_total.toFixed(2)} shipping
+                            </span>
+                          )}
+                        </div>
+                        
+                        {/* Timestamps and creator */}
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 pt-2 border-t border-border/50 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1">
                             <Clock className="w-3 h-3" />
                             {new Date(draft.created_at).toLocaleString()}
-                          </p>
-                          <p className="text-xs">
-                            Created by: {draft.created_by_name || 'Unknown'}
-                            {draft.is_locked && !draft.is_mine && draft.locked_by_name && (
-                              <span className="text-orange-500"> • Editing: {draft.locked_by_name}</span>
-                            )}
+                          </span>
+                          <span>
+                            By: {draft.created_by_name || 'Unknown'}
+                          </span>
+                          {draft.is_locked && !draft.is_mine && draft.locked_by_name && (
+                            <span className="text-orange-500">
+                              Editing: {draft.locked_by_name}
+                            </span>
+                          )}
+                          {draft.notes && (
+                            <span className="flex items-center gap-1" title={draft.notes}>
+                              <FileText className="w-3 h-3" />
+                              Has notes
+                            </span>
+                          )}
                           </p>
                         </div>
                       </div>
