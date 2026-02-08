@@ -392,7 +392,8 @@ export default function POS({ user }) {
         financial_status: "pending",
         order_discount: orderDiscount.value > 0 ? orderDiscount : null,
         is_draft: true,
-        requested_ship_date: requestedShipDate || null
+        requested_ship_date: requestedShipDate || null,
+        order_color: orderColor
       };
 
       // If we have an existing draft, update it
