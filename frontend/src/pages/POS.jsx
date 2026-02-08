@@ -348,7 +348,8 @@ export default function POS({ user }) {
         tags: orderTags.split(",").map(t => t.trim()).filter(Boolean),
         financial_status: "pending",
         order_discount: orderDiscount.value > 0 ? orderDiscount : null,
-        is_draft: true
+        is_draft: true,
+        requested_ship_date: requestedShipDate || null
       };
 
       // If we have an existing draft, update it
