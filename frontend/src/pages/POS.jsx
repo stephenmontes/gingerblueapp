@@ -28,6 +28,7 @@ export default function POS({ user }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [searching, setSearching] = useState(false);
+  const [storeProductCount, setStoreProductCount] = useState(null);
   const barcodeInputRef = useRef(null);
 
   // Cart
