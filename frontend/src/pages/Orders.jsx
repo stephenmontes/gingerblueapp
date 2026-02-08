@@ -102,7 +102,7 @@ export default function Orders({ user }) {
 
     setExporting(true);
     try {
-      const response = await fetch(API + "/orders/download-csv", {
+      const response = await fetch(API + "/export/selected-orders", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
