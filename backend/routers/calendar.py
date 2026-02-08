@@ -157,7 +157,7 @@ async def get_company_calendar_credentials() -> Optional[Credentials]:
                     "calendar_tokens.expires_at": (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat()
                 }}
             )
-        except Exception as e:
+        except Exception:
             # Token refresh failed, needs to re-authenticate
             await db[COMPANY_SETTINGS_COLLECTION].update_one(
                 {"setting_id": COMPANY_CALENDAR_ID},
