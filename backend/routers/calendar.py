@@ -203,6 +203,47 @@ async def disconnect_calendar(user: User = Depends(get_current_user)):
     return {"message": "Company calendar disconnected"}
 
 
+@router.get("/debug")
+async def debug_calendar(user: User = Depends(get_current_user)):
+    """Debug endpoint to check calendar connection and list available calendars"""
+    if user.role not in ["admin", "manager"]:
+        raise HTTPException(status_code=403, detail="Admin only")
+    
+    creds = await get_company_calendar_credentials()
+    if not creds:
+        return {"error": "Calendar not connected", "connected": False}
+    
+    try:
+        service = build("calendar", "v3", credentials=creds)
+        
+        # Get list of all calendars
+        calendar_list = service.calendarList().list().execute()
+        calendars = []
+        for cal in calendar_list.get("items", []):
+            calendars.append({
+                "id": cal.get("id"),
+                "summary": cal.get("summary"),
+                "primary": cal.get("primary", False),
+                "accessRole": cal.get("accessRole")
+            })
+        
+        # Get primary calendar info
+        primary = service.calendars().get(calendarId="primary").execute()
+        
+        return {
+            "connected": True,
+            "primary_calendar": {
+                "id": primary.get("id"),
+                "summary": primary.get("summary"),
+                "timeZone": primary.get("timeZone")
+            },
+            "all_calendars": calendars,
+            "total_calendars": len(calendars)
+        }
+    except Exception as e:
+        return {"error": str(e), "connected": True, "credentials_valid": False}
+
+
 @router.get("/events")
 async def get_calendar_events(
     start_date: Optional[str] = None,
