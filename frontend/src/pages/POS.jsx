@@ -26,6 +26,22 @@ export default function POS({ user }) {
   // Local storage key for this user
   const STORAGE_KEY = `pos_order_${user?.user_id || 'guest'}`;
   
+  // Order background color for visual distinction
+  const [orderColor, setOrderColor] = useState(null);
+  
+  // Generate random pastel color for order
+  const generateOrderColor = () => {
+    const hue = Math.floor(Math.random() * 360);
+    return {
+      hue,
+      bg: `hsl(${hue}, 70%, 95%)`,
+      bgDark: `hsl(${hue}, 40%, 15%)`,
+      border: `hsl(${hue}, 60%, 80%)`,
+      borderDark: `hsl(${hue}, 40%, 30%)`,
+      accent: `hsl(${hue}, 70%, 50%)`
+    };
+  };
+  
   // Store selection
   const [stores, setStores] = useState([]);
   const [selectedStore, setSelectedStore] = useState("");
