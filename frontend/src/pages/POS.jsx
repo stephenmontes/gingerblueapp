@@ -499,6 +499,17 @@ export default function POS({ user }) {
               <p className="font-mono font-bold text-primary" data-testid="next-order-number">{nextOrderNumber}</p>
             </div>
           )}
+          {lastOrder && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setPrintDialogOpen(true)}
+              data-testid="reprint-last-order"
+            >
+              <Printer className="w-4 h-4 mr-2" />
+              Reprint {lastOrder.pos_order_number}
+            </Button>
+          )}
           <div className="flex items-center gap-2">
             <Store className="w-5 h-5 text-muted-foreground" />
             <Select value={selectedStore} onValueChange={setSelectedStore}>
