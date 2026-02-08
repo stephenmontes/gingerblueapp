@@ -117,6 +117,44 @@ async def delete_store(store_id: str, user: User = Depends(get_current_user)):
     return {"message": "Store deleted"}
 
 
+class StoreBrandingUpdate(BaseModel):
+    logo: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    address: Optional[str] = None
+
+
+@router.put("/{store_id}/branding")
+async def update_store_branding(store_id: str, branding: StoreBrandingUpdate, user: User = Depends(get_current_user)):
+    """Update store branding info (logo, phone, email, address) for quotes/receipts"""
+    if user.role not in ["admin", "manager"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    update_doc = {}
+    if branding.logo is not None:
+        update_doc["logo"] = branding.logo
+    if branding.phone is not None:
+        update_doc["phone"] = branding.phone
+    if branding.email is not None:
+        update_doc["email"] = branding.email
+    if branding.address is not None:
+        update_doc["address"] = branding.address
+    
+    if not update_doc:
+        raise HTTPException(status_code=400, detail="No fields to update")
+    
+    result = await db.stores.update_one(
+        {"store_id": store_id},
+        {"$set": update_doc}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Store not found")
+    
+    store = await db.stores.find_one({"store_id": store_id}, {"_id": 0, "api_secret": 0, "access_token": 0})
+    return store
+
+
 @router.put("/{store_id}")
 async def update_store(store_id: str, store_data: StoreCreate, user: User = Depends(get_current_user)):
     """Update store configuration"""
