@@ -857,6 +857,7 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
               <SelectContent>
                 <SelectItem value="active">All Active Orders</SelectItem>
                 <SelectItem value="all">All Orders</SelectItem>
+                <SelectItem value="draft">Draft Orders (POS)</SelectItem>
                 <SelectItem value="awaiting_shipment">Awaiting Shipment</SelectItem>
                 <SelectItem value="pending">Pending Payment</SelectItem>
                 <SelectItem value="on_hold">On Hold</SelectItem>
