@@ -1287,12 +1287,22 @@ export default function POS({ user }) {
                 )}
 
                 <div className="items">
-                  <p><strong>Items:</strong></p>
+                  <p style={{marginBottom: '8px'}}><strong>Items:</strong></p>
                   {lastOrder.items.map((item, idx) => (
                     <div key={idx} className="item">
-                      <span className="item-name">{item.title}</span>
-                      <span className="item-qty">x{item.quantity}</span>
-                      <span className="item-price">${(item.price * item.quantity).toFixed(2)}</span>
+                      {item.image ? (
+                        <img src={item.image} alt="" className="item-image" />
+                      ) : (
+                        <div className="item-image-placeholder">IMG</div>
+                      )}
+                      <div className="item-details">
+                        <div className="item-name">{item.title}</div>
+                        {item.sku && <div className="item-sku">SKU: {item.sku}</div>}
+                        <div className="item-meta">
+                          <span className="item-qty">Qty: {item.quantity}</span>
+                          <span className="item-price">${(item.price * item.quantity).toFixed(2)}</span>
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
