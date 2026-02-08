@@ -733,7 +733,7 @@ function GoogleDriveSettings({ API, isManager }) {
   };
 
   const handleDisconnect = async () => {
-    if (!confirm("Are you sure you want to disconnect Google Drive?")) return;
+    if (!confirm("Are you sure you want to disconnect Google Drive? All users will lose export access.")) return;
     
     setDisconnecting(true);
     try {
@@ -768,7 +768,7 @@ function GoogleDriveSettings({ API, isManager }) {
               <path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/>
               <path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/>
             </svg>
-            <CardTitle>Google Drive</CardTitle>
+            <CardTitle>Google Drive (Company-Wide)</CardTitle>
           </div>
           {loading ? (
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -779,16 +779,25 @@ function GoogleDriveSettings({ API, isManager }) {
           )}
         </div>
         <CardDescription>
-          Export orders and reports directly to your Google Drive
+          Shared Google Drive for all team members to export orders and reports
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
           {status.connected ? (
             <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">
-                Google Drive is connected. You can export orders from the Orders page.
-              </p>
+              <div className="p-3 bg-muted/50 rounded-lg">
+                <p className="text-sm font-medium">Drive Connected</p>
+                <p className="text-sm text-muted-foreground">
+                  All team members can now export orders to the shared Google Drive.
+                  Files are saved to the &quot;MFGFlow Exports&quot; folder.
+                </p>
+                {status.connected_email && (
+                  <p className="text-xs text-primary mt-1">
+                    Connected account: {status.connected_email}
+                  </p>
+                )}
+              </div>
               {status.updated_at && (
                 <p className="text-xs text-muted-foreground">
                   Connected: {new Date(status.updated_at).toLocaleDateString()}
@@ -809,15 +818,24 @@ function GoogleDriveSettings({ API, isManager }) {
             </div>
           ) : (
             <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">
-                Connect Google Drive to export orders and reports as CSV files.
-                Files will be saved to a &quot;MFGFlow Exports&quot; folder.
-              </p>
-              {isManager && (
+              <div className="p-3 bg-muted/50 rounded-lg">
+                <p className="text-sm text-muted-foreground">
+                  Connect a shared Google Drive account (e.g., info@gingerbluehome.com) 
+                  to enable order exports for all team members.
+                </p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Files will be saved to a &quot;MFGFlow Exports&quot; folder in the connected account.
+                </p>
+              </div>
+              {isManager ? (
                 <Button onClick={handleConnect} disabled={connecting}>
                   {connecting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                  Connect Google Drive
+                  Connect Company Google Drive
                 </Button>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Ask an admin to connect the company Google Drive.
+                </p>
               )}
             </div>
           )}
