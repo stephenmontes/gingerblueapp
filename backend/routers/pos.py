@@ -1301,50 +1301,60 @@ async def send_quote_email(
     </html>
     """
     
-    # Try to send email via available method
+    # Try to send email via Resend
     try:
-        # Check if we have email service configured
-        # For now, we'll use a simple SMTP approach or log the email
+        resend_key = os.environ.get("RESEND_API_KEY")
         
-        # Try using SendGrid if available
-        sendgrid_key = os.environ.get("SENDGRID_API_KEY")
+        # Get store info for branding
+        store_full = await db.stores.find_one({"store_id": request.store_id}, {"_id": 0})
         
-        # Use from_email from request, or store email, or generate default
-        from_email = request.from_email or store.get("email") or os.environ.get("SENDGRID_FROM_EMAIL", f"noreply@{store_name.lower().replace(' ', '')}.com")
+        # Use from_email from request, or store email, or default Resend sender
+        # Note: In Resend free tier, use "onboarding@resend.dev" or your verified domain
+        from_email = request.from_email or (store_full.get("email") if store_full else None) or "onboarding@resend.dev"
         
-        if sendgrid_key:
-            async with httpx.AsyncClient() as client:
-                response = await client.post(
-                    "https://api.sendgrid.com/v3/mail/send",
-                    headers={
-                        "Authorization": f"Bearer {sendgrid_key}",
-                        "Content-Type": "application/json"
-                    },
-                    json={
-                        "personalizations": [{"to": [{"email": request.to}]}],
-                        "from": {"email": from_email, "name": store_name},
-                        "subject": request.subject,
-                        "content": [
-                            {"type": "text/html", "value": html_body}
-                        ]
-                    },
-                    timeout=30.0
-                )
-                
-                if response.status_code in [200, 202]:
-                    logger.info(f"Quote email sent to {request.to}")
-                    return {"message": "Email sent successfully", "to": request.to}
-                else:
-                    logger.error(f"SendGrid error: {response.text}")
-                    raise HTTPException(status_code=500, detail="Failed to send email via SendGrid")
+        if resend_key:
+            params = {
+                "from": f"{store_name} <{from_email}>" if from_email != "onboarding@resend.dev" else f"{store_name} <onboarding@resend.dev>",
+                "to": [request.to],
+                "subject": request.subject,
+                "html": html_body
+            }
+            
+            # Run sync SDK in thread to keep FastAPI non-blocking
+            email_response = await asyncio.to_thread(resend.Emails.send, params)
+            
+            logger.info(f"Quote email sent to {request.to} via Resend, ID: {email_response.get('id')}")
+            
+            # Log successful email
+            await db.email_logs.insert_one({
+                "email_id": email_response.get("id"),
+                "to": request.to,
+                "from": from_email,
+                "subject": request.subject,
+                "body_preview": request.message[:200],
+                "store_id": request.store_id,
+                "total": request.total,
+                "items_count": len(request.items),
+                "sent_by": user.user_id,
+                "sent_by_name": user.name,
+                "status": "sent",
+                "provider": "resend",
+                "created_at": datetime.now(timezone.utc).isoformat()
+            })
+            
+            return {
+                "message": "Email sent successfully",
+                "to": request.to,
+                "email_id": email_response.get("id")
+            }
         else:
             # No email service configured - log and return success for demo
             logger.warning(f"Email service not configured. Would send to: {request.to}")
-            logger.info(f"Email subject: {request.subject}")
             
             # Store the email attempt for reference
             await db.email_logs.insert_one({
                 "to": request.to,
+                "from": from_email,
                 "subject": request.subject,
                 "body_preview": request.message[:200],
                 "store_id": request.store_id,
@@ -1359,7 +1369,7 @@ async def send_quote_email(
             return {
                 "message": "Email logged (email service not configured)",
                 "to": request.to,
-                "note": "Configure SENDGRID_API_KEY to enable email sending"
+                "note": "Configure RESEND_API_KEY to enable email sending"
             }
             
     except HTTPException:
