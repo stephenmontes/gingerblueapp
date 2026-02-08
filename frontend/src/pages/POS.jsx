@@ -812,6 +812,42 @@ export default function POS({ user }) {
         </div>
       </div>
 
+      {/* Auto-save indicator and Clear button */}
+      {(cart.length > 0 || lastAutoSave) && (
+        <div className="flex items-center justify-between text-xs text-muted-foreground bg-muted/30 rounded-lg px-3 py-2">
+          <div className="flex items-center gap-2">
+            {autoSaving ? (
+              <>
+                <Loader2 className="w-3 h-3 animate-spin" />
+                <span>Auto-saving...</span>
+              </>
+            ) : lastAutoSave ? (
+              <>
+                <Check className="w-3 h-3 text-green-500" />
+                <span>Auto-saved {lastAutoSave.toLocaleTimeString()}</span>
+              </>
+            ) : cart.length > 0 ? (
+              <span>{cart.length} item(s) in cart • Will auto-save in 1 min</span>
+            ) : null}
+            {currentDraftId && (
+              <Badge variant="outline" className="text-[10px]">Draft</Badge>
+            )}
+          </div>
+          {cart.length > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 text-xs text-destructive hover:text-destructive"
+              onClick={clearCurrentOrder}
+              data-testid="clear-order-btn"
+            >
+              <X className="w-3 h-3 mr-1" />
+              Clear Order
+            </Button>
+          )}
+        </div>
+      )}
+
       {/* Mobile-optimized grid: stack on mobile, side-by-side on tablet+ */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
         {/* Left: Product Search & Results */}
