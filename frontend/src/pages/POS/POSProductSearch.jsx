@@ -124,32 +124,27 @@ export function POSProductSearch({
                     
                     {/* Variants Dropdown */}
                     {product.variants && product.variants.length > 1 && (
-                      <div className="mt-3 pt-3 border-t border-border">
-                        <p className="text-xs text-muted-foreground mb-2">{product.variants.length} variants available:</p>
-                        <div className="grid gap-2">
+                      <div className="mt-2 pt-2 border-t border-border">
+                        <p className="text-xs text-muted-foreground mb-2">{product.variants.length} variants:</p>
+                        <div className="space-y-1.5">
                           {product.variants.map((variant, vIdx) => (
                             <div 
                               key={variant.variant_id || vIdx}
-                              className="p-2 rounded bg-muted/30 hover:bg-muted/50"
+                              className="flex items-center justify-between gap-2 p-1.5 rounded bg-muted/30"
                             >
-                              <div className="flex items-start justify-between gap-2">
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-medium">{variant.title || `Variant ${vIdx + 1}`}</p>
-                                  <p className="text-xs text-muted-foreground truncate">
-                                    {variant.sku || variant.barcode || ''}
-                                  </p>
-                                </div>
-                                <div className="flex items-center gap-2 flex-shrink-0">
-                                  <span className="font-semibold text-sm">${parseFloat(variant.price || 0).toFixed(2)}</span>
-                                  <Button 
-                                    size="sm" 
-                                    className="h-7 px-2 text-xs"
-                                    onClick={() => onAddToCart(product, variant)}
-                                  >
-                                    <Plus className="w-3 h-3 mr-1" />
-                                    Add
-                                  </Button>
-                                </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-xs font-medium truncate">{variant.title || `Variant ${vIdx + 1}`}</p>
+                              </div>
+                              <div className="flex items-center gap-1.5 flex-shrink-0">
+                                <span className="text-xs font-semibold">${parseFloat(variant.price || 0).toFixed(2)}</span>
+                                <Button 
+                                  size="sm" 
+                                  className="h-6 px-2 text-xs"
+                                  onClick={() => onAddToCart(product, variant)}
+                                  data-testid={`add-variant-${vIdx}`}
+                                >
+                                  +
+                                </Button>
                               </div>
                             </div>
                           ))}
