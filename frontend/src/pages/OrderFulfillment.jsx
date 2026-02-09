@@ -278,18 +278,18 @@ export default function OrderFulfillment({ user }) {
           <Button
             variant="ghost"
             onClick={() => setShowUserDateReport(!showUserDateReport)}
-            className="w-full justify-between h-12"
+            className="w-full justify-between h-10 sm:h-12 text-sm sm:text-base px-3 sm:px-4"
             data-testid="toggle-user-date-report"
           >
             <span className="flex items-center gap-2">
               <Users className="w-4 h-4" />
-              Hours by User & Date Report
+              <span className="truncate">Hours by User & Date</span>
             </span>
-            {showUserDateReport ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            {showUserDateReport ? <ChevronUp className="w-4 h-4 flex-shrink-0" /> : <ChevronDown className="w-4 h-4 flex-shrink-0" />}
           </Button>
           
           {showUserDateReport && (
-            <div className="p-4 pt-0">
+            <div className="p-3 sm:p-4 pt-0">
               <UserDateReport />
             </div>
           )}
@@ -301,18 +301,18 @@ export default function OrderFulfillment({ user }) {
         <Button
           variant="ghost"
           onClick={() => setShowTimeManager(!showTimeManager)}
-          className="w-full justify-between h-12"
+          className="w-full justify-between h-10 sm:h-12 text-sm sm:text-base px-3 sm:px-4"
           data-testid="toggle-time-manager"
         >
           <span className="flex items-center gap-2">
             <Settings className="w-4 h-4" />
-            Time Entry Management (Admin)
+            <span className="truncate">Time Entry Management</span>
           </span>
-          {showTimeManager ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          {showTimeManager ? <ChevronUp className="w-4 h-4 flex-shrink-0" /> : <ChevronDown className="w-4 h-4 flex-shrink-0" />}
         </Button>
         
         {showTimeManager && (
-          <div className="p-4 pt-0">
+          <div className="p-3 sm:p-4 pt-0">
             <TimeEntryManager />
           </div>
         )}
@@ -320,13 +320,13 @@ export default function OrderFulfillment({ user }) {
 
       {/* Batch-Based Fulfillment Section */}
       {(fulfillmentBatches.length > 0 || historyBatches.length > 0) && (
-        <div className="grid grid-cols-12 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
           {/* Batch List - Left Panel */}
-          <div className={`${selectedBatch ? 'col-span-3' : 'col-span-12'}`}>
+          <div className={`${selectedBatch ? 'lg:col-span-3' : 'col-span-1 lg:col-span-12'}`}>
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-semibold flex items-center gap-2">
-                <Package className="w-5 h-5 text-primary" />
-                Fulfillment Batches
+              <h2 className="text-base sm:text-lg font-semibold flex items-center gap-2">
+                <Package className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+                <span className="truncate">Fulfillment Batches</span>
               </h2>
               {selectedBatch && (
                 <Button variant="ghost" size="sm" onClick={handleCloseBatchDetail}>
