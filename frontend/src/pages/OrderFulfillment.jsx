@@ -329,36 +329,36 @@ export default function OrderFulfillment({ user }) {
                 <span className="truncate">Fulfillment Batches</span>
               </h2>
               {selectedBatch && (
-                <Button variant="ghost" size="sm" onClick={handleCloseBatchDetail}>
-                  Close Batch
+                <Button variant="ghost" size="sm" onClick={handleCloseBatchDetail} className="text-xs sm:text-sm">
+                  Close
                 </Button>
               )}
             </div>
             
             {/* Active / History Tabs */}
-            <div className="flex gap-2 mb-4">
+            <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
               <Button
                 variant={batchTab === "active" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setBatchTab("active")}
-                className="gap-1"
+                className="gap-1 text-xs sm:text-sm flex-shrink-0"
               >
                 Active
-                <Badge variant="secondary" className="ml-1">{fulfillmentBatches.length}</Badge>
+                <Badge variant="secondary" className="ml-1 text-xs">{fulfillmentBatches.length}</Badge>
               </Button>
               <Button
                 variant={batchTab === "history" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setBatchTab("history")}
-                className="gap-1"
+                className="gap-1 text-xs sm:text-sm flex-shrink-0"
               >
                 History
-                <Badge variant="secondary" className="ml-1">{historyBatches.length}</Badge>
+                <Badge variant="secondary" className="ml-1 text-xs">{historyBatches.length}</Badge>
               </Button>
             </div>
             
             {batchTab === "active" ? (
-              <div className={`${selectedBatch ? 'space-y-2' : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'}`}>
+              <div className={`${selectedBatch ? 'space-y-2 hidden lg:block' : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4'}`}>
                 {fulfillmentBatches.length > 0 ? (
                   fulfillmentBatches.map((batch) => (
                     <FulfillmentBatchCard
@@ -371,14 +371,14 @@ export default function OrderFulfillment({ user }) {
                     />
                   ))
                 ) : (
-                  <div className="col-span-full text-center py-8 text-muted-foreground">
-                    <Package className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                    <p>No active fulfillment batches</p>
+                  <div className="col-span-full text-center py-6 sm:py-8 text-muted-foreground">
+                    <Package className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-3 opacity-50" />
+                    <p className="text-sm">No active fulfillment batches</p>
                   </div>
                 )}
               </div>
             ) : (
-              <div className={`${selectedBatch ? 'space-y-2' : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'}`}>
+              <div className={`${selectedBatch ? 'space-y-2 hidden lg:block' : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4'}`}>
                 {historyBatches.length > 0 ? (
                   historyBatches.map((batch) => (
                     <FulfillmentBatchCard
@@ -392,18 +392,18 @@ export default function OrderFulfillment({ user }) {
                     />
                   ))
                 ) : (
-                  <div className="col-span-full text-center py-8 text-muted-foreground">
-                    <Package className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                    <p>No completed batches in history</p>
+                  <div className="col-span-full text-center py-6 sm:py-8 text-muted-foreground">
+                    <Package className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-3 opacity-50" />
+                    <p className="text-sm">No completed batches in history</p>
                   </div>
                 )}
               </div>
             )}
           </div>
           
-          {/* Batch Detail - Right Panel */}
+          {/* Batch Detail - Right Panel (full width on mobile) */}
           {selectedBatch && batchDetail && (
-            <div className="col-span-9">
+            <div className="col-span-1 lg:col-span-9">
               {/* For enhanced batches (ShipStation/GB Decor): Show combined worksheet */}
               {batchDetail.is_enhanced_batch ? (
                 <FulfillmentBatchDetail
@@ -416,7 +416,7 @@ export default function OrderFulfillment({ user }) {
                 />
               ) : (
                 /* For GB Home batches: Show individual orders with stage tabs */
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   <div className="flex items-center justify-between">
                     <h2 className="text-lg font-semibold">{batchDetail.name}</h2>
                     <Badge variant="outline">{batchDetail.order_count} orders</Badge>
