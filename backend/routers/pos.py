@@ -827,6 +827,9 @@ async def get_draft_orders(
         {"_id": 0}
     ).sort([("created_at", -1)]).limit(limit).to_list(limit)
     
+    # Clean any ObjectIds from draft data
+    drafts = [clean_mongo_doc(d) for d in drafts]
+    
     # Add lock status for each draft
     for draft in drafts:
         draft["is_locked"] = bool(draft.get("locked_by"))
