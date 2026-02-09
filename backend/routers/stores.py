@@ -161,6 +161,52 @@ async def update_store_branding(store_id: str, branding: StoreBrandingUpdate, us
     return store
 
 
+@router.post("/upload-logo/{store_id}")
+async def upload_store_logo(
+    store_id: str,
+    file: UploadFile = File(...),
+    user: User = Depends(get_current_user)
+):
+    """Upload a logo image for the store"""
+    if user.role not in ["admin", "manager"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    # Validate store exists
+    store = await db.stores.find_one({"store_id": store_id})
+    if not store:
+        raise HTTPException(status_code=404, detail="Store not found")
+    
+    # Validate file type
+    allowed_types = ["image/png", "image/jpeg", "image/jpg", "image/gif", "image/webp"]
+    if file.content_type not in allowed_types:
+        raise HTTPException(status_code=400, detail=f"Invalid file type. Allowed: PNG, JPG, GIF, WebP")
+    
+    # Validate file size (max 2MB)
+    contents = await file.read()
+    if len(contents) > 2 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="File too large. Max 2MB")
+    
+    # Generate unique filename
+    ext = file.filename.split(".")[-1] if "." in file.filename else "png"
+    filename = f"{store_id}_{uuid.uuid4().hex[:8]}.{ext}"
+    filepath = os.path.join(UPLOAD_DIR, filename)
+    
+    # Save file
+    with open(filepath, "wb") as f:
+        f.write(contents)
+    
+    # Generate URL path (relative to backend)
+    logo_url = f"/api/uploads/logos/{filename}"
+    
+    # Update store with logo URL
+    await db.stores.update_one(
+        {"store_id": store_id},
+        {"$set": {"logo": logo_url}}
+    )
+    
+    return {"logo_url": logo_url, "message": "Logo uploaded successfully"}
+
+
 @router.put("/{store_id}")
 async def update_store(store_id: str, store_data: StoreCreate, user: User = Depends(get_current_user)):
     """Update store configuration"""
