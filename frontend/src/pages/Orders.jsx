@@ -138,6 +138,183 @@ export default function Orders({ user }) {
     }
   };
 
+  // Print barcode labels for all items in an order (1 label per qty)
+  const printOrderBarcodes = (order) => {
+    const lineItems = order.line_items || [];
+    if (lineItems.length === 0) {
+      toast.error("No items in this order");
+      return;
+    }
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      toast.error("Please allow pop-ups to print labels");
+      return;
+    }
+
+    // Generate labels - 1 per quantity
+    const orderNumber = order.order_number || order.pos_order_number || order.order_id;
+    let labelsHtml = '';
+    let totalLabels = 0;
+
+    lineItems.forEach((item, itemIdx) => {
+      const qty = item.quantity || 1;
+      const title = item.title || item.name || "Item";
+      const sku = item.sku || "N/A";
+      const barcodeValue = item.barcode || item.sku || `${orderNumber}-${itemIdx}`;
+      
+      // Create 1 label for each quantity
+      for (let i = 0; i < qty; i++) {
+        totalLabels++;
+        labelsHtml += `
+          <div class="label">
+            <div class="title">${title.length > 30 ? title.substring(0, 27) + "..." : title}</div>
+            <svg class="barcode" id="barcode-${itemIdx}-${i}"></svg>
+            <div class="barcode-number">${barcodeValue}</div>
+            <div class="sku">SKU: ${sku}</div>
+          </div>
+        `;
+      }
+    });
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Order Labels - ${orderNumber}</title>
+          <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            @page {
+              size: 2in 1in;
+              margin: 0;
+            }
+            body {
+              font-family: Arial, sans-serif;
+            }
+            .label {
+              width: 2in;
+              height: 1in;
+              padding: 0.05in;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: space-between;
+              page-break-after: always;
+              overflow: hidden;
+            }
+            .label:last-child {
+              page-break-after: auto;
+            }
+            .title {
+              font-size: 8pt;
+              font-weight: bold;
+              text-align: center;
+              line-height: 1.1;
+              max-height: 0.22in;
+              overflow: hidden;
+              width: 100%;
+            }
+            .barcode {
+              max-width: 1.8in;
+              height: 0.4in;
+            }
+            .barcode-number {
+              font-size: 7pt;
+              font-family: monospace;
+              letter-spacing: 0.5px;
+            }
+            .sku {
+              font-size: 6pt;
+              color: #333;
+            }
+            .print-actions {
+              position: fixed;
+              top: 10px;
+              right: 10px;
+              display: flex;
+              gap: 8px;
+              z-index: 1000;
+            }
+            .print-actions button {
+              padding: 10px 20px;
+              font-size: 14px;
+              cursor: pointer;
+              border: none;
+              border-radius: 6px;
+              font-weight: 500;
+            }
+            .btn-print { background: #2563eb; color: white; }
+            .btn-close { background: #e5e7eb; color: #374151; }
+            .label-count {
+              position: fixed;
+              top: 10px;
+              left: 10px;
+              background: #f3f4f6;
+              padding: 8px 16px;
+              border-radius: 6px;
+              font-size: 14px;
+            }
+            @media print {
+              .print-actions, .label-count { display: none; }
+            }
+            @media screen {
+              body { padding: 20px; background: #f5f5f5; }
+              .label { 
+                background: white; 
+                border: 1px solid #ddd; 
+                margin-bottom: 10px;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+              }
+            }
+          </style>
+          <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+        </head>
+        <body>
+          <div class="print-actions">
+            <button class="btn-print" id="printBtn">Print ${totalLabels} Labels</button>
+            <button class="btn-close" id="closeBtn">Close</button>
+          </div>
+          <div class="label-count">Order #${orderNumber} - ${totalLabels} labels</div>
+          ${labelsHtml}
+          <script>
+            // Generate barcodes
+            ${lineItems.map((item, itemIdx) => {
+              const qty = item.quantity || 1;
+              const barcodeValue = item.barcode || item.sku || `${orderNumber}-${itemIdx}`;
+              let script = '';
+              for (let i = 0; i < qty; i++) {
+                script += `
+                  try {
+                    JsBarcode("#barcode-${itemIdx}-${i}", "${barcodeValue}", {
+                      format: "CODE128",
+                      width: 1.5,
+                      height: 35,
+                      displayValue: false,
+                      margin: 0
+                    });
+                  } catch (e) {
+                    console.error("Barcode error:", e);
+                  }
+                `;
+              }
+              return script;
+            }).join('')}
+            
+            document.getElementById('printBtn').addEventListener('click', function() {
+              window.print();
+            });
+            document.getElementById('closeBtn').addEventListener('click', function() {
+              window.close();
+            });
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    
+    toast.success(`Prepared ${totalLabels} labels for printing`);
+  };
+
   const handleExportToCSV = async () => {
     if (selectedOrders.length === 0) {
       toast.error("Please select orders to export");
