@@ -5,9 +5,11 @@ All logic is organized in separate modules under routers/, models/, services/
 """
 
 from fastapi import FastAPI, APIRouter
+from fastapi.staticfiles import StaticFiles
 from starlette.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import logging
+import os
 
 # Import all routers
 from routers import (
