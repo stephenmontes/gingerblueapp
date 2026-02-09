@@ -721,50 +721,50 @@ export function FulfillmentBatchDetail({ batch, stages, onRefresh, onClose, canD
         
         {/* Paused Warning */}
         {isUserPaused && (
-          <div className="flex items-center gap-2 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg text-yellow-400">
-            <Pause className="w-5 h-5 flex-shrink-0" />
-            <span className="text-sm font-medium">Your timer is paused. Resume to continue tracking and update items.</span>
+          <div className="flex items-center gap-2 p-2 sm:p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg text-yellow-400">
+            <Pause className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+            <span className="text-xs sm:text-sm font-medium">Timer paused. Resume to continue.</span>
           </div>
         )}
         
-        {/* Timer Controls */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className={`text-2xl font-mono font-bold px-4 py-2 rounded-lg ${
+        {/* Timer Controls - Stack on mobile */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className={`text-lg sm:text-2xl font-mono font-bold px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg ${
               isUserPaused ? 'bg-yellow-500/20 text-yellow-400' : timerRunning && isUserActive ? 'bg-green-500/20 text-green-400' : 'bg-muted'
             }`}>
-              <Clock className="w-5 h-5 inline mr-2" />
+              <Clock className="w-4 h-4 sm:w-5 sm:h-5 inline mr-1 sm:mr-2" />
               {formatTime(elapsedSeconds)}
-              {isUserPaused && <Badge variant="outline" className="ml-2 text-xs border-yellow-500 text-yellow-400">PAUSED</Badge>}
+              {isUserPaused && <Badge variant="outline" className="ml-1 sm:ml-2 text-[10px] sm:text-xs border-yellow-500 text-yellow-400">PAUSED</Badge>}
             </div>
             
             {/* Timer Action Buttons */}
             {!isUserActive ? (
-              <Button onClick={handleStartTimer} className="gap-2" data-testid="start-batch-timer">
-                <Play className="w-4 h-4" />
-                {activeWorkers.length > 0 ? "Join Work" : "Start Timer"}
+              <Button onClick={handleStartTimer} className="gap-1.5 sm:gap-2 h-8 sm:h-9 text-sm" data-testid="start-batch-timer">
+                <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span className="hidden xs:inline">{activeWorkers.length > 0 ? "Join" : "Start"}</span>
               </Button>
             ) : (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-2">
                 {/* Pause/Resume Button */}
                 {isUserPaused ? (
                   <Button 
                     onClick={handleResumeTimer} 
-                    className="gap-2 bg-green-600 hover:bg-green-700"
+                    className="gap-1.5 bg-green-600 hover:bg-green-700 h-8 sm:h-9 text-sm"
                     data-testid="resume-batch-timer"
                   >
-                    <Play className="w-4 h-4" />
-                    Resume
+                    <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    <span className="hidden xs:inline">Resume</span>
                   </Button>
                 ) : (
                   <Button 
                     onClick={handlePauseTimer} 
                     variant="secondary" 
-                    className="gap-2"
+                    className="gap-1.5 h-8 sm:h-9 text-sm"
                     data-testid="pause-batch-timer"
                   >
-                    <Pause className="w-4 h-4" />
-                    Pause
+                    <Pause className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    <span className="hidden xs:inline">Pause</span>
                   </Button>
                 )}
                 
@@ -772,32 +772,32 @@ export function FulfillmentBatchDetail({ batch, stages, onRefresh, onClose, canD
                 <Button 
                   onClick={handleStopTimer} 
                   variant="destructive" 
-                  className="gap-2"
+                  className="gap-1.5 h-8 sm:h-9 text-sm"
                   data-testid="stop-batch-timer"
                 >
-                  <Square className="w-4 h-4" />
-                  Stop
+                  <Square className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <span className="hidden xs:inline">Stop</span>
                 </Button>
               </div>
             )}
           </div>
           
-          {/* Workers Info */}
+          {/* Workers Info - show on larger screens or wrap on mobile */}
           {activeWorkers.length > 0 && (
-            <div className="flex items-center gap-2">
-              {activeWorkers.slice(0, 3).map((w, i) => (
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+              {activeWorkers.slice(0, 2).map((w, i) => (
                 <Badge 
                   key={i} 
                   variant="secondary" 
-                  className={`gap-1 ${w.is_paused ? 'border-yellow-500/50 text-yellow-400' : ''}`}
+                  className={`gap-1 text-xs ${w.is_paused ? 'border-yellow-500/50 text-yellow-400' : ''}`}
                 >
                   <User className="w-3 h-3" />
-                  {w.user_name}
-                  {w.is_paused && <span className="text-xs">(paused)</span>}
+                  <span className="truncate max-w-[60px] sm:max-w-none">{w.user_name}</span>
+                  {w.is_paused && <span className="text-[10px]">(p)</span>}
                 </Badge>
               ))}
-              {activeWorkers.length > 3 && (
-                <Badge variant="secondary">+{activeWorkers.length - 3}</Badge>
+              {activeWorkers.length > 2 && (
+                <Badge variant="secondary" className="text-xs">+{activeWorkers.length - 2}</Badge>
               )}
             </div>
           )}
