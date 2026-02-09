@@ -141,7 +141,7 @@ export default function Orders({ user }) {
   // Print barcode labels for all items in an order (1 label per qty)
   const printOrderBarcodes = (order) => {
     // Handle both 'items' and 'line_items' field names from backend
-    const lineItems = order.items || order.line_items || [];
+    let lineItems = order.items || order.line_items || [];
     if (lineItems.length === 0) {
       toast.error("No items in this order");
       return;
@@ -153,12 +153,38 @@ export default function Orders({ user }) {
       return;
     }
 
+    // Size order for sorting (second to last group in SKU)
+    const sizeOrder = ['S', 'L', 'XL', 'HS', 'HX', 'XX', 'XXX'];
+    
+    // Extract size from SKU (second to last group separated by - or _)
+    const extractSize = (sku) => {
+      if (!sku) return '';
+      const parts = sku.split(/[-_]/);
+      if (parts.length >= 2) {
+        return parts[parts.length - 2].toUpperCase();
+      }
+      return '';
+    };
+    
+    // Sort items by size
+    const sortedItems = [...lineItems].sort((a, b) => {
+      const sizeA = extractSize(a.sku);
+      const sizeB = extractSize(b.sku);
+      const indexA = sizeOrder.indexOf(sizeA);
+      const indexB = sizeOrder.indexOf(sizeB);
+      // Items not in size order go to end
+      const orderA = indexA === -1 ? 999 : indexA;
+      const orderB = indexB === -1 ? 999 : indexB;
+      return orderA - orderB;
+    });
+
     // Generate labels - 1 per quantity
     const orderNumber = order.order_number || order.pos_order_number || order.order_id;
     let labelsHtml = '';
     let totalLabels = 0;
+    const labelData = []; // Track for barcode generation
 
-    lineItems.forEach((item, itemIdx) => {
+    sortedItems.forEach((item, itemIdx) => {
       // Handle both 'qty' and 'quantity' field names
       const qty = item.qty || item.quantity || 1;
       const title = item.title || item.name || "Item";
@@ -167,14 +193,20 @@ export default function Orders({ user }) {
       
       // Create 1 label for each quantity
       for (let i = 0; i < qty; i++) {
+        const labelId = `barcode-${itemIdx}-${i}`;
         totalLabels++;
+        labelData.push({ labelId, barcodeValue });
+        
+        // Optimized compact label layout for 2"x1"
         labelsHtml += `
           <div class="label">
-            <div class="order-number">Order #${orderNumber}</div>
-            <div class="title">${title.length > 28 ? title.substring(0, 25) + "..." : title}</div>
-            <svg class="barcode" id="barcode-${itemIdx}-${i}"></svg>
-            <div class="barcode-number">${barcodeValue}</div>
-            <div class="sku">SKU: ${sku}</div>
+            <div class="label-header">
+              <span class="order-num">#${orderNumber}</span>
+              <span class="sku-text">${sku}</span>
+            </div>
+            <div class="title">${title.length > 32 ? title.substring(0, 29) + "..." : title}</div>
+            <svg class="barcode" id="${labelId}"></svg>
+            <div class="barcode-num">${barcodeValue}</div>
           </div>
         `;
       }
@@ -197,7 +229,7 @@ export default function Orders({ user }) {
             .label {
               width: 2in;
               height: 1in;
-              padding: 0.04in 0.05in;
+              padding: 0.03in 0.04in;
               display: flex;
               flex-direction: column;
               align-items: center;
@@ -208,34 +240,43 @@ export default function Orders({ user }) {
             .label:last-child {
               page-break-after: auto;
             }
-            .order-number {
-              font-size: 7pt;
+            .label-header {
+              width: 100%;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              font-size: 6pt;
+              line-height: 1;
+            }
+            .order-num {
               font-weight: bold;
               color: #2563eb;
-              text-align: center;
-              width: 100%;
+            }
+            .sku-text {
+              font-weight: 600;
+              color: #333;
+              font-family: monospace;
+              font-size: 5.5pt;
             }
             .title {
-              font-size: 7pt;
+              font-size: 6.5pt;
               font-weight: bold;
               text-align: center;
-              line-height: 1.1;
-              max-height: 0.18in;
+              line-height: 1.15;
+              max-height: 0.2in;
               overflow: hidden;
               width: 100%;
+              margin: 0.01in 0;
             }
             .barcode {
-              max-width: 1.8in;
-              height: 0.35in;
+              max-width: 1.85in;
+              height: 0.42in;
             }
-            .barcode-number {
-              font-size: 6pt;
+            .barcode-num {
+              font-size: 5.5pt;
               font-family: monospace;
-              letter-spacing: 0.5px;
-            }
-            .sku {
-              font-size: 6pt;
-              color: #333;
+              letter-spacing: 0.3px;
+              color: #444;
             }
             .print-actions {
               position: fixed;
@@ -284,32 +325,23 @@ export default function Orders({ user }) {
             <button class="btn-print" id="printBtn">Print ${totalLabels} Labels</button>
             <button class="btn-close" id="closeBtn">Close</button>
           </div>
-          <div class="label-count">Order #${orderNumber} - ${totalLabels} labels</div>
+          <div class="label-count">Order #${orderNumber} - ${totalLabels} labels (sorted by size)</div>
           ${labelsHtml}
           <script>
             // Generate barcodes
-            ${lineItems.map((item, itemIdx) => {
-              // Handle both 'qty' and 'quantity' field names
-              const qty = item.qty || item.quantity || 1;
-              const barcodeValue = item.barcode || item.sku || `${orderNumber}-${itemIdx}`;
-              let script = '';
-              for (let i = 0; i < qty; i++) {
-                script += `
-                  try {
-                    JsBarcode("#barcode-${itemIdx}-${i}", "${barcodeValue}", {
-                      format: "CODE128",
-                      width: 1.5,
-                      height: 35,
-                      displayValue: false,
-                      margin: 0
-                    });
-                  } catch (e) {
-                    console.error("Barcode error:", e);
-                  }
-                `;
+            ${labelData.map(({ labelId, barcodeValue }) => `
+              try {
+                JsBarcode("#${labelId}", "${barcodeValue}", {
+                  format: "CODE128",
+                  width: 1.5,
+                  height: 38,
+                  displayValue: false,
+                  margin: 0
+                });
+              } catch (e) {
+                console.error("Barcode error:", e);
               }
-              return script;
-            }).join('')}
+            `).join('')}
             
             document.getElementById('printBtn').addEventListener('click', function() {
               window.print();
