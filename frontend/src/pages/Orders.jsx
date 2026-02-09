@@ -140,7 +140,8 @@ export default function Orders({ user }) {
 
   // Print barcode labels for all items in an order (1 label per qty)
   const printOrderBarcodes = (order) => {
-    const lineItems = order.line_items || [];
+    // Handle both 'items' and 'line_items' field names from backend
+    const lineItems = order.items || order.line_items || [];
     if (lineItems.length === 0) {
       toast.error("No items in this order");
       return;
@@ -158,7 +159,8 @@ export default function Orders({ user }) {
     let totalLabels = 0;
 
     lineItems.forEach((item, itemIdx) => {
-      const qty = item.quantity || 1;
+      // Handle both 'qty' and 'quantity' field names
+      const qty = item.qty || item.quantity || 1;
       const title = item.title || item.name || "Item";
       const sku = item.sku || "N/A";
       const barcodeValue = item.barcode || item.sku || `${orderNumber}-${itemIdx}`;
