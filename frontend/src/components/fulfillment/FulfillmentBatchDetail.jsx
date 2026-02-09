@@ -885,39 +885,40 @@ export function FulfillmentBatchDetail({ batch, stages, onRefresh, onClose, canD
             return (
               <Card 
                 key={order.order_id} 
-                className={`transition-all ${orderComplete ? 'bg-green-500/10 border-green-500/30' : ''} ${isSelected ? 'ring-2 ring-primary' : ''}`}
+                className={`transition-all overflow-hidden ${orderComplete ? 'bg-green-500/10 border-green-500/30' : ''} ${isSelected ? 'ring-2 ring-primary' : ''}`}
               >
-                <CardContent className="p-4">
-                  {/* Order Header */}
-                  <div className="flex items-center justify-between mb-3 pb-3 border-b border-border">
-                    <div className="flex items-center gap-3">
+                <CardContent className="p-3 sm:p-4">
+                  {/* Order Header - Mobile optimized */}
+                  <div className="flex items-start sm:items-center justify-between mb-2 sm:mb-3 pb-2 sm:pb-3 border-b border-border gap-2">
+                    <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
                       {/* Checkbox */}
                       <Checkbox 
                         checked={isSelected}
                         onCheckedChange={() => toggleOrderSelection(order.order_id)}
                         data-testid={`select-order-${order.order_id}`}
+                        className="flex-shrink-0"
                       />
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                      <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm flex-shrink-0 ${
                         orderComplete ? 'bg-green-500 text-white' : 'bg-muted'
                       }`}>
-                        {orderComplete ? <CheckCircle2 className="w-5 h-5" /> : orderIdx + 1}
+                        {orderComplete ? <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" /> : orderIdx + 1}
                       </div>
-                      <div>
-                        <h4 className="font-semibold flex items-center gap-2">
-                          Order #{order.order_number || order.order_id?.slice(-8)}
-                          {orderComplete && <CheckCircle2 className="w-4 h-4 text-green-400" />}
+                      <div className="min-w-0">
+                        <h4 className="font-semibold text-sm sm:text-base flex items-center gap-1 sm:gap-2 flex-wrap">
+                          <span className="truncate">#{order.order_number || order.order_id?.slice(-8)}</span>
+                          {orderComplete && <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-400 flex-shrink-0" />}
                         </h4>
-                        <p className="text-sm text-muted-foreground">{order.customer_name}</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground truncate">{order.customer_name}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant={orderComplete ? "default" : "outline"} className={`text-lg px-3 py-1 ${orderComplete ? 'bg-green-500' : ''}`}>
-                        {orderCompleted} / {orderTotal}
+                    <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+                      <Badge variant={orderComplete ? "default" : "outline"} className={`text-sm sm:text-lg px-2 sm:px-3 py-0.5 sm:py-1 ${orderComplete ? 'bg-green-500' : ''}`}>
+                        {orderCompleted}/{orderTotal}
                       </Badge>
                       {canDelete && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button size="sm" variant="ghost">
+                            <Button size="sm" variant="ghost" className="h-7 w-7 sm:h-8 sm:w-8 p-0">
                               <MoreVertical className="w-4 h-4" />
                             </Button>
                           </DropdownMenuTrigger>
@@ -928,7 +929,7 @@ export function FulfillmentBatchDetail({ batch, stages, onRefresh, onClose, canD
                               data-testid={`delete-order-${order.order_id}`}
                             >
                               <Trash2 className="w-4 h-4 mr-2" />
-                              Remove from Fulfillment
+                              Remove
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -936,7 +937,7 @@ export function FulfillmentBatchDetail({ batch, stages, onRefresh, onClose, canD
                     </div>
                   </div>
 
-                  {/* Order Items with Qty Tracking */}
+                  {/* Order Items with Qty Tracking - Mobile optimized */}
                   <div className="space-y-2">
                     {items.map((item, itemIdx) => {
                       const qty = item.qty || item.quantity || 1;
@@ -948,13 +949,13 @@ export function FulfillmentBatchDetail({ batch, stages, onRefresh, onClose, canD
                       return (
                         <div 
                           key={itemIdx} 
-                          className={`flex items-center gap-3 p-3 rounded-lg transition-all ${
+                          className={`flex items-start sm:items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg transition-all ${
                             itemComplete ? 'bg-green-500/10' : 'bg-muted/30'
                           }`}
                         >
-                          {/* Item Thumbnail */}
+                          {/* Item Thumbnail - Smaller on mobile */}
                           {imageUrl ? (
-                            <div className="flex-shrink-0 w-14 h-14 rounded-md overflow-hidden bg-muted">
+                            <div className="flex-shrink-0 w-10 h-10 sm:w-14 sm:h-14 rounded-md overflow-hidden bg-muted">
                               <img 
                                 src={imageUrl} 
                                 alt={item.name} 
