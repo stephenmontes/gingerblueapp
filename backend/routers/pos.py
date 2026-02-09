@@ -327,6 +327,9 @@ async def search_customers(
     
     logger.info(f"Customer search found {len(customers)} results for store_id={store_id}")
     
+    # Clean any ObjectIds from customer data
+    customers = [clean_mongo_doc(c) for c in customers]
+    
     # Normalize fields for frontend compatibility
     for cust in customers:
         # Normalize name field (use full_name if name is not present)
