@@ -236,23 +236,25 @@ export default function Products() {
       return;
     }
 
-    // Generate variant items for the 4x6 label
-    // 4x6 inches can fit approximately 6 small barcodes (2 columns x 3 rows)
+    // Generate variant items - simplified to just barcode and SKU
     let variantsHtml = variants.map((variant, idx) => {
       const barcodeValue = variant.barcode || variant.sku || `${product.product_id}-${idx}`;
-      const variantTitle = variant.title && variant.title !== "Default Title" ? variant.title : "Default";
-      const displayTitle = variantTitle.length > 20 ? variantTitle.substring(0, 17) + "..." : variantTitle;
       const sku = variant.sku || "N/A";
       
       return `
         <div class="variant-item">
-          <div class="variant-title">${displayTitle}</div>
           <svg class="barcode" id="barcode-${idx}"></svg>
-          <div class="barcode-number">${barcodeValue}</div>
-          <div class="sku">SKU: ${sku}</div>
+          <div class="sku">${sku}</div>
         </div>
       `;
     }).join('');
+
+    // Calculate grid layout based on number of variants
+    const variantCount = variants.length;
+    let columns = 2;
+    if (variantCount <= 4) columns = 2;
+    else if (variantCount <= 9) columns = 3;
+    else columns = 4;
 
     printWindow.document.write(`
       <!DOCTYPE html>
@@ -273,62 +275,50 @@ export default function Products() {
             .label-sheet {
               width: 4in;
               height: 6in;
-              padding: 0.15in;
+              padding: 0.1in;
               display: flex;
               flex-direction: column;
             }
             .product-header {
               text-align: center;
-              padding-bottom: 0.1in;
-              border-bottom: 1px solid #333;
-              margin-bottom: 0.1in;
+              padding: 0.08in 0;
+              border-bottom: 2px solid #333;
+              margin-bottom: 0.08in;
             }
             .product-header h1 {
-              font-size: 11pt;
+              font-size: 10pt;
               font-weight: bold;
               margin: 0;
-            }
-            .product-header p {
-              font-size: 8pt;
-              color: #666;
-              margin-top: 2px;
+              line-height: 1.2;
             }
             .variants-grid {
               display: grid;
-              grid-template-columns: repeat(2, 1fr);
-              gap: 0.1in;
+              grid-template-columns: repeat(${columns}, 1fr);
+              gap: 0.05in;
               flex: 1;
+              align-content: start;
             }
             .variant-item {
-              border: 1px solid #ddd;
-              border-radius: 4px;
-              padding: 0.08in;
+              border: 1px solid #ccc;
+              border-radius: 3px;
+              padding: 0.04in;
               display: flex;
               flex-direction: column;
               align-items: center;
               justify-content: center;
-              background: #fafafa;
-              min-height: 0.9in;
-            }
-            .variant-title {
-              font-size: 7pt;
-              font-weight: bold;
-              text-align: center;
-              margin-bottom: 2px;
-              color: #333;
+              background: #fff;
             }
             .barcode {
-              max-width: 1.6in;
-              height: 0.35in;
-            }
-            .barcode-number {
-              font-size: 6pt;
-              font-family: monospace;
-              margin-top: 1px;
+              max-width: 100%;
+              height: ${variantCount <= 6 ? '0.45in' : variantCount <= 12 ? '0.35in' : '0.28in'};
             }
             .sku {
-              font-size: 5pt;
-              color: #666;
+              font-size: ${variantCount <= 6 ? '7pt' : variantCount <= 12 ? '6pt' : '5pt'};
+              font-family: monospace;
+              color: #333;
+              margin-top: 1px;
+              text-align: center;
+              word-break: break-all;
             }
             .print-actions {
               position: fixed;
@@ -376,7 +366,6 @@ export default function Products() {
           <div class="label-sheet">
             <div class="product-header">
               <h1>${product.title}</h1>
-              <p>${variants.length} variant${variants.length > 1 ? 's' : ''}</p>
             </div>
             <div class="variants-grid">
               ${variantsHtml}
@@ -386,12 +375,14 @@ export default function Products() {
             // Generate barcodes for all variants
             ${variants.map((variant, idx) => {
               const barcodeValue = variant.barcode || variant.sku || `${product.product_id}-${idx}`;
+              const barcodeHeight = variantCount <= 6 ? 35 : variantCount <= 12 ? 28 : 22;
+              const barcodeWidth = variantCount <= 6 ? 1.3 : variantCount <= 12 ? 1.1 : 0.9;
               return `
                 try {
                   JsBarcode("#barcode-${idx}", "${barcodeValue}", {
                     format: "CODE128",
-                    width: 1.2,
-                    height: 28,
+                    width: ${barcodeWidth},
+                    height: ${barcodeHeight},
                     displayValue: false,
                     margin: 0
                   });
