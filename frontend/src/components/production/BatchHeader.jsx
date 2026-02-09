@@ -100,21 +100,37 @@ export function BatchHeader({ batch, batchDetails, activeStageId, stageName, sta
   }
 
   return (
-    <Card className="bg-card border-border">
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-bold">{batch.name}</h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              {orderCount} orders • {totalItems} items
-            </p>
+    <Card className="bg-card border-border overflow-hidden">
+      <CardContent className="p-3 sm:p-4">
+        {/* Mobile: Stack vertically, Desktop: Row */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+          {/* Batch Info */}
+          <div className="flex items-center justify-between sm:justify-start gap-3 min-w-0">
+            <div className="min-w-0">
+              <h2 className="text-lg sm:text-xl font-bold truncate">{batch.name}</h2>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                {orderCount} orders • {totalItems} items
+              </p>
+            </div>
+            {/* Report Button - visible on mobile */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowReport(true)}
+              className="gap-1.5 h-8 px-2 sm:hidden flex-shrink-0"
+              data-testid="batch-report-btn-mobile"
+            >
+              <BarChart3 className="w-4 h-4" />
+            </Button>
           </div>
-          <div className="flex items-center gap-4">
-            {/* Report Button */}
+
+          {/* Timer and Controls Row */}
+          <div className="flex items-center gap-2 sm:gap-4 flex-wrap sm:flex-nowrap">
+            {/* Report Button - hidden on mobile */}
             <Button
               variant="outline"
               onClick={() => setShowReport(true)}
-              className="gap-2"
+              className="gap-2 hidden sm:flex"
               data-testid="batch-report-btn"
             >
               <BarChart3 className="w-4 h-4" />
@@ -123,21 +139,21 @@ export function BatchHeader({ batch, batchDetails, activeStageId, stageName, sta
 
             {/* Stage indicator */}
             {activeStageId && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
                 <div
-                  className="w-3 h-3 rounded-full"
+                  className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full flex-shrink-0"
                   style={{ backgroundColor: stageColor || "#3B82F6" }}
                 />
-                <span className="text-sm">{stageName || "Select stage"}</span>
+                <span className="text-xs sm:text-sm truncate max-w-[80px] sm:max-w-none">{stageName || "Select stage"}</span>
               </div>
             )}
             
             {/* Timer display */}
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground mb-1">
-                Your Timer {isPaused && <Badge variant="outline" className="ml-1 text-xs">PAUSED</Badge>}
+            <div className="text-center flex-shrink-0">
+              <p className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1 flex items-center gap-1">
+                Timer {isPaused && <Badge variant="outline" className="text-[10px] px-1 py-0">PAUSED</Badge>}
               </p>
-              <div className={`font-mono text-2xl font-bold ${isPaused ? "text-yellow-400" : "text-primary"}`}>
+              <div className={`font-mono text-lg sm:text-2xl font-bold ${isPaused ? "text-yellow-400" : "text-primary"}`}>
                 {hasTimerForThisStage ? (
                   <LiveTimer 
                     startedAt={activeTimer.started_at} 
@@ -151,54 +167,60 @@ export function BatchHeader({ batch, batchDetails, activeStageId, stageName, sta
             </div>
             
             {/* Timer controls */}
-            {hasTimerForThisStage ? (
-              <div className="flex items-center gap-2">
-                {isPaused ? (
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+              {hasTimerForThisStage ? (
+                <>
+                  {isPaused ? (
+                    <Button
+                      onClick={handleResumeTimer}
+                      size="sm"
+                      className="gap-1.5 bg-green-600 hover:bg-green-700 h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm"
+                      data-testid="resume-timer-btn"
+                    >
+                      <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      <span className="hidden xs:inline">Resume</span>
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={handlePauseTimer}
+                      variant="secondary"
+                      size="sm"
+                      className="gap-1.5 h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm"
+                      data-testid="pause-timer-btn"
+                    >
+                      <Pause className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      <span className="hidden xs:inline">Pause</span>
+                    </Button>
+                  )}
                   <Button
-                    onClick={handleResumeTimer}
-                    className="gap-2 bg-green-600 hover:bg-green-700"
-                    data-testid="resume-timer-btn"
+                    onClick={handleStopTimer}
+                    variant="destructive"
+                    size="sm"
+                    className="gap-1.5 h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm"
+                    data-testid="stop-timer-btn"
                   >
-                    <Play className="w-4 h-4" />
-                    Resume
+                    <Square className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    <span className="hidden xs:inline">Stop</span>
                   </Button>
-                ) : (
-                  <Button
-                    onClick={handlePauseTimer}
-                    variant="secondary"
-                    className="gap-2"
-                    data-testid="pause-timer-btn"
-                  >
-                    <Pause className="w-4 h-4" />
-                    Pause
-                  </Button>
-                )}
+                </>
+              ) : hasTimerForOtherStage ? (
+                <div className="text-[10px] sm:text-sm text-orange-400 flex items-center gap-1">
+                  <Clock className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                  <span className="truncate max-w-[100px] sm:max-w-none">Active on {activeTimer.stage_name}</span>
+                </div>
+              ) : (
                 <Button
-                  onClick={handleStopTimer}
-                  variant="destructive"
-                  className="gap-2"
-                  data-testid="stop-timer-btn"
+                  onClick={handleStartTimer}
+                  size="sm"
+                  className="gap-1.5 bg-green-600 hover:bg-green-700 h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm"
+                  data-testid="start-timer-btn"
+                  disabled={!activeStageId}
                 >
-                  <Square className="w-4 h-4" />
-                  Stop
+                  <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <span className="hidden xs:inline">Start</span>
                 </Button>
-              </div>
-            ) : hasTimerForOtherStage ? (
-              <div className="text-sm text-orange-400 flex items-center gap-2">
-                <Clock className="w-4 h-4" />
-                Timer active on {activeTimer.stage_name}
-              </div>
-            ) : (
-              <Button
-                onClick={handleStartTimer}
-                className="gap-2 bg-green-600 hover:bg-green-700"
-                data-testid="start-timer-btn"
-                disabled={!activeStageId}
-              >
-                <Play className="w-4 h-4" />
-                Start
-              </Button>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </CardContent>
