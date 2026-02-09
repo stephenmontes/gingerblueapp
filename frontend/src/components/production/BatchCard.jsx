@@ -142,69 +142,71 @@ export function BatchCard({ batch, isSelected, onSelect, onRefresh, isArchived, 
 
   return (
     <Card
-      className={`cursor-pointer transition-all ${storeColor} ${isSelected ? "ring-2 ring-primary" : "hover:border-primary/50"} ${isArchived ? "opacity-80" : ""}`}
+      className={`cursor-pointer transition-all overflow-hidden ${storeColor} ${isSelected ? "ring-2 ring-primary" : "hover:border-primary/50"} ${isArchived ? "opacity-80" : ""}`}
       onClick={() => onSelect(batch)}
       data-testid={`batch-card-${batch.batch_id}`}
     >
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="font-semibold">{batch.name}</h3>
-          <div className="flex items-center gap-1">
+      <CardContent className="p-3 sm:p-4">
+        {/* Header row */}
+        <div className="flex items-start sm:items-center justify-between gap-2 mb-2">
+          <h3 className="font-semibold text-sm sm:text-base truncate">{batch.name}</h3>
+          <div className="flex items-center gap-1 flex-shrink-0 flex-wrap justify-end">
             {isOnDemand && (
-              <Badge variant="outline" className="text-orange-400 border-orange-400/30 text-xs">
-                <Package className="w-3 h-3 mr-1" />
-                Inventory
+              <Badge variant="outline" className="text-orange-400 border-orange-400/30 text-[10px] sm:text-xs px-1.5">
+                <Package className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5" />
+                <span className="hidden xs:inline">Inv</span>
               </Badge>
             )}
             {/* Store indicator for order-based batches */}
             {!isOnDemand && batch.store_name && (
-              <Badge variant="outline" className="text-xs truncate max-w-[100px]" title={batch.store_names?.join(", ") || batch.store_name}>
-                {batch.store_type === "mixed" ? "Mixed" : batch.store_name}
+              <Badge variant="outline" className="text-[10px] sm:text-xs truncate max-w-[60px] sm:max-w-[100px] px-1.5" title={batch.store_names?.join(", ") || batch.store_name}>
+                {batch.store_type === "mixed" ? "Mix" : batch.store_name}
               </Badge>
             )}
             <Badge 
               variant="outline" 
-              className={isArchived ? "text-muted-foreground border-muted-foreground" : "text-green-400 border-green-400/30"}
+              className={`text-[10px] sm:text-xs px-1.5 ${isArchived ? "text-muted-foreground border-muted-foreground" : "text-green-400 border-green-400/30"}`}
             >
-              {isArchived ? "Archived" : "Active"}
+              {isArchived ? "Done" : "Active"}
             </Badge>
           </div>
         </div>
         
-        <div className="text-sm text-muted-foreground mb-2">
+        {/* Stats row */}
+        <div className="text-xs sm:text-sm text-muted-foreground mb-2">
           {isOnDemand ? (
-            <>{totalItems} frame types • {batch.total_qty || 0} total qty</>
+            <>{totalItems} types • {batch.total_qty || 0} qty</>
           ) : (
             <>{orderCount} orders • {totalItems} items</>
           )}
         </div>
         
         {batch.assigned_name && (
-          <div className="text-sm mb-2 flex items-center gap-1">
-            <User className="w-4 h-4 text-primary" />
-            {batch.assigned_name}
+          <div className="text-xs sm:text-sm mb-2 flex items-center gap-1">
+            <User className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary flex-shrink-0" />
+            <span className="truncate">{batch.assigned_name}</span>
           </div>
         )}
         
         {isRunning && !isArchived && (
-          <div className="text-sm text-green-400 mb-2 flex items-center gap-1">
-            <Timer className="w-4 h-4 animate-pulse" />
+          <div className="text-xs sm:text-sm text-green-400 mb-2 flex items-center gap-1">
+            <Timer className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-pulse flex-shrink-0" />
             Timer running
           </div>
         )}
 
         {/* Show final stats for archived batches */}
         {isArchived && finalStats && (
-          <div className="grid grid-cols-3 gap-2 mb-2 text-xs">
-            <div className="bg-muted/30 rounded p-1.5 text-center">
+          <div className="grid grid-cols-3 gap-1.5 sm:gap-2 mb-2 text-[10px] sm:text-xs">
+            <div className="bg-muted/30 rounded p-1 sm:p-1.5 text-center">
               <p className="font-bold text-green-400">{finalStats.good_frames}</p>
               <p className="text-muted-foreground">Good</p>
             </div>
-            <div className="bg-muted/30 rounded p-1.5 text-center">
+            <div className="bg-muted/30 rounded p-1 sm:p-1.5 text-center">
               <p className="font-bold text-red-400">{finalStats.total_rejected}</p>
-              <p className="text-muted-foreground">Rejected</p>
+              <p className="text-muted-foreground">Rej</p>
             </div>
-            <div className="bg-muted/30 rounded p-1.5 text-center">
+            <div className="bg-muted/30 rounded p-1 sm:p-1.5 text-center">
               <p className="font-bold">{finalStats.total_completed}</p>
               <p className="text-muted-foreground">Total</p>
             </div>
@@ -213,8 +215,8 @@ export function BatchCard({ batch, isSelected, onSelect, onRefresh, isArchived, 
 
         {!isArchived && (
           <>
-            <Progress value={progress} className="h-2" />
-            <p className="text-xs text-muted-foreground text-right mt-1">
+            <Progress value={progress} className="h-1.5 sm:h-2" />
+            <p className="text-[10px] sm:text-xs text-muted-foreground text-right mt-0.5 sm:mt-1">
               {itemsCompleted}/{totalItems}
             </p>
           </>
@@ -222,26 +224,26 @@ export function BatchCard({ batch, isSelected, onSelect, onRefresh, isArchived, 
 
         {/* Archive date */}
         {isArchived && batch.archived_at && (
-          <p className="text-xs text-muted-foreground mt-2">
+          <p className="text-[10px] sm:text-xs text-muted-foreground mt-1.5 sm:mt-2">
             {batch.auto_archived ? (
               <span className="flex items-center gap-1 text-green-400">
                 <CheckCircle className="w-3 h-3" />
-                Auto-completed: {new Date(batch.archived_at).toLocaleDateString()}
+                Auto: {new Date(batch.archived_at).toLocaleDateString()}
               </span>
             ) : (
-              <>Archived: {new Date(batch.archived_at).toLocaleDateString()}</>
+              <>Done: {new Date(batch.archived_at).toLocaleDateString()}</>
             )}
           </p>
         )}
 
         {/* Action Buttons - Only for Admin/Manager */}
         {canModify && (
-          <div className="mt-3 flex gap-2">
+          <div className="mt-2 sm:mt-3 flex gap-1.5 sm:gap-2">
             {isArchived ? (
               <Button
                 size="sm"
                 variant="outline"
-                className="w-full text-xs"
+                className="w-full text-[10px] sm:text-xs h-7 sm:h-8"
                 onClick={handleRestore}
                 data-testid={`restore-batch-${batch.batch_id}`}
               >
@@ -254,24 +256,24 @@ export function BatchCard({ batch, isSelected, onSelect, onRefresh, isArchived, 
                 <Button
                   size="sm"
                   variant="outline"
-                  className="flex-1 text-xs text-orange-400 border-orange-400/30 hover:bg-orange-500/10"
+                  className="flex-1 text-[10px] sm:text-xs text-orange-400 border-orange-400/30 hover:bg-orange-500/10 h-7 sm:h-8"
                   onClick={(e) => {
                     e.stopPropagation();
                     setUndoDialogOpen(true);
                   }}
                   data-testid={`undo-batch-${batch.batch_id}`}
                 >
-                  <Undo2 className="w-3 h-3 mr-1" />
+                  <Undo2 className="w-3 h-3 mr-0.5 sm:mr-1" />
                   Undo
                 </Button>
                 <Button
                   size="sm"
                   variant="outline"
-                  className="flex-1 text-xs"
+                  className="flex-1 text-[10px] sm:text-xs h-7 sm:h-8"
                   onClick={handleArchive}
                   data-testid={`archive-batch-${batch.batch_id}`}
                 >
-                  <Archive className="w-3 h-3 mr-1" />
+                  <Archive className="w-3 h-3 mr-0.5 sm:mr-1" />
                   Archive
                 </Button>
               </>
