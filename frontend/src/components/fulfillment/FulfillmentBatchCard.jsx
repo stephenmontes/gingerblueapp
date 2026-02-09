@@ -158,63 +158,65 @@ export function FulfillmentBatchCard({ batch, isSelected, onSelect, onRefresh, c
       onClick={() => onSelect(batch)}
       data-testid={`fulfillment-batch-card-${batch.batch_id || batch.fulfillment_batch_id}`}
     >
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="font-semibold truncate">{batch.name}</h3>
-          <div className="flex items-center gap-1">
-            <Badge variant="outline" className="text-xs flex items-center gap-1">
-              <StoreIcon className="w-3 h-3" />
-              {storeDisplay.name}
+      <CardContent className="p-3 sm:p-4">
+        {/* Header - Mobile optimized */}
+        <div className="flex items-start justify-between gap-2 mb-2">
+          <h3 className="font-semibold truncate text-sm sm:text-base">{batch.name}</h3>
+          <div className="flex items-center gap-1 flex-shrink-0 flex-wrap justify-end">
+            <Badge variant="outline" className="text-[10px] sm:text-xs flex items-center gap-0.5 sm:gap-1 px-1.5 sm:px-2">
+              <StoreIcon className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+              <span className="hidden xs:inline">{storeDisplay.name}</span>
             </Badge>
             {(isHistory || batch.status === "completed") && (
-              <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs">
-                Completed
+              <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-[10px] sm:text-xs px-1.5">
+                Done
               </Badge>
             )}
             {isRunning && !isHistory && (
-              <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs">
-                <Timer className="w-3 h-3 mr-1" />
-                Running
+              <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-[10px] sm:text-xs px-1.5">
+                <Timer className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5" />
+                <span className="hidden xs:inline">Running</span>
               </Badge>
             )}
           </div>
         </div>
 
-        <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
+        {/* Stats Row - Compact on mobile */}
+        <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm text-muted-foreground mb-2 sm:mb-3">
           <span className="flex items-center gap-1">
-            <Package className="w-4 h-4" />
-            {orderCount} orders
+            <Package className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            {orderCount}
           </span>
           {activeWorkers.length > 0 ? (
             <span className="flex items-center gap-1 text-green-400">
-              <Users className="w-4 h-4" />
-              {activeWorkers.length} working
+              <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              {activeWorkers.length}
             </span>
           ) : batch.assigned_name && (
-            <span className="flex items-center gap-1">
-              <User className="w-4 h-4" />
-              {batch.assigned_name}
+            <span className="flex items-center gap-1 truncate">
+              <User className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+              <span className="truncate">{batch.assigned_name}</span>
             </span>
           )}
         </div>
 
         {/* Progress Bar */}
         <div className="space-y-1">
-          <Progress value={progress} className="h-2" />
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>{completedOrders} / {orderCount} completed</span>
+          <Progress value={progress} className="h-1.5 sm:h-2" />
+          <div className="flex justify-between text-[10px] sm:text-xs text-muted-foreground">
+            <span>{completedOrders}/{orderCount}</span>
             <span>{Math.round(progress)}%</span>
           </div>
         </div>
 
-        {/* Current Stage */}
+        {/* Current Stage / Completion Info */}
         {batch.current_stage_name && (
           <div className="mt-2 pt-2 border-t border-border/50 flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">
+            <span className="text-[10px] sm:text-xs text-muted-foreground truncate">
               {isHistory || batch.status === "completed" ? (
-                <>Completed: <strong>{batch.time_completed ? new Date(batch.time_completed).toLocaleDateString() : 'N/A'}</strong></>
+                <>Done: <strong>{batch.time_completed ? new Date(batch.time_completed).toLocaleDateString() : 'N/A'}</strong></>
               ) : (
-                <>Stage: <strong>{batch.current_stage_name}</strong></>
+                <><span className="hidden sm:inline">Stage: </span><strong>{batch.current_stage_name}</strong></>
               )}
             </span>
             
@@ -223,11 +225,11 @@ export function FulfillmentBatchCard({ batch, isSelected, onSelect, onRefresh, c
               <Button
                 size="sm"
                 variant="ghost"
-                className="h-7 px-2 text-muted-foreground hover:text-red-400"
+                className="h-6 sm:h-7 px-1.5 sm:px-2 text-muted-foreground hover:text-red-400"
                 onClick={handleUndoClick}
                 data-testid={`undo-batch-${batch.fulfillment_batch_id}`}
               >
-                <Undo2 className="w-3 h-3 mr-1" />
+                <Undo2 className="w-3 h-3 mr-0.5 sm:mr-1" />
                 Undo
               </Button>
             )}
