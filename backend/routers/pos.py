@@ -518,7 +518,20 @@ async def create_pos_order(
         if existing_customer:
             customer_name = existing_customer.get("name", "")
             customer_email = existing_customer.get("email", "")
-            customer_data = existing_customer
+            # Clean customer data - remove any potential ObjectId or _id fields
+            customer_data = {k: v for k, v in existing_customer.items() if k != "_id" and not isinstance(v, object) or isinstance(v, (str, int, float, bool, list, dict, type(None)))}
+            # Convert any nested ObjectIds to strings
+            import json
+            from bson import ObjectId as BsonObjectId
+            def clean_objectids(obj):
+                if isinstance(obj, dict):
+                    return {k: clean_objectids(v) for k, v in obj.items() if k != "_id"}
+                elif isinstance(obj, list):
+                    return [clean_objectids(item) for item in obj]
+                elif isinstance(obj, BsonObjectId):
+                    return str(obj)
+                return obj
+            customer_data = clean_objectids(existing_customer)
     elif order.customer:
         customer_name = f"{order.customer.first_name} {order.customer.last_name}"
         customer_email = order.customer.email or ""
