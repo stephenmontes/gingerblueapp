@@ -10,12 +10,12 @@ export function BatchList({ batches, selectedBatch, onSelectBatch, onRefresh, us
 
   return (
     <Card className="bg-card border-border">
-      <CardHeader className="py-3">
-        <CardTitle className="text-lg">Production Batches</CardTitle>
+      <CardHeader className="py-2 sm:py-3 px-3 sm:px-4">
+        <CardTitle className="text-base sm:text-lg">Production Batches</CardTitle>
       </CardHeader>
       <CardContent className="p-2">
         <Tabs defaultValue="active" className="w-full">
-          <TabsList className="w-full grid grid-cols-2 mb-2">
+          <TabsList className="w-full grid grid-cols-2 mb-2 h-8 sm:h-9">
             <TabsTrigger value="active" className="gap-1 text-xs" data-testid="active-batches-tab">
               <Layers className="w-3 h-3" />
               Active ({activeBatches.length})
@@ -27,7 +27,7 @@ export function BatchList({ batches, selectedBatch, onSelectBatch, onRefresh, us
           </TabsList>
           
           <TabsContent value="active" className="mt-0">
-            <ScrollArea className="h-[calc(100vh-350px)]">
+            <div className="max-h-[calc(100vh-400px)] sm:max-h-[calc(100vh-350px)] overflow-y-auto">
               {activeBatches.length === 0 ? (
                 <EmptyState message="No active batches" />
               ) : (
@@ -39,11 +39,11 @@ export function BatchList({ batches, selectedBatch, onSelectBatch, onRefresh, us
                   user={user}
                 />
               )}
-            </ScrollArea>
+            </div>
           </TabsContent>
           
           <TabsContent value="archived" className="mt-0">
-            <ScrollArea className="h-[calc(100vh-350px)]">
+            <div className="max-h-[calc(100vh-400px)] sm:max-h-[calc(100vh-350px)] overflow-y-auto">
               {archivedBatches.length === 0 ? (
                 <EmptyState message="No archived batches" />
               ) : (
@@ -56,7 +56,7 @@ export function BatchList({ batches, selectedBatch, onSelectBatch, onRefresh, us
                   user={user}
                 />
               )}
-            </ScrollArea>
+            </div>
           </TabsContent>
         </Tabs>
       </CardContent>
@@ -66,9 +66,9 @@ export function BatchList({ batches, selectedBatch, onSelectBatch, onRefresh, us
 
 function EmptyState({ message }) {
   return (
-    <div className="text-center py-8 text-muted-foreground">
-      <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
-      <p className="text-sm">{message}</p>
+    <div className="text-center py-6 sm:py-8 text-muted-foreground">
+      <Package className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-3 sm:mb-4 opacity-50" />
+      <p className="text-xs sm:text-sm">{message}</p>
     </div>
   );
 }
