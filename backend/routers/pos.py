@@ -858,6 +858,9 @@ async def get_drafts_by_customer(
         {"_id": 0}
     ).sort([("created_at", -1)]).to_list(100)
     
+    # Clean any ObjectIds from draft data
+    drafts = [clean_mongo_doc(d) for d in drafts]
+    
     logger.info(f"Found {len(drafts)} drafts for customer {customer_id}")
     
     # Add additional info
