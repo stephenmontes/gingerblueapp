@@ -170,7 +170,8 @@ export default function Orders({ user }) {
         totalLabels++;
         labelsHtml += `
           <div class="label">
-            <div class="title">${title.length > 30 ? title.substring(0, 27) + "..." : title}</div>
+            <div class="order-number">Order #${orderNumber}</div>
+            <div class="title">${title.length > 28 ? title.substring(0, 25) + "..." : title}</div>
             <svg class="barcode" id="barcode-${itemIdx}-${i}"></svg>
             <div class="barcode-number">${barcodeValue}</div>
             <div class="sku">SKU: ${sku}</div>
@@ -196,7 +197,7 @@ export default function Orders({ user }) {
             .label {
               width: 2in;
               height: 1in;
-              padding: 0.05in;
+              padding: 0.04in 0.05in;
               display: flex;
               flex-direction: column;
               align-items: center;
@@ -207,21 +208,28 @@ export default function Orders({ user }) {
             .label:last-child {
               page-break-after: auto;
             }
+            .order-number {
+              font-size: 7pt;
+              font-weight: bold;
+              color: #2563eb;
+              text-align: center;
+              width: 100%;
+            }
             .title {
-              font-size: 8pt;
+              font-size: 7pt;
               font-weight: bold;
               text-align: center;
               line-height: 1.1;
-              max-height: 0.22in;
+              max-height: 0.18in;
               overflow: hidden;
               width: 100%;
             }
             .barcode {
               max-width: 1.8in;
-              height: 0.4in;
+              height: 0.35in;
             }
             .barcode-number {
-              font-size: 7pt;
+              font-size: 6pt;
               font-family: monospace;
               letter-spacing: 0.5px;
             }
