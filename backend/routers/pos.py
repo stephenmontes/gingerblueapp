@@ -249,6 +249,9 @@ async def search_products(
         {"_id": 0}
     ).limit(limit).to_list(limit)
     
+    # Clean any ObjectIds from product data
+    products = [clean_mongo_doc(p) for p in products]
+    
     return {
         "products": products, 
         "count": len(products),
