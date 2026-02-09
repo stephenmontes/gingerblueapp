@@ -964,33 +964,34 @@ export function FulfillmentBatchDetail({ batch, stages, onRefresh, onClose, canD
                               />
                             </div>
                           ) : (
-                            <div className="flex-shrink-0 w-14 h-14 rounded-md bg-muted flex items-center justify-center">
-                              <Package className="w-5 h-5 text-muted-foreground" />
+                            <div className="flex-shrink-0 w-10 h-10 sm:w-14 sm:h-14 rounded-md bg-muted flex items-center justify-center">
+                              <Package className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
                             </div>
                           )}
                           
-                          <div className="flex-1 min-w-0">
-                            <p className={`font-medium text-sm leading-relaxed break-words ${itemComplete ? 'line-through text-muted-foreground' : ''}`}>
+                          {/* Item details - takes remaining space */}
+                          <div className="flex-1 min-w-0 overflow-hidden">
+                            <p className={`font-medium text-xs sm:text-sm leading-snug sm:leading-relaxed line-clamp-2 ${itemComplete ? 'line-through text-muted-foreground' : ''}`}>
                               {item.name}
                             </p>
                             {item.sku && (
-                              <p className="text-xs text-muted-foreground font-mono mt-0.5">SKU: {item.sku}</p>
+                              <p className="text-[10px] sm:text-xs text-muted-foreground font-mono mt-0.5 truncate">SKU: {item.sku}</p>
                             )}
                             {item.variant_title && (
-                              <p className="text-xs text-muted-foreground">{item.variant_title}</p>
+                              <p className="text-[10px] sm:text-xs text-muted-foreground truncate">{item.variant_title}</p>
                             )}
                           </div>
                           
-                          {/* Qty Input */}
-                          <div className="flex-shrink-0 flex items-center gap-2">
-                            {isUpdating && <Loader2 className="w-4 h-4 animate-spin" />}
+                          {/* Qty Input - Compact on mobile */}
+                          <div className="flex-shrink-0 flex items-center gap-1 sm:gap-2">
+                            {isUpdating && <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />}
                             <QtyInput
                               value={progress}
                               max={qty}
                               onChange={(newQty) => handleUpdateItemProgress(order.order_id, itemIdx, newQty)}
                               disabled={isUpdating || !hasActiveTimer}
                             />
-                            {itemComplete && <CheckCircle2 className="w-5 h-5 text-green-400" />}
+                            {itemComplete && <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-green-400" />}
                           </div>
                         </div>
                       );
@@ -1001,11 +1002,11 @@ export function FulfillmentBatchDetail({ batch, stages, onRefresh, onClose, canD
             );
           })}
         </div>
-      </ScrollArea>
+      </div>
 
-      {/* Action Buttons */}
-      <div className="p-4 border-t border-border flex justify-between items-center">
-        <div className="text-sm text-muted-foreground">
+      {/* Action Buttons - Mobile optimized */}
+      <div className="p-3 sm:p-4 border-t border-border flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-2 sm:gap-0">
+        <div className="text-xs sm:text-sm text-muted-foreground text-center sm:text-left">
           Stage: <strong>{batch.current_stage_name}</strong>
         </div>
         
@@ -1014,10 +1015,10 @@ export function FulfillmentBatchDetail({ batch, stages, onRefresh, onClose, canD
             <Button 
               onClick={() => handleMoveStage(nextStage.stage_id)}
               disabled={loading}
-              className="gap-2"
+              className="gap-1.5 sm:gap-2 flex-1 sm:flex-initial h-9 sm:h-10 text-sm"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ChevronRight className="w-4 h-4" />}
-              Move to {nextStage.name}
+              <span className="truncate">→ {nextStage.name}</span>
             </Button>
           )}
           
