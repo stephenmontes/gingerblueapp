@@ -54,14 +54,15 @@ export function FulfillmentKpiBanner() {
 
   return (
     <div data-testid="fulfillment-kpi-banner">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <Calendar className="w-4 h-4 text-muted-foreground" />
-          <span className="text-sm text-muted-foreground">Summary:</span>
-          <span className="text-sm font-medium">{kpis.date_range}</span>
+      {/* Header - Mobile Optimized */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+        <div className="flex items-center gap-2 min-w-0">
+          <Calendar className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+          <span className="text-xs sm:text-sm text-muted-foreground">Summary:</span>
+          <span className="text-xs sm:text-sm font-medium truncate">{kpis.date_range}</span>
         </div>
         <Select value={period} onValueChange={setPeriod}>
-          <SelectTrigger className="w-40 h-8" data-testid="kpi-period-select">
+          <SelectTrigger className="w-full sm:w-40 h-8 text-xs sm:text-sm" data-testid="kpi-period-select">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -73,7 +74,8 @@ export function FulfillmentKpiBanner() {
           </SelectContent>
         </Select>
       </div>
-      <div className={`grid grid-cols-2 md:grid-cols-4 gap-4 ${loading ? 'opacity-50' : ''}`}>
+      {/* KPI Cards Grid - Responsive */}
+      <div className={`grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 ${loading ? 'opacity-50' : ''}`}>
         <KpiCard
           icon={Clock}
           label="Total Time"
@@ -109,9 +111,9 @@ export function FulfillmentKpiBanner() {
 
 function LoadingState() {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
       {[...Array(4)].map((_, i) => (
-        <div key={i} className="h-24 bg-muted/30 animate-pulse rounded-lg" />
+        <div key={i} className="h-20 sm:h-24 bg-muted/30 animate-pulse rounded-lg" />
       ))}
     </div>
   );
@@ -133,15 +135,15 @@ function KpiCard({ icon: Icon, label, value, subValue, color }) {
   };
 
   return (
-    <Card className={`p-4 border ${colorClasses[color]}`}>
+    <Card className={`p-2.5 sm:p-4 border ${colorClasses[color]}`}>
       <div className="flex items-start justify-between">
-        <div>
-          <p className="text-xs text-muted-foreground mb-1">{label}</p>
-          <p className="text-2xl font-bold">{value}</p>
-          <p className="text-xs text-muted-foreground mt-1">{subValue}</p>
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 sm:mb-1 truncate">{label}</p>
+          <p className="text-lg sm:text-2xl font-bold truncate">{value}</p>
+          <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1 truncate">{subValue}</p>
         </div>
-        <div className="p-2 rounded-lg bg-background/50">
-          <Icon className={`w-5 h-5 ${iconColors[color]}`} />
+        <div className="p-1.5 sm:p-2 rounded-lg bg-background/50 flex-shrink-0 ml-1">
+          <Icon className={`w-4 h-4 sm:w-5 sm:h-5 ${iconColors[color]}`} />
         </div>
       </div>
     </Card>
