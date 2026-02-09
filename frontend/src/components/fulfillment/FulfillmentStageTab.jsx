@@ -436,40 +436,42 @@ function OrdersView({
     >
       {/* Active Workers Banner */}
       {stage.stage_id !== "fulfill_orders" && (
-        <div className="px-4 pt-4">
+        <div className="px-3 sm:px-4 pt-3 sm:pt-4">
           <ActiveWorkersBanner stageId={stage.stage_id} stageName={stage.name} />
         </div>
       )}
-      {/* Timer Required Warning Banner */}
+      {/* Timer Required Warning Banner - Mobile Optimized */}
       {timerRequired && !hasActiveTimerForStage && (
-        <div className="px-4 py-3 bg-yellow-500/10 border-b border-yellow-500/30 flex items-center gap-3">
-          <Clock className="w-5 h-5 text-yellow-400" />
-          <div className="flex-1">
-            <p className="text-sm font-medium text-yellow-400">Timer Required</p>
-            <p className="text-xs text-muted-foreground">Start a timer to complete tasks in this stage</p>
+        <div className="px-3 sm:px-4 py-2.5 sm:py-3 bg-yellow-500/10 border-b border-yellow-500/30 flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 flex-1">
+            <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400 flex-shrink-0" />
+            <div>
+              <p className="text-xs sm:text-sm font-medium text-yellow-400">Timer Required</p>
+              <p className="text-xs text-muted-foreground hidden sm:block">Start a timer to complete tasks in this stage</p>
+            </div>
           </div>
           <Button 
             size="sm" 
             onClick={onStartTimer}
-            className="gap-2"
+            className="gap-1.5 sm:gap-2 h-8 text-xs sm:text-sm w-full sm:w-auto"
             data-testid="start-stage-timer-btn"
           >
-            <Play className="w-4 h-4" />
+            <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             Start Timer
           </Button>
         </div>
       )}
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <CardTitle className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: stage.color }} />
-              {stage.name}
-              <Badge variant="secondary">{orders.length} orders</Badge>
+      <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
+            <CardTitle className="flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base">
+              <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full flex-shrink-0" style={{ backgroundColor: stage.color }} />
+              <span className="truncate">{stage.name}</span>
+              <Badge variant="secondary" className="text-xs">{orders.length}</Badge>
               {outOfStockCount > 0 && (
-                <Badge variant="outline" className="border-orange-500 text-orange-500 gap-1">
+                <Badge variant="outline" className="border-orange-500 text-orange-500 gap-1 text-xs px-1.5">
                   <AlertTriangle className="w-3 h-3" />
-                  {outOfStockCount} low stock
+                  {outOfStockCount}
                 </Badge>
               )}
             </CardTitle>
@@ -477,11 +479,11 @@ function OrdersView({
           
           {stage.stage_id === "fulfill_orders" && selectedOrders.length > 0 && (
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">{selectedOrders.length} selected</span>
+              <span className="text-xs sm:text-sm text-muted-foreground">{selectedOrders.length} selected</span>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button size="sm" className="gap-2">
-                    Move to <ChevronRight className="w-4 h-4" />
+                  <Button size="sm" className="gap-1 sm:gap-2 h-7 sm:h-8 text-xs sm:text-sm">
+                    Move <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
@@ -503,34 +505,16 @@ function OrdersView({
       </CardHeader>
       <CardContent className="p-0">
         {orders.length === 0 ? (
-          <div className="p-8 text-center text-muted-foreground">
-            <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            <p>No orders in this stage</p>
+          <div className="p-6 sm:p-8 text-center text-muted-foreground">
+            <Package className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-3 sm:mb-4 opacity-50" />
+            <p className="text-sm">No orders in this stage</p>
           </div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow className="border-border">
-                {stage.stage_id === "fulfill_orders" && (
-                  <TableHead className="w-12">
-                    <Checkbox
-                      checked={selectedOrders.length === orders.length && orders.length > 0}
-                      onCheckedChange={onToggleAllOrders}
-                    />
-                  </TableHead>
-                )}
-                <TableHead>Order #</TableHead>
-                <TableHead>Items</TableHead>
-                <TableHead>Customer</TableHead>
-                <TableHead>Qty</TableHead>
-                <TableHead>Batch</TableHead>
-                <TableHead>Stock Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+          <>
+            {/* Mobile Card View */}
+            <div className="block sm:hidden divide-y divide-border">
               {orders.map((order) => (
-                <OrderRow
+                <MobileOrderCard
                   key={order.order_id}
                   order={order}
                   stage={stage}
@@ -551,10 +535,190 @@ function OrdersView({
                   onDeleteOrder={() => onDeleteOrder(order.order_id, order.order_number)}
                 />
               ))}
-            </TableBody>
-          </Table>
+            </div>
+            
+            {/* Desktop Table View */}
+            <div className="hidden sm:block">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-border">
+                    {stage.stage_id === "fulfill_orders" && (
+                      <TableHead className="w-12">
+                        <Checkbox
+                          checked={selectedOrders.length === orders.length && orders.length > 0}
+                          onCheckedChange={onToggleAllOrders}
+                        />
+                      </TableHead>
+                    )}
+                    <TableHead>Order #</TableHead>
+                    <TableHead>Items</TableHead>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Qty</TableHead>
+                    <TableHead>Batch</TableHead>
+                    <TableHead>Stock Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {orders.map((order) => (
+                    <OrderRow
+                      key={order.order_id}
+                      order={order}
+                      stage={stage}
+                      stages={stages}
+                      nextStage={nextStage}
+                      prevStage={prevStage}
+                      isLastStage={isLastStage}
+                      isSelected={selectedOrders.includes(order.order_id)}
+                      onToggleSelect={() => onToggleOrderSelection(order.order_id)}
+                      onMoveNext={() => onMoveOrderToNext(order.order_id)}
+                      onMoveToStage={(stageId) => onMoveOrderToStage(order.order_id, stageId)}
+                      onReturnToPrevious={() => onReturnOrderToPrevious(order.order_id)}
+                      onMarkShipped={() => onMarkShipped(order.order_id)}
+                      onShowInventory={() => onShowInventory(order)}
+                      onOpenWorksheet={() => onOpenWorksheet(order)}
+                      onPrintOrder={() => onPrintOrder(order)}
+                      canDelete={canDelete}
+                      onDeleteOrder={() => onDeleteOrder(order.order_id, order.order_number)}
+                    />
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </>
         )}
       </CardContent>
     </Card>
+  );
+}
+
+// Mobile-optimized order card for small screens
+function MobileOrderCard({
+  order,
+  stage,
+  stages,
+  nextStage,
+  prevStage,
+  isLastStage,
+  isSelected,
+  onToggleSelect,
+  onMoveNext,
+  onMoveToStage,
+  onReturnToPrevious,
+  onMarkShipped,
+  onShowInventory,
+  onOpenWorksheet,
+  onPrintOrder,
+  canDelete,
+  onDeleteOrder
+}) {
+  const totalQty = order.items?.reduce((sum, item) => sum + (item.quantity || 1), 0) || 1;
+  const itemNames = order.items?.map(item => item.title || item.name).slice(0, 2).join(", ") || "Order items";
+  const hasLowStock = order.inventory_status && !order.inventory_status.all_in_stock;
+  
+  return (
+    <div className="p-3 space-y-2.5">
+      {/* Header row with order number and checkbox */}
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          {stage.stage_id === "fulfill_orders" && (
+            <Checkbox
+              checked={isSelected}
+              onCheckedChange={onToggleSelect}
+              className="flex-shrink-0"
+            />
+          )}
+          <div className="min-w-0">
+            <button 
+              onClick={onOpenWorksheet}
+              className="font-medium text-sm text-primary hover:underline truncate block"
+            >
+              #{order.order_number}
+            </button>
+            {order.customer_name && (
+              <p className="text-xs text-muted-foreground truncate">{order.customer_name}</p>
+            )}
+          </div>
+        </div>
+        
+        {/* Stock status badge */}
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          {hasLowStock ? (
+            <Badge variant="outline" className="border-orange-500 text-orange-500 text-xs px-1.5 py-0.5">
+              <AlertTriangle className="w-3 h-3 mr-1" />
+              Low
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="border-green-500 text-green-500 text-xs px-1.5 py-0.5">
+              OK
+            </Badge>
+          )}
+        </div>
+      </div>
+      
+      {/* Items preview */}
+      <div className="text-xs text-muted-foreground">
+        <span className="font-medium text-foreground">{totalQty} items</span>
+        <span className="mx-1.5">·</span>
+        <span className="truncate">{itemNames}{order.items?.length > 2 && "..."}</span>
+      </div>
+      
+      {/* Action buttons */}
+      <div className="flex items-center gap-2 pt-1">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onOpenWorksheet}
+          className="flex-1 h-8 text-xs gap-1"
+        >
+          View
+        </Button>
+        
+        {isLastStage ? (
+          <Button
+            size="sm"
+            onClick={onMarkShipped}
+            className="flex-1 h-8 text-xs gap-1 bg-green-600 hover:bg-green-700"
+          >
+            Ship
+          </Button>
+        ) : nextStage && (
+          <Button
+            size="sm"
+            onClick={onMoveNext}
+            className="flex-1 h-8 text-xs gap-1"
+          >
+            → {nextStage.name}
+          </Button>
+        )}
+        
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={onShowInventory}>
+              Check Inventory
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onPrintOrder}>
+              Print Order
+            </DropdownMenuItem>
+            {prevStage && (
+              <DropdownMenuItem onClick={onReturnToPrevious}>
+                Return to {prevStage.name}
+              </DropdownMenuItem>
+            )}
+            {canDelete && (
+              <DropdownMenuItem onClick={onDeleteOrder} className="text-destructive">
+                <Trash2 className="w-4 h-4 mr-2" />
+                Remove
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </div>
   );
 }
