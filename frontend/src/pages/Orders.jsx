@@ -1311,6 +1311,16 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
                         <Button
                           variant="ghost"
                           size="sm"
+                          onClick={() => printOrderBarcodes(order)}
+                          data-testid={`barcode-order-${order.order_id}`}
+                          title="Print item labels"
+                          className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                        >
+                          <Barcode className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={() => handleEmailOrder(order)}
                           data-testid={`email-order-${order.order_id}`}
                           title="Email order to customer"
