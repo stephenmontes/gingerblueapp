@@ -1,8 +1,10 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
 from datetime import datetime, timezone
 from typing import Optional
 from pydantic import BaseModel
 import uuid
+import base64
+import os
 
 from database import db
 from models.user import User
@@ -12,6 +14,10 @@ from services.shopify_service import ShopifyService
 from services.etsy_service import EtsyService
 
 router = APIRouter(prefix="/stores", tags=["stores"])
+
+# Directory for uploaded logos
+UPLOAD_DIR = "/app/uploads/logos"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
 class TestConnectionRequest(BaseModel):
