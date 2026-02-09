@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 import uuid
 
 class ManufacturingAPITester:
-    def __init__(self, base_url="https://pos-android-fix.preview.emergentagent.com"):
+    def __init__(self, base_url="https://order-label-print-1.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.session_token = None
