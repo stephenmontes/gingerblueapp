@@ -123,3 +123,8 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["*"],
 )
+
+# Static files for uploaded logos
+UPLOAD_DIR = "/app/uploads/logos"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+app.mount("/api/uploads/logos", StaticFiles(directory=UPLOAD_DIR), name="logos")
