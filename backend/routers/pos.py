@@ -6,6 +6,7 @@ from fastapi import APIRouter, HTTPException, Depends, Query
 from typing import Optional, List, Dict, Any
 from datetime import datetime, timezone
 from pydantic import BaseModel
+from bson import ObjectId as BsonObjectId
 import uuid
 import httpx
 import logging
@@ -25,6 +26,17 @@ resend.api_key = os.environ.get("RESEND_API_KEY")
 router = APIRouter(prefix="/pos", tags=["pos"])
 
 API_VERSION = "2024-10"
+
+
+def clean_mongo_doc(obj):
+    """Remove _id fields and convert ObjectIds to strings for JSON serialization"""
+    if isinstance(obj, dict):
+        return {k: clean_mongo_doc(v) for k, v in obj.items() if k != "_id"}
+    elif isinstance(obj, list):
+        return [clean_mongo_doc(item) for item in obj]
+    elif isinstance(obj, BsonObjectId):
+        return str(obj)
+    return obj
 
 
 # Debug endpoint to check POS data status
