@@ -1026,10 +1026,10 @@ export function FulfillmentBatchDetail({ batch, stages, onRefresh, onClose, canD
             <Button 
               onClick={handleComplete}
               disabled={loading}
-              className="gap-2 bg-green-600 hover:bg-green-700"
+              className="gap-1.5 sm:gap-2 bg-green-600 hover:bg-green-700 flex-1 sm:flex-initial h-9 sm:h-10 text-sm"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-              Complete Batch
+              <span className="truncate">Complete</span>
             </Button>
           )}
         </div>
@@ -1044,23 +1044,22 @@ export function FulfillmentBatchDetail({ batch, stages, onRefresh, onClose, canD
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!deleteOrderId} onOpenChange={(open) => !open && setDeleteOrderId(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-[90vw] sm:max-w-lg">
           <AlertDialogHeader>
-            <AlertDialogTitle>Remove Order from Fulfillment?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will remove order <span className="font-semibold text-foreground">{deleteOrderNumber}</span> from the fulfillment workflow. 
-              <br /><br />
-              <span className="text-muted-foreground">Note: This only removes the order from fulfillment stages. The original order will not be affected.</span>
+            <AlertDialogTitle className="text-base sm:text-lg">Remove Order?</AlertDialogTitle>
+            <AlertDialogDescription className="text-sm">
+              Remove order <span className="font-semibold text-foreground">{deleteOrderNumber}</span> from fulfillment?
+              <span className="block mt-2 text-xs text-muted-foreground">The original order will not be affected.</span>
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel disabled={deleting} className="sm:w-auto">Cancel</AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleDeleteOrder}
               disabled={deleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 sm:w-auto"
             >
-              {deleting ? "Removing..." : "Remove Order"}
+              {deleting ? "Removing..." : "Remove"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
