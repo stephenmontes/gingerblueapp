@@ -222,6 +222,198 @@ export default function Products() {
     printWindow.document.close();
   };
 
+  // Print all variants on a single 4x6 label
+  const printAllVariantsLabel = (product) => {
+    const variants = product.variants || [];
+    if (variants.length === 0) {
+      toast.error("No variants found for this product");
+      return;
+    }
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      toast.error("Please allow pop-ups to print labels");
+      return;
+    }
+
+    // Generate variant items for the 4x6 label
+    // 4x6 inches can fit approximately 6 small barcodes (2 columns x 3 rows)
+    let variantsHtml = variants.map((variant, idx) => {
+      const barcodeValue = variant.barcode || variant.sku || `${product.product_id}-${idx}`;
+      const variantTitle = variant.title && variant.title !== "Default Title" ? variant.title : "Default";
+      const displayTitle = variantTitle.length > 20 ? variantTitle.substring(0, 17) + "..." : variantTitle;
+      const sku = variant.sku || "N/A";
+      
+      return `
+        <div class="variant-item">
+          <div class="variant-title">${displayTitle}</div>
+          <svg class="barcode" id="barcode-${idx}"></svg>
+          <div class="barcode-number">${barcodeValue}</div>
+          <div class="sku">SKU: ${sku}</div>
+        </div>
+      `;
+    }).join('');
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>All Variants - ${product.title}</title>
+          <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            @page {
+              size: 4in 6in;
+              margin: 0;
+            }
+            body {
+              font-family: Arial, sans-serif;
+              width: 4in;
+              height: 6in;
+            }
+            .label-sheet {
+              width: 4in;
+              height: 6in;
+              padding: 0.15in;
+              display: flex;
+              flex-direction: column;
+            }
+            .product-header {
+              text-align: center;
+              padding-bottom: 0.1in;
+              border-bottom: 1px solid #333;
+              margin-bottom: 0.1in;
+            }
+            .product-header h1 {
+              font-size: 11pt;
+              font-weight: bold;
+              margin: 0;
+            }
+            .product-header p {
+              font-size: 8pt;
+              color: #666;
+              margin-top: 2px;
+            }
+            .variants-grid {
+              display: grid;
+              grid-template-columns: repeat(2, 1fr);
+              gap: 0.1in;
+              flex: 1;
+            }
+            .variant-item {
+              border: 1px solid #ddd;
+              border-radius: 4px;
+              padding: 0.08in;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+              background: #fafafa;
+              min-height: 0.9in;
+            }
+            .variant-title {
+              font-size: 7pt;
+              font-weight: bold;
+              text-align: center;
+              margin-bottom: 2px;
+              color: #333;
+            }
+            .barcode {
+              max-width: 1.6in;
+              height: 0.35in;
+            }
+            .barcode-number {
+              font-size: 6pt;
+              font-family: monospace;
+              margin-top: 1px;
+            }
+            .sku {
+              font-size: 5pt;
+              color: #666;
+            }
+            .print-actions {
+              position: fixed;
+              top: 10px;
+              right: 10px;
+              display: flex;
+              gap: 8px;
+              z-index: 1000;
+            }
+            .print-actions button {
+              padding: 10px 20px;
+              font-size: 14px;
+              cursor: pointer;
+              border: none;
+              border-radius: 6px;
+              font-weight: 500;
+            }
+            .btn-print { background: #2563eb; color: white; }
+            .btn-close { background: #e5e7eb; color: #374151; }
+            @media print {
+              .print-actions { display: none; }
+            }
+            @media screen {
+              body { 
+                padding: 20px; 
+                background: #f5f5f5;
+                width: auto;
+                height: auto;
+              }
+              .label-sheet { 
+                background: white; 
+                border: 1px solid #ddd;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                margin: 0 auto;
+              }
+            }
+          </style>
+          <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+        </head>
+        <body>
+          <div class="print-actions">
+            <button class="btn-print" id="printBtn">Print Label</button>
+            <button class="btn-close" id="closeBtn">Close</button>
+          </div>
+          <div class="label-sheet">
+            <div class="product-header">
+              <h1>${product.title}</h1>
+              <p>${variants.length} variant${variants.length > 1 ? 's' : ''}</p>
+            </div>
+            <div class="variants-grid">
+              ${variantsHtml}
+            </div>
+          </div>
+          <script>
+            // Generate barcodes for all variants
+            ${variants.map((variant, idx) => {
+              const barcodeValue = variant.barcode || variant.sku || `${product.product_id}-${idx}`;
+              return `
+                try {
+                  JsBarcode("#barcode-${idx}", "${barcodeValue}", {
+                    format: "CODE128",
+                    width: 1.2,
+                    height: 28,
+                    displayValue: false,
+                    margin: 0
+                  });
+                } catch (e) {
+                  console.error("Barcode error for variant ${idx}:", e);
+                }
+              `;
+            }).join('')}
+            
+            document.getElementById('printBtn').addEventListener('click', function() {
+              window.print();
+            });
+            document.getElementById('closeBtn').addEventListener('click', function() {
+              window.close();
+            });
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
   const openLabelDialog = (product, e) => {
     e?.stopPropagation();
     setSelectedProductForLabel(product);
