@@ -667,55 +667,55 @@ export function FulfillmentBatchDetail({ batch, stages, onRefresh, onClose, canD
   };
 
   return (
-    <div className="flex flex-col h-full bg-card rounded-lg border border-border">
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-border">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={onClose}>
-            <ChevronLeft className="w-5 h-5" />
+    <div className="flex flex-col h-full bg-card rounded-lg border border-border overflow-hidden">
+      {/* Header - Mobile Optimized */}
+      <div className="flex items-center justify-between p-3 sm:p-4 border-b border-border gap-2">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+          <Button variant="ghost" size="icon" onClick={onClose} className="flex-shrink-0 h-8 w-8 sm:h-9 sm:w-9">
+            <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
           </Button>
-          <div>
-            <h2 className="text-lg font-semibold">{batch.name}</h2>
-            <p className="text-sm text-muted-foreground">
+          <div className="min-w-0">
+            <h2 className="text-base sm:text-lg font-semibold truncate">{batch.name}</h2>
+            <p className="text-xs sm:text-sm text-muted-foreground">
               {batch.orders?.length || 0} orders • {totalItems} items
             </p>
           </div>
         </div>
         
-        <div className="flex items-center gap-2">
-          {/* Active Workers Badge */}
+        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+          {/* Active Workers Badge - hidden on mobile */}
           {activeWorkers.length > 0 && (
-            <Badge variant="outline" className="gap-1">
+            <Badge variant="outline" className="gap-1 hidden sm:flex">
               <Users className="w-3 h-3" />
               {activeWorkers.length} working
             </Badge>
           )}
           
-          {/* Report Button */}
-          <Button variant="outline" size="sm" onClick={() => setShowReport(true)}>
-            <BarChart3 className="w-4 h-4 mr-1" />
-            Report
+          {/* Report Button - icon only on mobile */}
+          <Button variant="outline" size="sm" onClick={() => setShowReport(true)} className="h-8 px-2 sm:px-3">
+            <BarChart3 className="w-4 h-4" />
+            <span className="hidden sm:inline ml-1">Report</span>
           </Button>
           
-          {/* Print Button */}
-          <Button variant="outline" size="sm" onClick={handlePrint}>
-            <Printer className="w-4 h-4 mr-1" />
-            Print
+          {/* Print Button - icon only on mobile */}
+          <Button variant="outline" size="sm" onClick={handlePrint} className="h-8 px-2 sm:px-3">
+            <Printer className="w-4 h-4" />
+            <span className="hidden sm:inline ml-1">Print</span>
           </Button>
           
-          <Button variant="ghost" size="icon" onClick={onClose}>
-            <X className="w-5 h-5" />
+          <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 sm:h-9 sm:w-9">
+            <X className="w-4 h-4 sm:w-5 sm:h-5" />
           </Button>
         </div>
       </div>
 
-      {/* Timer and Progress Bar */}
-      <div className="p-4 border-b border-border space-y-3">
+      {/* Timer and Progress Bar - Mobile Optimized */}
+      <div className="p-3 sm:p-4 border-b border-border space-y-2 sm:space-y-3">
         {/* Timer Required Warning */}
         {!isUserActive && (
-          <div className="flex items-center gap-2 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg text-yellow-400">
-            <Clock className="w-5 h-5 flex-shrink-0" />
-            <span className="text-sm font-medium">Start your timer to update item quantities and move orders</span>
+          <div className="flex items-center gap-2 p-2 sm:p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg text-yellow-400">
+            <Clock className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+            <span className="text-xs sm:text-sm font-medium">Start timer to update items</span>
           </div>
         )}
         
