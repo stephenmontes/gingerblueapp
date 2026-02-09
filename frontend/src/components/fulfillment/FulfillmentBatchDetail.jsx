@@ -234,25 +234,25 @@ function QtyInput({ value, max, onChange, disabled }) {
   const isComplete = value >= max;
   
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-0.5 sm:gap-1">
       <Button
         size="icon"
         variant="outline"
-        className="h-8 w-8"
+        className="h-7 w-7 sm:h-8 sm:w-8"
         onClick={() => onChange(Math.max(0, value - 1))}
         disabled={disabled || value <= 0}
       >
         <Minus className="w-3 h-3" />
       </Button>
-      <div className={`w-16 text-center py-1 rounded font-bold ${
+      <div className={`w-12 sm:w-16 text-center py-0.5 sm:py-1 rounded font-bold text-xs sm:text-sm ${
         isComplete ? 'bg-green-500/20 text-green-400' : 'bg-muted'
       }`}>
-        {value} / {max}
+        {value}/{max}
       </div>
       <Button
         size="icon"
         variant="outline"
-        className="h-8 w-8"
+        className="h-7 w-7 sm:h-8 sm:w-8"
         onClick={() => onChange(Math.min(max, value + 1))}
         disabled={disabled || value >= max}
       >
