@@ -987,10 +987,56 @@ function StoreBrandingSettings({ API, stores, setStores, isManager }) {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div>
-              <Label className="flex items-center gap-2">
+              <Label className="flex items-center gap-2 mb-2">
                 <Image className="w-4 h-4" />
-                Logo URL
+                Logo
               </Label>
+              
+              {/* File Upload Option */}
+              <div className="flex items-center gap-2 mb-2">
+                <Input
+                  type="file"
+                  accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    
+                    if (file.size > 2 * 1024 * 1024) {
+                      toast.error("File too large. Max 2MB");
+                      return;
+                    }
+                    
+                    const formData = new FormData();
+                    formData.append("file", file);
+                    
+                    try {
+                      const res = await fetch(`${API}/stores/upload-logo/${brandingStore?.store_id}`, {
+                        method: "POST",
+                        credentials: "include",
+                        body: formData
+                      });
+                      
+                      if (res.ok) {
+                        const data = await res.json();
+                        setBrandingForm({ ...brandingForm, logo: data.logo_url });
+                        toast.success("Logo uploaded!");
+                      } else {
+                        const err = await res.json();
+                        toast.error(err.detail || "Failed to upload logo");
+                      }
+                    } catch (err) {
+                      toast.error("Failed to upload logo");
+                    }
+                  }}
+                  className="flex-1"
+                  data-testid="branding-logo-upload"
+                />
+              </div>
+              
+              {/* URL Option */}
+              <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
+                <span>— or paste a URL —</span>
+              </div>
               <Input 
                 value={brandingForm.logo} 
                 onChange={(e) => setBrandingForm({ ...brandingForm, logo: e.target.value })}
@@ -998,13 +1044,13 @@ function StoreBrandingSettings({ API, stores, setStores, isManager }) {
                 data-testid="branding-logo-input"
               />
               <p className="text-xs text-muted-foreground mt-1">
-                Direct URL to your logo image (PNG, JPG). Leave blank to show store name as text.
+                Upload an image (PNG, JPG, max 2MB) or paste a direct URL.
               </p>
               {brandingForm.logo && (
                 <div className="mt-2 p-2 bg-muted rounded border">
                   <p className="text-xs text-muted-foreground mb-1">Preview:</p>
                   <img 
-                    src={brandingForm.logo} 
+                    src={brandingForm.logo.startsWith("/api") ? `${API.replace("/api", "")}${brandingForm.logo}` : brandingForm.logo} 
                     alt="Logo preview" 
                     className="max-h-16 object-contain"
                     onError={(e) => e.target.style.display = 'none'}
