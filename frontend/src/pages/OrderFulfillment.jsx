@@ -470,26 +470,31 @@ export default function OrderFulfillment({ user }) {
       {/* Stage Tabs - Only show when NO batch is selected OR no batches exist */}
       {(!selectedBatch || fulfillmentBatches.length === 0) && (
         <>
-          <div className="flex gap-2 overflow-x-auto pb-2">
-            {stages.map((stage) => (
-              <Button
-                key={stage.stage_id}
-                variant={activeTab === stage.stage_id ? "default" : "outline"}
-                size="sm"
-                onClick={() => setActiveTab(stage.stage_id)}
-                className="flex items-center gap-2 whitespace-nowrap"
-                data-testid={`tab-${stage.stage_id}`}
-              >
-                <div 
-                  className="w-3 h-3 rounded-full" 
-                  style={{ backgroundColor: stage.color }}
-                />
-                {stage.name}
-                <Badge variant="secondary">
-                  {getStageCount(stage.stage_id)}
-                </Badge>
-              </Button>
-            ))}
+          {/* Stage tabs with horizontal scroll on mobile */}
+          <div className="relative">
+            <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
+              {stages.map((stage) => (
+                <Button
+                  key={stage.stage_id}
+                  variant={activeTab === stage.stage_id ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setActiveTab(stage.stage_id)}
+                  className="flex items-center gap-1.5 sm:gap-2 whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3 h-8 sm:h-9 flex-shrink-0"
+                  data-testid={`tab-${stage.stage_id}`}
+                >
+                  <div 
+                    className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full flex-shrink-0" 
+                    style={{ backgroundColor: stage.color }}
+                  />
+                  <span className="truncate max-w-[80px] sm:max-w-none">{stage.name}</span>
+                  <Badge variant="secondary" className="text-xs px-1.5 sm:px-2">
+                    {getStageCount(stage.stage_id)}
+                  </Badge>
+                </Button>
+              ))}
+            </div>
+            {/* Scroll hint gradient on mobile */}
+            <div className="absolute right-0 top-0 bottom-2 w-8 bg-gradient-to-l from-background to-transparent pointer-events-none sm:hidden" />
           </div>
 
           {/* Stage Content */}
