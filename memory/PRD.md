@@ -240,3 +240,17 @@ Build a manufacturing and fulfillment app for Shopify websites with detailed tim
     - Increased page bottom padding (pb-32) for action bar clearance
     - Desktop retains internal cart scroll (lg:max-h-[400px])
 
+### 9. Barcode Label Printing - COMPLETE (Feb 2026)
+- **Products Page Barcode Printing:**
+  - Individual variant labels (2"x1") with title, barcode, barcode number, and SKU
+  - All variants on single 4"x6" label with title header and barcode grid
+  - Configurable label quantity (1-100)
+  - JsBarcode CODE128 format integration
+- **Orders Page Barcode Printing (NEW - Feb 2026):**
+  - Print 1 barcode label per item quantity in an order
+  - Example: Order with 3x Item A + 2x Item B generates 5 labels
+  - Blue barcode button in Actions column (data-testid="barcode-order-{id}")
+  - Print preview window with "Print X Labels" and "Close" buttons
+  - Error handling for empty orders (toast notification)
+  - Handles both 'items'/'line_items' and 'qty'/'quantity' field names
+
