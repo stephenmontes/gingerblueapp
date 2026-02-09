@@ -191,11 +191,12 @@ export default function Production({ user }) {
   }
 
   return (
-    <div className="space-y-6" data-testid="production-page">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-heading font-bold">Frame Production</h1>
-          <p className="text-muted-foreground mt-1">
+    <div className="space-y-4 sm:space-y-6" data-testid="production-page">
+      {/* Header - Mobile optimized */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-3xl font-heading font-bold truncate">Frame Production</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1 hidden sm:block">
             Track time per stage • One timer per user at a time
           </p>
         </div>
@@ -205,11 +206,11 @@ export default function Production({ user }) {
           <Button
             variant="outline"
             onClick={() => setShowTimeEntryDialog(true)}
-            className="gap-2"
+            className="gap-1.5 sm:gap-2 h-8 sm:h-9 text-xs sm:text-sm flex-shrink-0 w-full sm:w-auto"
             data-testid="manage-time-entries-btn"
           >
             <Clock className="w-4 h-4" />
-            Manage Time Entries
+            <span className="sm:inline">Manage Time</span>
           </Button>
         )}
       </div>
