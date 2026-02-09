@@ -801,10 +801,23 @@ export default function Products() {
             </div>
           )}
           
-          <DialogFooter>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button variant="outline" onClick={() => setLabelDialogOpen(false)}>
               Cancel
             </Button>
+            {selectedProductForLabel?.variants?.length > 1 && (
+              <Button 
+                onClick={() => {
+                  printAllVariantsLabel(selectedProductForLabel);
+                  setLabelDialogOpen(false);
+                }}
+                variant="outline"
+                className="border-purple-500 text-purple-600 hover:bg-purple-50"
+              >
+                <Printer className="w-4 h-4 mr-2" />
+                All Variants (4x6)
+              </Button>
+            )}
             <Button 
               onClick={() => {
                 const variantIndex = selectedProductForLabel._selectedVariantIndex || 0;
