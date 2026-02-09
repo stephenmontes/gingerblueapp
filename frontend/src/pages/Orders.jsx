@@ -982,6 +982,12 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
                     </p>
                   )}
                   
+                  {isShipstation && store.last_shipstation_sync && (
+                    <p className="text-xs text-muted-foreground mb-3">
+                      Last sync: {new Date(store.last_shipstation_sync).toLocaleString()}
+                    </p>
+                  )}
+                  
                   {isDropship ? (
                     <Button
                       size="sm"
