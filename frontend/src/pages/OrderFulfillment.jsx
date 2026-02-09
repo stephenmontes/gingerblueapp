@@ -230,18 +230,18 @@ export default function OrderFulfillment({ user }) {
         <Button
           variant="ghost"
           onClick={() => setShowMyTimerHistory(!showMyTimerHistory)}
-          className="w-full justify-between h-12"
+          className="w-full justify-between h-10 sm:h-12 text-sm sm:text-base px-3 sm:px-4"
           data-testid="toggle-my-timer-history"
         >
           <span className="flex items-center gap-2">
             <History className="w-4 h-4" />
-            My Timer History
+            <span className="truncate">My Timer History</span>
           </span>
-          {showMyTimerHistory ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          {showMyTimerHistory ? <ChevronUp className="w-4 h-4 flex-shrink-0" /> : <ChevronDown className="w-4 h-4 flex-shrink-0" />}
         </Button>
         
         {showMyTimerHistory && (
-          <div className="p-4 pt-0">
+          <div className="p-3 sm:p-4 pt-0">
             <MyTimerHistory />
           </div>
         )}
@@ -255,18 +255,18 @@ export default function OrderFulfillment({ user }) {
         <Button
           variant="ghost"
           onClick={() => setShowReport(!showReport)}
-          className="w-full justify-between h-12"
+          className="w-full justify-between h-10 sm:h-12 text-sm sm:text-base px-3 sm:px-4"
           data-testid="toggle-order-report"
         >
           <span className="flex items-center gap-2">
             <FileText className="w-4 h-4" />
-            Order Time & Cost Report
+            <span className="truncate">Order Time & Cost Report</span>
           </span>
-          {showReport ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          {showReport ? <ChevronUp className="w-4 h-4 flex-shrink-0" /> : <ChevronDown className="w-4 h-4 flex-shrink-0" />}
         </Button>
         
         {showReport && (
-          <div className="p-4 pt-0">
+          <div className="p-3 sm:p-4 pt-0">
             <OrderKpiReport />
           </div>
         )}
