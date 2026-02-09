@@ -281,7 +281,8 @@ export default function Orders({ user }) {
           <script>
             // Generate barcodes
             ${lineItems.map((item, itemIdx) => {
-              const qty = item.quantity || 1;
+              // Handle both 'qty' and 'quantity' field names
+              const qty = item.qty || item.quantity || 1;
               const barcodeValue = item.barcode || item.sku || `${orderNumber}-${itemIdx}`;
               let script = '';
               for (let i = 0; i < qty; i++) {
