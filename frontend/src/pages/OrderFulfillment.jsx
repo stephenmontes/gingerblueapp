@@ -182,26 +182,26 @@ export default function OrderFulfillment({ user }) {
   }
 
   return (
-    <div className="space-y-6" data-testid="order-fulfillment-page">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-heading font-bold flex items-center gap-3">
-            <Truck className="w-8 h-8 text-primary" />
-            Order Fulfillment
+    <div className="space-y-4 sm:space-y-6" data-testid="order-fulfillment-page">
+      {/* Header - Mobile Optimized */}
+      <div className="flex items-start sm:items-center justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-xl sm:text-3xl font-heading font-bold flex items-center gap-2 sm:gap-3">
+            <Truck className="w-6 h-6 sm:w-8 sm:h-8 text-primary flex-shrink-0" />
+            <span className="truncate">Order Fulfillment</span>
           </h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1 hidden sm:block">
             Track orders through print, mount, finish, and shipping stages
           </p>
         </div>
         <Button 
           variant="outline" 
           onClick={loadData} 
-          className="gap-2"
+          className="gap-1.5 sm:gap-2 h-8 sm:h-9 px-2 sm:px-3 flex-shrink-0"
           data-testid="refresh-fulfillment-btn"
         >
           <RefreshCw className="w-4 h-4" />
-          Refresh
+          <span className="hidden xs:inline">Refresh</span>
         </Button>
       </div>
 
