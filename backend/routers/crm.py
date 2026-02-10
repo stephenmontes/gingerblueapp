@@ -1036,6 +1036,26 @@ async def update_opportunity(opp_id: str, updates: OpportunityUpdate, user: User
             user_id=user.user_id,
             user_name=user.name
         )
+        
+        # Log opportunity won/lost event
+        if new_stage in ["closed_won", "closed_lost"]:
+            await log_opportunity_closed(
+                opportunity_id=opp_id,
+                is_won=(new_stage == "closed_won"),
+                amount=existing.get("amount", 0),
+                user_id=user.user_id,
+                user_name=user.name
+            )
+    
+    # Log high-signal field changes (amount, close_date, owner_id)
+    await log_field_changes(
+        entity_type="opportunity",
+        entity_id=opp_id,
+        old_values=existing,
+        new_values=update_data,
+        user_id=user.user_id,
+        user_name=user.name
+    )
     
     update_data["updated_at"] = now
     update_data["updated_by"] = user.user_id
