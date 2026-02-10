@@ -319,7 +319,6 @@ async def get_forecast(
                     "count": 0
                 }
             amount = opp.get("amount", 0)
-            prob = opp.get("probability", 0)
             forecast[close_date]["count"] += 1
             forecast[close_date]["pipeline"] += amount
             
