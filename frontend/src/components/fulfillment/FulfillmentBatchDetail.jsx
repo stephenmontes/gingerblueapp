@@ -646,7 +646,8 @@ export function FulfillmentBatchDetail({ batch, stages, onRefresh, onClose, canD
       return;
     }
 
-    if (!isAtFinishStage) {
+    // GB Home can move orders at any stage, others only at Finish
+    if (!canMoveToPackShip) {
       toast.error("Orders can only be moved to Pack and Ship from the Finish stage");
       return;
     }
@@ -661,7 +662,8 @@ export function FulfillmentBatchDetail({ batch, stages, onRefresh, onClose, canD
           headers: { "Content-Type": "application/json" },
           credentials: "include",
           body: JSON.stringify({
-            order_ids: Array.from(selectedOrders)
+            order_ids: Array.from(selectedOrders),
+            is_gb_home: isGBHomeBatch  // Pass flag so backend knows to allow at any stage
           })
         }
       );
