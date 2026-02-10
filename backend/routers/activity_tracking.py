@@ -43,7 +43,7 @@ async def record_heartbeat(user: User = Depends(get_current_user)):
                 gap = (now - last_dt).total_seconds() / 60
                 if gap > 5:
                     minutes_to_add = 1  # Only count this minute, not the gap
-            except:
+            except (ValueError, TypeError):
                 pass
         
         await db.user_activity.update_one(
