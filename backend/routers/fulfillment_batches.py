@@ -677,6 +677,7 @@ async def complete_fulfillment_batch(
 class MoveOrderToPackShip(BaseModel):
     """Request to move individual orders to pack/ship"""
     order_ids: list[str]
+    is_gb_home: bool = False  # GB Home batches can move at any stage
 
 
 @router.post("/{batch_id}/orders/move-to-pack-ship")
@@ -690,6 +691,9 @@ async def move_orders_to_pack_ship(
     
     This allows decor/home batches to be printed, mounted, and finished as a batch,
     but packed and shipped individually. The batch timing continues for tracking purposes.
+    
+    GB Home batches can move orders to Pack and Ship at any stage since they 
+    process orders individually rather than as a combined batch.
     """
     batch = await db.fulfillment_batches.find_one(
         {"fulfillment_batch_id": batch_id},
@@ -699,8 +703,11 @@ async def move_orders_to_pack_ship(
     if not batch:
         raise HTTPException(status_code=404, detail="Fulfillment batch not found")
     
-    # Verify batch is at Finish stage
-    if batch.get("current_stage_id") != "fulfill_finish":
+    # GB Home batches can move orders at any stage
+    is_gb_home = request.is_gb_home or batch.get("store_type") == "gb_home" or batch.get("is_gb_home_batch", False)
+    
+    # For non-GB Home batches, verify batch is at Finish stage
+    if not is_gb_home and batch.get("current_stage_id") != "fulfill_finish":
         raise HTTPException(
             status_code=400, 
             detail="Orders can only be moved to Pack and Ship when batch is at Finish stage"
