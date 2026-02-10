@@ -1,26 +1,23 @@
 import { useState, useEffect, useCallback } from 'react';
 import { API } from '@/utils/api';
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
-import { Button } from "../../components/ui/button";
-import { Input } from "../../components/ui/input";
-import { Badge } from "../../components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter
-} from "../../components/ui/dialog";
-import { Label } from "../../components/ui/label";
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from "../../components/ui/select";
-import { Textarea } from "../../components/ui/textarea";
-import { useToast } from "@/components/ui/use-toast";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
-  Plus, Search, TrendingUp, DollarSign, Calendar, Building2,
-  MoreVertical, Trash2, Eye, Kanban, List, GripVertical
+  Plus, Search, TrendingUp, Calendar, Building2,
+  Kanban, List, GripVertical
 } from 'lucide-react';
-import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
-} from "../../components/ui/dropdown-menu";
 
 const stages = [
   { id: 'prospecting', name: 'Prospecting', color: 'bg-gray-500', probability: 10 },
