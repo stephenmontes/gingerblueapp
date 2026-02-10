@@ -484,7 +484,7 @@ async def delete_contact(contact_id: str, user: User = Depends(get_current_user)
 # ==================== LEADS ====================
 
 @router.post("/leads")
-async def create_lead(lead: LeadCreate, user: User = Depends(get_current_user)):
+async def create_lead(lead: LeadCreate, background_tasks: BackgroundTasks, user: User = Depends(get_current_user)):
     """Create a new lead"""
     lead_id = generate_id("lead")
     now = datetime.now(timezone.utc).isoformat()
@@ -512,6 +512,20 @@ async def create_lead(lead: LeadCreate, user: User = Depends(get_current_user)):
     
     await db.crm_leads.insert_one(lead_doc)
     await log_activity("lead", lead_id, "created", {"name": lead_doc["full_name"], "source": lead.source}, user)
+    
+    # Log record creation to timeline
+    await log_record_created(
+        entity_type="lead",
+        entity_id=lead_id,
+        entity_name=lead_doc["full_name"],
+        user_id=user.user_id,
+        user_name=user.name,
+        metadata={"source": lead.source, "company": lead.company}
+    )
+    
+    # Execute lead assignment rules (if no owner was explicitly set)
+    if not lead.owner_id:
+        background_tasks.add_task(execute_lead_assignment, lead_doc)
     
     lead_doc.pop("_id", None)
     return lead_doc
