@@ -235,14 +235,14 @@ async def get_production_overall_kpis(
             "completed_date": {"$gte": start_date, "$lte": end_date}
         }},
         {"$group": {
-            "_id": None,
+            "_id": "$user_id",
             "total_minutes": {"$sum": "$duration_minutes"},
             "total_items": {"$sum": "$items_processed"},
             "session_count": {"$sum": 1}
         }}
     ]
     
-    result = await db.time_logs.aggregate(pipeline).to_list(1)
+    result = await db.time_logs.aggregate(pipeline).to_list(100)
     
     if not result:
         return {
@@ -257,14 +257,36 @@ async def get_production_overall_kpis(
             "date_range": date_range
         }
     
-    data = result[0]
-    total_hours = data["total_minutes"] / 60
-    total_items = data["total_items"]
+    # Get hourly rates for all users
+    user_ids = [r["_id"] for r in result if r["_id"]]
+    user_rates = {}
+    if user_ids:
+        users_cursor = db.users.find(
+            {"user_id": {"$in": user_ids}},
+            {"_id": 0, "user_id": 1, "hourly_rate": 1}
+        )
+        async for u in users_cursor:
+            user_rates[u["user_id"]] = u.get("hourly_rate", 15)
     
-    # Calculate costs ($30/hour rate)
-    labor_cost = total_hours * 30
+    # Calculate totals with user-specific rates
+    total_minutes = 0
+    total_items = 0
+    session_count = 0
+    labor_cost = 0
+    
+    for r in result:
+        user_id = r["_id"]
+        hourly_rate = user_rates.get(user_id, 15)
+        user_hours = r["total_minutes"] / 60
+        
+        total_minutes += r["total_minutes"]
+        total_items += r["total_items"]
+        session_count += r["session_count"]
+        labor_cost += user_hours * hourly_rate
+    
+    total_hours = total_minutes / 60
     cost_per_item = labor_cost / total_items if total_items > 0 else 0
-    avg_time_per_item = data["total_minutes"] / total_items if total_items > 0 else 0
+    avg_time_per_item = total_minutes / total_items if total_items > 0 else 0
     
     return {
         "total_hours": round(total_hours, 2),
@@ -272,7 +294,7 @@ async def get_production_overall_kpis(
         "labor_cost": round(labor_cost, 2),
         "cost_per_item": round(cost_per_item, 2),
         "avg_time_per_item": round(avg_time_per_item, 1),
-        "session_count": data["session_count"],
+        "session_count": session_count,
         "period": period,
         "period_label": period_label,
         "date_range": date_range
