@@ -63,7 +63,6 @@ async def get_fulfillment_batch(
     stage_id = batch.get("current_stage_id", "")
     stage_progress_key = f"stage_{stage_id}"
     stage_progress = item_progress.get(stage_progress_key, {})
-    individual_order_status = batch.get("individual_order_status", {})
     
     for order in orders:
         order_progress = stage_progress.get(order["order_id"], {})
