@@ -44,7 +44,7 @@ export default function AccountsPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
-  const { toast } = useToast();
+  
 
   const [newAccount, setNewAccount] = useState({
     name: '',
@@ -70,7 +70,7 @@ export default function AccountsPage() {
       setAccounts(data.accounts || []);
       setPagination(data.pagination || { page: 1, total: 0, total_pages: 0 });
     } catch (error) {
-      toast({ title: "Error", description: "Failed to load accounts", variant: "destructive" });
+      toast.error("Failed to load accounts");
     } finally {
       setLoading(false);
     }
@@ -94,12 +94,12 @@ export default function AccountsPage() {
         throw new Error(err.detail || 'Failed to create account');
       }
       
-      toast({ title: "Success", description: "Account created successfully" });
+      toast.success("Account created successfully");
       setIsCreateOpen(false);
       setNewAccount({ name: '', account_type: 'prospect', industry: '', website: '', phone: '', description: '' });
       fetchAccounts();
     } catch (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast.error(error.message);
     }
   };
 
@@ -110,7 +110,7 @@ export default function AccountsPage() {
       setSelectedAccount(data);
       setIsDetailOpen(true);
     } catch (error) {
-      toast({ title: "Error", description: "Failed to load account details", variant: "destructive" });
+      toast.error("Failed to load account details");
     }
   };
 
@@ -121,10 +121,10 @@ export default function AccountsPage() {
         method: 'DELETE',
         credentials: 'include'
       });
-      toast({ title: "Success", description: "Account deleted" });
+      toast.success("Account deleted");
       fetchAccounts();
     } catch (error) {
-      toast({ title: "Error", description: "Failed to delete account", variant: "destructive" });
+      toast.error("Failed to delete account");
     }
   };
 
