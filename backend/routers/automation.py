@@ -661,7 +661,7 @@ async def log_lead_converted(
         entity_type="lead",
         entity_id=lead_id,
         activity_type="lead_converted",
-        body=f"Lead converted to Account, Contact, and Opportunity",
+        body="Lead converted to Account, Contact, and Opportunity",
         metadata={
             "account_id": account_id,
             "contact_id": contact_id,
