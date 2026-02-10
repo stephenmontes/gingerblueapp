@@ -634,6 +634,72 @@ export function FulfillmentBatchDetail({ batch, stages, onRefresh, onClose, canD
     setDeleteOrderNumber(orderNumber);
   };
 
+  // Move selected orders to Pack and Ship (for Finish stage)
+  const moveOrdersToPackShip = async () => {
+    if (selectedOrders.size === 0) {
+      toast.error("No orders selected");
+      return;
+    }
+
+    if (!isAtFinishStage) {
+      toast.error("Orders can only be moved to Pack and Ship from the Finish stage");
+      return;
+    }
+
+    setMovingToPackShip(true);
+
+    try {
+      const res = await fetch(
+        `${API}/fulfillment-batches/${batch.fulfillment_batch_id}/orders/move-to-pack-ship`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            order_ids: Array.from(selectedOrders)
+          })
+        }
+      );
+
+      if (res.ok) {
+        const result = await res.json();
+        toast.success(result.message);
+        setSelectedOrders(new Set());
+        onRefresh?.();
+      } else {
+        const err = await res.json();
+        toast.error(err.detail || "Failed to move orders");
+      }
+    } catch (err) {
+      toast.error("Failed to move orders to Pack and Ship");
+    } finally {
+      setMovingToPackShip(false);
+    }
+  };
+
+  // Mark individual order as shipped
+  const markOrderShipped = async (orderId) => {
+    try {
+      const res = await fetch(
+        `${API}/fulfillment-batches/${batch.fulfillment_batch_id}/orders/${orderId}/mark-shipped`,
+        {
+          method: "POST",
+          credentials: "include"
+        }
+      );
+
+      if (res.ok) {
+        toast.success("Order marked as shipped");
+        onRefresh?.();
+      } else {
+        const err = await res.json();
+        toast.error(err.detail || "Failed to mark order as shipped");
+      }
+    } catch (err) {
+      toast.error("Failed to mark order as shipped");
+    }
+  };
+
   // Calculate progress
   const totalItems = batch.orders?.reduce((sum, order) => {
     const items = order.items || order.line_items || [];
