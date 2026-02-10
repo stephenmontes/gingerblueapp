@@ -98,6 +98,8 @@ api_router.include_router(timer_recovery_router)
 api_router.include_router(drive_router)
 api_router.include_router(pos_router)
 api_router.include_router(activity_router)
+api_router.include_router(crm_router)
+api_router.include_router(crm_reports_router)
 
 # Root endpoint
 @api_router.get("/")
