@@ -819,10 +819,31 @@ async def get_order_time_entries(order_id: str, user: User = Depends(get_current
     # Get order details
     order = await db.orders.find_one({"order_id": order_id}, {"_id": 0})
     
-    total_minutes = sum(log.get("duration_minutes", 0) for log in time_logs)
-    total_items = sum(log.get("items_processed", 0) for log in time_logs) or 1
+    # Get unique user IDs for rate lookup
+    user_ids = list(set(log["user_id"] for log in time_logs if log.get("user_id")))
+    user_rates = {}
+    if user_ids:
+        users_cursor = db.users.find(
+            {"user_id": {"$in": user_ids}},
+            {"_id": 0, "user_id": 1, "hourly_rate": 1}
+        )
+        async for u in users_cursor:
+            user_rates[u["user_id"]] = u.get("hourly_rate", 15)
+    
+    # Calculate labor cost with user-specific rates
+    total_minutes = 0
+    total_items = 0
+    labor_cost = 0
+    
+    for log in time_logs:
+        duration = log.get("duration_minutes", 0)
+        total_minutes += duration
+        total_items += log.get("items_processed", 0)
+        hourly_rate = user_rates.get(log["user_id"], 15)
+        labor_cost += (duration / 60) * hourly_rate
+    
+    total_items = total_items or 1
     total_hours = total_minutes / 60
-    labor_cost = total_hours * 30
     
     return {
         "order_id": order_id,
