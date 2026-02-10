@@ -947,8 +947,8 @@ export function FulfillmentBatchDetail({ batch, stages, onRefresh, onClose, canD
               <span className="hidden xs:inline">Mark</span> {selectedOrders.size} Done
             </Button>
             
-            {/* Move to Pack & Ship button - only at Finish stage */}
-            {isAtFinishStage && (
+            {/* Move to Pack & Ship button - for GB Home at any stage, others only at Finish */}
+            {canMoveToPackShip && (
               <Button
                 size="sm"
                 onClick={moveOrdersToPackShip}
