@@ -51,6 +51,37 @@ const navItems = [
 export default function Layout({ children, user, setUser }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
+  const heartbeatIntervalRef = useRef(null);
+
+  // Track user activity with heartbeat every minute
+  useEffect(() => {
+    if (!user) return;
+
+    const sendHeartbeat = async () => {
+      try {
+        await fetch(`${API}/activity/heartbeat`, {
+          method: "POST",
+          credentials: "include"
+        });
+      } catch (err) {
+        // Silently fail - don't disrupt user experience
+        console.debug("Heartbeat failed:", err);
+      }
+    };
+
+    // Send initial heartbeat
+    sendHeartbeat();
+
+    // Set up interval for every 60 seconds
+    heartbeatIntervalRef.current = setInterval(sendHeartbeat, 60000);
+
+    // Cleanup on unmount
+    return () => {
+      if (heartbeatIntervalRef.current) {
+        clearInterval(heartbeatIntervalRef.current);
+      }
+    };
+  }, [user]);
 
   const handleSaveTimers = async () => {
     try {
