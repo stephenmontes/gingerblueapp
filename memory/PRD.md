@@ -442,6 +442,56 @@ Build a manufacturing and fulfillment app for Shopify websites with detailed tim
   - Support tickets linked to accounts
   - Customer 360 view with cases
 
+### 15. Activity Timeline (Salesforce-style Chatter) - COMPLETE (Feb 2026)
+- **Core Features:**
+  - Unified activity feed on CRM records (Opportunities, Accounts)
+  - Multiple activity types: Post, Note, Call Log, Email Log, Meeting Log, **Onboarding** (custom)
+  - User-created posts with rich text
+  - System-generated events (stage changes, owner changes)
+  - Threaded replies/comments
+  - @mentions with notification support
+  - File attachment support (UI ready, cloud storage not integrated)
+  - Pin/Unpin important posts
+  - Follow/Unfollow records with notification preferences
+  - Activity type filtering
+  - Pagination and auto-polling (30 second refresh)
+- **Timeline Composer:**
+  - Tab-based activity type selector
+  - Call log with duration and outcome fields
+  - Attachment picker (images, documents)
+  - Cancel/Post actions
+- **System Event Logging:**
+  - Automatic timeline entries when Opportunity stage changes
+  - Shows old value → new value transition
+  - Attributed to user who made the change
+- **API Endpoints:**
+  - `POST /api/timeline/items` - Create timeline item
+  - `GET /api/timeline/items/{entity_type}/{entity_id}` - Get paginated timeline
+  - `PUT /api/timeline/items/{item_id}` - Update item (edit window: 15 min)
+  - `DELETE /api/timeline/items/{item_id}` - Soft delete item
+  - `POST /api/timeline/items/{item_id}/pin` - Toggle pin status
+  - `POST /api/timeline/follow/{entity_type}/{entity_id}` - Follow record
+  - `DELETE /api/timeline/follow/{entity_type}/{entity_id}` - Unfollow
+  - `GET /api/timeline/follow/{entity_type}/{entity_id}` - Get follow status
+  - `GET /api/timeline/followers/{entity_type}/{entity_id}` - List followers
+  - `GET /api/timeline/notifications` - Get user notifications
+  - `PUT /api/timeline/notifications/{id}/read` - Mark as read
+  - `PUT /api/timeline/notifications/read-all` - Mark all read
+  - `GET /api/timeline/activity-types` - List activity type configs
+  - `POST /api/timeline/quick/note` - Quick add note
+  - `POST /api/timeline/quick/call` - Quick log call
+  - `POST /api/timeline/quick/task` - Quick create task
+- **Database Collections:**
+  - `timeline_items` - All timeline entries with indexed entity_type/entity_id
+  - `record_follows` - User follow subscriptions
+  - `timeline_notifications` - User notifications
+- **Frontend Integration:**
+  - Timeline tab in Opportunity detail dialog
+  - Timeline tab in Customer Account detail dialog
+  - ActivityTimeline React component (reusable)
+- **Testing:** 100% pass rate (16 backend tests, all UI flows verified)
+
 ## Pending Verification from User
 1. POS Order Creation fix (ObjectId serialization) - applied, needs user test
 2. Frame Production KPIs calculation fix (timezone) - applied, needs user test
+
