@@ -1372,7 +1372,7 @@ async def get_crm_settings(user: User = Depends(get_current_user)):
     
     if not settings:
         # Return default settings
-        settings = {
+        default_settings = {
             "settings_id": "main",
             "opportunity_stages": [
                 {"stage_id": "prospecting", "name": "Prospecting", "probability": 10, "forecast_category": "pipeline", "order": 1, "is_closed": False, "is_won": False, "color": "#6b7280"},
@@ -1387,7 +1387,9 @@ async def get_crm_settings(user: User = Depends(get_current_user)):
             "industries": ["Retail", "Wholesale", "E-commerce", "Manufacturing", "Services", "Other"],
             "territories": ["Northeast", "Southeast", "Midwest", "Southwest", "West", "International"]
         }
-        await db.crm_settings.insert_one(settings)
+        # Insert a copy so the original doesn't get _id added
+        await db.crm_settings.insert_one({**default_settings})
+        return default_settings
     
     return settings
 
