@@ -434,7 +434,10 @@ async def get_production_hours_by_user_date(
     user: User = Depends(get_current_user)
 ):
     """Get production hours grouped by user and date."""
-    now = datetime.now(timezone.utc)
+    # Use EST timezone for date calculations (user's timezone)
+    from zoneinfo import ZoneInfo
+    est_tz = ZoneInfo("America/New_York")
+    now = datetime.now(est_tz)
     
     if period == "day":
         start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -446,8 +449,11 @@ async def get_production_hours_by_user_date(
     else:
         start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
     
+    # Convert to UTC for database query
+    start_date_utc = start_date.astimezone(timezone.utc)
+    
     time_logs = await db.time_logs.find({
-        "completed_at": {"$gte": start_date.isoformat()},
+        "completed_at": {"$gte": start_date_utc.isoformat()},
         "duration_minutes": {"$gt": 0},
         "workflow_type": "production"
     }, {"_id": 0}).to_list(5000)
@@ -461,7 +467,10 @@ async def get_production_hours_by_user_date(
         completed = log.get("completed_at", "")
         if completed:
             try:
-                log_date = datetime.fromisoformat(completed.replace('Z', '+00:00')).strftime("%Y-%m-%d")
+                completed_dt = datetime.fromisoformat(completed.replace('Z', '+00:00'))
+                # Convert to EST for date grouping
+                completed_est = completed_dt.astimezone(est_tz)
+                log_date = completed_est.strftime("%Y-%m-%d")
             except ValueError:
                 continue
         else:
