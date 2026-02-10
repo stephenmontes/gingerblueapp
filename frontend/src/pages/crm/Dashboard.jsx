@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
 import { API } from '@/utils/api';
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
-import { Button } from "../../components/ui/button";
-import { Badge } from "../../components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from "../../components/ui/select";
-import { useToast } from "@/components/ui/use-toast";
+} from "@/components/ui/select";
+import { toast } from "sonner";
 import { 
-  LayoutDashboard, TrendingUp, TrendingDown, DollarSign, Users, 
+  LayoutDashboard, TrendingUp, DollarSign, Users, 
   Target, Clock, Calendar, AlertTriangle, CheckCircle2, ArrowRight
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
