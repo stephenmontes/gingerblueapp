@@ -683,7 +683,7 @@ async def get_fulfillment_overall_kpis(
         "cost_per_order": round(cost_per_order, 2),
         "cost_per_item": round(cost_per_item, 2),
         "avg_time_per_order": round(avg_time_per_order, 1),
-        "session_count": data["session_count"],
+        "session_count": session_count,
         "period": period,
         "period_label": period_label,
         "date_range": date_range
