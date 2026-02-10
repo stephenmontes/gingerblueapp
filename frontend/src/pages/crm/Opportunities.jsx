@@ -39,7 +39,7 @@ export default function OpportunitiesPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedOpp, setSelectedOpp] = useState(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
-  const { toast } = useToast();
+  
 
   const [newOpp, setNewOpp] = useState({
     name: '',
@@ -78,11 +78,11 @@ export default function OpportunitiesPage() {
         setPagination(data.pagination || { page: 1, total: 0 });
       }
     } catch (error) {
-      toast({ title: "Error", description: "Failed to load opportunities", variant: "destructive" });
+      toast.error("Failed to load opportunities");
     } finally {
       setLoading(false);
     }
-  }, [view, pagination.page, search, filterStage, toast]);
+  }, [view, pagination.page, search, filterStage]);
 
   useEffect(() => {
     fetchAccounts();
@@ -109,12 +109,12 @@ export default function OpportunitiesPage() {
         throw new Error(err.detail || 'Failed to create opportunity');
       }
       
-      toast({ title: "Success", description: "Opportunity created successfully" });
+      toast.success("Opportunity created successfully");
       setIsCreateOpen(false);
       setNewOpp({ name: '', account_id: '', amount: '', close_date: new Date().toISOString().split('T')[0], stage: 'prospecting', description: '' });
       fetchOpportunities();
     } catch (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast.error(error.message);
     }
   };
 
@@ -129,7 +129,7 @@ export default function OpportunitiesPage() {
       toast({ title: "Stage Updated", description: `Moved to ${newStage}` });
       fetchOpportunities();
     } catch (error) {
-      toast({ title: "Error", description: "Failed to update stage", variant: "destructive" });
+      toast.error("Failed to update stage");
     }
   };
 
@@ -140,7 +140,7 @@ export default function OpportunitiesPage() {
       setSelectedOpp(data);
       setIsDetailOpen(true);
     } catch (error) {
-      toast({ title: "Error", description: "Failed to load opportunity details", variant: "destructive" });
+      toast.error("Failed to load opportunity details");
     }
   };
 
@@ -151,10 +151,10 @@ export default function OpportunitiesPage() {
         method: 'DELETE',
         credentials: 'include'
       });
-      toast({ title: "Success", description: "Opportunity deleted" });
+      toast.success("Opportunity deleted");
       fetchOpportunities();
     } catch (error) {
-      toast({ title: "Error", description: "Failed to delete opportunity", variant: "destructive" });
+      toast.error("Failed to delete opportunity");
     }
   };
 
