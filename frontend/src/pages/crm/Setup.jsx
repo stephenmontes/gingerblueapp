@@ -504,17 +504,176 @@ export default function CRMSetupPage() {
 
         {/* AUTOMATION TAB */}
         <TabsContent value="automation" className="space-y-4">
+          {/* Lead Assignment Rules */}
           <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Automation Rules</CardTitle>
-              <CardDescription>Coming soon: Create rules to automate tasks, field updates, and notifications</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-base">Lead Assignment Rules</CardTitle>
+                <CardDescription>Automatically assign new leads to sales reps</CardDescription>
+              </div>
+              <Button onClick={() => setAssignmentDialog({ 
+                open: true, 
+                data: { 
+                  name: '', 
+                  description: '',
+                  method: 'round_robin',
+                  conditions: {},
+                  assignee_user_ids: [],
+                  priority: 100,
+                  status: 'active'
+                }
+              })}>
+                <Plus className="h-4 w-4 mr-1" />
+                Add Rule
+              </Button>
             </CardHeader>
             <CardContent>
-              <div className="text-center text-muted-foreground py-8">
-                Automation rules will be available in the next update.
-                <br />
-                <span className="text-sm">Examples: Auto-assign leads, create follow-up tasks on stage change, send notifications</span>
+              {assignmentRules.length === 0 ? (
+                <div className="text-center text-muted-foreground py-8">
+                  No lead assignment rules configured.
+                  <br />
+                  <span className="text-sm">Create rules to automatically assign leads based on territory, source, or round-robin</span>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {assignmentRules.map((rule) => (
+                    <div 
+                      key={rule.rule_id}
+                      className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Zap className={`h-5 w-5 ${rule.status === 'active' ? 'text-green-500' : 'text-gray-400'}`} />
+                        <div>
+                          <div className="font-medium">{rule.name}</div>
+                          <div className="text-sm text-muted-foreground">
+                            Method: {rule.method?.replace('_', ' ')} • Priority: {rule.priority}
+                            {rule.assignees?.length > 0 && (
+                              <span className="ml-2">
+                                • {rule.assignees.length} assignee(s)
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={rule.status === 'active' ? 'default' : 'secondary'}>
+                          {rule.status}
+                        </Badge>
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => setAssignmentDialog({ open: true, data: { ...rule, existing: true } })}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => deleteAssignmentRule(rule.rule_id)}
+                        >
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Stale Opportunity Rules */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-base">Stale Opportunity Reminders</CardTitle>
+                <CardDescription>Get notified when opportunities have no activity</CardDescription>
               </div>
+              <Button onClick={() => setStaleDialog({ 
+                open: true, 
+                data: { 
+                  name: '', 
+                  description: '',
+                  days_threshold: 14,
+                  applicable_stages: [],
+                  notify_owner: true,
+                  additional_notify_user_ids: [],
+                  status: 'active'
+                }
+              })}>
+                <Plus className="h-4 w-4 mr-1" />
+                Add Rule
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {staleRules.length === 0 ? (
+                <div className="text-center text-muted-foreground py-8">
+                  No stale opportunity rules configured.
+                  <br />
+                  <span className="text-sm">Create rules to receive reminders for opportunities without recent activity</span>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {staleRules.map((rule) => (
+                    <div 
+                      key={rule.rule_id}
+                      className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Zap className={`h-5 w-5 ${rule.status === 'active' ? 'text-orange-500' : 'text-gray-400'}`} />
+                        <div>
+                          <div className="font-medium">{rule.name}</div>
+                          <div className="text-sm text-muted-foreground">
+                            Threshold: {rule.days_threshold} days
+                            {rule.applicable_stages?.length > 0 && (
+                              <span className="ml-2">
+                                • Stages: {rule.applicable_stages.join(', ')}
+                              </span>
+                            )}
+                            {rule.notify_owner && <span className="ml-2">• Notifies owner</span>}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={rule.status === 'active' ? 'default' : 'secondary'}>
+                          {rule.status}
+                        </Badge>
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => setStaleDialog({ open: true, data: { ...rule, existing: true } })}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => deleteStaleRule(rule.rule_id)}
+                        >
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Manual Trigger */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Manual Triggers</CardTitle>
+              <CardDescription>Run automation checks manually</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button 
+                variant="outline"
+                onClick={runStaleCheck}
+                disabled={runningStaleCheck}
+              >
+                <Zap className="h-4 w-4 mr-2" />
+                {runningStaleCheck ? 'Running...' : 'Run Stale Opportunity Check Now'}
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
