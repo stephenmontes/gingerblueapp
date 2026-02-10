@@ -23,7 +23,7 @@ class EntityType(str, Enum):
 
 class ActivityType(str, Enum):
     """Types of timeline activities"""
-    # User-created
+    # User-created (human actions)
     CHAT_POST = "chat_post"
     COMMENT = "comment"
     NOTE = "note"
@@ -41,11 +41,26 @@ class ActivityType(str, Enum):
     EVENT_CREATED = "event_created"
     EVENT_COMPLETED = "event_completed"
     
-    # CRM workflow events
+    # Record lifecycle events
+    RECORD_CREATED = "record_created"
+    RECORD_DELETED = "record_deleted"
+    RECORD_RESTORED = "record_restored"
+    
+    # CRM workflow events (high-signal field changes)
     STAGE_CHANGED = "stage_changed"
     OWNER_CHANGED = "owner_changed"
     STATUS_CHANGED = "status_changed"
+    AMOUNT_CHANGED = "amount_changed"
+    CLOSE_DATE_CHANGED = "close_date_changed"
+    FIELD_UPDATE = "field_update"
+    
+    # Lead lifecycle
     LEAD_CONVERTED = "lead_converted"
+    LEAD_ASSIGNED = "lead_assigned"
+    
+    # Opportunity lifecycle
+    OPPORTUNITY_WON = "opportunity_won"
+    OPPORTUNITY_LOST = "opportunity_lost"
     
     # Quote/Order events
     QUOTE_CREATED = "quote_created"
@@ -62,14 +77,18 @@ class ActivityType(str, Enum):
     INVOICE_SENT = "invoice_sent"
     PAYMENT_RECEIVED = "payment_received"
     
-    # External sync events
+    # ERP/Shopify system events
     SHOPIFY_SYNC = "shopify_sync"
     SHIPSTATION_SYNC = "shipstation_sync"
+    CUSTOMER_SYNCED = "customer_synced"
+    
+    # Automation events
+    AUTO_ASSIGNED = "auto_assigned"
+    STALE_REMINDER = "stale_reminder"
+    AUTOMATION_TRIGGERED = "automation_triggered"
     
     # Generic
     SYSTEM_EVENT = "system_event"
-    FIELD_UPDATE = "field_update"
-    RECORD_CREATED = "record_created"
     RECORD_UPDATED = "record_updated"
 
 
