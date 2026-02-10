@@ -34,9 +34,11 @@ import {
   Layers,
   Package,
   Calendar as CalendarIcon,
+  Clock,
 } from "lucide-react";
 import { toast } from "sonner";
 import { KpiCards, QualityTab, UsersTab, StagesTab, OverviewTab, StageUserKpis, BatchReports } from "@/components/reports";
+import { ProductivityReport } from "@/components/reports/ProductivityReport";
 import { API } from "@/utils/api";
 import { format, subDays, startOfWeek, startOfMonth, endOfMonth, subMonths } from "date-fns";
 
