@@ -28,6 +28,7 @@ import CRMAccounts from "@/pages/crm/Accounts";
 import CRMLeads from "@/pages/crm/Leads";
 import CRMOpportunities from "@/pages/crm/Opportunities";
 import UnifiedAccounts from "@/pages/crm/UnifiedAccounts";
+import CRMSetup from "@/pages/crm/Setup";
 
 // REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
 
