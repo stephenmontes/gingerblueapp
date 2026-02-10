@@ -328,24 +328,37 @@ export default function Layout({ children, user, setUser }) {
           <nav className="flex-1 p-4 space-y-1 overflow-y-auto min-h-0">
             {navItems
               .filter((item) => !item.roles || item.roles.includes(user?.role))
-              .map((item) => (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                onClick={() => setSidebarOpen(false)}
-                className={({ isActive }) =>
-                  `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
-                    isActive
-                      ? "bg-primary/10 text-primary border border-primary/20"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                  }`
+              .map((item, index) => {
+                // Render divider
+                if (item.type === 'divider') {
+                  return (
+                    <div key={`divider-${index}`} className="pt-4 pb-2 px-4">
+                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        {item.label}
+                      </span>
+                    </div>
+                  );
                 }
-                data-testid={`nav-${item.label.toLowerCase()}`}
-              >
-                <item.icon size={20} />
-                <span className="font-medium">{item.label}</span>
-              </NavLink>
-            ))}
+                // Render nav item
+                return (
+                  <NavLink
+                    key={item.path}
+                    to={item.path}
+                    onClick={() => setSidebarOpen(false)}
+                    className={({ isActive }) =>
+                      `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+                        isActive
+                          ? "bg-primary/10 text-primary border border-primary/20"
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                      }`
+                    }
+                    data-testid={`nav-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
+                  >
+                    <item.icon size={20} />
+                    <span className="font-medium">{item.label}</span>
+                  </NavLink>
+                );
+              })}
           </nav>
 
           {/* User section */}
