@@ -1,28 +1,28 @@
 import { useState, useEffect, useCallback } from 'react';
 import { API } from '@/utils/api';
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
-import { Button } from "../../components/ui/button";
-import { Input } from "../../components/ui/input";
-import { Badge } from "../../components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { 
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
-} from "../../components/ui/table";
+} from "@/components/ui/table";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter
-} from "../../components/ui/dialog";
-import { Label } from "../../components/ui/label";
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from "../../components/ui/select";
-import { Textarea } from "../../components/ui/textarea";
-import { useToast } from "@/components/ui/use-toast";
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
 import { 
-  Plus, Search, Building2, Phone, Globe, MapPin, Mail, 
-  MoreVertical, Edit, Trash2, Eye, Users, DollarSign, TrendingUp
+  Plus, Search, Building2, Phone, Globe, Mail, 
+  MoreVertical, Trash2, Eye, Users, TrendingUp
 } from 'lucide-react';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
-} from "../../components/ui/dropdown-menu";
+} from "@/components/ui/dropdown-menu";
 
 const accountTypes = [
   { value: 'prospect', label: 'Prospect', color: 'bg-blue-100 text-blue-800' },
