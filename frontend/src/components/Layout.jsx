@@ -1,6 +1,6 @@
 import { Factory, Menu, X, ShoppingCart } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   LayoutDashboard,
   Package,
