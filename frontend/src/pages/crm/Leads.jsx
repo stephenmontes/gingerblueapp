@@ -51,7 +51,7 @@ export default function LeadsPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isConvertOpen, setIsConvertOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState(null);
-  const { toast } = useToast();
+  
 
   const [newLead, setNewLead] = useState({
     first_name: '',
@@ -85,11 +85,11 @@ export default function LeadsPage() {
       setLeads(data.leads || []);
       setPagination(data.pagination || { page: 1, total: 0, total_pages: 0 });
     } catch (error) {
-      toast({ title: "Error", description: "Failed to load leads", variant: "destructive" });
+      toast.error("Failed to load leads");
     } finally {
       setLoading(false);
     }
-  }, [pagination.page, search, filterStatus, filterSource, toast]);
+  }, [pagination.page, search, filterStatus, filterSource]);
 
   useEffect(() => {
     fetchLeads();
@@ -109,12 +109,12 @@ export default function LeadsPage() {
         throw new Error(err.detail || 'Failed to create lead');
       }
       
-      toast({ title: "Success", description: "Lead created successfully" });
+      toast.success("Lead created successfully");
       setIsCreateOpen(false);
       setNewLead({ first_name: '', last_name: '', company: '', email: '', phone: '', source: 'website', description: '' });
       fetchLeads();
     } catch (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast.error(error.message);
     }
   };
 
@@ -147,7 +147,7 @@ export default function LeadsPage() {
       setConvertData({ create_opportunity: true, opportunity_name: '', opportunity_amount: '' });
       fetchLeads();
     } catch (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast.error(error.message);
     }
   };
 
@@ -158,10 +158,10 @@ export default function LeadsPage() {
         method: 'DELETE',
         credentials: 'include'
       });
-      toast({ title: "Success", description: "Lead deleted" });
+      toast.success("Lead deleted");
       fetchLeads();
     } catch (error) {
-      toast({ title: "Error", description: "Failed to delete lead", variant: "destructive" });
+      toast.error("Failed to delete lead");
     }
   };
 
