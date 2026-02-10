@@ -297,8 +297,6 @@ async def get_forecast(
     user: User = Depends(get_current_user)
 ):
     """Get sales forecast by month"""
-    now = datetime.now(EST_TZ)
-    
     # Get opportunities closing in next 3 months
     query = {"stage": {"$nin": ["closed_won", "closed_lost"]}}
     if owner_id:
