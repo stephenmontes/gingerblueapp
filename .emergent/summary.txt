@@ -1,191 +1,172 @@
 <analysis>**original_problem_statement:**
-Initial Request: build me a manufacturing and fulfillment app for my shopify websites
-
-PRODUCT REQUIREMENTS:
-- **Core Functionality:** A manufacturing workflow app with detailed tracking including time tracking, reporting, average products per hour, and tracking per user for moving parts through production stages.
-- **Integrations:** Connect to Shopify stores, an Etsy store, and ShipStation for live order syncing and fulfillment management. A dropship store (Antique Farmhouse) was also added, initially for CSV uploads, but now integrated via ShipStation.
-- **Authentication:** Users must log in with their company Google email.
-- **Production & Fulfillment Workflows:** Manage production batches and fulfill orders. The production workflow is frame-centric, where items from orders are aggregated by size and color into frames that move through production stages as a single unit. A new on-demand batch type was added to create frames directly for inventory.
-- **Reporting & Management:** Export reports, manage inventory, sync products from e-commerce platforms, and control user access with roles and permissions.
-- **Scheduling:** A company-wide Google Calendar to visualize orders based on their requested ship date.
-- **CRM:** A complete CRM system to manage customers from all connected stores, including notes, tags, segments, and team collaboration.
-- **Task Management:** A full-featured task system to create, assign, and track tasks with due dates, checklists, and notifications. Tasks can be associated with orders or customers.
-- **Point of Sale (POS):** A new feature to create orders directly in the app, with product search (SKU, title, barcode), customer management, and auto-sync to a selected Shopify store.
+- Implement barcode printing on the Orders page.
+- Optimize the Order Fulfillment and Frame Production pages for Android mobile devices.
+- When creating labels for orders, add the order number to each label.
+- Show the date and time of the last sync for ShipStation store summary cards.
+- Fix a horizontal scrolling issue on the Order Fulfillment batch detail view on mobile where content is cut off.
+- Fix an issue on the Frame Production page where the timer and start button are not contained correctly on mobile.
+- Fix a P1 bug where creating a POS order fails with a failed to create order message, especially for the Ginger Blue Home store with a customer selected.
+- Add the ability to upload a logo file instead of just using a URL.
+- In POS order creation, add the ability to select and add multiple variants from the same search result.
+- Adjust the label creation tool:
+  1. Sort items by size based on the SKU (S, L, XL, HS, HX, XX, XXX).
+  2. Optimize the label layout for 2x1 labels.
+  3. Make the SKU, title, and order number text larger.
+  4. Ensure one label is still generated per item quantity.
+- Fix a bug where the date shown on the hours by user and date banner on the fulfillment and production pages is one day behind.
+- Use the actual user's rate of pay from their profile for labor cost calculations, instead of a hardcoded 0/hour.
+- Fix a bug on the Frame Production page where frames produced, avg time, and productivity are not being calculated.
+- Implement a productivity report to track active time logged in versus time tracked on tasks, with filtering by date range and a productivity percentage calculation.
+- Automatically log out a user after 9 hours, with a 60-second continue? prompt. Stop all running timers upon logout.
 
 **User's preferred language**: English
 
 **what currently exists?**
-A comprehensive full-stack manufacturing application using React, FastAPI, and MongoDB. It features Google OAuth and integrates with ShipStation, Shopify, Etsy, and Google Calendar.
-
-In this session, the agent implemented several features and bug fixes:
-- **Date Filtering:** Completed backend logic for date range filtering on the Reports page.
-- **Timer Corruption Fixes:** Made the frontend timer banner resilient to corrupted data ( issue) and added multiple backend endpoints for admins and users to forcibly clean up stuck timers.
-- **Time Entry Sorting:** Added sorting and filtering by user and date to the admin Manage Time Entries dialogs.
-- **CSV Import UX:** Improved UI feedback for the CSV order import to clarify that duplicate orders are updated.
-- **Order Export to CSV:** Replaced a problematic Google Drive export feature with a direct-to-CSV download for selected orders. This involved extensive debugging of  errors related to the deployment environment's routing.
-- **Deployment Fixes:** Addressed deployment-blocking issues by adding a  endpoint and removing hardcoded URLs in favor of environment variables.
-- **Point of Sale (POS) Skeleton:** Created the initial framework for a new POS feature, including the backend router, frontend page, and navigation links.
-- **POS Product Search:** Implemented product search and added a UI for a variant selection dropdown.
+The agent has implemented several features and bug fixes in this session.
+- **Completed Features:** Barcode printing with order numbers and size-based sorting, logo file uploads, multi-select in POS product search, and a new productivity report.
+- **Mobile Optimization:** The Order Fulfillment and Frame Production pages, including their sub-components like batch details, have been optimized for mobile devices.
+- **Bug Fixes:** A critical  serialization bug preventing POS order creation has been addressed by converting ObjectIds to strings before sending responses. A timezone bug causing incorrect dates in reports has been fixed by standardizing on the 'America/New_York' timezone for date calculations.
+- **Cost Calculation:** Labor cost calculations have been updated across all reports to use each user's specific hourly rate from their profile instead of a hardcoded value.
 
 **Last working item**:
-- **Last item agent was working:** Implementing a dropdown menu in the Point of Sale (POS) product search results to allow users to select from different product variants. The UI has been updated, but the logic to handle variant selection and add it to the cart is not complete.
-- **Status:** IN PROGRESS
-- **Agent Testing Done:** N
-- **Which testing method agent to use?** frontend testing agent
-- **User Testing Done:** N
+    - Last item agent was working: The agent was implementing a feature to automatically log out users after 9 hours of inactivity. It had started creating the necessary backend endpoints to stop all of a user's active timers upon logout. The agent defined the route  in  but had not yet written the implementation logic.
+    - Status: IN PROGRESS
+    - Agent Testing Done: N
+    - Which testing method agent to use? both
+    - User Testing Done: N
 
 **All Pending/In progress Issue list**:
-- **Issue 1: (P0) CSV Export fails on custom domain after deployment.**
-    - A  endpoint () was created as a workaround for  requests failing with  errors. While this works in the preview environment (returning a No orders found message as expected with an empty DB), it still fails with a  on the custom domain, even after multiple deployments. This strongly suggests a platform/ingress caching or routing issue.
-- **Issue 2: (P1) Google Calendar does not return events.**
-    - The user reported that events created on the primary  calendar are not appearing in the app. The agent added a debug endpoint () to help diagnose which calendar is connected, but could not resolve the issue as it pertains to the production environment data.
-- **Issue 3: (P1) Corrupted timer for .**
-    - The user reported a persistent banner timer showing  and failing to stop. While the agent added defensive frontend code to prevent crashes and created multiple backend cleanup tools, the root cause of the data corruption hasn't been found. The user needs to verify if the new Force Cleanup buttons resolve the issue on the custom domain.
-- **Issue 4: (P1) Report button not visible on the frame production page.**
-    - This is a carry-over issue from a previous session. The agent has reviewed the code and it appears correct, but user verification is required to confirm if a frontend rebuild resolved it.
-- **Issue 5: (P2) failed to update progress error for Antique Farmhouse orders.**
-    - A carry-over issue. Diagnosis is still in progress.
-- **Issue 6: (P2) Custom domain login breaks after every redeployment.**
-    - This is a recurring platform issue that is blocked on external support.
-- **Issue 7: (P2) Data created on the custom domain was missing after a new deployment.**
-    - This is a platform-level data integrity issue that is blocked on external support.
+  - Issue 1: Fix failed to create order on POS (Priority: P1)
+  - Issue 2: KPIs on Frame Production page not calculating (Priority: P1)
+
+  Issues Detail:
+  - Issue 1:
+     - Attempted fixes: A potential fix was implemented by creating a  utility function () to recursively convert all MongoDB  types to strings in API responses. This was applied to customer, product, and order data in .
+     - Next debug checklist: The user needs to test the order creation flow again. If the issue persists, the next agent should check the backend logs for any new errors and verify that the  function in  is receiving correctly formatted data without any s.
+     - Why fix this issue and what will be achieved with the fix? This is a critical P1 bug that prevents users from creating orders through the POS system, which is a core business function.
+     - Status: USER VERIFICATION PENDING
+     - Is recurring issue? Y
+     - Should Test frontend/backend/both after fix? backend
+     - Blocked on other issue: None
+
+  - Issue 2:
+     - Attempted fixes: The agent suspected a timezone issue similar to one fixed earlier. It updated the date filtering logic in the overall KPI endpoints (, ) in  to use the 'America/New_York' timezone.
+     - Next debug checklist: The user needs to verify if the KPIs are now calculating correctly in their production environment. Since the test database has no data, the fix couldn't be verified. If it's still not working, the agent should add logging to the aggregation pipeline in  to inspect the documents at each stage and ensure they are being matched and grouped as expected.
+     - Why fix this issue and what will be achieved with the fix? This bug prevents users from seeing key performance metrics on the Frame Production page, hindering their ability to monitor productivity.
+     - Status: USER VERIFICATION PENDING
+     - Is recurring issue? N
+     - Should Test frontend/backend/both after fix? backend
+     - Blocked on other issue: None
 
 **In progress Task List**:
-- **Task 1: (P0) Complete Point of Sale (POS) Feature.**
-    - **Where to resume:**
-        1.  Finish the variant selection logic in . When a variant is chosen from the dropdown, it should be the item added to the cart.
-        2.  Implement the remaining required features:
-            - Barcode scanning to add products.
-            - Add Customer button with a search/add form containing all Shopify fields.
-            - Tax-exempt toggle.
-            - Ship all items toggle.
-            - Custom item creation.
-            - Shipping cost field.
-            - Finalize the Shopify order creation and sync logic in .
-    - **What will be achieved with this?** A fully functional POS system for creating orders directly within the application.
-    - **Status:** IN PROGRESS
-    - **Should Test frontend/backend/both after fix?** both
-    - **Blocked on something:** No.
+  - Task 1: Implement 9-hour auto-logout feature (Priority: P0)
+
+ Task Detail:
+  - Task 1:
+     - Where to resume: The agent has started implementing the backend. The next steps are:
+        1.  Complete the implementation logic for the  function in . This should find and stop all active timers for the given user.
+        2.  Create a similar  endpoint and function in .
+        3.  Verify the frontend logic in  correctly calls these new endpoints when the user is logged out, either manually or via the timeout dialog.
+     - What will be achieved with this? This will prevent timers from running indefinitely if a user forgets to log out, ensuring accurate time tracking and preventing inflated labor cost data.
+     - Status: IN PROGRESS
+     - Should Test frontend/backend/both after fix? both
+     - Blocked on something: No
 
 **Upcoming and Future Tasks**
-- **Upcoming Tasks (P1):**
-    - ShipStation Fulfillment UI: Further enhance the Order Fulfillment UI to get shipping rates and create labels via the ShipStation API.
-    - Order Audit Log: Implement a history log for tracking all changes to orders.
-    - Etsy Webhooks: Implement webhook handlers for real-time Etsy order synchronization.
-- **Future Tasks (P2):**
-    - Bulk Print: Allow printing a combined packing slip for multiple orders.
-    - UI State Persistence: Remember user's filter and sorting settings across sessions.
-    - Remove Dead Code: Clean up the abandoned Google Drive integration code.
+Based on the provided history, all user requests have either been completed or are currently in progress. The next agent should focus on completing the In progress Task List and verifying the pending bug fixes with the user.
 
 **Completed work in this session**
-- **Feature: Date Range Filtering on Reports:** Implemented backend logic to filter all key report statistics by a date range.
-- **Feature: Robust Timer Cleanup:** Created multiple admin and user-facing tools to fix stuck/corrupted timers and made the UI more resilient.
-- **Feature: Time Entry Management UX:** Added sorting and filtering capabilities to the time entry management dialogs.
-- **Feature: CSV Order Export:** Implemented a feature to download selected orders as a CSV file, replacing the abandoned Google Drive integration.
-- **Feature: Point of Sale (POS) Foundation:** Built the initial UI and backend routes for a new POS system.
-- **Improvement: Deployment Stability:** Fixed deployment-blocking issues by adding a  endpoint and removing hardcoded URLs.
-- **Improvement: CSV Import Feedback:** Enhanced the UI to provide clearer feedback on created vs. updated orders during CSV import.
-- **Bugfix: Extensive  Debugging:** Troubleshooted and implemented several workarounds for a persistent routing/caching issue in the deployment environment affecting new API endpoints.
+- **Barcode Printing:** Implemented on Orders page, including adding order number, size-based sorting, and layout optimization ().
+- **Productivity Report:** Created a new report to track logged-in time vs. active work time, with a new backend service and frontend component (, ).
+- **Mobile Optimizations:** Made Order Fulfillment and Frame Production pages responsive (,  and their child components).
+- **POS Multi-Select:** Added checkbox-based multi-selection for variants in POS product search ().
+- **Logo Upload:** Enabled direct file upload for store logos (, ).
+- **Labor Cost Calculation:** Replaced hardcoded 0/hr rate with user-specific rates from their profiles in all reports ().
+- **ShipStation Sync Time:** Added display of last sync time to ShipStation store cards ().
+- **Timezone Bug Fix:** Corrected a date calculation error in reports by enforcing 'America/New_York' timezone ().
 
 **Earlier issues found/mentioned but not fixed**
-- **Issue 1:  build error.**
-    - **Debug checklist:** This recurring frontend build error is currently bypassed by setting the  environment variable. A real fix would require analyzing JSX files for potential infinite loops in component rendering or complex dependency chains.
-    - **Why to solve this issue and what will be achieved with this?** Removing the workaround would improve build stability and re-enable visual editing tools.
-    - **Should Test frontend/backend/both after fix:** frontend
-    - **Is recurring issue?** Y
+None. The agent addressed all issues raised by the user during the session.
 
 **Known issue recurrence from previous fork**
-- **Issue recurrence in previous fork:**  when compiling large JSX files.
-- **Recurrence count:** 5+
-- **Status:** RESOLVED (via a workaround: ).
+  - Issue recurrence in previous fork: None mentioned in the provided history.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
-- **API Routing Debugging:** Extensive troubleshooting of  errors in the deployed environment, pointing to potential ingress controller caching/routing issues. Workarounds involved changing endpoint paths, switching from  to , and moving endpoints between different router files.
-- **Feature Pivot:** The Export to Google Drive feature was fully implemented but abandoned due to user-facing complexity and errors. It was replaced with a simpler, more robust local CSV download.
-- **Defensive Programming:** Frontend components (e.g., ) were modified to handle invalid or corrupted data from the backend gracefully, preventing UI crashes and providing a better user experience.
-- **OAuth Enhancements:** The Google OAuth flow was improved by adding a  parameter to pre-fill the desired email, addressing a user pain point.
-- **Deployment Health Checks:** A  endpoint was added at the application root to comply with Kubernetes health check standards, resolving a critical deployment issue.
+- **Backend:** FastAPI, Pydantic, MongoDB (motor),  for timezone handling.
+- **Frontend:** React, Vite, Tailwind CSS, Shadcn UI components, .
+- **Architecture:** Decoupled frontend/backend communicating via a REST API.
+- **Authentication:** JWT-based token authentication ().
 
 **key DB schema**
-- ****: This collection was introduced to store Google API credentials (initially for Calendar, then extended for the attempted Drive integration). It stores a single document with  or , containing the user's refresh token and connected email.
-
-**changes in tech stack**
-None.
+- **stores:** 
+- **users:** 
+- **orders:** 
+- **fulfillment_timers:** 
+- **production_timers:** 
+- **user_activity:**  (New collection for tracking heartbeats)
 
 **All files of reference**
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
--  (Partially deprecated)
+- : Created to house a helper function that recursively converts MongoDB s to strings, fixing a critical serialization bug.
+- : Created to track user heartbeats and generate the new productivity report.
+- : Created as the frontend component for the new productivity report.
+- : Significantly updated to add a global heartbeat for activity tracking and to implement the new auto-logout logic.
+- : Heavily modified to use user-specific pay rates and to fix timezone issues in date filtering.
+- : Updated to use the  utility to prevent order creation failures.
+- : Updated with complex logic for sorting, layout, and content of barcode labels.
+- : Updated to mount the  directory for serving static files like logos.
 
 **Areas that need refactoring**:
-- **Google Drive Remnants:** The code for the abandoned Google Drive integration still exists in , , and . This should be removed to prevent confusion and code bloat.
-- **Timer System:** The two separate fulfillment timer systems ( and the  array in ) still exist. A full data migration to a single, unified system would simplify the codebase and reduce the likelihood of data corruption.
-- **Technical Debt:** The  build error workaround () should be investigated and properly fixed.
+The repeated logic for fetching user hourly rates inside loops in  was refactored to a more efficient approach (fetching all user rates once). However, a general review of database queries within loops could be beneficial for performance.
 
 **key api endpoints**
-- : (New) Creates a draft order.
-- : (New) Downloads a CSV file for the specified order IDs. This replaced a failing  endpoint.
-- : (New) A robust endpoint for admins to stop all timers for a user.
-- : (New) An endpoint for a user to clean up their own corrupted timer.
-- : (New) A debug endpoint to check the status and ID of the connected Google Calendar.
-- : (Deprecated/Unused) Should be removed.
+- : (New) Records user activity.
+- : (New) Returns data for the productivity report.
+- : (New) Handles file uploads for store logos.
+- : (In Progress) Stops all fulfillment timers for a user.
+- : (To be created) Stops all production timers for a user.
+- : (Updated) For KPI calculations.
+- : (Updated) For KPI calculations.
 
 **Critical Info for New Agent**
-- **Deployment/Ingress Issues:** Be aware that new API endpoints, especially  routes, may return  on the custom domain even after a successful deployment. This is likely due to caching or routing delays in the platform's ingress controller. The most reliable workaround found was to use a  request or to move the endpoint to a different, existing router file. Always confirm with the user if a  is happening on preview or custom domain.
-- **Test vs. Production Data:** The preview environment uses a separate, ephemeral database. It does not contain the user's production data. Issues related to specific data (stuck timers, missing orders, calendar events) can only be fully validated on the custom domain after deployment.
-- **Abandoned Google Drive Code:** The Google Drive integration was built but then replaced with a CSV download. The old code is still present. Do not attempt to fix or use it. The next logical step is to remove it entirely.
-- **Recurring Timer Corruption:** Stuck timers are a frequent problem. The agent has built several cleanup tools. If a user reports a stuck timer, instruct them to use the Force Cleanup button on the Team page or the self-service cleanup triggered by the timer banner. The root cause of the corruption is still unknown.
+- **Timezone Standardization:** A critical bug was caused by mixing UTC and local times. The codebase has been updated to use  for user-facing date calculations in reports. Be mindful of this when working with dates.
+- **MongoDB Serialization:** A recurring P1 bug was traced to s from the database being present in API responses. A new utility  in  has been created to solve this. This function should be used on data retrieved from MongoDB before it is returned in an API response to prevent this error.
+- **Productivity Tracking:** A new system for tracking user activity has been implemented via a  endpoint called from the frontend. This populates the  collection, which is separate from the task-specific timer collections.
 
 **documents and test reports created in this job**
-- : Updated with the new POS feature requirements and a record of completed tasks.
+-  was updated multiple times.
+- Test reports were generated by the testing agent but not saved to a persistent file path in the logs.
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  ****: (IN PROGRESS) User requested a large new POS feature. Agent created the initial skeleton.
-2.  ****: (IN PROGRESS) User requested an enhancement to the new POS feature. Agent added the UI for the dropdown.
-3.  ****: (IN PROGRESS) User reported Google Calendar events not syncing. Agent added debugging tools but couldn't solve the production data issue.
-4.  ****: (INFO) User provided more details on the calendar issue.
-5.  ****: (DONE) User provided deployment logs. Agent analyzed them and implemented fixes (added  endpoint, removed hardcoded URLs).
-6.  ****: (IN PROGRESS) User reporting that the CSV export is failing everywhere.
-7.  ****: (INFO) User confirming they are testing on the custom domain.
-8.  ****: (IN PROGRESS) User confirming deployment did not fix the export  issue.
-9.  ****: (INFO) User providing the exact error from the custom domain, confirming the  after deployment.
-10. ****: (USER VERIFICATION PENDING) This was the agent's message confirming the endpoint works on preview (with an empty DB) and asking the user to test on the custom domain after one final deployment. The user's response to this is pending.
+1.  **Request:** Adjust label creation: sort by size, optimize layout.
+2.  **Request:** Make SKU, title, order number larger on labels.
+3.  **Question:** Does the label still generate one per item? (Agent confirmed yes).
+4.  **Bug Report:** Date on report banners is one day behind.
+5.  **Question:** Is labor cost calculated by user's actual pay rate? (Agent confirmed it was hardcoded).
+6.  **Confirmation:** The pay rate field already exists in Teams settings.
+7.  **Request:** Yes, use the rate of pay per user for calculations.
+8.  **Bug Report:** KPIs on the Frame Production page are not calculating.
+9.  **Request:** Create a productivity report tracking logged-in vs. active time with filters.
+10. **Request:** Auto-logout user after 9 hours with a warning prompt and stop all timers on logout.
 
 **Project Health Check:**
-- **Broken:**
-    - The **CSV Export** feature is non-functional on the custom domain due to a persistent  error, likely caused by platform ingress routing/caching issues.
-    - **Google Calendar Sync** is not fetching events from the user's calendar.
-    - **Custom domain login** is unreliable and often breaks after deployments.
-- **Mocked:** N/A.
+- **Broken:** The POS order creation flow was broken but has a potential fix pending user verification. The Frame Production KPIs were broken and also have a fix pending verification.
+- **Mocked:** No mocked components or services were introduced.
 
 **3rd Party Integrations**
-- **Emergent-managed Google Auth:** For user login.
-- **ShipStation API:** For order sync.
-- **Shopify API:** For order and product sync.
-- **Etsy API:** For order sync.
-- **Google Calendar API:** For scheduling.
-- **APScheduler:** For running scheduled background jobs.
-- **Google Drive API:** (Attempted/Deprecated) Code exists but is not used and should be removed.
+- No new integrations were added. The agent worked with existing context for ShipStation and Shopify.
 
 **Testing status**
-- **Testing agent used after significant changes:** NO
-- **Troubleshoot agent used after agent stuck in loop:** NO
-- **Test files created:** None.
-- **Known regressions:** None.
+  - Testing agent used after significant changes: YES (for initial barcode and fulfillment page changes).
+  - Troubleshoot agent used after agent stuck in loop: NO
+  - Test files created: No new test files were created. Existing ones were used (, ).
+  - Known regressions: None explicitly identified, but the KPI calculation bug might be a regression from the labor cost changes.
 
 **Credentials to test flow:**
-- User login is via Google OAuth.
-- API keys for ShipStation, Google, etc., are managed in .
+Use the  endpoint for an authenticated session in . The required credentials are automatically handled by the endpoint.
 
 **What agent forgot to execute**
-- The agent did not remove the now-defunct Google Drive integration code from the backend () or the frontend (). This leaves dead code and a confusing UI element in the Settings page.</analysis>
+- The agent defined the route for  fulfillment timers but did not write the implementation logic for the function.
+- The agent did not create the corresponding  endpoint for  as required by the task to stop all timers on logout.</analysis>
