@@ -63,6 +63,7 @@ async def get_fulfillment_batch(
     stage_id = batch.get("current_stage_id", "")
     stage_progress_key = f"stage_{stage_id}"
     stage_progress = item_progress.get(stage_progress_key, {})
+    individual_order_status = batch.get("individual_order_status", {})
     
     for order in orders:
         order_progress = stage_progress.get(order["order_id"], {})
@@ -79,6 +80,20 @@ async def get_fulfillment_batch(
                 all_complete = False
         
         order["is_complete"] = all_complete and len(items) > 0
+        
+        # Add individual stage info if order was moved independently
+        if order.get("individual_stage_override"):
+            order["current_stage"] = {
+                "stage_id": order.get("fulfillment_stage_id"),
+                "stage_name": order.get("fulfillment_stage_name"),
+                "is_independent": True
+            }
+        else:
+            order["current_stage"] = {
+                "stage_id": batch.get("current_stage_id"),
+                "stage_name": batch.get("current_stage_name"),
+                "is_independent": False
+            }
     
     return {**batch, "orders": orders}
 
