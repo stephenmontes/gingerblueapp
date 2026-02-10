@@ -22,6 +22,12 @@ import Tasks from "@/pages/Tasks";
 import POS from "@/pages/POS";
 import Layout from "@/components/Layout";
 
+// CRM Pages
+import CRMDashboard from "@/pages/crm/Dashboard";
+import CRMAccounts from "@/pages/crm/Accounts";
+import CRMLeads from "@/pages/crm/Leads";
+import CRMOpportunities from "@/pages/crm/Opportunities";
+
 // REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
 
 // Auth Callback Component - Handles OAuth redirect
