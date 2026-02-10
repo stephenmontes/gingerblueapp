@@ -418,7 +418,7 @@ export default function Layout({ children, user, setUser }) {
 
       {/* Session Timeout Warning Dialog */}
       <AlertDialog open={showTimeoutWarning} onOpenChange={() => {}}>
-        <AlertDialogContent className="max-w-md">
+        <AlertDialogContent className="max-w-md" data-testid="session-timeout-dialog">
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2 text-orange-500">
               <AlertTriangle className="w-5 h-5" />
@@ -435,7 +435,7 @@ export default function Layout({ children, user, setUser }) {
                     <Clock className="w-4 h-4" />
                     Auto logout in:
                   </span>
-                  <span className="font-mono text-lg font-bold text-orange-500">
+                  <span className="font-mono text-lg font-bold text-orange-500" data-testid="session-countdown">
                     {countdownSeconds}s
                   </span>
                 </div>
@@ -451,6 +451,7 @@ export default function Layout({ children, user, setUser }) {
               variant="outline"
               onClick={performLogout}
               className="w-full sm:w-auto"
+              data-testid="session-logout-btn"
             >
               <LogOut className="w-4 h-4 mr-2" />
               Log Out Now
@@ -458,6 +459,7 @@ export default function Layout({ children, user, setUser }) {
             <Button
               onClick={handleContinueSession}
               className="w-full sm:w-auto bg-green-600 hover:bg-green-700"
+              data-testid="session-continue-btn"
             >
               Continue Working
             </Button>
