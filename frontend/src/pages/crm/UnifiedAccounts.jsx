@@ -20,8 +20,9 @@ import { toast } from "sonner";
 import { 
   Search, Building2, Phone, Mail, MapPin, 
   User, ShoppingCart, DollarSign, TrendingUp, Clock,
-  Tag, Edit, Save, Lock, Unlock
+  Tag, Edit, Save, Lock, Unlock, MessageCircle
 } from 'lucide-react';
+import ActivityTimeline from '@/components/crm/ActivityTimeline';
 
 const accountStatuses = [
   { value: 'prospect', label: 'Prospect', color: 'bg-blue-100 text-blue-800' },
