@@ -427,6 +427,17 @@ export default function UnifiedAccountsPage() {
                   </div>
                 </TabsContent>
 
+                {/* Timeline Tab */}
+                <TabsContent value="timeline">
+                  <ActivityTimeline 
+                    entityType="customer"
+                    entityId={selectedAccount.shopify_data?.customer_id}
+                    entityName={`${selectedAccount.shopify_data?.first_name || ''} ${selectedAccount.shopify_data?.last_name || ''}`}
+                    showComposer={true}
+                    maxHeight="500px"
+                  />
+                </TabsContent>
+
                 {/* Shopify Data Tab (Read-only) */}
                 <TabsContent value="shopify" className="space-y-4">
                   <Card className="border-gray-300 bg-gray-50">
