@@ -336,6 +336,37 @@ Build a manufacturing and fulfillment app for Shopify websites with detailed tim
   - Proper indexing for search performance
 - **Testing:** 100% pass rate (28 backend tests, all frontend flows verified)
 
+### 13. Customer/Account Data Separation Architecture - COMPLETE (Feb 2026)
+- **Data Structure:**
+  - `customers` collection: Shopify-synced data (name, email, address, orders_count, etc.)
+  - `customer_crm` collection: CRM-owned fields (1:1 with customers, keyed by customer_id)
+  - Physical separation prevents Shopify sync from overwriting CRM data
+- **Field Ownership Rules:**
+  - **Shopify-Owned** (read-only from CRM): email, first_name, last_name, phone, addresses, orders_count, total_spent, accepts_marketing, tags, note
+  - **CRM-Owned** (editable, never synced): owner_user_id, account_status, crm_tags, industry, account_type, territory, region, lead_source, credit_limit, payment_terms, crm_notes, custom_fields
+  - **ERP-Calculated** (read-only): total_orders, total_revenue, pipeline_value, open_orders, last_order_date
+- **Unified Account View:**
+  - Joins customers + customer_crm + ERP rollups
+  - Shows all data in organized panels with clear ownership indicators
+  - Lock icon for Shopify fields, unlock icon for CRM fields
+- **Lead Conversion Flow:**
+  - Creates Customer record (if not exists)
+  - Creates Customer_CRM record (always)
+  - Links to CRM Account for opportunity tracking
+  - Creates Contact and optional Opportunity
+- **API Endpoints:**
+  - `GET /api/customer-crm/accounts` - Unified account list
+  - `GET /api/customer-crm/accounts/{id}` - Full account view with rollups
+  - `PUT /api/customer-crm/accounts/{id}/crm` - Update CRM fields only
+  - `POST /api/customer-crm/leads/{id}/convert-to-customer` - Lead conversion
+  - `GET /api/customer-crm/field-ownership` - Document field rules
+  - `POST /api/customer-crm/accounts/bulk-assign` - Bulk owner assignment
+  - `POST /api/customer-crm/accounts/bulk-tag` - Bulk tagging
+- **Frontend:**
+  - `/crm/accounts` now shows unified view
+  - Detail modal with tabs: Overview, Shopify Data (read-only), CRM Data (editable), Orders & Activity
+  - Edit button only for CRM fields
+
 ## CRM Module Roadmap
 
 ### Phase 2 - Sales Operations (Planned)
