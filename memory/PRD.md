@@ -491,6 +491,46 @@ Build a manufacturing and fulfillment app for Shopify websites with detailed tim
   - ActivityTimeline React component (reusable)
 - **Testing:** 100% pass rate (16 backend tests, all UI flows verified)
 
+### 16. Automation Rule Engine - COMPLETE (Feb 2026)
+- **Lead Assignment Rules:**
+  - Trigger: On lead creation (when no owner explicitly set)
+  - Methods: Round Robin, By Territory, By Lead Source, Specific User
+  - Configurable assignee pool per rule
+  - Priority-based rule evaluation (lower = higher priority)
+  - Round-robin index tracking for fair distribution
+  - Background task execution via FastAPI BackgroundTasks
+  - Auto-logs assignment to timeline with rule details
+- **Stale Opportunity Reminders:**
+  - Daily check scheduled at 8:00 AM EST via APScheduler
+  - Configurable days threshold (default: 14 days)
+  - Filter by applicable stages (or all open stages)
+  - In-app notifications to opportunity owner
+  - Can manually trigger via API
+  - Logs stale reminder events to timeline
+- **Enhanced Chatter Events:**
+  - Record lifecycle: record_created, record_deleted
+  - High-signal field changes: amount_changed, close_date_changed, owner_changed
+  - Opportunity lifecycle: opportunity_won, opportunity_lost
+  - Automation events: auto_assigned, stale_reminder
+  - System events are read-only (no delete/edit)
+- **API Endpoints:**
+  - `GET/POST /api/automation/lead-assignment-rules` - CRUD for lead assignment rules
+  - `PUT/DELETE /api/automation/lead-assignment-rules/{rule_id}` - Update/Delete rules
+  - `GET/POST /api/automation/stale-opportunity-rules` - CRUD for stale rules
+  - `PUT/DELETE /api/automation/stale-opportunity-rules/{rule_id}` - Update/Delete rules
+  - `POST /api/automation/run-stale-check` - Manual trigger (admin only)
+  - `POST /api/automation/test-assignment/{lead_id}` - Test assignment dry run
+- **Database Collections:**
+  - `automation_lead_assignment` - Lead assignment rules with round-robin tracking
+  - `automation_stale_opportunity` - Stale opportunity rules with last_run_at
+- **Frontend Integration:**
+  - Automation tab in CRM Setup page
+  - Lead Assignment Rules section with Add/Edit/Delete
+  - Stale Opportunity Rules section with Add/Edit/Delete
+  - Manual Triggers section with Run Stale Check button
+  - Full dialog forms for rule configuration
+- **Testing:** 100% pass rate (18 backend tests, all UI flows verified)
+
 ## Pending Verification from User
 1. POS Order Creation fix (ObjectId serialization) - applied, needs user test
 2. Frame Production KPIs calculation fix (timezone) - applied, needs user test
