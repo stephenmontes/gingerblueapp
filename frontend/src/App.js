@@ -399,6 +399,18 @@ function AppRouter() {
           <ProtectedRoute>
             {({ user, setUser }) => (
               <Layout user={user} setUser={setUser}>
+                <UnifiedAccounts user={user} />
+              </Layout>
+            )}
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/crm/accounts-legacy"
+        element={
+          <ProtectedRoute>
+            {({ user, setUser }) => (
+              <Layout user={user} setUser={setUser}>
                 <CRMAccounts user={user} />
               </Layout>
             )}
