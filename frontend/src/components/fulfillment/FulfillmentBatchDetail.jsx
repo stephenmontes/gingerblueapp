@@ -1038,8 +1038,8 @@ export function FulfillmentBatchDetail({ batch, stages, onRefresh, onClose, canD
                       </div>
                     </div>
                     <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
-                      {/* Mark Shipped button for orders at Pack & Ship */}
-                      {isAtPackShip && !isShipped && (
+                      {/* Mark Shipped button - for Pack & Ship orders OR GB Home completed orders */}
+                      {((isAtPackShip && !isShipped) || (isGBHomeBatch && orderComplete && !isShipped && !isAtPackShip)) && (
                         <Button
                           size="sm"
                           onClick={() => markOrderShipped(order.order_id)}
