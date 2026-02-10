@@ -110,6 +110,66 @@ async def create_indexes():
         await db.frame_inventory_log.create_index("deducted_at")
         await db.frame_inventory_log.create_index([("color", 1), ("size", 1)])
         
+        # CRM Indexes
+        await db.crm_accounts.create_index("account_id", unique=True)
+        await db.crm_accounts.create_index("owner_id")
+        await db.crm_accounts.create_index("account_type")
+        await db.crm_accounts.create_index("status")
+        await db.crm_accounts.create_index("linked_customer_id")
+        await db.crm_accounts.create_index([("name", "text")])
+        
+        await db.crm_contacts.create_index("contact_id", unique=True)
+        await db.crm_contacts.create_index("account_id")
+        await db.crm_contacts.create_index("owner_id")
+        await db.crm_contacts.create_index("email")
+        await db.crm_contacts.create_index([("full_name", "text"), ("email", "text")])
+        
+        await db.crm_leads.create_index("lead_id", unique=True)
+        await db.crm_leads.create_index("owner_id")
+        await db.crm_leads.create_index("status")
+        await db.crm_leads.create_index("source")
+        await db.crm_leads.create_index("email")
+        await db.crm_leads.create_index([("full_name", "text"), ("company", "text")])
+        
+        await db.crm_opportunities.create_index("opportunity_id", unique=True)
+        await db.crm_opportunities.create_index("account_id")
+        await db.crm_opportunities.create_index("contact_id")
+        await db.crm_opportunities.create_index("owner_id")
+        await db.crm_opportunities.create_index("stage")
+        await db.crm_opportunities.create_index("close_date")
+        await db.crm_opportunities.create_index([("name", "text")])
+        
+        await db.crm_tasks.create_index("task_id", unique=True)
+        await db.crm_tasks.create_index("assigned_to")
+        await db.crm_tasks.create_index("status")
+        await db.crm_tasks.create_index("due_date")
+        await db.crm_tasks.create_index("account_id")
+        await db.crm_tasks.create_index("opportunity_id")
+        await db.crm_tasks.create_index("lead_id")
+        
+        await db.crm_notes.create_index("note_id", unique=True)
+        await db.crm_notes.create_index("account_id")
+        await db.crm_notes.create_index("contact_id")
+        await db.crm_notes.create_index("opportunity_id")
+        await db.crm_notes.create_index("lead_id")
+        
+        await db.crm_events.create_index("event_id", unique=True)
+        await db.crm_events.create_index("owner_id")
+        await db.crm_events.create_index("start_time")
+        
+        await db.crm_quotes.create_index("quote_id", unique=True)
+        await db.crm_quotes.create_index("opportunity_id")
+        await db.crm_quotes.create_index("account_id")
+        
+        await db.crm_activity_log.create_index("activity_id", unique=True)
+        await db.crm_activity_log.create_index("record_type")
+        await db.crm_activity_log.create_index("record_id")
+        await db.crm_activity_log.create_index("account_id")
+        await db.crm_activity_log.create_index("opportunity_id")
+        await db.crm_activity_log.create_index("created_at")
+        
+        await db.crm_settings.create_index("settings_id", unique=True)
+        
         print("[Database] Indexes created successfully")
     except Exception as e:
         print(f"[Database] Index creation error (may already exist): {e}")
