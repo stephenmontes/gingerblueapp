@@ -658,6 +658,279 @@ async def complete_fulfillment_batch(
     return {"success": True, "message": "Batch completed", "total_minutes": accumulated}
 
 
+# ==================== INDIVIDUAL ORDER PACK/SHIP ====================
+
+class MoveOrderToPackShip(BaseModel):
+    """Request to move individual orders to pack/ship"""
+    order_ids: list[str]
+
+
+@router.post("/{batch_id}/orders/move-to-pack-ship")
+async def move_orders_to_pack_ship(
+    batch_id: str,
+    request: MoveOrderToPackShip,
+    user: User = Depends(get_current_user)
+):
+    """
+    Move individual orders from Finish stage to Pack and Ship independently.
+    
+    This allows decor/home batches to be printed, mounted, and finished as a batch,
+    but packed and shipped individually. The batch timing continues for tracking purposes.
+    """
+    batch = await db.fulfillment_batches.find_one(
+        {"fulfillment_batch_id": batch_id},
+        {"_id": 0}
+    )
+    
+    if not batch:
+        raise HTTPException(status_code=404, detail="Fulfillment batch not found")
+    
+    # Verify batch is at Finish stage
+    if batch.get("current_stage_id") != "fulfill_finish":
+        raise HTTPException(
+            status_code=400, 
+            detail="Orders can only be moved to Pack and Ship when batch is at Finish stage"
+        )
+    
+    now = datetime.now(timezone.utc).isoformat()
+    order_ids = request.order_ids
+    
+    if not order_ids:
+        raise HTTPException(status_code=400, detail="No orders specified")
+    
+    # Initialize individual_order_status if not present
+    individual_order_status = batch.get("individual_order_status", {})
+    
+    # Move specified orders to pack/ship
+    moved_orders = []
+    for order_id in order_ids:
+        # Verify order belongs to this batch
+        order = await db.fulfillment_orders.find_one({
+            "order_id": order_id,
+            "fulfillment_batch_id": batch_id
+        })
+        
+        if not order:
+            continue
+        
+        # Update order status
+        individual_order_status[order_id] = {
+            "stage_id": "fulfill_pack",
+            "stage_name": "Pack and Ship",
+            "moved_at": now,
+            "moved_by": user.user_id,
+            "moved_by_name": user.name
+        }
+        
+        # Update the order document
+        await db.fulfillment_orders.update_one(
+            {"order_id": order_id},
+            {"$set": {
+                "fulfillment_stage_id": "fulfill_pack",
+                "fulfillment_stage_name": "Pack and Ship",
+                "individual_stage_override": True,
+                "moved_to_pack_at": now,
+                "moved_to_pack_by": user.user_id,
+                "fulfillment_updated_at": now,
+                "fulfillment_updated_by": user.user_id
+            }}
+        )
+        
+        moved_orders.append(order_id)
+    
+    # Update batch with individual order statuses
+    await db.fulfillment_batches.update_one(
+        {"fulfillment_batch_id": batch_id},
+        {"$set": {
+            "individual_order_status": individual_order_status,
+            "has_split_orders": True,
+            "updated_at": now
+        }}
+    )
+    
+    # Log the action
+    log_entry = {
+        "log_id": f"flog_{uuid.uuid4().hex[:12]}",
+        "fulfillment_batch_id": batch_id,
+        "action": "orders_moved_to_pack_ship",
+        "order_ids": moved_orders,
+        "order_count": len(moved_orders),
+        "user_id": user.user_id,
+        "user_name": user.name,
+        "created_at": now
+    }
+    await db.fulfillment_logs.insert_one(log_entry)
+    
+    return {
+        "success": True,
+        "message": f"Moved {len(moved_orders)} order(s) to Pack and Ship",
+        "moved_orders": moved_orders,
+        "remaining_at_finish": len([
+            oid for oid in batch.get("orders", []) 
+            if oid not in individual_order_status or 
+               individual_order_status.get(oid, {}).get("stage_id") != "fulfill_pack"
+        ])
+    }
+
+
+@router.post("/{batch_id}/orders/{order_id}/mark-shipped")
+async def mark_order_shipped(
+    batch_id: str,
+    order_id: str,
+    user: User = Depends(get_current_user)
+):
+    """
+    Mark an individual order as shipped/completed.
+    Used for orders that have been moved to Pack and Ship independently.
+    """
+    batch = await db.fulfillment_batches.find_one(
+        {"fulfillment_batch_id": batch_id},
+        {"_id": 0}
+    )
+    
+    if not batch:
+        raise HTTPException(status_code=404, detail="Fulfillment batch not found")
+    
+    order = await db.fulfillment_orders.find_one({
+        "order_id": order_id,
+        "fulfillment_batch_id": batch_id
+    })
+    
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found in this batch")
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    # Update order as shipped
+    await db.fulfillment_orders.update_one(
+        {"order_id": order_id},
+        {"$set": {
+            "status": "shipped",
+            "shipped_at": now,
+            "shipped_by": user.user_id,
+            "shipped_by_name": user.name,
+            "fulfillment_updated_at": now
+        }}
+    )
+    
+    # Update individual order status in batch
+    individual_order_status = batch.get("individual_order_status", {})
+    if order_id in individual_order_status:
+        individual_order_status[order_id]["shipped_at"] = now
+        individual_order_status[order_id]["shipped_by"] = user.user_id
+        individual_order_status[order_id]["status"] = "shipped"
+    
+    await db.fulfillment_batches.update_one(
+        {"fulfillment_batch_id": batch_id},
+        {"$set": {
+            "individual_order_status": individual_order_status,
+            "updated_at": now
+        }}
+    )
+    
+    return {
+        "success": True,
+        "message": f"Order {order_id} marked as shipped"
+    }
+
+
+@router.get("/{batch_id}/pack-ship-orders")
+async def get_pack_ship_orders(
+    batch_id: str,
+    user: User = Depends(get_current_user)
+):
+    """
+    Get orders that have been moved to Pack and Ship for this batch.
+    Returns orders grouped by status (ready to ship, shipped).
+    """
+    batch = await db.fulfillment_batches.find_one(
+        {"fulfillment_batch_id": batch_id},
+        {"_id": 0}
+    )
+    
+    if not batch:
+        raise HTTPException(status_code=404, detail="Fulfillment batch not found")
+    
+    # Get all orders that have been moved to pack/ship
+    orders = await db.fulfillment_orders.find({
+        "fulfillment_batch_id": batch_id,
+        "individual_stage_override": True,
+        "fulfillment_stage_id": "fulfill_pack"
+    }, {"_id": 0}).to_list(1000)
+    
+    ready_to_ship = []
+    shipped = []
+    
+    for order in orders:
+        if order.get("status") == "shipped":
+            shipped.append(order)
+        else:
+            ready_to_ship.append(order)
+    
+    return {
+        "batch_id": batch_id,
+        "batch_name": batch.get("name"),
+        "batch_stage": batch.get("current_stage_name"),
+        "ready_to_ship": ready_to_ship,
+        "shipped": shipped,
+        "total_at_pack_ship": len(orders)
+    }
+
+
+@router.get("/{batch_id}/orders-by-stage")
+async def get_orders_by_stage(
+    batch_id: str,
+    user: User = Depends(get_current_user)
+):
+    """
+    Get orders in a batch grouped by their current stage.
+    Useful for batches with split orders (some at Finish, some at Pack/Ship).
+    """
+    batch = await db.fulfillment_batches.find_one(
+        {"fulfillment_batch_id": batch_id},
+        {"_id": 0}
+    )
+    
+    if not batch:
+        raise HTTPException(status_code=404, detail="Fulfillment batch not found")
+    
+    # Get all orders in this batch
+    orders = await db.fulfillment_orders.find(
+        {"fulfillment_batch_id": batch_id},
+        {"_id": 0}
+    ).to_list(1000)
+    
+    # Group by stage
+    by_stage = {}
+    individual_order_status = batch.get("individual_order_status", {})
+    
+    for order in orders:
+        # Determine actual stage - check if individually overridden
+        if order.get("individual_stage_override"):
+            stage_id = order.get("fulfillment_stage_id", "fulfill_pack")
+            stage_name = order.get("fulfillment_stage_name", "Pack and Ship")
+        else:
+            stage_id = batch.get("current_stage_id")
+            stage_name = batch.get("current_stage_name")
+        
+        if stage_id not in by_stage:
+            by_stage[stage_id] = {
+                "stage_id": stage_id,
+                "stage_name": stage_name,
+                "orders": []
+            }
+        
+        by_stage[stage_id]["orders"].append(order)
+    
+    return {
+        "batch_id": batch_id,
+        "batch_name": batch.get("name"),
+        "batch_current_stage": batch.get("current_stage_name"),
+        "has_split_orders": batch.get("has_split_orders", False),
+        "stages": list(by_stage.values())
+    }
+
+
 @router.get("/{batch_id}/report")
 async def get_fulfillment_batch_report(
     batch_id: str,
