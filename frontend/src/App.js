@@ -367,6 +367,67 @@ function AppRouter() {
           </ProtectedRoute>
         }
       />
+      {/* CRM Routes */}
+      <Route
+        path="/crm"
+        element={
+          <ProtectedRoute>
+            {({ user, setUser }) => (
+              <Layout user={user} setUser={setUser}>
+                <CRMDashboard user={user} />
+              </Layout>
+            )}
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/crm/dashboard"
+        element={
+          <ProtectedRoute>
+            {({ user, setUser }) => (
+              <Layout user={user} setUser={setUser}>
+                <CRMDashboard user={user} />
+              </Layout>
+            )}
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/crm/accounts"
+        element={
+          <ProtectedRoute>
+            {({ user, setUser }) => (
+              <Layout user={user} setUser={setUser}>
+                <CRMAccounts user={user} />
+              </Layout>
+            )}
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/crm/leads"
+        element={
+          <ProtectedRoute>
+            {({ user, setUser }) => (
+              <Layout user={user} setUser={setUser}>
+                <CRMLeads user={user} />
+              </Layout>
+            )}
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/crm/opportunities"
+        element={
+          <ProtectedRoute>
+            {({ user, setUser }) => (
+              <Layout user={user} setUser={setUser}>
+                <CRMOpportunities user={user} />
+              </Layout>
+            )}
+          </ProtectedRoute>
+        }
+      />
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
