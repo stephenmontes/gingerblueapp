@@ -2,13 +2,17 @@
 CRM Router - Salesforce-style CRM Module
 Handles Accounts, Contacts, Leads, Opportunities, Activities, Notes
 """
-from fastapi import APIRouter, HTTPException, Depends, Query
+from fastapi import APIRouter, HTTPException, Depends, Query, BackgroundTasks
 from datetime import datetime, timezone
 from typing import Optional, List
 import uuid
 
 from database import db
 from routers.timeline import log_system_event
+from routers.automation import (
+    execute_lead_assignment, log_field_changes, log_record_created,
+    log_opportunity_closed
+)
 from models.user import User
 from models.crm import (
     AccountCreate, AccountUpdate, AccountType, AccountStatus,
