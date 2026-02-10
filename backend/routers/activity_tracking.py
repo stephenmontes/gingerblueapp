@@ -196,7 +196,7 @@ async def get_productivity_report(
                         "tracked_minutes": 0
                     }
                 user_date_data[key]["tracked_minutes"] += log.get("duration_minutes", 0)
-            except:
+            except (ValueError, TypeError):
                 pass
     
     # Process production time logs (tracked time)
@@ -217,7 +217,7 @@ async def get_productivity_report(
                         "tracked_minutes": 0
                     }
                 user_date_data[key]["tracked_minutes"] += log.get("duration_minutes", 0)
-            except:
+            except (ValueError, TypeError):
                 pass
     
     # Calculate productivity for each record
