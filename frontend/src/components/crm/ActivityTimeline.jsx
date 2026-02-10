@@ -266,11 +266,7 @@ export default function ActivityTimeline({
           `${API}/timeline/follow/${entityType}/${entityId}`,
           { 
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({
-              notify_on: ['chat_post', 'comment', 'stage_changed', 'mention']
-            })
+            credentials: 'include'
           }
         );
         if (res.ok) {
