@@ -1,6 +1,6 @@
-import { Factory, Menu, X, ShoppingCart } from "lucide-react";
+import { Factory, Menu, X, ShoppingCart, Clock, AlertTriangle } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   LayoutDashboard,
   Package,
@@ -26,6 +26,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { NotificationBell } from "@/components/NotificationBell";
@@ -48,10 +57,140 @@ const navItems = [
   { path: "/settings", label: "Settings", icon: Settings, roles: ["admin", "manager"] },
 ];
 
+// Session timeout settings
+const SESSION_TIMEOUT_HOURS = 9;
+const SESSION_TIMEOUT_MS = SESSION_TIMEOUT_HOURS * 60 * 60 * 1000; // 9 hours in ms
+const WARNING_COUNTDOWN_SECONDS = 60;
+
 export default function Layout({ children, user, setUser }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
   const heartbeatIntervalRef = useRef(null);
+  const sessionTimeoutRef = useRef(null);
+  const countdownIntervalRef = useRef(null);
+  
+  // Auto-logout state
+  const [showTimeoutWarning, setShowTimeoutWarning] = useState(false);
+  const [countdownSeconds, setCountdownSeconds] = useState(WARNING_COUNTDOWN_SECONDS);
+
+  // Stop all active timers before logout
+  const stopAllTimers = useCallback(async () => {
+    try {
+      // Stop fulfillment timers
+      await fetch(`${API}/fulfillment/timers/stop-all`, {
+        method: "POST",
+        credentials: "include"
+      });
+    } catch (err) {
+      console.error("Error stopping fulfillment timers:", err);
+    }
+
+    try {
+      // Stop production timers
+      await fetch(`${API}/production/timers/stop-all`, {
+        method: "POST",
+        credentials: "include"
+      });
+    } catch (err) {
+      console.error("Error stopping production timers:", err);
+    }
+  }, []);
+
+  // Perform logout
+  const performLogout = useCallback(async () => {
+    // Stop all timers first
+    await stopAllTimers();
+    
+    // Clear session
+    try {
+      await fetch(`${API}/auth/logout`, {
+        method: "POST",
+        credentials: "include"
+      });
+    } catch (err) {
+      console.error("Logout error:", err);
+    }
+    
+    // Clear local state
+    setUser(null);
+    localStorage.removeItem("sessionStartTime");
+    navigate("/");
+    toast.info("Session ended. Please log in again.");
+  }, [navigate, setUser, stopAllTimers]);
+
+  // Handle session timeout
+  const handleSessionTimeout = useCallback(() => {
+    setShowTimeoutWarning(true);
+    setCountdownSeconds(WARNING_COUNTDOWN_SECONDS);
+    
+    // Start countdown
+    countdownIntervalRef.current = setInterval(() => {
+      setCountdownSeconds(prev => {
+        if (prev <= 1) {
+          // Time's up - logout
+          clearInterval(countdownIntervalRef.current);
+          setShowTimeoutWarning(false);
+          performLogout();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }, [performLogout]);
+
+  // Continue session (user clicked "Continue")
+  const handleContinueSession = () => {
+    // Clear countdown
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+    }
+    setShowTimeoutWarning(false);
+    
+    // Reset session timer
+    const newStartTime = Date.now();
+    localStorage.setItem("sessionStartTime", newStartTime.toString());
+    
+    // Set new timeout
+    if (sessionTimeoutRef.current) {
+      clearTimeout(sessionTimeoutRef.current);
+    }
+    sessionTimeoutRef.current = setTimeout(handleSessionTimeout, SESSION_TIMEOUT_MS);
+    
+    toast.success("Session extended for 9 more hours");
+  };
+
+  // Initialize session timeout tracking
+  useEffect(() => {
+    if (!user) return;
+
+    // Get or set session start time
+    let sessionStartTime = localStorage.getItem("sessionStartTime");
+    if (!sessionStartTime) {
+      sessionStartTime = Date.now().toString();
+      localStorage.setItem("sessionStartTime", sessionStartTime);
+    }
+
+    const startTime = parseInt(sessionStartTime);
+    const elapsed = Date.now() - startTime;
+    const remaining = SESSION_TIMEOUT_MS - elapsed;
+
+    if (remaining <= 0) {
+      // Session already expired
+      handleSessionTimeout();
+    } else {
+      // Set timeout for remaining time
+      sessionTimeoutRef.current = setTimeout(handleSessionTimeout, remaining);
+    }
+
+    return () => {
+      if (sessionTimeoutRef.current) {
+        clearTimeout(sessionTimeoutRef.current);
+      }
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current);
+      }
+    };
+  }, [user, handleSessionTimeout]);
 
   // Track user activity with heartbeat every minute
   useEffect(() => {
