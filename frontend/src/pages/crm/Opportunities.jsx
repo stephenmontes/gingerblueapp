@@ -467,7 +467,7 @@ export default function OpportunitiesPage() {
 
       {/* Opportunity Detail Dialog */}
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           {selectedOpp && (
             <>
               <DialogHeader>
@@ -476,124 +476,145 @@ export default function OpportunitiesPage() {
                   {selectedOpp.name}
                 </DialogTitle>
               </DialogHeader>
-              <div className="space-y-6">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="text-sm text-muted-foreground">Amount</div>
-                      <div className="text-xl font-bold text-green-600">{formatCurrency(selectedOpp.amount)}</div>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="text-sm text-muted-foreground">Probability</div>
-                      <div className="text-xl font-bold">{selectedOpp.probability}%</div>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="text-sm text-muted-foreground">Stage</div>
-                      <div className="text-xl font-bold capitalize">{selectedOpp.stage?.replace('_', ' ')}</div>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="text-sm text-muted-foreground">Close Date</div>
-                      <div className="text-xl font-bold">{selectedOpp.close_date}</div>
-                    </CardContent>
-                  </Card>
-                </div>
+              
+              <Tabs defaultValue="overview" className="mt-2">
+                <TabsList>
+                  <TabsTrigger value="overview">Overview</TabsTrigger>
+                  <TabsTrigger value="timeline" className="flex items-center gap-1">
+                    <MessageCircle className="h-3 w-3" />
+                    Timeline
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="overview" className="space-y-6 mt-4">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="text-sm text-muted-foreground">Amount</div>
+                        <div className="text-xl font-bold text-green-600">{formatCurrency(selectedOpp.amount)}</div>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="text-sm text-muted-foreground">Probability</div>
+                        <div className="text-xl font-bold">{selectedOpp.probability}%</div>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="text-sm text-muted-foreground">Stage</div>
+                        <div className="text-xl font-bold capitalize">{selectedOpp.stage?.replace('_', ' ')}</div>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="text-sm text-muted-foreground">Close Date</div>
+                        <div className="text-xl font-bold">{selectedOpp.close_date}</div>
+                      </CardContent>
+                    </Card>
+                  </div>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">Move Stage</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex flex-wrap gap-2">
-                      {stages.map(stage => (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">Move Stage</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex flex-wrap gap-2">
+                        {stages.map(stage => (
+                          <Button
+                            key={stage.id}
+                            variant={selectedOpp.stage === stage.id ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => {
+                              updateStage(selectedOpp.opportunity_id, stage.id);
+                              setSelectedOpp({...selectedOpp, stage: stage.id});
+                            }}
+                          >
+                            {stage.name}
+                          </Button>
+                        ))}
                         <Button
-                          key={stage.id}
-                          variant={selectedOpp.stage === stage.id ? "default" : "outline"}
+                          variant="outline"
                           size="sm"
+                          className="bg-green-50 text-green-700 border-green-300 hover:bg-green-100"
                           onClick={() => {
-                            updateStage(selectedOpp.opportunity_id, stage.id);
-                            setSelectedOpp({...selectedOpp, stage: stage.id});
+                            updateStage(selectedOpp.opportunity_id, 'closed_won');
+                            setIsDetailOpen(false);
                           }}
                         >
-                          {stage.name}
+                          Won
                         </Button>
-                      ))}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="bg-green-50 text-green-700 border-green-300 hover:bg-green-100"
-                        onClick={() => {
-                          updateStage(selectedOpp.opportunity_id, 'closed_won');
-                          setIsDetailOpen(false);
-                        }}
-                      >
-                        Won
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="bg-red-50 text-red-700 border-red-300 hover:bg-red-100"
-                        onClick={() => {
-                          updateStage(selectedOpp.opportunity_id, 'closed_lost');
-                          setIsDetailOpen(false);
-                        }}
-                      >
-                        Lost
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {selectedOpp.account && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base flex items-center gap-2">
-                        <Building2 className="h-4 w-4" />
-                        Account
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="font-medium">{selectedOpp.account.name}</div>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {selectedOpp.description && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base">Description</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-muted-foreground whitespace-pre-wrap">{selectedOpp.description}</p>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {selectedOpp.stage_history?.length > 0 && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base">Stage History</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2">
-                        {selectedOpp.stage_history.map((history, idx) => (
-                          <div key={idx} className="flex justify-between text-sm p-2 bg-muted/50 rounded">
-                            <span className="capitalize">{history.stage?.replace('_', ' ')}</span>
-                            <span className="text-muted-foreground">
-                              {new Date(history.entered_at).toLocaleDateString()} by {history.user_name}
-                            </span>
-                          </div>
-                        ))}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="bg-red-50 text-red-700 border-red-300 hover:bg-red-100"
+                          onClick={() => {
+                            updateStage(selectedOpp.opportunity_id, 'closed_lost');
+                            setIsDetailOpen(false);
+                          }}
+                        >
+                          Lost
+                        </Button>
                       </div>
                     </CardContent>
                   </Card>
-                )}
-              </div>
+
+                  {selectedOpp.account && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <Building2 className="h-4 w-4" />
+                          Account
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="font-medium">{selectedOpp.account.name}</div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {selectedOpp.description && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base">Description</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm text-muted-foreground whitespace-pre-wrap">{selectedOpp.description}</p>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {selectedOpp.stage_history?.length > 0 && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base">Stage History</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2">
+                          {selectedOpp.stage_history.map((history, idx) => (
+                            <div key={idx} className="flex justify-between text-sm p-2 bg-muted/50 rounded">
+                              <span className="capitalize">{history.stage?.replace('_', ' ')}</span>
+                              <span className="text-muted-foreground">
+                                {new Date(history.entered_at).toLocaleDateString()} by {history.user_name}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                </TabsContent>
+                
+                <TabsContent value="timeline" className="mt-4">
+                  <ActivityTimeline 
+                    entityType="opportunity"
+                    entityId={selectedOpp.opportunity_id}
+                    entityName={selectedOpp.name}
+                    showComposer={true}
+                    maxHeight="500px"
+                  />
+                </TabsContent>
+              </Tabs>
             </>
           )}
         </DialogContent>
