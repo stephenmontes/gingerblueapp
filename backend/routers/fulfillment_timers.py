@@ -559,9 +559,12 @@ async def get_fulfillment_overall_kpis(
     user: User = Depends(get_current_user)
 ):
     """Get KPIs for the fulfillment workflow for a specified time period."""
-    now = datetime.now(timezone.utc)
+    # Use EST timezone for date calculations (user's timezone)
+    from zoneinfo import ZoneInfo
+    est_tz = ZoneInfo("America/New_York")
+    now = datetime.now(est_tz)
     
-    # Calculate date range based on period
+    # Calculate date range based on period (in EST)
     if period == "today":
         start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
         end_date = now
