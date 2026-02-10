@@ -32,6 +32,7 @@ class ActivityType(str, Enum):
     SMS_LOG = "sms_log"
     MEETING_LOG = "meeting_log"
     FILE_UPLOAD = "file_upload"
+    ONBOARDING = "onboarding"  # Customer onboarding activity
     
     # Task/Event related
     TASK_CREATED = "task_created"
@@ -249,5 +250,12 @@ ACTIVITY_TYPE_CONFIG = {
         "color": "#6b7280",
         "user_created": False,
         "allows_replies": False
+    },
+    ActivityType.ONBOARDING: {
+        "label": "Onboarding",
+        "icon": "rocket",
+        "color": "#0891b2",
+        "user_created": True,
+        "allows_replies": True
     }
 }
