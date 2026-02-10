@@ -8,6 +8,7 @@ from typing import Optional, List
 import uuid
 
 from database import db
+from routers.timeline import log_system_event
 from models.user import User
 from models.crm import (
     AccountCreate, AccountUpdate, AccountType, AccountStatus,
