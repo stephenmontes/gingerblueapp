@@ -74,7 +74,7 @@ export default function AccountsPage() {
     } finally {
       setLoading(false);
     }
-  }, [pagination.page, search, filterType, toast]);
+  }, [pagination.page, search, filterType]);
 
   useEffect(() => {
     fetchAccounts();
