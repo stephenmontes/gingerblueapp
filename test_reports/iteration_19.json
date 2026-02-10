@@ -1,0 +1,108 @@
+{
+  "summary": "Activity Timeline Feature testing completed. Backend: 16/16 tests passed (100%). Frontend: All key features verified working including Timeline tab in Opportunity detail, composer with Post/Note/Call/Email/Meeting/Onboarding tabs, Follow/Unfollow button, and auto-logged stage change events. Fixed minor frontend issue with Follow button (removed unnecessary JSON body from POST request).",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "Dialog components",
+        "issues": ["Console warning: Missing `Description` or `aria-describedby` for DialogContent - accessibility improvement needed (existing issue)"]
+      }
+    ]
+  },
+
+  "passed_tests": [
+    "GET /api/timeline/activity-types - Returns all activity types including ONBOARDING",
+    "POST /api/timeline/items - Create chat_post",
+    "POST /api/timeline/items - Create note with internal visibility",
+    "POST /api/timeline/items - Create call_log with duration and outcome",
+    "POST /api/timeline/items - Create ONBOARDING activity",
+    "POST /api/timeline/items - Create post with @mentions",
+    "GET /api/timeline/items/{entity_type}/{entity_id} - Returns paginated timeline",
+    "GET /api/timeline/items with activity_types filter - Filters by type",
+    "POST /api/timeline/follow/{entity_type}/{entity_id} - Follow a record",
+    "GET /api/timeline/follow/{entity_type}/{entity_id} - Get follow status",
+    "DELETE /api/timeline/follow/{entity_type}/{entity_id} - Unfollow a record",
+    "GET /api/timeline/notifications - Returns user notifications",
+    "GET /api/timeline/notifications?is_read=false - Filter unread notifications",
+    "PUT /api/crm/opportunities/{id} stage change - Auto-logs stage_changed event to timeline",
+    "Frontend: Timeline tab appears in Opportunity detail dialog",
+    "Frontend: Timeline composer shows Post, Note, Log a Call, Log Email, Log Meeting, Onboarding tabs",
+    "Frontend: Creating a post shows it in the timeline feed with avatar, timestamp, badge",
+    "Frontend: Stage change in Opportunity creates 'Stage Changed' system event in timeline",
+    "Frontend: Follow button toggles between Follow/Following states with toast notifications"
+  ],
+
+  "test_report_links": [
+    "/app/backend/tests/test_timeline_feature.py",
+    "/app/test_reports/pytest/timeline_feature_results.xml"
+  ],
+
+  "action_items": [],
+
+  "critical_code_review_comments": [
+    "ONBOARDING activity type properly included in ActivityType enum and ACTIVITY_TYPE_CONFIG with rocket icon",
+    "Stage changes correctly auto-log to timeline via log_system_event() in crm.py update_opportunity endpoint",
+    "Timeline items properly exclude MongoDB _id from responses using projection",
+    "Follow/Unfollow works with notification preferences (notify_on default values)",
+    "@mentions are parsed and can trigger notifications (email sending not implemented as expected)",
+    "File attachments supported in schema but full cloud upload not implemented (as noted in requirements)"
+  ],
+
+  "updated_files": [
+    "/app/backend/tests/test_timeline_feature.py (created - 16 tests)",
+    "/app/frontend/src/components/crm/ActivityTimeline.jsx (fixed Follow button request - removed unnecessary JSON body)"
+  ],
+
+  "success_rate": {
+    "backend": "100% (16/16 tests passed)",
+    "frontend": "100% (all UI flows working)"
+  },
+
+  "test_credentials": {
+    "login_endpoint": "/api/auth/dev-login (TRAINING_MODE enabled)",
+    "test_user": "Test User (test@example.com)"
+  },
+
+  "seed_data_creation": "Test data created via API for timeline items, follows. Cleanup test removes TEST_ prefixed data.",
+
+  "retest_needed": false,
+
+  "should_main_agent_self_test": false,
+
+  "context_for_next_testing_agent": "Activity Timeline feature is fully functional. Timeline tab appears in Opportunity detail dialog under the 'Timeline' tab. Composer supports: Post, Note, Log a Call, Log Email, Log Meeting, ONBOARDING (new type). Stage changes auto-log to timeline. Follow/Unfollow toggles work. File attachments are supported in UI but actual cloud storage upload is not implemented (attachments stored locally - this is expected per requirements). Email notifications for @mentions are prepared in schema but actual email sending is not implemented (also expected).",
+
+  "features_verified": {
+    "timeline_api": {
+      "endpoint": "/api/timeline/*",
+      "status": "WORKING",
+      "features": ["Create items", "Get timeline with pagination", "Filter by activity_type", "Follow/Unfollow", "Notifications"]
+    },
+    "activity_types": {
+      "endpoint": "/api/timeline/activity-types",
+      "status": "WORKING",
+      "types_confirmed": ["chat_post", "note", "call_log", "email_log", "meeting_log", "onboarding", "stage_changed", "owner_changed", "system_event"]
+    },
+    "stage_change_auto_log": {
+      "endpoint": "PUT /api/crm/opportunities/{id}",
+      "status": "WORKING",
+      "auto_creates": "stage_changed event with old_value/new_value metadata"
+    },
+    "frontend_timeline": {
+      "location": "Opportunity detail dialog > Timeline tab",
+      "status": "WORKING",
+      "features": ["Composer with 6 activity tabs", "Follow button", "Activity filter", "Timeline items display", "Avatar & badges"]
+    }
+  },
+
+  "not_implemented_per_requirements": {
+    "file_attachments_cloud_upload": "Attachments store locally - cloud upload integration not implemented",
+    "email_notifications": "@mentions prepared in schema - actual email sending not implemented"
+  }
+}
