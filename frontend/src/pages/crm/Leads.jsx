@@ -138,10 +138,7 @@ export default function LeadsPage() {
       }
       
       const result = await res.json();
-      toast({ 
-        title: "Lead Converted!", 
-        description: `Created Account${result.opportunity_id ? ' and Opportunity' : ''}` 
-      });
+      toast.success(`Lead Converted! Created Account${result.opportunity_id ? ' and Opportunity' : ''}`);
       setIsConvertOpen(false);
       setSelectedLead(null);
       setConvertData({ create_opportunity: true, opportunity_name: '', opportunity_amount: '' });
