@@ -44,6 +44,7 @@ from routers.crm import router as crm_router
 from routers.crm_reports import router as crm_reports_router
 from routers.customer_crm import router as customer_crm_router
 from routers.crm_admin import router as crm_admin_router
+from routers.timeline import router as timeline_router
 from database import create_indexes
 from services.scheduler import start_scheduler, stop_scheduler
 
@@ -104,6 +105,7 @@ api_router.include_router(crm_router)
 api_router.include_router(crm_reports_router)
 api_router.include_router(customer_crm_router)
 api_router.include_router(crm_admin_router)
+api_router.include_router(timeline_router)
 
 # Root endpoint
 @api_router.get("/")
