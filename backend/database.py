@@ -170,6 +170,16 @@ async def create_indexes():
         
         await db.crm_settings.create_index("settings_id", unique=True)
         
+        # Customer CRM Extension (separate from Shopify data)
+        await db.customer_crm.create_index("crm_id", unique=True)
+        await db.customer_crm.create_index("customer_id", unique=True)
+        await db.customer_crm.create_index("owner_user_id")
+        await db.customer_crm.create_index("account_status")
+        await db.customer_crm.create_index("territory")
+        await db.customer_crm.create_index("industry")
+        await db.customer_crm.create_index("tags")
+        await db.customer_crm.create_index("converted_from_lead_id")
+        
         print("[Database] Indexes created successfully")
     except Exception as e:
         print(f"[Database] Index creation error (may already exist): {e}")
