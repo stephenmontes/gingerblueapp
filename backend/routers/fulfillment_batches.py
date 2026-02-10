@@ -64,6 +64,10 @@ async def get_fulfillment_batch(
     stage_progress_key = f"stage_{stage_id}"
     stage_progress = item_progress.get(stage_progress_key, {})
     
+    # Calculate shipping progress
+    total_orders = len(orders)
+    shipped_count = 0
+    
     for order in orders:
         order_progress = stage_progress.get(order["order_id"], {})
         items = order.get("items", []) or order.get("line_items", [])
@@ -80,6 +84,10 @@ async def get_fulfillment_batch(
         
         order["is_complete"] = all_complete and len(items) > 0
         
+        # Track shipped orders
+        if order.get("status") == "shipped":
+            shipped_count += 1
+        
         # Add individual stage info if order was moved independently
         if order.get("individual_stage_override"):
             order["current_stage"] = {
@@ -93,6 +101,11 @@ async def get_fulfillment_batch(
                 "stage_name": batch.get("current_stage_name"),
                 "is_independent": False
             }
+    
+    # Add shipping progress to batch
+    batch["shipped_count"] = shipped_count
+    batch["total_orders"] = total_orders
+    batch["orders_remaining"] = total_orders - shipped_count
     
     return {**batch, "orders": orders}
 
