@@ -102,8 +102,31 @@ def start_scheduler():
         replace_existing=True
     )
     
+    # Add stale opportunity check daily at 8 AM EST
+    scheduler.add_job(
+        run_stale_opportunity_check,
+        CronTrigger(hour=8, minute=0, timezone="America/New_York"),
+        id="daily_stale_opp_check",
+        name="Daily Stale Opportunity Check (8 AM EST)",
+        replace_existing=True
+    )
+    
     scheduler.start()
     logger.info("Scheduler started - Daily order sync scheduled for 7:00 AM EST")
+    logger.info("Scheduler started - Daily stale opportunity check scheduled for 8:00 AM EST")
+
+
+async def run_stale_opportunity_check():
+    """Wrapper to run stale opportunity check from scheduler"""
+    from routers.automation import check_stale_opportunities
+    logger.info("Starting scheduled stale opportunity check...")
+    try:
+        result = await check_stale_opportunities()
+        logger.info(f"Stale opportunity check complete: {result}")
+        return result
+    except Exception as e:
+        logger.error(f"Error in stale opportunity check: {e}")
+        return {"error": str(e)}
 
 
 def stop_scheduler():
