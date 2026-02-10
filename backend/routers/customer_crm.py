@@ -96,7 +96,6 @@ async def get_erp_rollups(customer_id: str, customer_email: str = None) -> dict:
     last_order_date = max(order_dates) if order_dates else None
     
     # Get opportunities for this customer
-    opp_query = {}
     crm_record = await db.customer_crm.find_one({"customer_id": customer_id})
     if crm_record:
         # Find linked account
