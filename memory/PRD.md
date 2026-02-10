@@ -278,6 +278,63 @@ Build a manufacturing and fulfillment app for Shopify websites with detailed tim
   - Timers marked with `stopped_reason: "session_timeout"` for audit trail
 - **Activity Heartbeat:**
   - Frontend sends heartbeat every 60 seconds (`POST /api/activity/heartbeat`)
+
+### 12. Salesforce-Style CRM Module - PHASE 1 COMPLETE (Feb 2026)
+- **Sales Dashboard (/crm):**
+  - Period selector (Today, This Week, This Month, This Quarter, This Year)
+  - Key metrics: Total Pipeline, Closed Won, Win Rate, Weighted Pipeline
+  - Secondary metrics: Open Opps, New Leads, Converted, Conversion Rate, Tasks Overdue
+  - Pipeline by Stage visualization with progress bars
+  - Stale Opportunities (14+ days no activity)
+  - Closing This Month section
+  - Quick action buttons
+- **Leads Management (/crm/leads):**
+  - Create, edit, delete leads
+  - Lead sources: Website, Trade Show, Referral, Cold Call, Social Media, Other
+  - Lead statuses: New, Contacted, Qualified, Unqualified, Converted
+  - Search and filter by status/source
+  - Convert lead to Account + Contact + optional Opportunity
+  - Duplicate prevention by email
+- **Accounts Management (/crm/accounts):**
+  - Create, edit, delete accounts (companies)
+  - Account types: Prospect, Customer, Vendor, Partner
+  - Account status: Active, Inactive, Churned
+  - Industry and territory classification
+  - Rollup fields: Total Opportunities, Open Opps, Total Revenue, Pipeline Value
+  - Account detail view with contacts, opportunities, tasks, activities
+  - Link to existing ERP customer data
+- **Opportunities Pipeline (/crm/opportunities):**
+  - **Kanban View (default):** Drag-drop stage changes
+  - **List View:** Sortable, filterable table
+  - Stages (editable): Prospecting(10%) → Qualification(20%) → Needs Analysis(40%) → Proposal(60%) → Negotiation(80%) → Closed Won(100%) / Closed Lost(0%)
+  - Automatic probability update on stage change
+  - Stage history tracking with timestamps and user
+  - Forecast categories: Pipeline, Best Case, Commit, Closed, Omitted
+  - Won/Lost buttons with immediate close
+- **Navigation:**
+  - Sidebar "CRM & SALES" section
+  - Links: Sales Dashboard, Leads, Accounts, Opportunities
+- **Backend APIs:**
+  - `GET/POST/PUT/DELETE /api/crm/accounts` - Account CRUD
+  - `GET/POST/PUT/DELETE /api/crm/contacts` - Contact CRUD
+  - `GET/POST/PUT/DELETE /api/crm/leads` - Lead CRUD
+  - `POST /api/crm/leads/{id}/convert` - Lead conversion
+  - `GET/POST/PUT/DELETE /api/crm/opportunities` - Opportunity CRUD
+  - `GET /api/crm/opportunities/pipeline` - Kanban data
+  - `GET/POST/PUT/DELETE /api/crm/tasks` - Task CRUD
+  - `GET/POST/PUT/DELETE /api/crm/notes` - Note CRUD
+  - `GET/POST /api/crm/events` - Event/Meeting CRUD
+  - `GET /api/crm/settings` - Editable stages and sources
+  - `GET /api/crm/search` - Global search
+  - `GET /api/crm/reports/dashboard` - Dashboard metrics
+  - `GET /api/crm/reports/pipeline-by-stage` - Pipeline breakdown
+  - `GET /api/crm/reports/stale-opportunities` - Stale deals
+  - `GET /api/crm/reports/closing-soon` - Deals closing soon
+- **Data Model:**
+  - MongoDB collections: crm_accounts, crm_contacts, crm_leads, crm_opportunities, crm_tasks, crm_notes, crm_events, crm_quotes, crm_activity_log, crm_settings
+  - Full audit trail with activity logging
+  - Proper indexing for search performance
+- **Testing:** 100% pass rate (28 backend tests, all frontend flows verified)
   - Heartbeat records user activity for productivity tracking
 - **UI Components:**
   - AlertDialog with orange warning styling
