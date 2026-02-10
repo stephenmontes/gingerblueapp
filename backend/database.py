@@ -215,6 +215,14 @@ async def create_indexes():
         await db.timeline_notifications.create_index([("user_id", 1), ("is_read", 1)])
         await db.timeline_notifications.create_index("created_at")
         
+        # Automation Collections
+        await db.automation_lead_assignment.create_index("rule_id", unique=True)
+        await db.automation_lead_assignment.create_index("status")
+        await db.automation_lead_assignment.create_index("priority")
+        
+        await db.automation_stale_opportunity.create_index("rule_id", unique=True)
+        await db.automation_stale_opportunity.create_index("status")
+        
         print("[Database] Indexes created successfully")
     except Exception as e:
         print(f"[Database] Index creation error (may already exist): {e}")
