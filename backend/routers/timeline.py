@@ -621,7 +621,7 @@ async def get_entity_name(entity_type: str, entity_id: str) -> str:
     
     collection_name, name_field = collection_map[entity_type]
     collection = getattr(db, collection_name, None)
-    if not collection:
+    if collection is None:
         return entity_id
     
     # Try to find by various id fields
