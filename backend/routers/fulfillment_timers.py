@@ -753,15 +753,35 @@ async def get_order_kpis_report(user: User = Depends(get_current_user)):
             "completed_at": log.get("completed_at")
         })
     
-    # Now get order details and calculate costs
+    # Get all unique user IDs to fetch their hourly rates
+    all_user_ids = set()
+    for data in order_data.values():
+        all_user_ids.update(data["users"].keys())
+    
+    user_rates = {}
+    if all_user_ids:
+        users_cursor = db.users.find(
+            {"user_id": {"$in": list(all_user_ids)}},
+            {"_id": 0, "user_id": 1, "hourly_rate": 1}
+        )
+        async for u in users_cursor:
+            user_rates[u["user_id"]] = u.get("hourly_rate", 15)
+    
+    # Now get order details and calculate costs with user-specific rates
     result = []
     for order_id, data in order_data.items():
         # Get order details
         order = await db.orders.find_one({"order_id": order_id}, {"_id": 0})
         
+        # Calculate labor cost based on each user's rate and time
+        labor_cost = 0
+        for user_id, user_data in data["users"].items():
+            hourly_rate = user_rates.get(user_id, 15)
+            user_hours = user_data["total_minutes"] / 60
+            labor_cost += user_hours * hourly_rate
+        
         total_hours = data["total_minutes"] / 60
         total_items = data["total_items"] or 1
-        labor_cost = total_hours * 30
         cost_per_item = labor_cost / total_items if total_items > 0 else 0
         
         result.append({
