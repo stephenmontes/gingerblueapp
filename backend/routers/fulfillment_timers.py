@@ -609,14 +609,14 @@ async def get_fulfillment_overall_kpis(
         period_label = "This Week"
         date_range = f"{start_date.strftime('%b %d')} - {(start_date + timedelta(days=6)).strftime('%b %d')}"
     
-    # Aggregate completed time logs for the period
+    # Aggregate completed time logs for the period, grouped by user
     pipeline = [
         {"$match": {
             "duration_minutes": {"$gt": 0},
             "completed_at": {"$ne": None, "$gte": start_date.isoformat(), "$lte": end_date.isoformat()}
         }},
         {"$group": {
-            "_id": None,
+            "_id": "$user_id",
             "total_minutes": {"$sum": "$duration_minutes"},
             "total_orders": {"$sum": "$orders_processed"},
             "total_items": {"$sum": "$items_processed"},
@@ -624,7 +624,7 @@ async def get_fulfillment_overall_kpis(
         }}
     ]
     
-    result = await db.fulfillment_time_logs.aggregate(pipeline).to_list(1)
+    result = await db.fulfillment_time_logs.aggregate(pipeline).to_list(100)
     
     if not result:
         return {
@@ -641,16 +641,39 @@ async def get_fulfillment_overall_kpis(
             "date_range": date_range
         }
     
-    data = result[0]
-    total_hours = data["total_minutes"] / 60
-    total_orders = data["total_orders"]
-    total_items = data["total_items"]
+    # Get hourly rates for all users
+    user_ids = [r["_id"] for r in result if r["_id"]]
+    user_rates = {}
+    if user_ids:
+        users_cursor = db.users.find(
+            {"user_id": {"$in": user_ids}},
+            {"_id": 0, "user_id": 1, "hourly_rate": 1}
+        )
+        async for u in users_cursor:
+            user_rates[u["user_id"]] = u.get("hourly_rate", 15)
     
-    # Calculate costs ($30/hour rate)
-    labor_cost = total_hours * 30
+    # Calculate totals with user-specific rates
+    total_minutes = 0
+    total_orders = 0
+    total_items = 0
+    session_count = 0
+    labor_cost = 0
+    
+    for r in result:
+        user_id = r["_id"]
+        hourly_rate = user_rates.get(user_id, 15)  # Default $15/hr
+        user_hours = r["total_minutes"] / 60
+        
+        total_minutes += r["total_minutes"]
+        total_orders += r["total_orders"]
+        total_items += r["total_items"]
+        session_count += r["session_count"]
+        labor_cost += user_hours * hourly_rate
+    
+    total_hours = total_minutes / 60
     cost_per_order = labor_cost / total_orders if total_orders > 0 else 0
     cost_per_item = labor_cost / total_items if total_items > 0 else 0
-    avg_time_per_order = data["total_minutes"] / total_orders if total_orders > 0 else 0
+    avg_time_per_order = total_minutes / total_orders if total_orders > 0 else 0
     
     return {
         "total_hours": round(total_hours, 2),
