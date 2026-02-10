@@ -276,5 +276,102 @@ ACTIVITY_TYPE_CONFIG = {
         "color": "#0891b2",
         "user_created": True,
         "allows_replies": True
+    },
+    # Record lifecycle
+    ActivityType.RECORD_CREATED: {
+        "label": "Created",
+        "icon": "plus-circle",
+        "color": "#22c55e",
+        "user_created": False,
+        "allows_replies": False
+    },
+    ActivityType.RECORD_DELETED: {
+        "label": "Deleted",
+        "icon": "trash-2",
+        "color": "#ef4444",
+        "user_created": False,
+        "allows_replies": False
+    },
+    # Lead lifecycle
+    ActivityType.LEAD_CONVERTED: {
+        "label": "Lead Converted",
+        "icon": "check-circle",
+        "color": "#22c55e",
+        "user_created": False,
+        "allows_replies": False
+    },
+    ActivityType.LEAD_ASSIGNED: {
+        "label": "Lead Assigned",
+        "icon": "user-plus",
+        "color": "#8b5cf6",
+        "user_created": False,
+        "allows_replies": False
+    },
+    # Opportunity lifecycle
+    ActivityType.OPPORTUNITY_WON: {
+        "label": "Won",
+        "icon": "trophy",
+        "color": "#22c55e",
+        "user_created": False,
+        "allows_replies": False
+    },
+    ActivityType.OPPORTUNITY_LOST: {
+        "label": "Lost",
+        "icon": "x-circle",
+        "color": "#ef4444",
+        "user_created": False,
+        "allows_replies": False
+    },
+    # High-signal field changes
+    ActivityType.AMOUNT_CHANGED: {
+        "label": "Amount Changed",
+        "icon": "dollar-sign",
+        "color": "#16a34a",
+        "user_created": False,
+        "allows_replies": False
+    },
+    ActivityType.CLOSE_DATE_CHANGED: {
+        "label": "Close Date Changed",
+        "icon": "calendar",
+        "color": "#f59e0b",
+        "user_created": False,
+        "allows_replies": False
+    },
+    ActivityType.STATUS_CHANGED: {
+        "label": "Status Changed",
+        "icon": "activity",
+        "color": "#6366f1",
+        "user_created": False,
+        "allows_replies": False
+    },
+    # Automation events
+    ActivityType.AUTO_ASSIGNED: {
+        "label": "Auto-Assigned",
+        "icon": "zap",
+        "color": "#f59e0b",
+        "user_created": False,
+        "allows_replies": False
+    },
+    ActivityType.STALE_REMINDER: {
+        "label": "Stale Reminder",
+        "icon": "alert-triangle",
+        "color": "#f97316",
+        "user_created": False,
+        "allows_replies": False
+    },
+    ActivityType.AUTOMATION_TRIGGERED: {
+        "label": "Automation",
+        "icon": "zap",
+        "color": "#8b5cf6",
+        "user_created": False,
+        "allows_replies": False
+    },
+    # ERP/Shopify
+    ActivityType.CUSTOMER_SYNCED: {
+        "label": "Customer Synced",
+        "icon": "refresh-cw",
+        "color": "#84cc16",
+        "user_created": False,
+        "allows_replies": False
     }
 }
