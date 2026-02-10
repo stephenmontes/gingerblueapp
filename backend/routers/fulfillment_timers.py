@@ -600,7 +600,7 @@ async def get_fulfillment_overall_kpis(
         period_label = "Last Month"
         date_range = start_date.strftime("%B %Y")
     elif period == "all_time":
-        start_date = datetime(2020, 1, 1, tzinfo=timezone.utc)
+        start_date = datetime(2020, 1, 1, tzinfo=est_tz)
         end_date = now
         period_label = "All Time"
         date_range = "All Time"
@@ -612,11 +612,15 @@ async def get_fulfillment_overall_kpis(
         period_label = "This Week"
         date_range = f"{start_date.strftime('%b %d')} - {(start_date + timedelta(days=6)).strftime('%b %d')}"
     
+    # Convert to UTC for database query
+    start_date_utc = start_date.astimezone(timezone.utc)
+    end_date_utc = end_date.astimezone(timezone.utc)
+    
     # Aggregate completed time logs for the period, grouped by user
     pipeline = [
         {"$match": {
             "duration_minutes": {"$gt": 0},
-            "completed_at": {"$ne": None, "$gte": start_date.isoformat(), "$lte": end_date.isoformat()}
+            "completed_at": {"$ne": None, "$gte": start_date_utc.isoformat(), "$lte": end_date_utc.isoformat()}
         }},
         {"$group": {
             "_id": "$user_id",
