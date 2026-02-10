@@ -265,3 +265,24 @@ Build a manufacturing and fulfillment app for Shopify websites with detailed tim
   - Touch Targets: All buttons ≥32px for finger-friendly interaction
   - Tested on Pixel 6 viewport (412x915)
 
+### 11. Auto-Logout Feature - COMPLETE (Feb 2026)
+- **9-Hour Session Timeout:**
+  - Automatic logout after 9 hours of session activity
+  - 60-second countdown warning dialog before logout
+  - "Continue Working" button extends session for 9 more hours
+  - "Log Out Now" button for immediate logout
+  - Session start time persisted in localStorage across page refreshes
+- **Timer Cleanup on Logout:**
+  - All active fulfillment timers stopped on logout (`POST /api/fulfillment/timers/stop-all`)
+  - All active production timers stopped on logout (`POST /api/production/timers/stop-all`)
+  - Timers marked with `stopped_reason: "session_timeout"` for audit trail
+- **Activity Heartbeat:**
+  - Frontend sends heartbeat every 60 seconds (`POST /api/activity/heartbeat`)
+  - Heartbeat records user activity for productivity tracking
+- **UI Components:**
+  - AlertDialog with orange warning styling
+  - Progress bar showing countdown
+  - Clock icon and session info
+  - data-testid attributes: `session-timeout-dialog`, `session-countdown`, `session-logout-btn`, `session-continue-btn`
+- **Testing:** 100% pass rate - Backend endpoints + frontend integration verified
+
