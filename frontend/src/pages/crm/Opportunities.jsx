@@ -126,7 +126,7 @@ export default function OpportunitiesPage() {
         credentials: 'include',
         body: JSON.stringify({ stage: newStage })
       });
-      toast({ title: "Stage Updated", description: `Moved to ${newStage}` });
+      toast.success(`Moved to ${newStage}`);
       fetchOpportunities();
     } catch (error) {
       toast.error("Failed to update stage");
