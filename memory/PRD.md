@@ -555,6 +555,14 @@ Build a manufacturing and fulfillment app for Shopify websites with detailed tim
   - `individual_order_status` - Tracks each order's independent stage
   - `has_split_orders` - Flag when batch has orders at different stages
   - `individual_stage_override` - Order-level flag for independent movement
+- **Auto-Archive on All Shipped:**
+  - When all orders in a batch are marked as shipped, batch automatically moves to "archived" status
+  - Toast notification: "All orders shipped! Batch has been archived."
+  - Detail view closes and list refreshes automatically
+- **Shipping Progress on Batch Cards:**
+  - Shows "X left" with truck icon for remaining orders to ship
+  - Shows "All shipped" with green truck icon when complete
+  - Progress tracked via `shipped_count`, `total_orders`, `orders_remaining` fields
 
 ## Pending Verification from User
 1. POS Order Creation fix (ObjectId serialization) - applied, needs user test
