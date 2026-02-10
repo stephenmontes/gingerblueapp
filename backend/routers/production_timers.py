@@ -166,9 +166,12 @@ async def get_production_overall_kpis(
     user: User = Depends(get_current_user)
 ):
     """Get KPIs for the production workflow for a specified time period."""
-    now = datetime.now(timezone.utc)
+    # Use EST timezone for date calculations (user's timezone)
+    from zoneinfo import ZoneInfo
+    est_tz = ZoneInfo("America/New_York")
+    now = datetime.now(est_tz)
     
-    # Calculate date range based on period
+    # Calculate date range based on period (in EST)
     if period == "today":
         start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
         end_date = now
@@ -204,7 +207,7 @@ async def get_production_overall_kpis(
         period_label = "Last Month"
         date_range = start_date.strftime("%B %Y")
     elif period == "all_time":
-        start_date = datetime(2020, 1, 1, tzinfo=timezone.utc)
+        start_date = datetime(2020, 1, 1, tzinfo=est_tz)
         end_date = now
         period_label = "All Time"
         date_range = "All Time"
@@ -214,6 +217,10 @@ async def get_production_overall_kpis(
         end_date = now
         period_label = "This Week"
         date_range = f"{start_date.strftime('%b %d')} - {(start_date + timedelta(days=6)).strftime('%b %d')}"
+    
+    # Convert to UTC for database query
+    start_date_utc = start_date.astimezone(timezone.utc)
+    end_date_utc = end_date.astimezone(timezone.utc)
     
     # Aggregate completed time logs for the period
     pipeline = [
@@ -232,7 +239,7 @@ async def get_production_overall_kpis(
             }
         }},
         {"$match": {
-            "completed_date": {"$gte": start_date, "$lte": end_date}
+            "completed_date": {"$gte": start_date_utc, "$lte": end_date_utc}
         }},
         {"$group": {
             "_id": "$user_id",
