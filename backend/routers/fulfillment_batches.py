@@ -916,7 +916,6 @@ async def get_orders_by_stage(
     
     # Group by stage
     by_stage = {}
-    individual_order_status = batch.get("individual_order_status", {})
     
     for order in orders:
         # Determine actual stage - check if individually overridden
