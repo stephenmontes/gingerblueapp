@@ -245,35 +245,36 @@ export default function Orders({ user }) {
               display: flex;
               justify-content: space-between;
               align-items: center;
-              font-size: 6pt;
+              font-size: 8pt;
               line-height: 1;
             }
             .order-num {
               font-weight: bold;
               color: #2563eb;
+              font-size: 9pt;
             }
             .sku-text {
-              font-weight: 600;
-              color: #333;
+              font-weight: 700;
+              color: #000;
               font-family: monospace;
-              font-size: 5.5pt;
+              font-size: 8pt;
             }
             .title {
-              font-size: 6.5pt;
+              font-size: 8pt;
               font-weight: bold;
               text-align: center;
               line-height: 1.15;
-              max-height: 0.2in;
+              max-height: 0.22in;
               overflow: hidden;
               width: 100%;
               margin: 0.01in 0;
             }
             .barcode {
               max-width: 1.85in;
-              height: 0.42in;
+              height: 0.38in;
             }
             .barcode-num {
-              font-size: 5.5pt;
+              font-size: 6pt;
               font-family: monospace;
               letter-spacing: 0.3px;
               color: #444;
