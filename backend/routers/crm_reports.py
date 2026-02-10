@@ -387,7 +387,7 @@ async def get_win_loss_analysis(
                 days = (closed_dt - created_dt).days
                 if days >= 0:
                     cycle_days.append(days)
-            except:
+            except (ValueError, TypeError):
                 pass
     
     avg_cycle = sum(cycle_days) / len(cycle_days) if cycle_days else 0
