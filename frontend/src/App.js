@@ -442,6 +442,18 @@ function AppRouter() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/crm/setup"
+        element={
+          <ProtectedRoute>
+            {({ user, setUser }) => (
+              <Layout user={user} setUser={setUser}>
+                <CRMSetup user={user} />
+              </Layout>
+            )}
+          </ProtectedRoute>
+        }
+      />
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
