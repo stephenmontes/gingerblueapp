@@ -75,19 +75,28 @@ export default function CRMSetupPage() {
   const fetchAllConfig = async () => {
     try {
       setLoading(true);
-      const [stagesRes, picklistsRes, fieldsRes] = await Promise.all([
+      const [stagesRes, picklistsRes, fieldsRes, assignmentRes, staleRes, usersRes] = await Promise.all([
         fetch(`${API}/crm/admin/stages`, { credentials: 'include' }),
         fetch(`${API}/crm/admin/picklists`, { credentials: 'include' }),
-        fetch(`${API}/crm/admin/fields`, { credentials: 'include' })
+        fetch(`${API}/crm/admin/fields`, { credentials: 'include' }),
+        fetch(`${API}/automation/lead-assignment-rules`, { credentials: 'include' }),
+        fetch(`${API}/automation/stale-opportunity-rules`, { credentials: 'include' }),
+        fetch(`${API}/users`, { credentials: 'include' })
       ]);
       
       const stagesData = await stagesRes.json();
       const picklistsData = await picklistsRes.json();
       const fieldsData = await fieldsRes.json();
+      const assignmentData = assignmentRes.ok ? await assignmentRes.json() : { rules: [] };
+      const staleData = staleRes.ok ? await staleRes.json() : { rules: [] };
+      const usersData = usersRes.ok ? await usersRes.json() : { users: [] };
       
       setStages(stagesData.stages || []);
       setPicklists(picklistsData.picklists || []);
       setCustomFields(fieldsData.fields || []);
+      setAssignmentRules(assignmentData.rules || []);
+      setStaleRules(staleData.rules || []);
+      setUsers(usersData.users || usersData || []);
     } catch (error) {
       toast.error("Failed to load configuration");
     } finally {
