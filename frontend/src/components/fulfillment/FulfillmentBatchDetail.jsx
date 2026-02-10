@@ -696,7 +696,18 @@ export function FulfillmentBatchDetail({ batch, stages, onRefresh, onClose, canD
       );
 
       if (res.ok) {
+        const result = await res.json();
         toast.success("Order marked as shipped");
+        
+        // Check if all orders are now shipped
+        if (result.all_shipped && result.batch_archived) {
+          toast.success("All orders shipped! Batch has been archived.", {
+            duration: 5000
+          });
+          // Close the detail view and refresh
+          onClose?.();
+        }
+        
         onRefresh?.();
       } else {
         const err = await res.json();
