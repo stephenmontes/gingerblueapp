@@ -103,6 +103,7 @@ api_router.include_router(activity_router)
 api_router.include_router(crm_router)
 api_router.include_router(crm_reports_router)
 api_router.include_router(customer_crm_router)
+api_router.include_router(crm_admin_router)
 
 # Root endpoint
 @api_router.get("/")
