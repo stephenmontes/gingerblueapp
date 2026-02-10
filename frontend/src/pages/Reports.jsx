@@ -307,6 +307,10 @@ export default function Reports() {
             <Activity className="w-4 h-4" />
             Stage Analysis
           </TabsTrigger>
+          <TabsTrigger value="productivity" className="gap-2" data-testid="tab-productivity">
+            <Clock className="w-4 h-4" />
+            Productivity
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -331,6 +335,10 @@ export default function Reports() {
 
         <TabsContent value="stages" className="space-y-6">
           <StagesTab stageStats={stageStats} />
+        </TabsContent>
+
+        <TabsContent value="productivity" className="space-y-6">
+          <ProductivityReport />
         </TabsContent>
       </Tabs>
     </div>
