@@ -19,7 +19,7 @@ export default function CRMDashboard() {
   const [staleOpps, setStaleOpps] = useState([]);
   const [closingSoon, setClosingSoon] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
+  
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -43,7 +43,7 @@ export default function CRMDashboard() {
       setStaleOpps(staleData.opportunities || []);
       setClosingSoon(closingData.opportunities || []);
     } catch (error) {
-      toast({ title: "Error", description: "Failed to load dashboard", variant: "destructive" });
+      toast.error("Failed to load dashboard");
     } finally {
       setLoading(false);
     }
