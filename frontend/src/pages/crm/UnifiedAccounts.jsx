@@ -307,6 +307,10 @@ export default function UnifiedAccountsPage() {
               <Tabs defaultValue="overview" className="mt-4">
                 <TabsList>
                   <TabsTrigger value="overview">Overview</TabsTrigger>
+                  <TabsTrigger value="timeline" className="flex items-center gap-1">
+                    <MessageCircle className="h-3 w-3" />
+                    Timeline
+                  </TabsTrigger>
                   <TabsTrigger value="shopify">Shopify Data</TabsTrigger>
                   <TabsTrigger value="crm">CRM Data</TabsTrigger>
                   <TabsTrigger value="orders">Orders & Activity</TabsTrigger>
