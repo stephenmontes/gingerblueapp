@@ -13,11 +13,12 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Plus, Search, TrendingUp, Calendar, Building2,
-  Kanban, List, GripVertical
+  Kanban, List, GripVertical, MessageCircle
 } from 'lucide-react';
+import ActivityTimeline from '@/components/crm/ActivityTimeline';
 
 const stages = [
   { id: 'prospecting', name: 'Prospecting', color: 'bg-gray-500', probability: 10 },
