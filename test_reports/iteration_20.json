@@ -1,0 +1,123 @@
+{
+  "summary": "Automation Rule Engine testing completed. Backend: 18/18 tests passed (100%). Frontend: All features verified working - Automation tab displays correctly, Lead Assignment Rule dialog works with all form fields, Stale Opportunity Rule dialog works, Run Stale Check button executes successfully with toast notification, created rules appear in list.",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+
+  "passed_tests": [
+    "GET /api/automation/lead-assignment-rules - Returns rules list (200)",
+    "POST /api/automation/lead-assignment-rules - Create round_robin rule (200)",
+    "POST /api/automation/lead-assignment-rules - Create by_territory rule (200)",
+    "PUT /api/automation/lead-assignment-rules/{rule_id} - Update rule (200)",
+    "DELETE /api/automation/lead-assignment-rules/{rule_id} - Delete rule (200)",
+    "GET /api/automation/stale-opportunity-rules - Returns rules list (200)",
+    "POST /api/automation/stale-opportunity-rules - Create stale rule (200)",
+    "PUT /api/automation/stale-opportunity-rules/{rule_id} - Update rule (200)",
+    "DELETE /api/automation/stale-opportunity-rules/{rule_id} - Delete rule (200)",
+    "POST /api/automation/run-stale-check - Manual trigger works (200)",
+    "Lead creation triggers background assignment task",
+    "Opportunity amount change logs amount_changed event to timeline",
+    "Opportunity close_date change logs close_date_changed event to timeline",
+    "Opportunity closed won logs opportunity_won event with amount",
+    "Opportunity closed lost logs opportunity_lost event",
+    "Permission check: Admin can access lead assignment rules",
+    "Permission check: Admin can run stale check",
+    "Status filter: GET lead-assignment-rules?status=active filters correctly",
+    "Frontend: Automation tab appears in CRM Setup with correct sections",
+    "Frontend: Lead Assignment Rules section shows 'Add Rule' button",
+    "Frontend: Stale Opportunity Reminders section shows 'Add Rule' button",
+    "Frontend: Manual Triggers section shows 'Run Stale Opportunity Check Now' button",
+    "Frontend: New Assignment Rule dialog opens with all fields (name, description, method, assignees, priority, status)",
+    "Frontend: New Stale Rule dialog opens with all fields (name, description, days_threshold, stages, notify_owner, status)",
+    "Frontend: Creating assignment rule shows success toast and rule appears in list",
+    "Frontend: Run Stale Check shows success toast with notification count"
+  ],
+
+  "test_report_links": [
+    "/app/backend/tests/test_automation_rules.py",
+    "/app/test_reports/pytest/automation_rules_results.xml"
+  ],
+
+  "action_items": [],
+
+  "critical_code_review_comments": [
+    "Lead assignment rules correctly support round_robin, by_territory, by_source, and specific_user methods",
+    "Assignment executes via background task (FastAPI BackgroundTasks) when lead is created without explicit owner",
+    "Stale opportunity check is scheduled daily at 8 AM EST via APScheduler CronTrigger",
+    "High-signal field changes (amount, close_date, owner_id, stage) properly logged via log_field_changes()",
+    "Opportunity won/lost events correctly logged with is_won flag and amount",
+    "Timeline logging uses log_system_event() which creates timeline items with proper entity references",
+    "Permission checks in place: Admin/Manager for rules CRUD, Admin-only for manual stale check and delete"
+  ],
+
+  "updated_files": [
+    "/app/backend/tests/test_automation_rules.py (created - 18 tests)"
+  ],
+
+  "success_rate": {
+    "backend": "100% (18/18 tests passed)",
+    "frontend": "100% (all UI flows working)"
+  },
+
+  "test_credentials": {
+    "login_endpoint": "/api/auth/dev-login (TRAINING_MODE enabled)",
+    "test_user": "Test User (admin role)"
+  },
+
+  "seed_data_creation": "Test rules created with TEST_ prefix are cleaned up after each test. Frontend test created TEST_Frontend_Assignment rule which persists.",
+
+  "retest_needed": false,
+
+  "should_main_agent_self_test": false,
+
+  "context_for_next_testing_agent": "Automation Rule Engine is fully functional. Lead Assignment Rules CRUD works with round_robin, by_territory, by_source methods. Stale Opportunity Rules CRUD works with days_threshold configuration. Manual stale check trigger works. High-signal field change logging (amount, close_date, owner, stage) logs to timeline automatically. Opportunity won/lost events logged correctly. Daily stale check is scheduled at 8 AM EST. Frontend Setup page Automation tab shows all sections with working dialogs.",
+
+  "features_verified": {
+    "lead_assignment_rules_api": {
+      "endpoints": "GET/POST/PUT/DELETE /api/automation/lead-assignment-rules",
+      "status": "WORKING",
+      "features": ["CRUD operations", "Status filtering", "Assignee enrichment", "Round-robin tracking"]
+    },
+    "stale_opportunity_rules_api": {
+      "endpoints": "GET/POST/PUT/DELETE /api/automation/stale-opportunity-rules",
+      "status": "WORKING",
+      "features": ["CRUD operations", "Days threshold", "Stage filtering", "Owner notifications"]
+    },
+    "manual_trigger_api": {
+      "endpoint": "POST /api/automation/run-stale-check",
+      "status": "WORKING",
+      "features": ["Admin-only access", "Creates notifications", "Updates last_run_at"]
+    },
+    "lead_assignment_execution": {
+      "trigger": "Lead creation without owner_id",
+      "status": "WORKING",
+      "features": ["Background task execution", "Auto-logs to timeline", "Round-robin index tracking"]
+    },
+    "high_signal_field_logging": {
+      "fields": ["amount", "close_date", "owner_id", "stage"],
+      "status": "WORKING",
+      "events_logged": ["amount_changed", "close_date_changed", "stage_changed", "opportunity_won", "opportunity_lost"]
+    },
+    "frontend_automation_tab": {
+      "location": "CRM Setup > Automation tab",
+      "status": "WORKING",
+      "features": ["Lead Assignment Rules section", "Stale Opportunity Rules section", "Manual Triggers section", "Add Rule dialogs", "Run Stale Check button"]
+    }
+  },
+
+  "scheduler_info": {
+    "stale_opportunity_check": {
+      "schedule": "Daily at 8:00 AM EST (America/New_York timezone)",
+      "job_id": "daily_stale_opp_check",
+      "note": "Scheduled job won't run during testing; use manual trigger endpoint instead"
+    }
+  }
+}
