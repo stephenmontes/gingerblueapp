@@ -968,12 +968,16 @@ export function FulfillmentBatchDetail({ batch, stages, onRefresh, onClose, canD
         )}
       </div>
 
-      {/* Pack & Ship indicator */}
-      {isAtFinishStage && hasSplitOrders && (
+      {/* Pack & Ship indicator for GB Home batches or split orders */}
+      {(isGBHomeBatch || (isAtFinishStage && hasSplitOrders)) && (
         <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-2 mx-3 sm:mx-4 mb-2">
           <div className="flex items-center gap-2 text-sm text-blue-400">
             <Package className="w-4 h-4" />
-            <span>Some orders have been moved to Pack & Ship independently</span>
+            <span>
+              {isGBHomeBatch 
+                ? "GB Home: Select orders to move to Pack & Ship individually" 
+                : "Some orders have been moved to Pack & Ship independently"}
+            </span>
           </div>
         </div>
       )}
