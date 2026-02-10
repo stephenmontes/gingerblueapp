@@ -280,6 +280,11 @@ export function FulfillmentBatchDetail({ batch, stages, onRefresh, onClose, canD
   // Check if batch is at Finish stage (allows moving orders to Pack & Ship independently)
   const isAtFinishStage = batch.current_stage_id === "fulfill_finish";
   const hasSplitOrders = batch.has_split_orders || false;
+  
+  // GB Home batches use individual order processing - they can move orders to Pack & Ship at any stage
+  const isGBHomeBatch = batch.store_type === "gb_home" || batch.is_gb_home_batch;
+  // Allow moving to pack/ship for GB Home at any stage, or for other stores only at Finish stage
+  const canMoveToPackShip = isGBHomeBatch || isAtFinishStage;
 
   // Check if current user is in active workers (timer must be running to work)
   const activeWorkers = batch.active_workers || [];
