@@ -924,22 +924,52 @@ export function FulfillmentBatchDetail({ batch, stages, onRefresh, onClose, canD
         </div>
         
         {selectedOrders.size > 0 && (
-          <Button
-            size="sm"
-            onClick={handleMarkSelectedComplete}
-            disabled={markingComplete || !isUserActive || isUserPaused}
-            className="gap-1.5 bg-green-600 hover:bg-green-700 h-8 text-xs sm:text-sm flex-shrink-0"
-            data-testid="mark-selected-complete-btn"
-          >
-            {markingComplete ? (
-              <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" />
-            ) : (
-              <CheckSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              onClick={handleMarkSelectedComplete}
+              disabled={markingComplete || !isUserActive || isUserPaused}
+              className="gap-1.5 bg-green-600 hover:bg-green-700 h-8 text-xs sm:text-sm flex-shrink-0"
+              data-testid="mark-selected-complete-btn"
+            >
+              {markingComplete ? (
+                <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" />
+              ) : (
+                <CheckSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              )}
+              <span className="hidden xs:inline">Mark</span> {selectedOrders.size} Done
+            </Button>
+            
+            {/* Move to Pack & Ship button - only at Finish stage */}
+            {isAtFinishStage && (
+              <Button
+                size="sm"
+                onClick={moveOrdersToPackShip}
+                disabled={movingToPackShip}
+                className="gap-1.5 bg-blue-600 hover:bg-blue-700 h-8 text-xs sm:text-sm flex-shrink-0"
+                data-testid="move-to-pack-ship-btn"
+              >
+                {movingToPackShip ? (
+                  <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" />
+                ) : (
+                  <Package className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                )}
+                <span className="hidden sm:inline">Pack &</span> Ship {selectedOrders.size}
+              </Button>
             )}
-            <span className="hidden xs:inline">Mark</span> {selectedOrders.size} Done
-          </Button>
+          </div>
         )}
       </div>
+
+      {/* Pack & Ship indicator */}
+      {isAtFinishStage && hasSplitOrders && (
+        <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-2 mx-3 sm:mx-4 mb-2">
+          <div className="flex items-center gap-2 text-sm text-blue-400">
+            <Package className="w-4 h-4" />
+            <span>Some orders have been moved to Pack & Ship independently</span>
+          </div>
+        </div>
+      )}
 
       {/* Orders Worksheet - Mobile optimized with proper overflow handling */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden">
@@ -952,22 +982,31 @@ export function FulfillmentBatchDetail({ batch, stages, onRefresh, onClose, canD
             }, 0);
             const orderComplete = isOrderComplete(order);
             const isSelected = selectedOrders.has(order.order_id);
+            const isAtPackShip = order.individual_stage_override && order.fulfillment_stage_id === "fulfill_pack";
+            const isShipped = order.status === "shipped";
             
             return (
               <Card 
                 key={order.order_id} 
-                className={`transition-all overflow-hidden ${orderComplete ? 'bg-green-500/10 border-green-500/30' : ''} ${isSelected ? 'ring-2 ring-primary' : ''}`}
+                className={`transition-all overflow-hidden ${
+                  isShipped ? 'bg-green-500/20 border-green-500/50' :
+                  isAtPackShip ? 'bg-blue-500/10 border-blue-500/30' :
+                  orderComplete ? 'bg-green-500/10 border-green-500/30' : ''
+                } ${isSelected ? 'ring-2 ring-primary' : ''}`}
               >
                 <CardContent className="p-3 sm:p-4">
                   {/* Order Header - Mobile optimized */}
                   <div className="flex items-start sm:items-center justify-between mb-2 sm:mb-3 pb-2 sm:pb-3 border-b border-border gap-2">
                     <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-                      {/* Checkbox */}
-                      <Checkbox 
-                        checked={isSelected}
-                        onCheckedChange={() => toggleOrderSelection(order.order_id)}
-                        data-testid={`select-order-${order.order_id}`}
-                        className="flex-shrink-0"
+                      {/* Checkbox - only for orders not yet at Pack & Ship */}
+                      {!isAtPackShip && !isShipped && (
+                        <Checkbox 
+                          checked={isSelected}
+                          onCheckedChange={() => toggleOrderSelection(order.order_id)}
+                          data-testid={`select-order-${order.order_id}`}
+                          className="flex-shrink-0"
+                        />
+                      )}
                       />
                       <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm flex-shrink-0 ${
                         orderComplete ? 'bg-green-500 text-white' : 'bg-muted'
