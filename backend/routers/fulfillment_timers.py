@@ -1012,9 +1012,12 @@ async def get_hours_by_user_date(
 ):
     """Get hours grouped by user and date for reporting."""
     
-    now = datetime.now(timezone.utc)
+    # Use EST timezone for date calculations (user's timezone)
+    from zoneinfo import ZoneInfo
+    est_tz = ZoneInfo("America/New_York")
+    now = datetime.now(est_tz)
     
-    # Calculate date range based on period
+    # Calculate date range based on period (in EST)
     if period == "day":
         start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
     elif period == "week":
@@ -1025,24 +1028,30 @@ async def get_hours_by_user_date(
     else:
         start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
     
+    # Convert to UTC for database query
+    start_date_utc = start_date.astimezone(timezone.utc)
+    
     # Get all completed time logs in the period
     time_logs = await db.fulfillment_time_logs.find({
-        "completed_at": {"$gte": start_date.isoformat()},
+        "completed_at": {"$gte": start_date_utc.isoformat()},
         "duration_minutes": {"$gt": 0}
     }, {"_id": 0}).to_list(5000)
     
-    # Group by user and date
+    # Group by user and date (using EST date)
     user_date_data = {}
     
     for log in time_logs:
         user_id = log["user_id"]
         user_name = log["user_name"]
         
-        # Get date from completed_at
+        # Get date from completed_at (convert to EST for grouping)
         completed = log.get("completed_at", "")
         if completed:
             try:
-                log_date = datetime.fromisoformat(completed.replace('Z', '+00:00')).strftime("%Y-%m-%d")
+                completed_dt = datetime.fromisoformat(completed.replace('Z', '+00:00'))
+                # Convert to EST for date grouping
+                completed_est = completed_dt.astimezone(est_tz)
+                log_date = completed_est.strftime("%Y-%m-%d")
             except:
                 continue
         else:
