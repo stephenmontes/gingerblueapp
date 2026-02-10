@@ -198,6 +198,23 @@ async def create_indexes():
         await db.crm_config_assignment.create_index("rule_id", unique=True)
         await db.crm_config_assignment.create_index("object_type")
         
+        # Timeline Collections
+        await db.timeline_items.create_index("item_id", unique=True)
+        await db.timeline_items.create_index([("entity_type", 1), ("entity_id", 1)])
+        await db.timeline_items.create_index("parent_id")
+        await db.timeline_items.create_index("activity_type")
+        await db.timeline_items.create_index("created_by_user_id")
+        await db.timeline_items.create_index("created_at")
+        await db.timeline_items.create_index("is_pinned")
+        
+        await db.record_follows.create_index("follow_id", unique=True)
+        await db.record_follows.create_index([("entity_type", 1), ("entity_id", 1)])
+        await db.record_follows.create_index("user_id")
+        
+        await db.timeline_notifications.create_index("notification_id", unique=True)
+        await db.timeline_notifications.create_index([("user_id", 1), ("is_read", 1)])
+        await db.timeline_notifications.create_index("created_at")
+        
         print("[Database] Indexes created successfully")
     except Exception as e:
         print(f"[Database] Index creation error (may already exist): {e}")
