@@ -180,6 +180,24 @@ async def create_indexes():
         await db.customer_crm.create_index("tags")
         await db.customer_crm.create_index("converted_from_lead_id")
         
+        # CRM Configuration Collections
+        await db.crm_config_stages.create_index("stage_id", unique=True)
+        await db.crm_config_stages.create_index("order")
+        
+        await db.crm_config_picklists.create_index("picklist_id", unique=True)
+        
+        await db.crm_config_fields.create_index("field_id", unique=True)
+        await db.crm_config_fields.create_index("object_type")
+        await db.crm_config_fields.create_index([("object_type", 1), ("field_name", 1)], unique=True)
+        
+        await db.crm_config_layouts.create_index("object_type", unique=True)
+        
+        await db.crm_config_automation.create_index("rule_id", unique=True)
+        await db.crm_config_automation.create_index("object_type")
+        
+        await db.crm_config_assignment.create_index("rule_id", unique=True)
+        await db.crm_config_assignment.create_index("object_type")
+        
         print("[Database] Indexes created successfully")
     except Exception as e:
         print(f"[Database] Index creation error (may already exist): {e}")
