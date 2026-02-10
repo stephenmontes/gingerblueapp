@@ -42,6 +42,7 @@ from routers.activity_tracking import router as activity_router
 from routers.pos import router as pos_router
 from routers.crm import router as crm_router
 from routers.crm_reports import router as crm_reports_router
+from routers.customer_crm import router as customer_crm_router
 from database import create_indexes
 from services.scheduler import start_scheduler, stop_scheduler
 
