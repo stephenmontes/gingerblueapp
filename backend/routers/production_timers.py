@@ -615,6 +615,48 @@ async def check_production_user_daily_hours(user: User = Depends(get_current_use
 
 
 # Auto-stop inactive timers
+@router.post("/timers/stop-all")
+async def stop_all_production_timers(user: User = Depends(get_current_user)):
+    """Stop all active production timers for the current user. Used during logout."""
+    now = datetime.now(timezone.utc)
+    
+    # Find all active production timers for this user
+    active_timers = await db.time_logs.find({
+        "user_id": user.user_id,
+        "completed_at": None,
+        "workflow_type": "production"
+    }).to_list(100)
+    
+    stopped_count = 0
+    
+    for timer in active_timers:
+        # Calculate duration
+        started_at = timer.get("started_at")
+        accumulated = timer.get("accumulated_minutes", 0)
+        
+        duration_minutes = accumulated
+        if started_at and not timer.get("is_paused"):
+            try:
+                start_dt = datetime.fromisoformat(started_at.replace('Z', '+00:00'))
+                session_minutes = (now - start_dt).total_seconds() / 60
+                duration_minutes = accumulated + session_minutes
+            except (ValueError, TypeError):
+                pass
+        
+        # Mark timer as completed
+        await db.time_logs.update_one(
+            {"log_id": timer["log_id"]},
+            {"$set": {
+                "completed_at": now.isoformat(),
+                "duration_minutes": round(duration_minutes, 2),
+                "stopped_reason": "session_timeout"
+            }}
+        )
+        stopped_count += 1
+    
+    return {"message": f"Stopped {stopped_count} timer(s)", "stopped_count": stopped_count}
+
+
 @router.post("/timers/auto-stop-inactive")
 async def auto_stop_inactive_production_timers(user: User = Depends(get_current_user)):
     """Automatically stop production timers that have been inactive for more than 4 hours."""
