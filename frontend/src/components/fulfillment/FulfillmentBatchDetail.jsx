@@ -275,6 +275,11 @@ export function FulfillmentBatchDetail({ batch, stages, onRefresh, onClose, canD
   const [deleting, setDeleting] = useState(false);
   const [selectedOrders, setSelectedOrders] = useState(new Set());
   const [markingComplete, setMarkingComplete] = useState(false);
+  const [movingToPackShip, setMovingToPackShip] = useState(false);
+
+  // Check if batch is at Finish stage (allows moving orders to Pack & Ship independently)
+  const isAtFinishStage = batch.current_stage_id === "fulfill_finish";
+  const hasSplitOrders = batch.has_split_orders || false;
 
   // Check if current user is in active workers (timer must be running to work)
   const activeWorkers = batch.active_workers || [];
