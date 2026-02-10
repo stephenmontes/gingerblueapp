@@ -1,4 +1,4 @@
-import { Factory, Menu, X, ShoppingCart, Clock, AlertTriangle } from "lucide-react";
+import { Factory, Menu, X, ShoppingCart, Clock, AlertTriangle, TrendingUp, Building2, UserPlus } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
@@ -55,6 +55,12 @@ const navItems = [
   { path: "/team", label: "Team", icon: Users, roles: ["admin", "manager"] },
   { path: "/reports", label: "Reports", icon: BarChart3, roles: ["admin", "manager"] },
   { path: "/settings", label: "Settings", icon: Settings, roles: ["admin", "manager"] },
+  // CRM Section
+  { type: "divider", label: "CRM & Sales" },
+  { path: "/crm", label: "Sales Dashboard", icon: TrendingUp },
+  { path: "/crm/leads", label: "Leads", icon: UserPlus },
+  { path: "/crm/accounts", label: "Accounts", icon: Building2 },
+  { path: "/crm/opportunities", label: "Opportunities", icon: TrendingUp },
 ];
 
 // Session timeout settings
