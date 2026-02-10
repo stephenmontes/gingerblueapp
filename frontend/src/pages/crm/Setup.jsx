@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { API } from '@/utils/api';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { 
   Settings, GitBranch, List, Plus, Trash2, Edit, GripVertical,
-  Save, ChevronUp, ChevronDown, Palette, FileText, Zap
+  Save, ChevronUp, ChevronDown, Palette, FileText, Zap, Users
 } from 'lucide-react';
 
 const fieldTypes = [
