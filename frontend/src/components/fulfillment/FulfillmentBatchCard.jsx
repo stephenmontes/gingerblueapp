@@ -187,6 +187,19 @@ export function FulfillmentBatchCard({ batch, isSelected, onSelect, onRefresh, c
             <Package className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             {orderCount}
           </span>
+          {/* Shipping Progress - show remaining orders to ship */}
+          {batch.orders_remaining > 0 && batch.shipped_count >= 0 && (
+            <span className="flex items-center gap-1 text-blue-400" title={`${batch.shipped_count}/${batch.total_orders} shipped`}>
+              <Truck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              {batch.orders_remaining} left
+            </span>
+          )}
+          {batch.orders_remaining === 0 && batch.total_orders > 0 && (
+            <span className="flex items-center gap-1 text-green-400">
+              <Truck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              All shipped
+            </span>
+          )}
           {activeWorkers.length > 0 ? (
             <span className="flex items-center gap-1 text-green-400">
               <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
