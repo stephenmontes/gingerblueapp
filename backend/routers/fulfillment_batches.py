@@ -25,7 +25,7 @@ async def get_fulfillment_batches(
     status: Optional[str] = "active",
     user: User = Depends(get_current_user)
 ):
-    """Get all fulfillment batches"""
+    """Get all fulfillment batches with shipping progress"""
     query = {}
     if status and status != "all":
         query["status"] = status
@@ -34,6 +34,22 @@ async def get_fulfillment_batches(
         query,
         {"_id": 0}
     ).sort("created_at", -1).to_list(100)
+    
+    # Add shipping progress to each batch
+    for batch in batches:
+        batch_id = batch.get("fulfillment_batch_id")
+        
+        # Get order counts
+        total_orders = await db.fulfillment_orders.count_documents(
+            {"fulfillment_batch_id": batch_id}
+        )
+        shipped_count = await db.fulfillment_orders.count_documents(
+            {"fulfillment_batch_id": batch_id, "status": "shipped"}
+        )
+        
+        batch["total_orders"] = total_orders
+        batch["shipped_count"] = shipped_count
+        batch["orders_remaining"] = total_orders - shipped_count
     
     return {"batches": batches}
 
