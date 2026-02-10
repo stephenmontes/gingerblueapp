@@ -243,8 +243,8 @@ export default function Layout({ children, user, setUser }) {
 
   const handleLogout = async () => {
     try {
-      // Save any active timers before logout (instead of stopping them)
-      await handleSaveTimers();
+      // Stop all active timers before logout
+      await stopAllTimers();
       
       await fetch(`${API}/auth/logout`, {
         method: "POST",
@@ -252,12 +252,14 @@ export default function Layout({ children, user, setUser }) {
       });
       // Clear session storage
       sessionStorage.removeItem("shopfactory_user");
+      localStorage.removeItem("sessionStartTime");
       setUser(null);
       toast.success("Logged out successfully");
       navigate("/login", { replace: true });
     } catch (error) {
       console.error("Logout error:", error);
       sessionStorage.removeItem("shopfactory_user");
+      localStorage.removeItem("sessionStartTime");
       navigate("/login", { replace: true });
     }
   };
