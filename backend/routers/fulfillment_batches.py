@@ -803,6 +803,7 @@ async def mark_order_shipped(
     """
     Mark an individual order as shipped/completed.
     Used for orders that have been moved to Pack and Ship independently.
+    When all orders in a batch are shipped, the batch is automatically archived.
     """
     batch = await db.fulfillment_batches.find_one(
         {"fulfillment_batch_id": batch_id},
@@ -840,18 +841,55 @@ async def mark_order_shipped(
         individual_order_status[order_id]["shipped_at"] = now
         individual_order_status[order_id]["shipped_by"] = user.user_id
         individual_order_status[order_id]["status"] = "shipped"
+    else:
+        # Add to individual_order_status if not already there
+        individual_order_status[order_id] = {
+            "stage_id": "fulfill_pack",
+            "stage_name": "Pack and Ship",
+            "shipped_at": now,
+            "shipped_by": user.user_id,
+            "status": "shipped"
+        }
+    
+    # Count shipped vs total orders
+    all_orders = await db.fulfillment_orders.find(
+        {"fulfillment_batch_id": batch_id},
+        {"_id": 0, "order_id": 1, "status": 1}
+    ).to_list(1000)
+    
+    total_orders = len(all_orders)
+    shipped_count = sum(1 for o in all_orders if o.get("status") == "shipped")
+    # Add 1 for the order we just marked (in case the query ran before update propagated)
+    if order.get("status") != "shipped":
+        shipped_count += 1
+    
+    batch_update = {
+        "individual_order_status": individual_order_status,
+        "shipped_count": shipped_count,
+        "total_orders": total_orders,
+        "updated_at": now
+    }
+    
+    # Auto-archive batch if all orders are shipped
+    all_shipped = shipped_count >= total_orders
+    if all_shipped:
+        batch_update["status"] = "archived"
+        batch_update["archived_at"] = now
+        batch_update["archived_by"] = user.user_id
+        batch_update["archived_reason"] = "All orders shipped"
     
     await db.fulfillment_batches.update_one(
         {"fulfillment_batch_id": batch_id},
-        {"$set": {
-            "individual_order_status": individual_order_status,
-            "updated_at": now
-        }}
+        {"$set": batch_update}
     )
     
     return {
         "success": True,
-        "message": f"Order {order_id} marked as shipped"
+        "message": f"Order {order_id} marked as shipped",
+        "shipped_count": shipped_count,
+        "total_orders": total_orders,
+        "all_shipped": all_shipped,
+        "batch_archived": all_shipped
     }
 
 
