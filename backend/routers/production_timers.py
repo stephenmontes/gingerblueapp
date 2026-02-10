@@ -500,11 +500,24 @@ async def get_production_hours_by_user_date(
             "completed_at": log.get("completed_at")
         })
     
+    # Get all unique user IDs to fetch their hourly rates
+    user_ids = list(set(data["user_id"] for data in user_date_data.values()))
+    user_rates = {}
+    if user_ids:
+        users_cursor = db.users.find(
+            {"user_id": {"$in": user_ids}},
+            {"_id": 0, "user_id": 1, "hourly_rate": 1}
+        )
+        async for u in users_cursor:
+            user_rates[u["user_id"]] = u.get("hourly_rate", 15)  # Default $15/hr
+    
     result = []
     for key, data in user_date_data.items():
         total_hours = data["total_minutes"] / 60
+        hourly_rate = user_rates.get(data["user_id"], 15)  # Default $15/hr
         data["total_hours"] = round(total_hours, 2)
-        data["labor_cost"] = round(total_hours * 30, 2)
+        data["hourly_rate"] = hourly_rate
+        data["labor_cost"] = round(total_hours * hourly_rate, 2)
         data["exceeds_limit"] = total_hours > DAILY_HOURS_LIMIT
         data["entries"] = sorted(data["entries"], key=lambda x: x.get("completed_at") or "", reverse=True)
         result.append(data)
