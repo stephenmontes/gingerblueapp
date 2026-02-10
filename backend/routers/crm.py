@@ -960,13 +960,16 @@ async def update_opportunity(opp_id: str, updates: OpportunityUpdate, user: User
     
     # Track stage changes
     if "stage" in update_data and update_data["stage"] != existing.get("stage"):
+        old_stage = existing.get("stage", "unknown")
+        new_stage = update_data["stage"]
+        
         stage_history = existing.get("stage_history", [])
         stage_history.append({
-            "stage": update_data["stage"],
+            "stage": new_stage,
             "entered_at": now,
             "user_id": user.user_id,
             "user_name": user.name,
-            "previous_stage": existing.get("stage")
+            "previous_stage": old_stage
         })
         update_data["stage_history"] = stage_history
         
@@ -992,6 +995,29 @@ async def update_opportunity(opp_id: str, updates: OpportunityUpdate, user: User
             update_data["forecast_category"] = "omitted"
             update_data["closed_at"] = now
             update_data["is_won"] = False
+        
+        # Log stage change to timeline
+        stage_labels = {
+            "prospecting": "Prospecting",
+            "qualification": "Qualification", 
+            "needs_analysis": "Needs Analysis",
+            "proposal": "Proposal",
+            "negotiation": "Negotiation",
+            "closed_won": "Closed Won",
+            "closed_lost": "Closed Lost"
+        }
+        old_label = stage_labels.get(old_stage, old_stage.replace('_', ' ').title())
+        new_label = stage_labels.get(new_stage, new_stage.replace('_', ' ').title())
+        
+        await log_system_event(
+            entity_type="opportunity",
+            entity_id=opp_id,
+            activity_type="stage_changed",
+            body=f"Stage changed from {old_label} to {new_label}",
+            metadata={"old_value": old_label, "new_value": new_label},
+            user_id=user.user_id,
+            user_name=user.name
+        )
     
     update_data["updated_at"] = now
     update_data["updated_by"] = user.user_id
