@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 import uuid
 
 class ManufacturingAPITester:
-    def __init__(self, base_url="https://auto-logout-timer.preview.emergentagent.com"):
+    def __init__(self, base_url="https://sales-chatter.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.session_token = None
