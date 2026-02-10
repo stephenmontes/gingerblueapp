@@ -265,6 +265,121 @@ export default function CRMSetupPage() {
     }
   };
 
+  // ==================== LEAD ASSIGNMENT RULES ====================
+  
+  const saveAssignmentRule = async () => {
+    const data = assignmentDialog.data;
+    try {
+      const isNew = !data.existing;
+      const url = isNew 
+        ? `${API}/automation/lead-assignment-rules`
+        : `${API}/automation/lead-assignment-rules/${data.rule_id}`;
+      
+      const res = await fetch(url, {
+        method: isNew ? 'POST' : 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          name: data.name,
+          description: data.description,
+          method: data.method,
+          conditions: data.conditions || {},
+          assignee_user_ids: data.assignee_user_ids || [],
+          priority: parseInt(data.priority) || 100,
+          status: data.status
+        })
+      });
+      
+      if (!res.ok) throw new Error('Failed to save rule');
+      
+      toast.success(isNew ? "Assignment rule created" : "Assignment rule updated");
+      setAssignmentDialog({ open: false, data: null });
+      fetchAllConfig();
+    } catch (error) {
+      toast.error("Failed to save assignment rule");
+    }
+  };
+
+  const deleteAssignmentRule = async (ruleId) => {
+    if (!confirm('Delete this assignment rule?')) return;
+    try {
+      await fetch(`${API}/automation/lead-assignment-rules/${ruleId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      toast.success("Assignment rule deleted");
+      fetchAllConfig();
+    } catch (error) {
+      toast.error("Failed to delete rule");
+    }
+  };
+
+  // ==================== STALE OPPORTUNITY RULES ====================
+  
+  const saveStaleRule = async () => {
+    const data = staleDialog.data;
+    try {
+      const isNew = !data.existing;
+      const url = isNew 
+        ? `${API}/automation/stale-opportunity-rules`
+        : `${API}/automation/stale-opportunity-rules/${data.rule_id}`;
+      
+      const res = await fetch(url, {
+        method: isNew ? 'POST' : 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          name: data.name,
+          description: data.description,
+          days_threshold: parseInt(data.days_threshold) || 14,
+          applicable_stages: data.applicable_stages || [],
+          notify_owner: data.notify_owner !== false,
+          additional_notify_user_ids: data.additional_notify_user_ids || [],
+          status: data.status
+        })
+      });
+      
+      if (!res.ok) throw new Error('Failed to save rule');
+      
+      toast.success(isNew ? "Stale rule created" : "Stale rule updated");
+      setStaleDialog({ open: false, data: null });
+      fetchAllConfig();
+    } catch (error) {
+      toast.error("Failed to save stale rule");
+    }
+  };
+
+  const deleteStaleRule = async (ruleId) => {
+    if (!confirm('Delete this stale opportunity rule?')) return;
+    try {
+      await fetch(`${API}/automation/stale-opportunity-rules/${ruleId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      toast.success("Stale rule deleted");
+      fetchAllConfig();
+    } catch (error) {
+      toast.error("Failed to delete rule");
+    }
+  };
+
+  const runStaleCheck = async () => {
+    try {
+      setRunningStaleCheck(true);
+      const res = await fetch(`${API}/automation/run-stale-check`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+      if (!res.ok) throw new Error('Failed to run check');
+      const data = await res.json();
+      toast.success(`Stale check complete. Created ${data.result?.notifications_created || 0} notifications.`);
+    } catch (error) {
+      toast.error("Failed to run stale check");
+    } finally {
+      setRunningStaleCheck(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="p-6 flex items-center justify-center min-h-[400px]">
