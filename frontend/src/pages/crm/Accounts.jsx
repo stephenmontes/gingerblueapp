@@ -15,7 +15,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "../../components/ui/select";
 import { Textarea } from "../../components/ui/textarea";
-import { useToast } from "../../components/ui/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 import { 
   Plus, Search, Building2, Phone, Globe, MapPin, Mail, 
   MoreVertical, Edit, Trash2, Eye, Users, DollarSign, TrendingUp
