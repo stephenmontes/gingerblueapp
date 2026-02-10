@@ -335,11 +335,45 @@ Build a manufacturing and fulfillment app for Shopify websites with detailed tim
   - Full audit trail with activity logging
   - Proper indexing for search performance
 - **Testing:** 100% pass rate (28 backend tests, all frontend flows verified)
-  - Heartbeat records user activity for productivity tracking
-- **UI Components:**
-  - AlertDialog with orange warning styling
-  - Progress bar showing countdown
-  - Clock icon and session info
-  - data-testid attributes: `session-timeout-dialog`, `session-countdown`, `session-logout-btn`, `session-continue-btn`
-- **Testing:** 100% pass rate - Backend endpoints + frontend integration verified
 
+## CRM Module Roadmap
+
+### Phase 2 - Sales Operations (Planned)
+- **Quote Object:**
+  - Create quotes from opportunities
+  - Product line items with pricing
+  - Quote versioning
+  - Convert quote to ERP Sales Order
+- **Additional Reports/Dashboards:**
+  - Win/Loss analysis
+  - Forecast by month
+  - Leads by source report
+  - Activity reports by rep
+  - Top accounts report
+- **Automation Rules:**
+  - Lead assignment rules (round-robin, by territory)
+  - Stale opportunity reminders
+  - Stage-based task creation
+- **Communication Log:**
+  - Manual email/call logging
+  - Associate communications to records
+
+### Phase 3 - Advanced (Future)
+- **Gmail Integration:**
+  - Email sync for contacts
+  - Calendar sync for events
+  - Activity logging from Gmail
+- **Approval Workflows:**
+  - Discount approval for quotes over threshold
+- **Custom Object Builder:**
+  - Admin can create custom objects with fields
+- **Campaign Management:**
+  - Track marketing campaigns
+  - Campaign attribution on leads
+- **Case Management:**
+  - Support tickets linked to accounts
+  - Customer 360 view with cases
+
+## Pending Verification from User
+1. POS Order Creation fix (ObjectId serialization) - applied, needs user test
+2. Frame Production KPIs calculation fix (timezone) - applied, needs user test
