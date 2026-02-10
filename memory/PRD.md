@@ -389,6 +389,43 @@ Build a manufacturing and fulfillment app for Shopify websites with detailed tim
   - Manual email/call logging
   - Associate communications to records
 
+### 14. Configurable CRM Framework - COMPLETE (Feb 2026)
+- **Admin Setup Page** (`/crm/setup`):
+  - 4 tabs: Stages, Picklists, Custom Fields, Automation
+  - Access restricted to admin/manager roles
+- **Pipeline Stages Configuration:**
+  - Add/edit/delete opportunity stages
+  - Configure: name, probability, forecast category, color, order
+  - Reorder stages with up/down arrows
+  - Mark stages as closed (won/lost)
+  - Cannot delete system stages (closed_won, closed_lost)
+- **Picklist Management:**
+  - 7 system picklists: Lead Source, Industry, Territory, Account Type, Lead Status, Task Priority, Task Status
+  - Add/remove options from any picklist
+  - Set option colors
+  - Shows which objects use each picklist
+- **Custom Fields:**
+  - Add custom fields to any CRM object (Account, Contact, Lead, Opportunity, Customer CRM)
+  - Field types: Text, Text Area, Number, Currency, Percent, Date, Checkbox, Picklist, Email, Phone, URL
+  - Configure: required, visible on list view, description
+  - Picklist fields support custom options
+- **Backend Collections:**
+  - `crm_config_stages`: Pipeline stage definitions
+  - `crm_config_picklists`: Picklist configurations
+  - `crm_config_fields`: Custom field definitions
+  - `crm_config_layouts`: Page layout configurations
+  - `crm_config_automation`: Automation rule definitions
+  - `crm_config_assignment`: Assignment rule definitions
+- **API Endpoints:**
+  - `GET/POST/PUT/DELETE /api/crm/admin/stages` - Stage CRUD
+  - `POST /api/crm/admin/stages/reorder` - Reorder stages
+  - `GET/POST/PUT /api/crm/admin/picklists` - Picklist CRUD
+  - `POST/DELETE /api/crm/admin/picklists/{id}/options` - Add/remove options
+  - `GET/POST/PUT/DELETE /api/crm/admin/fields` - Custom field CRUD
+  - `GET /api/crm/admin/fields/{object_type}` - Get all fields for object
+  - `GET/PUT /api/crm/admin/layouts/{object_type}` - Page layouts
+  - `GET /api/crm/admin/export` - Export full configuration
+
 ### Phase 3 - Advanced (Future)
 - **Gmail Integration:**
   - Email sync for contacts
