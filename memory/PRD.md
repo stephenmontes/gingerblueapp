@@ -531,6 +531,31 @@ Build a manufacturing and fulfillment app for Shopify websites with detailed tim
   - Full dialog forms for rule configuration
 - **Testing:** 100% pass rate (18 backend tests, all UI flows verified)
 
+### 17. Individual Order Pack & Ship - COMPLETE (Feb 2026)
+- **Feature:** Move orders from Finish to Pack & Ship independently within batches
+- **Use Case:** GB Decor, Ginger Blue Decor, GB Home, Ginger Blue Home, and Etsy stores
+  - Orders are printed, mounted, and finished as a batch
+  - Individual orders can be packed and shipped independently
+  - Batch timing continues for reporting purposes
+- **GB Home Special Handling:**
+  - GB Home batches use individual order workflow
+  - Can move orders to Pack & Ship at **any stage** (not just Finish)
+  - "Shipped" button appears for completed orders
+- **API Endpoints:**
+  - `POST /api/fulfillment-batches/{batch_id}/orders/move-to-pack-ship` - Move selected orders
+  - `POST /api/fulfillment-batches/{batch_id}/orders/{order_id}/mark-shipped` - Mark as shipped
+  - `GET /api/fulfillment-batches/{batch_id}/pack-ship-orders` - Get orders at Pack & Ship
+  - `GET /api/fulfillment-batches/{batch_id}/orders-by-stage` - Orders grouped by stage
+- **Frontend Features:**
+  - Blue "Pack & Ship" badge for orders moved independently
+  - Green "Shipped" badge for completed orders
+  - Multi-select orders with "Ship X" button
+  - Visual indicator for batches with split orders
+- **Data Fields Added:**
+  - `individual_order_status` - Tracks each order's independent stage
+  - `has_split_orders` - Flag when batch has orders at different stages
+  - `individual_stage_override` - Order-level flag for independent movement
+
 ## Pending Verification from User
 1. POS Order Creation fix (ObjectId serialization) - applied, needs user test
 2. Frame Production KPIs calculation fix (timezone) - applied, needs user test
