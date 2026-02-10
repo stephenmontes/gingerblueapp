@@ -1007,22 +1007,43 @@ export function FulfillmentBatchDetail({ batch, stages, onRefresh, onClose, canD
                           className="flex-shrink-0"
                         />
                       )}
-                      />
                       <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm flex-shrink-0 ${
+                        isShipped ? 'bg-green-600 text-white' :
+                        isAtPackShip ? 'bg-blue-500 text-white' :
                         orderComplete ? 'bg-green-500 text-white' : 'bg-muted'
                       }`}>
-                        {orderComplete ? <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" /> : orderIdx + 1}
+                        {isShipped ? <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" /> : 
+                         isAtPackShip ? <Package className="w-4 h-4 sm:w-5 sm:h-5" /> :
+                         orderComplete ? <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" /> : orderIdx + 1}
                       </div>
                       <div className="min-w-0">
                         <h4 className="font-semibold text-sm sm:text-base flex items-center gap-1 sm:gap-2 flex-wrap">
                           <span className="truncate">#{order.order_number || order.order_id?.slice(-8)}</span>
-                          {orderComplete && <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-400 flex-shrink-0" />}
+                          {isShipped && <Badge className="bg-green-600 text-xs">Shipped</Badge>}
+                          {isAtPackShip && !isShipped && <Badge className="bg-blue-500 text-xs">Pack & Ship</Badge>}
+                          {orderComplete && !isAtPackShip && !isShipped && <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-400 flex-shrink-0" />}
                         </h4>
                         <p className="text-xs sm:text-sm text-muted-foreground truncate">{order.customer_name}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
-                      <Badge variant={orderComplete ? "default" : "outline"} className={`text-sm sm:text-lg px-2 sm:px-3 py-0.5 sm:py-1 ${orderComplete ? 'bg-green-500' : ''}`}>
+                      {/* Mark Shipped button for orders at Pack & Ship */}
+                      {isAtPackShip && !isShipped && (
+                        <Button
+                          size="sm"
+                          onClick={() => markOrderShipped(order.order_id)}
+                          className="bg-green-600 hover:bg-green-700 h-7 text-xs"
+                          data-testid={`mark-shipped-${order.order_id}`}
+                        >
+                          <CheckCircle2 className="w-3 h-3 mr-1" />
+                          Shipped
+                        </Button>
+                      )}
+                      <Badge variant={orderComplete ? "default" : "outline"} className={`text-sm sm:text-lg px-2 sm:px-3 py-0.5 sm:py-1 ${
+                        isShipped ? 'bg-green-600' :
+                        isAtPackShip ? 'bg-blue-500' :
+                        orderComplete ? 'bg-green-500' : ''
+                      }`}>
                         {orderCompleted}/{orderTotal}
                       </Badge>
                       {canDelete && (
