@@ -243,6 +243,47 @@ async def resume_fulfillment_timer(stage_id: str, user: User = Depends(get_curre
     return {"message": "Timer resumed", "started_at": now.isoformat()}
 
 
+@router.post("/timers/stop-all")
+async def stop_all_fulfillment_timers(user: User = Depends(get_current_user)):
+    """Stop all active fulfillment timers for the current user. Used during logout."""
+    now = datetime.now(timezone.utc)
+    
+    # Find all active timers for this user
+    active_timers = await db.fulfillment_time_logs.find({
+        "user_id": user.user_id,
+        "completed_at": None
+    }).to_list(100)
+    
+    stopped_count = 0
+    
+    for timer in active_timers:
+        # Calculate duration
+        started_at = timer.get("started_at")
+        accumulated = timer.get("accumulated_minutes", 0)
+        
+        duration_minutes = accumulated
+        if started_at and not timer.get("is_paused"):
+            try:
+                start_dt = datetime.fromisoformat(started_at.replace('Z', '+00:00'))
+                session_minutes = (now - start_dt).total_seconds() / 60
+                duration_minutes = accumulated + session_minutes
+            except (ValueError, TypeError):
+                pass
+        
+        # Mark timer as completed
+        await db.fulfillment_time_logs.update_one(
+            {"log_id": timer["log_id"]},
+            {"$set": {
+                "completed_at": now.isoformat(),
+                "duration_minutes": round(duration_minutes, 2),
+                "stopped_reason": "session_timeout"
+            }}
+        )
+        stopped_count += 1
+    
+    return {"message": f"Stopped {stopped_count} timer(s)", "stopped_count": stopped_count}
+
+
 @router.get("/user/active-timer")
 async def get_user_active_fulfillment_timer(user: User = Depends(get_current_user)):
     """Get user's active fulfillment timer if any (checks both stage and batch timers)."""
