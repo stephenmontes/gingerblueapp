@@ -415,6 +415,55 @@ export default function Layout({ children, user, setUser }) {
 
       {/* Timer Recovery Dialog - shows when user has saved timers */}
       <TimerRecoveryDialog onTimerRestored={handleTimerRestored} />
+
+      {/* Session Timeout Warning Dialog */}
+      <AlertDialog open={showTimeoutWarning} onOpenChange={() => {}}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-orange-500">
+              <AlertTriangle className="w-5 h-5" />
+              Session Expiring
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-4">
+              <p>
+                Your session has been active for {SESSION_TIMEOUT_HOURS} hours and will expire soon.
+                All active timers will be stopped.
+              </p>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="flex items-center gap-2">
+                    <Clock className="w-4 h-4" />
+                    Auto logout in:
+                  </span>
+                  <span className="font-mono text-lg font-bold text-orange-500">
+                    {countdownSeconds}s
+                  </span>
+                </div>
+                <Progress 
+                  value={(countdownSeconds / WARNING_COUNTDOWN_SECONDS) * 100} 
+                  className="h-2"
+                />
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={performLogout}
+              className="w-full sm:w-auto"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Log Out Now
+            </Button>
+            <Button
+              onClick={handleContinueSession}
+              className="w-full sm:w-auto bg-green-600 hover:bg-green-700"
+            >
+              Continue Working
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
