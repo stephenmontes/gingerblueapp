@@ -54,13 +54,19 @@ export default function CRMSetupPage() {
   const [stages, setStages] = useState([]);
   const [picklists, setPicklists] = useState([]);
   const [customFields, setCustomFields] = useState([]);
+  const [assignmentRules, setAssignmentRules] = useState([]);
+  const [staleRules, setStaleRules] = useState([]);
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [runningStaleCheck, setRunningStaleCheck] = useState(false);
   
   // Dialog states
   const [stageDialog, setStageDialog] = useState({ open: false, data: null });
   const [picklistDialog, setPicklistDialog] = useState({ open: false, data: null });
   const [fieldDialog, setFieldDialog] = useState({ open: false, data: null });
   const [optionDialog, setOptionDialog] = useState({ open: false, picklistId: null, data: null });
+  const [assignmentDialog, setAssignmentDialog] = useState({ open: false, data: null });
+  const [staleDialog, setStaleDialog] = useState({ open: false, data: null });
 
   useEffect(() => {
     fetchAllConfig();
