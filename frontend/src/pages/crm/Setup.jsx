@@ -1157,6 +1157,286 @@ export default function CRMSetupPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* LEAD ASSIGNMENT RULE DIALOG */}
+      <Dialog open={assignmentDialog.open} onOpenChange={(open) => !open && setAssignmentDialog({ open: false, data: null })}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{assignmentDialog.data?.existing ? 'Edit Assignment Rule' : 'New Assignment Rule'}</DialogTitle>
+          </DialogHeader>
+          {assignmentDialog.data && (
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Rule Name</Label>
+                <Input 
+                  value={assignmentDialog.data.name}
+                  onChange={(e) => setAssignmentDialog({
+                    ...assignmentDialog,
+                    data: { ...assignmentDialog.data, name: e.target.value }
+                  })}
+                  placeholder="e.g., Northeast Territory Assignment"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Description</Label>
+                <Textarea 
+                  value={assignmentDialog.data.description || ''}
+                  onChange={(e) => setAssignmentDialog({
+                    ...assignmentDialog,
+                    data: { ...assignmentDialog.data, description: e.target.value }
+                  })}
+                  placeholder="Describe what this rule does"
+                  rows={2}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Assignment Method</Label>
+                <Select 
+                  value={assignmentDialog.data.method}
+                  onValueChange={(val) => setAssignmentDialog({
+                    ...assignmentDialog,
+                    data: { ...assignmentDialog.data, method: val }
+                  })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="round_robin">Round Robin</SelectItem>
+                    <SelectItem value="by_territory">By Territory</SelectItem>
+                    <SelectItem value="by_source">By Lead Source</SelectItem>
+                    <SelectItem value="specific_user">Specific User</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {assignmentDialog.data.method === 'by_territory' && (
+                <div className="space-y-2">
+                  <Label>Territory (condition)</Label>
+                  <Input 
+                    value={assignmentDialog.data.conditions?.territory || ''}
+                    onChange={(e) => setAssignmentDialog({
+                      ...assignmentDialog,
+                      data: { 
+                        ...assignmentDialog.data, 
+                        conditions: { ...assignmentDialog.data.conditions, territory: e.target.value }
+                      }
+                    })}
+                    placeholder="e.g., Northeast"
+                  />
+                </div>
+              )}
+              {assignmentDialog.data.method === 'by_source' && (
+                <div className="space-y-2">
+                  <Label>Lead Source (condition)</Label>
+                  <Input 
+                    value={assignmentDialog.data.conditions?.source || ''}
+                    onChange={(e) => setAssignmentDialog({
+                      ...assignmentDialog,
+                      data: { 
+                        ...assignmentDialog.data, 
+                        conditions: { ...assignmentDialog.data.conditions, source: e.target.value }
+                      }
+                    })}
+                    placeholder="e.g., trade_show"
+                  />
+                </div>
+              )}
+              <div className="space-y-2">
+                <Label>Assignees</Label>
+                <div className="border rounded-md p-2 max-h-40 overflow-y-auto space-y-1">
+                  {users.filter(u => u.role !== 'worker').map(user => (
+                    <label key={user.user_id} className="flex items-center gap-2 p-1 hover:bg-muted rounded cursor-pointer">
+                      <input 
+                        type="checkbox"
+                        checked={assignmentDialog.data.assignee_user_ids?.includes(user.user_id)}
+                        onChange={(e) => {
+                          const ids = assignmentDialog.data.assignee_user_ids || [];
+                          setAssignmentDialog({
+                            ...assignmentDialog,
+                            data: { 
+                              ...assignmentDialog.data, 
+                              assignee_user_ids: e.target.checked 
+                                ? [...ids, user.user_id]
+                                : ids.filter(id => id !== user.user_id)
+                            }
+                          });
+                        }}
+                        className="rounded"
+                      />
+                      <span className="text-sm">{user.name}</span>
+                      <Badge variant="outline" className="text-xs">{user.role}</Badge>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Priority (lower = higher)</Label>
+                  <Input 
+                    type="number"
+                    value={assignmentDialog.data.priority}
+                    onChange={(e) => setAssignmentDialog({
+                      ...assignmentDialog,
+                      data: { ...assignmentDialog.data, priority: parseInt(e.target.value) }
+                    })}
+                    min={1}
+                    max={999}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Status</Label>
+                  <Select 
+                    value={assignmentDialog.data.status}
+                    onValueChange={(val) => setAssignmentDialog({
+                      ...assignmentDialog,
+                      data: { ...assignmentDialog.data, status: val }
+                    })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="inactive">Inactive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAssignmentDialog({ open: false, data: null })}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={saveAssignmentRule}
+              disabled={!assignmentDialog.data?.name || !assignmentDialog.data?.assignee_user_ids?.length}
+            >
+              <Save className="h-4 w-4 mr-1" />
+              Save Rule
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* STALE OPPORTUNITY RULE DIALOG */}
+      <Dialog open={staleDialog.open} onOpenChange={(open) => !open && setStaleDialog({ open: false, data: null })}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{staleDialog.data?.existing ? 'Edit Stale Rule' : 'New Stale Rule'}</DialogTitle>
+          </DialogHeader>
+          {staleDialog.data && (
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Rule Name</Label>
+                <Input 
+                  value={staleDialog.data.name}
+                  onChange={(e) => setStaleDialog({
+                    ...staleDialog,
+                    data: { ...staleDialog.data, name: e.target.value }
+                  })}
+                  placeholder="e.g., 14-Day Stale Reminder"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Description</Label>
+                <Textarea 
+                  value={staleDialog.data.description || ''}
+                  onChange={(e) => setStaleDialog({
+                    ...staleDialog,
+                    data: { ...staleDialog.data, description: e.target.value }
+                  })}
+                  placeholder="Describe what this rule does"
+                  rows={2}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Days Without Activity</Label>
+                <Input 
+                  type="number"
+                  value={staleDialog.data.days_threshold}
+                  onChange={(e) => setStaleDialog({
+                    ...staleDialog,
+                    data: { ...staleDialog.data, days_threshold: parseInt(e.target.value) }
+                  })}
+                  min={1}
+                  max={365}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Opportunities with no activity for this many days will trigger a reminder
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label>Apply to Stages (leave empty for all open stages)</Label>
+                <div className="flex flex-wrap gap-2">
+                  {stages.filter(s => !s.is_closed).map(stage => (
+                    <label key={stage.stage_id} className="flex items-center gap-1 text-sm">
+                      <input 
+                        type="checkbox"
+                        checked={staleDialog.data.applicable_stages?.includes(stage.stage_id)}
+                        onChange={(e) => {
+                          const current = staleDialog.data.applicable_stages || [];
+                          setStaleDialog({
+                            ...staleDialog,
+                            data: { 
+                              ...staleDialog.data, 
+                              applicable_stages: e.target.checked 
+                                ? [...current, stage.stage_id]
+                                : current.filter(s => s !== stage.stage_id)
+                            }
+                          });
+                        }}
+                        className="rounded"
+                      />
+                      {stage.name}
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch 
+                  checked={staleDialog.data.notify_owner !== false}
+                  onCheckedChange={(checked) => setStaleDialog({
+                    ...staleDialog,
+                    data: { ...staleDialog.data, notify_owner: checked }
+                  })}
+                />
+                <Label>Notify Opportunity Owner</Label>
+              </div>
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <Select 
+                  value={staleDialog.data.status}
+                  onValueChange={(val) => setStaleDialog({
+                    ...staleDialog,
+                    data: { ...staleDialog.data, status: val }
+                  })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setStaleDialog({ open: false, data: null })}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={saveStaleRule}
+              disabled={!staleDialog.data?.name}
+            >
+              <Save className="h-4 w-4 mr-1" />
+              Save Rule
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
