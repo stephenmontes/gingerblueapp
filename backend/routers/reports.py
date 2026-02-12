@@ -1239,8 +1239,12 @@ async def get_batches_summary(
     
     batch_ids = [b["batch_id"] for b in batches]
     all_order_ids = []
+    # Build a map of order_id -> production_batch_id
+    order_to_batch = {}
     for b in batches:
-        all_order_ids.extend(b.get("order_ids", []))
+        for oid in b.get("order_ids", []):
+            all_order_ids.append(oid)
+            order_to_batch[oid] = b["batch_id"]
     
     # Aggregate production time by batch
     production_by_batch = await db.time_logs.aggregate([
@@ -1253,22 +1257,29 @@ async def get_batches_summary(
     ]).to_list(100)
     prod_map = {p["_id"]: p for p in production_by_batch}
     
-    # Aggregate fulfillment time by batch (via order_ids or batch_id)
-    fulfillment_by_batch = await db.fulfillment_time_logs.aggregate([
+    # Aggregate fulfillment time by order_id first (since fulfillment batches have different IDs)
+    fulfillment_by_order = await db.fulfillment_time_logs.aggregate([
         {"$match": {
-            "$or": [
-                {"batch_id": {"$in": batch_ids}},
-                {"order_id": {"$in": all_order_ids}}
-            ],
+            "order_id": {"$in": all_order_ids},
             "completed_at": {"$ne": None}
         }},
         {"$group": {
-            "_id": "$batch_id",
+            "_id": "$order_id",
             "total_minutes": {"$sum": "$duration_minutes"},
             "orders_processed": {"$sum": "$orders_processed"}
         }}
-    ]).to_list(100)
-    fulfill_map = {f["_id"]: f for f in fulfillment_by_batch if f["_id"]}
+    ]).to_list(500)
+    
+    # Map fulfillment time back to production batches
+    fulfill_map = {}
+    for f in fulfillment_by_order:
+        order_id = f["_id"]
+        prod_batch_id = order_to_batch.get(order_id)
+        if prod_batch_id:
+            if prod_batch_id not in fulfill_map:
+                fulfill_map[prod_batch_id] = {"total_minutes": 0, "orders_processed": 0}
+            fulfill_map[prod_batch_id]["total_minutes"] += f.get("total_minutes", 0)
+            fulfill_map[prod_batch_id]["orders_processed"] += f.get("orders_processed", 0)
     
     # Get frame stats per batch
     frame_stats = await db.batch_frames.aggregate([
