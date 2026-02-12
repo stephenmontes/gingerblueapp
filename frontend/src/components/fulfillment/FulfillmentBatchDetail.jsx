@@ -1006,6 +1006,24 @@ export function FulfillmentBatchDetail({ batch, stages, onRefresh, onClose, canD
               <span className="hidden xs:inline">Mark</span> {selectedOrders.size} Done
             </Button>
             
+            {/* Mark All Done button - for retail batches (Ginger Blue Decor, Etsy, Antique Farmhouse) */}
+            {isRetailBatch && (
+              <Button
+                size="sm"
+                onClick={markAllSelectedDone}
+                disabled={markingAllDone || !isUserActive || isUserPaused}
+                className="gap-1.5 bg-purple-600 hover:bg-purple-700 h-8 text-xs sm:text-sm flex-shrink-0"
+                data-testid="mark-all-done-btn"
+              >
+                {markingAllDone ? (
+                  <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" />
+                ) : (
+                  <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                )}
+                <span className="hidden sm:inline">All Items</span> Done
+              </Button>
+            )}
+            
             {/* Move to Pack & Ship button - for GB Home at any stage, others only at Finish */}
             {canMoveToPackShip && (
               <Button
