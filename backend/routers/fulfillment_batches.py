@@ -781,6 +781,76 @@ async def complete_fulfillment_batch(
     return {"success": True, "message": "Batch completed", "total_minutes": accumulated}
 
 
+# ==================== ARCHIVE BATCH ====================
+
+@router.post("/{batch_id}/archive")
+async def archive_batch(
+    batch_id: str,
+    user: User = Depends(get_current_user)
+):
+    """
+    Archive a fulfillment batch.
+    Moves the batch to archived status, preserving all data for reporting.
+    """
+    if user.role not in ["admin", "manager"]:
+        raise HTTPException(status_code=403, detail="Admin/Manager access required")
+    
+    batch = await db.fulfillment_batches.find_one(
+        {"fulfillment_batch_id": batch_id},
+        {"_id": 0}
+    )
+    
+    if not batch:
+        raise HTTPException(status_code=404, detail="Fulfillment batch not found")
+    
+    if batch.get("status") == "archived":
+        raise HTTPException(status_code=400, detail="Batch is already archived")
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    # Stop any running timers
+    active_workers = batch.get("active_workers", [])
+    accumulated_time = batch.get("accumulated_time_minutes", 0)
+    
+    for worker in active_workers:
+        if worker.get("started_at"):
+            started_at = datetime.fromisoformat(worker["started_at"].replace('Z', '+00:00'))
+            now_dt = datetime.now(timezone.utc)
+            elapsed_minutes = (now_dt - started_at).total_seconds() / 60
+            accumulated_time += elapsed_minutes
+    
+    # Update batch to archived
+    await db.fulfillment_batches.update_one(
+        {"fulfillment_batch_id": batch_id},
+        {"$set": {
+            "status": "archived",
+            "archived_at": now,
+            "archived_by": user.user_id,
+            "archived_by_name": user.name,
+            "active_workers": [],  # Clear active workers
+            "accumulated_time_minutes": accumulated_time,
+            "updated_at": now
+        }}
+    )
+    
+    # Log the archive action
+    log_entry = {
+        "log_id": f"flog_{uuid.uuid4().hex[:12]}",
+        "fulfillment_batch_id": batch_id,
+        "action": "batch_archived",
+        "user_id": user.user_id,
+        "user_name": user.name,
+        "created_at": now
+    }
+    await db.fulfillment_logs.insert_one(log_entry)
+    
+    return {
+        "success": True,
+        "message": f"Batch '{batch.get('name')}' has been archived",
+        "archived_at": now
+    }
+
+
 # ==================== INDIVIDUAL ORDER PACK/SHIP ====================
 
 class MoveOrderToPackShip(BaseModel):
