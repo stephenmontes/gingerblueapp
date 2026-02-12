@@ -124,7 +124,7 @@ export default function Tasks({ user }) {
       
       // Handle "My Tasks" filter
       if (showMyTasksOnly && user?.user_id) {
-        params.append("assigned_to", user.user_id);
+        params.append("my_tasks", "true");
       } else if (assigneeFilter !== "all") {
         params.append("assigned_to", assigneeFilter);
       }
@@ -144,7 +144,7 @@ export default function Tasks({ user }) {
     } finally {
       setLoading(false);
     }
-  }, [searchTerm, statusFilter, priorityFilter, assigneeFilter]);
+  }, [searchTerm, statusFilter, priorityFilter, assigneeFilter, showMyTasksOnly, user?.user_id]);
 
   const fetchStats = async () => {
     try {
