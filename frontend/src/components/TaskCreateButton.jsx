@@ -252,18 +252,58 @@ export function TaskCreateButton({
                 value={task.assigned_to} 
                 onValueChange={(val) => setTask(prev => ({ ...prev, assigned_to: val }))}
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select team member..." />
+                <SelectTrigger data-testid="task-assign-to-select">
+                  <SelectValue placeholder="Select assignee..." />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="unassigned">Unassigned</SelectItem>
-                  {teamMembers.map(member => (
-                    <SelectItem key={member.user_id} value={member.user_id}>
-                      {member.name}
-                    </SelectItem>
-                  ))}
+                  
+                  {/* Managers & Admins Section - Always visible to all users */}
+                  {managersAdmins.length > 0 && (
+                    <>
+                      <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider bg-muted/30">
+                        Management
+                      </div>
+                      {managersAdmins.map(member => (
+                        <SelectItem key={member.user_id} value={member.user_id}>
+                          <div className="flex items-center gap-2">
+                            <span>{member.name}</span>
+                            <Badge variant="outline" className="text-xs py-0 h-4 capitalize">
+                              {member.role}
+                            </Badge>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </>
+                  )}
+                  
+                  {/* All Team Members - Only visible to managers/admins */}
+                  {(user?.role === "admin" || user?.role === "manager") && teamMembers.length > 0 && (
+                    <>
+                      <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider bg-muted/30">
+                        All Team Members
+                      </div>
+                      {teamMembers
+                        .filter(m => !managersAdmins.some(ma => ma.user_id === m.user_id))
+                        .map(member => (
+                          <SelectItem key={member.user_id} value={member.user_id}>
+                            <div className="flex items-center gap-2">
+                              <span>{member.name}</span>
+                              <Badge variant="outline" className="text-xs py-0 h-4 capitalize opacity-60">
+                                {member.role}
+                              </Badge>
+                            </div>
+                          </SelectItem>
+                        ))}
+                    </>
+                  )}
                 </SelectContent>
               </Select>
+              {user?.role === "worker" && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Assign tasks to management for review or action
+                </p>
+              )}
             </div>
             
             {/* Checklist */}
