@@ -447,10 +447,27 @@ export default function Tasks({ user }) {
             Manage tasks across orders and customers
           </p>
         </div>
-        <Button onClick={() => setShowCreateDialog(true)} className="gap-2" data-testid="create-task-btn">
-          <Plus className="w-4 h-4" />
-          Create Task
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button onClick={() => setShowCreateDialog(true)} className="gap-2" data-testid="create-task-btn">
+            <Plus className="w-4 h-4" />
+            Create Task
+          </Button>
+          {/* Quick action for workers to assign to management */}
+          {user?.role === "worker" && managersAdmins.length > 0 && (
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setNewTask(prev => ({ ...prev, assigned_to: managersAdmins[0]?.user_id || "" }));
+                setShowCreateDialog(true);
+              }}
+              className="gap-2 border-amber-500/50 text-amber-500 hover:bg-amber-500/10"
+              data-testid="assign-to-management-btn"
+            >
+              <Users className="w-4 h-4" />
+              Request from Management
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Stats Cards */}
