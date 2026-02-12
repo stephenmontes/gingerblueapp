@@ -338,6 +338,7 @@ export default function Reports() {
         </TabsContent>
 
         <TabsContent value="productivity" className="space-y-6">
+          <UserProductionReport />
           <ProductivityReport />
         </TabsContent>
       </Tabs>
