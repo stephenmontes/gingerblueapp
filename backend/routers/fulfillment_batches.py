@@ -851,6 +851,129 @@ async def archive_batch(
     }
 
 
+# ==================== MARK ALL ORDERS DONE ====================
+
+class MarkAllDoneRequest(BaseModel):
+    """Request to mark all items in selected orders as done"""
+    order_ids: List[str]
+
+
+@router.post("/{batch_id}/orders/mark-all-done")
+async def mark_all_orders_done(
+    batch_id: str,
+    request: MarkAllDoneRequest,
+    user: User = Depends(get_current_user)
+):
+    """
+    Mark all items in selected orders as complete (set qty_completed to required qty).
+    Used for retail batches (Ginger Blue Decor, Etsy, Antique Farmhouse) to quickly
+    complete all items in selected orders.
+    """
+    batch = await db.fulfillment_batches.find_one(
+        {"fulfillment_batch_id": batch_id},
+        {"_id": 0}
+    )
+    
+    if not batch:
+        raise HTTPException(status_code=404, detail="Fulfillment batch not found")
+    
+    # Verify user has timer running (is in active workers)
+    active_workers = batch.get("active_workers", [])
+    is_active = any(w.get("user_id") == user.user_id for w in active_workers)
+    
+    if not is_active:
+        raise HTTPException(
+            status_code=400, 
+            detail="Timer must be running to mark items as done"
+        )
+    
+    order_ids = request.order_ids
+    if not order_ids:
+        raise HTTPException(status_code=400, detail="No orders specified")
+    
+    now = datetime.now(timezone.utc).isoformat()
+    stage_id = batch.get("current_stage_id", "")
+    stage_progress_key = f"stage_{stage_id}"
+    
+    # Get current item progress
+    item_progress = batch.get("item_progress", {})
+    if stage_progress_key not in item_progress:
+        item_progress[stage_progress_key] = {}
+    
+    orders_completed = 0
+    items_completed = 0
+    
+    for order_id in order_ids:
+        # Get order from fulfillment_orders
+        order = await db.fulfillment_orders.find_one({
+            "order_id": order_id,
+            "fulfillment_batch_id": batch_id
+        })
+        
+        if not order:
+            continue
+        
+        items = order.get("items", []) or order.get("line_items", [])
+        
+        # Initialize order progress if not present
+        if order_id not in item_progress[stage_progress_key]:
+            item_progress[stage_progress_key][order_id] = {}
+        
+        # Set all items to their required qty
+        for idx, item in enumerate(items):
+            item_key = f"item_{idx}"
+            required_qty = item.get("qty") or item.get("quantity") or 1
+            
+            # Set qty_completed to required qty
+            item_progress[stage_progress_key][order_id][item_key] = {
+                "qty_completed": required_qty,
+                "updated_at": now,
+                "updated_by": user.user_id
+            }
+            items_completed += 1
+        
+        orders_completed += 1
+    
+    # Update batch with new progress
+    update_data = {
+        "item_progress": item_progress,
+        "updated_at": now
+    }
+    
+    # Update orders_processed and items_processed counts
+    current_orders_processed = batch.get("orders_processed", 0)
+    current_items_processed = batch.get("items_processed", 0)
+    update_data["orders_processed"] = current_orders_processed + orders_completed
+    update_data["items_processed"] = current_items_processed + items_completed
+    
+    await db.fulfillment_batches.update_one(
+        {"fulfillment_batch_id": batch_id},
+        {"$set": update_data}
+    )
+    
+    # Log the action
+    log_entry = {
+        "log_id": f"flog_{uuid.uuid4().hex[:12]}",
+        "fulfillment_batch_id": batch_id,
+        "action": "orders_marked_all_done",
+        "order_ids": order_ids,
+        "orders_completed": orders_completed,
+        "items_completed": items_completed,
+        "stage_id": stage_id,
+        "user_id": user.user_id,
+        "user_name": user.name,
+        "created_at": now
+    }
+    await db.fulfillment_logs.insert_one(log_entry)
+    
+    return {
+        "success": True,
+        "message": f"Marked {orders_completed} orders as done ({items_completed} items)",
+        "orders_completed": orders_completed,
+        "items_completed": items_completed
+    }
+
+
 # ==================== INDIVIDUAL ORDER PACK/SHIP ====================
 
 class MoveOrderToPackShip(BaseModel):
