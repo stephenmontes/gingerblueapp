@@ -852,14 +852,22 @@ async def get_stage_stats(
             "_id": {"stage_id": "$stage_id", "stage_name": "$stage_name"},
             "total_items": {"$sum": "$items_processed"},
             "total_minutes": {"$sum": "$duration_minutes"},
-            "avg_time_per_item": {"$avg": {"$divide": ["$duration_minutes", "$items_processed"]}}
+            "session_count": {"$sum": 1}
         }},
         {"$project": {
             "stage_id": "$_id.stage_id",
             "stage_name": "$_id.stage_name",
             "total_items": 1,
-            "total_hours": {"$round": [{"$divide": ["$total_minutes", 60]}, 1]},
-            "avg_minutes_per_item": {"$round": ["$avg_time_per_item", 1]}
+            "total_hours": {"$round": [{"$divide": ["$total_minutes", 60]}, 2]},
+            "session_count": 1,
+            # Safely calculate avg_minutes_per_item - avoid divide by zero
+            "avg_minutes_per_item": {
+                "$cond": {
+                    "if": {"$gt": ["$total_items", 0]},
+                    "then": {"$round": [{"$divide": ["$total_minutes", "$total_items"]}, 2]},
+                    "else": 0
+                }
+            }
         }}
     ]
     return await db.time_logs.aggregate(pipeline).to_list(100)
