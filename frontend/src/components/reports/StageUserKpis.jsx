@@ -6,7 +6,7 @@ import { StageKpiCard } from "./StageKpiCard";
 import { API } from "@/utils/api";
 
 
-export function StageUserKpis() {
+export function StageUserKpis({ startDate, endDate }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [openStages, setOpenStages] = useState({});
@@ -14,7 +14,14 @@ export function StageUserKpis() {
   useEffect(() => {
     async function loadData() {
       try {
-        const res = await fetch(API + "/stats/stage-user-kpis", {
+        // Build URL with date params
+        const params = new URLSearchParams();
+        if (startDate) params.append("start_date", startDate);
+        if (endDate) params.append("end_date", endDate);
+        const queryString = params.toString();
+        const url = `${API}/stats/stage-user-kpis${queryString ? `?${queryString}` : ""}`;
+        
+        const res = await fetch(url, {
           credentials: "include",
         });
         if (res.ok) {
@@ -33,7 +40,7 @@ export function StageUserKpis() {
       }
     }
     loadData();
-  }, []);
+  }, [startDate, endDate]);
 
   function toggleStage(stageId) {
     setOpenStages(function(prev) {
