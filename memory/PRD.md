@@ -605,3 +605,21 @@ Build a manufacturing and fulfillment app for Shopify websites with detailed tim
   - Orders API now returns `fulfillment_batch_id`, `fulfillment_batch_name`, `fulfillment_stage_id`, `fulfillment_stage_name`
   - Enriches order data with batch info from fulfillment_batches collection
 
+### 20. Archive Button on Batch Summary Cards - COMPLETE (Feb 2026)
+- **Feature:** Archive button added to fulfillment batch summary cards
+- **Location:** Next to the existing Undo button on each batch card
+- **Visibility:** Admin/Manager only, not shown for history or completed batches
+- **Archive Dialog:**
+  - Shows batch name, order count, current stage, shipped count
+  - Confirmation required before archiving
+  - Orange "Archive Batch" button
+- **Archive Action:**
+  - Sets batch status to "archived"
+  - Stops any running timers and accumulates time
+  - Records archived_by user and timestamp
+  - Logs archive action to fulfillment_logs
+  - Moves batch to History tab
+- **API Endpoint:**
+  - `POST /api/fulfillment-batches/{batch_id}/archive`
+  - Admin/Manager permission required
+
