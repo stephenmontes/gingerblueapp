@@ -62,7 +62,7 @@
 
   "test_credentials": {
     "login": "/api/auth/dev-login (TRAINING_MODE enabled)",
-    "test_url": "https://retail-bulk-mark.preview.emergentagent.com/fulfillment"
+    "test_url": "https://assign-tasks-admin.preview.emergentagent.com/fulfillment"
   },
 
   "seed_data_creation": "Created temporary test orders (mobile_test_001, mobile_test_002) in test_database_training for mobile card testing, then cleaned up",

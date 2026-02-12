@@ -125,7 +125,7 @@ async def calendar_oauth_callback(code: str, state: str):
         if auth_url:
             frontend_url = "https://gingerblueapp.com"
         else:
-            frontend_url = "https://retail-bulk-mark.preview.emergentagent.com"
+            frontend_url = "https://assign-tasks-admin.preview.emergentagent.com"
     return RedirectResponse(f"{frontend_url}/scheduling?connected=true")
 
 
