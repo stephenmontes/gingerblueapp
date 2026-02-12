@@ -6,10 +6,12 @@ import { Play, Pause, Square, Clock, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
 import { API } from "@/utils/api";
 import { ProductionBatchReportDialog } from "./ProductionBatchReportDialog";
+import { StopTimerDialog } from "./StopTimerDialog";
 
 
 export function BatchHeader({ batch, batchDetails, activeStageId, stageName, stageColor, onTimerChange, activeTimer }) {
   const [showReport, setShowReport] = useState(false);
+  const [showStopDialog, setShowStopDialog] = useState(false);
   const totalItems = batchDetails ? batchDetails.total_items : 0;
   const orderCount = batch.order_ids ? batch.order_ids.length : 0;
 
