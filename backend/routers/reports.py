@@ -1094,10 +1094,13 @@ async def get_batch_report(batch_id: str, user: User = Depends(get_current_user)
         }}
     ]
     
-    # For now, get all production logs (until batch_id is consistently tracked)
-    # In production, filter by batch_id once data is available
+    # Get production time logs filtered by this batch_id
     production_logs = await db.time_logs.aggregate([
-        {"$match": {"completed_at": {"$ne": None}, "duration_minutes": {"$gt": 0}}},
+        {"$match": {
+            "batch_id": batch_id,
+            "completed_at": {"$ne": None}, 
+            "duration_minutes": {"$gt": 0}
+        }},
         {"$group": {
             "_id": {"stage_id": "$stage_id", "stage_name": "$stage_name"},
             "total_minutes": {"$sum": "$duration_minutes"},
@@ -1106,13 +1109,10 @@ async def get_batch_report(batch_id: str, user: User = Depends(get_current_user)
         }}
     ]).to_list(100)
     
-    # Get fulfillment time logs for orders in this batch
+    # Get fulfillment time logs for orders in this batch (match by order_id, not fulfillment batch_id)
     fulfillment_pipeline = [
         {"$match": {
-            "$or": [
-                {"batch_id": batch_id},
-                {"order_id": {"$in": order_ids}}
-            ],
+            "order_id": {"$in": order_ids},
             "completed_at": {"$ne": None},
             "duration_minutes": {"$gt": 0}
         }},
