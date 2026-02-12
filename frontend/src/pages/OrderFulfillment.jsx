@@ -47,6 +47,70 @@ export default function OrderFulfillment({ user }) {
     autoStopInactiveTimers();
   }, []);
 
+  // Handle URL query parameters to navigate to specific batch/stage
+  useEffect(() => {
+    const batchId = searchParams.get("batch");
+    const stageId = searchParams.get("stage");
+    
+    if (batchId && fulfillmentBatches.length > 0) {
+      // Find the batch in active batches
+      let batch = fulfillmentBatches.find(b => b.fulfillment_batch_id === batchId);
+      
+      if (!batch && historyBatches.length > 0) {
+        // Check history batches
+        batch = historyBatches.find(b => b.fulfillment_batch_id === batchId);
+        if (batch) {
+          setBatchTab("history");
+        }
+      }
+      
+      if (batch) {
+        handleSelectBatch(batch);
+        if (stageId) {
+          setActiveTab(stageId);
+        }
+        // Clear the URL params after handling
+        setSearchParams({});
+      } else if (!loading) {
+        // Batch not found in loaded batches - try fetching it
+        fetchBatchFromUrl(batchId, stageId);
+      }
+    }
+  }, [searchParams, fulfillmentBatches, historyBatches, loading]);
+
+  async function fetchBatchFromUrl(batchId, stageId) {
+    try {
+      const res = await fetch(
+        `${API}/fulfillment-batches/${batchId}`,
+        { credentials: "include" }
+      );
+      
+      if (res.ok) {
+        const batchData = await res.json();
+        
+        if (batchData.status === "active") {
+          setFulfillmentBatches(prev => [...prev, batchData]);
+        } else {
+          setHistoryBatches(prev => [...prev, batchData]);
+          setBatchTab("history");
+        }
+        
+        setSelectedBatch(batchData);
+        setBatchDetail(batchData);
+        
+        if (stageId) {
+          setActiveTab(stageId);
+        }
+        
+        toast.success(`Navigated to batch "${batchData.name}"`);
+        setSearchParams({});
+      }
+    } catch (err) {
+      toast.error("Failed to load batch from URL");
+      setSearchParams({});
+    }
+  }
+
   async function autoStopInactiveTimers() {
     try {
       await fetch(`${API}/fulfillment/timers/auto-stop-inactive`, {
