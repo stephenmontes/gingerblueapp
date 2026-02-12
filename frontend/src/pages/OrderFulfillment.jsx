@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -20,6 +21,7 @@ import { OrderSearchBox } from "@/components/fulfillment/OrderSearchBox";
 import { API } from "@/utils/api";
 
 export default function OrderFulfillment({ user }) {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [stages, setStages] = useState([]);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
