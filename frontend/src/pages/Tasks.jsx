@@ -72,6 +72,7 @@ export default function Tasks({ user }) {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [teamMembers, setTeamMembers] = useState([]);
+  const [managersAdmins, setManagersAdmins] = useState([]); // For workers to assign to management
   
   // View toggles
   const [viewMode, setViewMode] = useState("kanban"); // "kanban" or "list"
