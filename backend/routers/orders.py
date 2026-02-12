@@ -301,7 +301,11 @@ async def get_orders(
         "batch_id": 1,
         "batch_name": 1,
         "current_stage_id": 1,
+        "fulfillment_batch_id": 1,
+        "fulfillment_batch_name": 1,
         "fulfillment_stage_id": 1,
+        "fulfillment_stage_name": 1,
+        "individual_stage_override": 1,
         "archived": 1,
         "requested_ship_date": 1,
         "shipping_address": 1,
@@ -311,7 +315,8 @@ async def get_orders(
         "updated_at": 1,
         "pos_order_number": 1,
         "is_draft": 1,
-        "source": 1
+        "source": 1,
+        "platform": 1
     }
     
     # Fetch from appropriate collection with pagination
