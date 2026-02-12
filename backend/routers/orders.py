@@ -325,9 +325,18 @@ async def get_orders(
         (primary_sort_field, sort_direction)
     ]).skip(skip).limit(page_size).to_list(page_size)
     
-    # Enrich orders with batch information if missing
+    # Enrich orders with batch information and extract Faire order number if missing
     batch_cache = {}
     for order in orders:
+        # Extract Faire order number from note_attributes if present
+        note_attrs = order.get("note_attributes", [])
+        faire_order_num = None
+        for attr in note_attrs:
+            attr_name = (attr.get("name") or "").lower()
+            if "faire" in attr_name and "order" in attr_name:
+                faire_order_num = attr.get("value")
+                break
+        order["faire_order_number"] = faire_order_num
         batch_id = order.get("fulfillment_batch_id")
         if batch_id:
             # Get batch info if not cached
