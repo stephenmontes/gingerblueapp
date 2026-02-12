@@ -74,8 +74,11 @@ async def start_stage_timer(
     }
 
 @router.post("/stages/{stage_id}/stop-timer")
-async def stop_stage_timer(stage_id: str, items_processed: int = 0, user: User = Depends(get_current_user)):
-    """Stop time tracking for a user's stage work."""
+async def stop_stage_timer(stage_id: str, items_processed: int = None, user: User = Depends(get_current_user)):
+    """Stop time tracking for a user's stage work.
+    
+    Items processed is automatically calculated from qty changes during the timer session.
+    """
     active_timer = await db.time_logs.find_one({
         "user_id": user.user_id,
         "stage_id": stage_id,
@@ -97,12 +100,33 @@ async def stop_stage_timer(stage_id: str, items_processed: int = 0, user: User =
         current_session = (now - started_at).total_seconds() / 60
         duration_minutes = accumulated + current_session
     
+    # Auto-calculate items_processed from qty changes if not provided
+    calculated_items = 0
+    batch_id = active_timer.get("batch_id")
+    qty_snapshot = active_timer.get("qty_snapshot", {})
+    
+    if batch_id and qty_snapshot:
+        batch = await db.production_batches.find_one({"batch_id": batch_id}, {"_id": 0, "frames": 1})
+        if batch and batch.get("frames"):
+            for frame in batch["frames"]:
+                frame_id = frame.get("frame_id")
+                if frame_id in qty_snapshot:
+                    # Get the current qty_completed for this stage
+                    current_qty = frame.get(f"qty_completed_{stage_id}", 0) or frame.get("qty_completed", 0)
+                    previous_qty = qty_snapshot.get(frame_id, 0)
+                    diff = current_qty - previous_qty
+                    if diff > 0:
+                        calculated_items += diff
+    
+    # Use provided items_processed if explicitly given, otherwise use calculated
+    final_items = items_processed if items_processed is not None else calculated_items
+    
     await db.time_logs.update_one(
         {"log_id": active_timer["log_id"]},
         {"$set": {
             "completed_at": now.isoformat(),
             "duration_minutes": round(duration_minutes, 2),
-            "items_processed": items_processed,
+            "items_processed": final_items,
             "action": "stopped",
             "is_paused": False
         }}
@@ -113,7 +137,7 @@ async def stop_stage_timer(stage_id: str, items_processed: int = 0, user: User =
         "stage_id": stage_id,
         "stage_name": active_timer["stage_name"],
         "duration_minutes": round(duration_minutes, 2),
-        "items_processed": items_processed
+        "items_processed": final_items
     }
 
 @router.post("/stages/{stage_id}/pause-timer")
