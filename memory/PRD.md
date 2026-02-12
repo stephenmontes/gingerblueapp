@@ -21,6 +21,18 @@ Build a manufacturing and fulfillment app for Shopify websites with detailed tim
   - Blank for non-Faire orders
 - **Store Name Column** - Shows store name with platform badge
 
+### 3. Frame Production Time Tracking
+- **Stop Timer Dialog** (NEW - Feb 2026)
+  - When stopping a timer, prompts user to enter number of items processed
+  - Context-aware labels (e.g., "frames cut", "frames sanded", "frames assembled")
+  - Records items_processed for productivity calculations
+- **User Production Report** (NEW - Feb 2026)
+  - Per-user, per-stage breakdown of time tracked and items processed
+  - Items per hour calculation for each user at each stage
+  - Filterable by day, week, month, or custom date range
+  - Summary cards: Active Workers, Total Hours, Total Items, Avg Items/Hour
+  - Located in Reports > Productivity tab
+
 ### 3. Production Workflow
 - Frame-centric batch processing
 - Production stages: Cutting → Assembly → Sand → Paint → QC
