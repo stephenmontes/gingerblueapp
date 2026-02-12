@@ -325,6 +325,30 @@ async def get_orders(
         (primary_sort_field, sort_direction)
     ]).skip(skip).limit(page_size).to_list(page_size)
     
+    # Enrich orders with batch information if missing
+    batch_cache = {}
+    for order in orders:
+        batch_id = order.get("fulfillment_batch_id")
+        if batch_id:
+            # Get batch info if not cached
+            if batch_id not in batch_cache:
+                batch = await db.fulfillment_batches.find_one(
+                    {"fulfillment_batch_id": batch_id},
+                    {"_id": 0, "name": 1, "current_stage_id": 1, "current_stage_name": 1}
+                )
+                batch_cache[batch_id] = batch
+            
+            batch_info = batch_cache.get(batch_id)
+            if batch_info:
+                # Add batch name if not present
+                if not order.get("fulfillment_batch_name"):
+                    order["fulfillment_batch_name"] = batch_info.get("name")
+                
+                # Determine stage - use individual override if present, otherwise batch stage
+                if not order.get("individual_stage_override"):
+                    order["fulfillment_stage_id"] = batch_info.get("current_stage_id")
+                    order["fulfillment_stage_name"] = batch_info.get("current_stage_name")
+    
     return {
         "orders": orders,
         "pagination": {
