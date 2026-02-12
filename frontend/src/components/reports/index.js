@@ -9,3 +9,4 @@ export { StagesTab } from "./StagesTab";
 export { OverviewTab } from "./OverviewTab";
 export { StageUserKpis } from "./StageUserKpis";
 export { StageKpiCard } from "./StageKpiCard";
+export { UserProductionReport } from "./UserProductionReport";
