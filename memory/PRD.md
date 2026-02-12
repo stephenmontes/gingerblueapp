@@ -568,3 +568,25 @@ Build a manufacturing and fulfillment app for Shopify websites with detailed tim
 1. POS Order Creation fix (ObjectId serialization) - applied, needs user test
 2. Frame Production KPIs calculation fix (timezone) - applied, needs user test
 
+### 18. Order Search Box in Fulfillment - COMPLETE (Feb 2026)
+- **Feature:** Search box to find orders and their batch/stage in Order Fulfillment page
+- **Location:** Below the stage tabs (Print List, Mount List, Finish, Pack and Ship)
+- **Search Capabilities:**
+  - Search by order number (partial match)
+  - Search by order name (partial match)
+  - Search by customer name (partial match)
+  - Case-insensitive regex matching
+- **Results Dropdown:**
+  - Shows matching orders with order number, name, customer
+  - Displays batch name and current stage with color indicator
+  - Shows "Shipped" badge for shipped orders
+  - Keyboard navigation (Up/Down arrows, Enter to select, Escape to close)
+- **On Order Selection:**
+  - Opens the batch containing the order
+  - Switches to the correct stage tab
+  - Toast notification: "Found order in batch X at Y Stage"
+  - Handles orders in both active and archived batches
+- **API Endpoint:**
+  - `GET /api/fulfillment-batches/search-orders?q={query}&limit={limit}`
+  - Returns order with batch info, current stage, and shipped status
+
