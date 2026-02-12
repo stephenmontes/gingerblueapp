@@ -59,7 +59,7 @@ export function OrderReportRow({ order, onViewDetails }) {
 function ExpandedRow({ order }) {
   return (
     <TableRow className="border-border bg-muted/20">
-      <TableCell colSpan={8} className="py-3">
+      <TableCell colSpan={9} className="py-3">
         <div className="pl-8 space-y-3">
           <StageBreakdown stages={order.stages} />
           <UserBreakdown users={order.users} />
