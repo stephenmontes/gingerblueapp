@@ -168,6 +168,17 @@ export default function Tasks({ user }) {
     }
   };
 
+  const fetchManagersAdmins = async () => {
+    try {
+      const response = await fetch(`${API}/users/managers-admins`, { credentials: "include" });
+      if (response.ok) {
+        setManagersAdmins(await response.json());
+      }
+    } catch (error) {
+      console.error("Failed to fetch managers/admins:", error);
+    }
+  };
+
   const fetchTaskDetail = async (taskId) => {
     try {
       setDetailLoading(true);
