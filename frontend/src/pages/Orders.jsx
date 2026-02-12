@@ -229,7 +229,7 @@ export default function Orders({ user }) {
             .label {
               width: 2in;
               height: 1in;
-              padding: 0.03in 0.04in;
+              padding: 0.02in 0.03in;
               display: flex;
               flex-direction: column;
               align-items: center;
@@ -243,35 +243,36 @@ export default function Orders({ user }) {
             .label-header {
               width: 100%;
               display: flex;
-              justify-content: space-between;
+              justify-content: center;
               align-items: center;
+              gap: 0.15in;
               font-size: 8pt;
               line-height: 1;
             }
             .order-num {
               font-weight: bold;
               color: #2563eb;
-              font-size: 9pt;
+              font-size: 11pt;
             }
             .sku-text {
               font-weight: 700;
               color: #000;
               font-family: monospace;
-              font-size: 8pt;
+              font-size: 10pt;
             }
             .title {
               font-size: 8pt;
               font-weight: bold;
               text-align: center;
-              line-height: 1.15;
-              max-height: 0.22in;
+              line-height: 1.1;
+              max-height: 0.2in;
               overflow: hidden;
               width: 100%;
-              margin: 0.01in 0;
+              margin: 0;
             }
             .barcode {
               max-width: 1.85in;
-              height: 0.38in;
+              height: 0.4in;
             }
             .barcode-num {
               font-size: 6pt;
