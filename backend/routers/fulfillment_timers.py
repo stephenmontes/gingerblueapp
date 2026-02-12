@@ -818,8 +818,10 @@ async def get_order_kpis_report(user: User = Depends(get_current_user)):
     # Now get order details and calculate costs with user-specific rates
     result = []
     for order_id, data in order_data.items():
-        # Get order details
+        # Get order details - check both orders and fulfillment_orders collections
         order = await db.orders.find_one({"order_id": order_id}, {"_id": 0})
+        if not order:
+            order = await db.fulfillment_orders.find_one({"order_id": order_id}, {"_id": 0})
         
         # Calculate labor cost based on each user's rate and time
         labor_cost = 0
@@ -832,15 +834,25 @@ async def get_order_kpis_report(user: User = Depends(get_current_user)):
         total_items = data["total_items"] or 1
         cost_per_item = labor_cost / total_items if total_items > 0 else 0
         
+        # Get order total amount
+        order_total = 0
+        if order:
+            order_total = order.get("total_price") or order.get("total") or order.get("subtotal") or 0
+        
+        # Calculate cost as percentage of order total
+        cost_percent = (labor_cost / order_total * 100) if order_total > 0 else 0
+        
         result.append({
             "order_id": order_id,
             "order_number": data["order_number"] or (order.get("order_number") if order else order_id[:8]),
-            "customer_name": order.get("customer_name") if order else "—",
+            "customer_name": order.get("customer_name") or order.get("name") if order else "—",
             "total_minutes": round(data["total_minutes"], 1),
             "total_hours": round(total_hours, 2),
             "total_items": total_items,
             "labor_cost": round(labor_cost, 2),
             "cost_per_item": round(cost_per_item, 2),
+            "order_total": round(order_total, 2),
+            "cost_percent": round(cost_percent, 1),
             "stages": list(data["stages"].values()),
             "users": list(data["users"].values()),
             "time_entries": sorted(data["time_entries"], key=lambda x: x.get("completed_at") or "", reverse=True)
