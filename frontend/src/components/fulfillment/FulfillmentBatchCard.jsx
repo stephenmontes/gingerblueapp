@@ -267,18 +267,32 @@ export function FulfillmentBatchCard({ batch, isSelected, onSelect, onRefresh, c
               )}
             </span>
             
-            {/* Undo Button - Admin/Manager only, not for history */}
+            {/* Action Buttons - Admin/Manager only, not for history */}
             {canDelete && !isHistory && batch.status !== "completed" && (
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-6 sm:h-7 px-1.5 sm:px-2 text-muted-foreground hover:text-red-400"
-                onClick={handleUndoClick}
-                data-testid={`undo-batch-${batch.fulfillment_batch_id}`}
-              >
-                <Undo2 className="w-3 h-3 mr-0.5 sm:mr-1" />
-                Undo
-              </Button>
+              <div className="flex items-center gap-1">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 sm:h-7 px-1.5 sm:px-2 text-muted-foreground hover:text-orange-400"
+                  onClick={handleArchiveClick}
+                  data-testid={`archive-batch-${batch.fulfillment_batch_id}`}
+                  title="Archive batch"
+                >
+                  <Archive className="w-3 h-3 mr-0.5 sm:mr-1" />
+                  <span className="hidden sm:inline">Archive</span>
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 sm:h-7 px-1.5 sm:px-2 text-muted-foreground hover:text-red-400"
+                  onClick={handleUndoClick}
+                  data-testid={`undo-batch-${batch.fulfillment_batch_id}`}
+                  title="Undo batch"
+                >
+                  <Undo2 className="w-3 h-3 mr-0.5 sm:mr-1" />
+                  <span className="hidden sm:inline">Undo</span>
+                </Button>
+              </div>
             )}
           </div>
         )}
