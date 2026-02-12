@@ -37,6 +37,17 @@ async def start_stage_timer(
     
     now = datetime.now(timezone.utc)
     
+    # Capture snapshot of current qty_completed for this batch/stage
+    qty_snapshot = {}
+    if batch_id:
+        batch = await db.production_batches.find_one({"batch_id": batch_id}, {"_id": 0, "frames": 1})
+        if batch and batch.get("frames"):
+            for frame in batch["frames"]:
+                frame_id = frame.get("frame_id")
+                # Get the qty_completed for the current stage
+                stage_qty = frame.get(f"qty_completed_{stage_id}", 0) or frame.get("qty_completed", 0)
+                qty_snapshot[frame_id] = stage_qty
+    
     time_log = {
         "log_id": f"log_{uuid.uuid4().hex[:12]}",
         "user_id": user.user_id,
@@ -48,6 +59,7 @@ async def start_stage_timer(
         "action": "started",
         "started_at": now.isoformat(),
         "items_processed": 0,
+        "qty_snapshot": qty_snapshot,  # Store snapshot for calculating items on stop
         "created_at": now.isoformat()
     }
     await db.time_logs.insert_one(time_log)
