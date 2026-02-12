@@ -590,3 +590,18 @@ Build a manufacturing and fulfillment app for Shopify websites with detailed tim
   - `GET /api/fulfillment-batches/search-orders?q={query}&limit={limit}`
   - Returns order with batch info, current stage, and shipped status
 
+### 19. Batch/Stage Column on Orders Page - COMPLETE (Feb 2026)
+- **Feature:** Added Batch/Stage column to Orders page table
+- **Column Shows:**
+  - Batch name (truncated to fit)
+  - Current stage badge with stage name
+  - "—" for orders not in a fulfillment batch
+- **Click Action:**
+  - Navigates to `/fulfillment?batch={id}&stage={stageId}`
+  - Order Fulfillment page reads URL params and opens the batch
+  - Switches to the correct stage tab
+  - Shows toast: "Navigated to batch X"
+- **Backend Enhancement:**
+  - Orders API now returns `fulfillment_batch_id`, `fulfillment_batch_name`, `fulfillment_stage_id`, `fulfillment_stage_name`
+  - Enriches order data with batch info from fulfillment_batches collection
+
