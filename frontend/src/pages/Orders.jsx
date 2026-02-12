@@ -1222,6 +1222,7 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
                   <SortableHeader column="items">Items</SortableHeader>
                   <SortableHeader column="total_price">Total</SortableHeader>
                   <SortableHeader column="status">Status</SortableHeader>
+                  <TableHead className="label-caps">Batch/Stage</TableHead>
                   <SortableHeader column="requested_ship_date">Ship Date</SortableHeader>
                   <SortableHeader column="created_at">Order Date</SortableHeader>
                   <TableHead className="label-caps">Actions</TableHead>
