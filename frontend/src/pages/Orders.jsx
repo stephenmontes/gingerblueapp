@@ -1217,6 +1217,7 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
                     />
                   </TableHead>
                   <SortableHeader column="order_number">Order #</SortableHeader>
+                  <TableHead className="label-caps">Faire Order #</TableHead>
                   <SortableHeader column="store_name">Store</SortableHeader>
                   <SortableHeader column="customer_name">Customer</SortableHeader>
                   <SortableHeader column="items">Items</SortableHeader>
