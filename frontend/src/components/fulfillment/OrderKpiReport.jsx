@@ -107,13 +107,18 @@ function ReportSummary({ totals }) {
   const avgCostPerFrame = totals.totalItems > 0 
     ? (totals.totalCost / totals.totalItems).toFixed(2) 
     : '0.00';
+  
+  const avgCostPercent = totals.totalOrderValue > 0
+    ? (totals.totalCost / totals.totalOrderValue * 100).toFixed(1)
+    : '0.0';
     
   return (
-    <div className="grid grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg">
+    <div className="grid grid-cols-5 gap-4 mb-6 p-4 bg-muted/30 rounded-lg">
       <SummaryItem icon={Package} label="Orders Tracked" value={totals.orderCount} />
       <SummaryItem icon={Clock} label="Total Time" value={formatTime(totals.totalMinutes)} />
+      <SummaryItem icon={DollarSign} label="Total Order Value" value={`$${totals.totalOrderValue.toFixed(2)}`} />
       <SummaryItem icon={DollarSign} label="Total Labor Cost" value={`$${totals.totalCost.toFixed(2)}`} />
-      <SummaryItem icon={DollarSign} label="Avg Cost/Frame" value={`$${avgCostPerFrame}`} />
+      <SummaryItem icon={DollarSign} label="Avg Cost %" value={`${avgCostPercent}%`} highlight={parseFloat(avgCostPercent) > 10} />
     </div>
   );
 }
