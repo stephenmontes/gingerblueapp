@@ -10,7 +10,8 @@ import {
   Package, 
   Store, 
   Truck, 
-  Undo2 
+  Undo2,
+  Archive
 } from "lucide-react";
 import {
   Dialog,
@@ -25,7 +26,9 @@ import { API } from "@/utils/api";
 
 export function FulfillmentBatchCard({ batch, isSelected, onSelect, onRefresh, canDelete, isHistory }) {
   const [undoDialogOpen, setUndoDialogOpen] = useState(false);
+  const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
   const [undoing, setUndoing] = useState(false);
+  const [archiving, setArchiving] = useState(false);
   
   const orderCount = batch.order_ids?.length || batch.order_count || 0;
   const isRunning = batch.timer_active && !batch.timer_paused;
