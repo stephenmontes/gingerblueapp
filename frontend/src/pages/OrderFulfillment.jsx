@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { RefreshCw, Truck, Users, Clock, FileText, ChevronDown, ChevronUp, Settings, Package, History } from "lucide-react";
+import { RefreshCw, Truck, Users, Clock, FileText, ChevronDown, ChevronUp, Settings, Package, History, Search } from "lucide-react";
 import { toast } from "sonner";
 import { FulfillmentStageTab } from "@/components/fulfillment/FulfillmentStageTab";
 import { FulfillmentSummary } from "@/components/fulfillment/FulfillmentSummary";
@@ -16,6 +16,7 @@ import { UserDateReport } from "@/components/fulfillment/UserDateReport/index";
 import { MyTimerHistory } from "@/components/fulfillment/MyTimerHistory";
 import { FulfillmentBatchCard } from "@/components/fulfillment/FulfillmentBatchCard";
 import { FulfillmentBatchDetail } from "@/components/fulfillment/FulfillmentBatchDetail";
+import { OrderSearchBox } from "@/components/fulfillment/OrderSearchBox";
 import { API } from "@/utils/api";
 
 export default function OrderFulfillment({ user }) {
