@@ -155,6 +155,37 @@ export function FulfillmentBatchCard({ batch, isSelected, onSelect, onRefresh, c
     setUndoDialogOpen(true);
   };
 
+  const handleArchiveClick = (e) => {
+    e.stopPropagation();
+    setArchiveDialogOpen(true);
+  };
+
+  const handleArchive = async () => {
+    setArchiving(true);
+    try {
+      const res = await fetch(
+        `${API}/fulfillment-batches/${batch.fulfillment_batch_id}/archive`,
+        {
+          method: "POST",
+          credentials: "include",
+        }
+      );
+      
+      if (res.ok) {
+        toast.success(`Batch "${batch.name}" archived`);
+        setArchiveDialogOpen(false);
+        if (onRefresh) onRefresh();
+      } else {
+        const err = await res.json();
+        toast.error(err.detail || "Failed to archive batch");
+      }
+    } catch (err) {
+      toast.error("Failed to archive batch");
+    } finally {
+      setArchiving(false);
+    }
+  };
+
   return (
     <Card
       className={`cursor-pointer transition-all ${storeColor} ${isSelected ? "ring-2 ring-primary" : "hover:border-primary/50"}`}
