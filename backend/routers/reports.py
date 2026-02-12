@@ -1075,25 +1075,6 @@ async def get_batch_report(batch_id: str, user: User = Depends(get_current_user)
     
     order_ids = batch.get("order_ids", [])
     
-    # Get production time logs for this batch (direct batch_id match)
-    production_pipeline = [
-        {"$match": {
-            "$or": [
-                {"batch_id": batch_id},
-                {"batch_id": {"$exists": False}}  # Include legacy logs without batch_id
-            ],
-            "completed_at": {"$ne": None},
-            "duration_minutes": {"$gt": 0}
-        }},
-        {"$group": {
-            "_id": {"stage_id": "$stage_id", "stage_name": "$stage_name"},
-            "total_minutes": {"$sum": "$duration_minutes"},
-            "total_items": {"$sum": "$items_processed"},
-            "session_count": {"$sum": 1},
-            "users": {"$addToSet": {"user_id": "$user_id", "user_name": "$user_name"}}
-        }}
-    ]
-    
     # Get production time logs filtered by this batch_id
     production_logs = await db.time_logs.aggregate([
         {"$match": {
