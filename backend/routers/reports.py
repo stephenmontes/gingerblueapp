@@ -910,13 +910,25 @@ async def get_time_logs(
 @router.get("/stats/stage-user-kpis")
 async def get_stage_user_kpis(
     stage_id: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
     user: User = Depends(get_current_user)
 ):
     """Get KPIs for each user per stage: time in stage, avg items made, items sent to next stage"""
+    # Parse date range
+    start_dt, end_dt = parse_date_range(start_date, end_date)
+    
     # Build match query
     match_query = {"duration_minutes": {"$gt": 0}, "completed_at": {"$ne": None}}
     if stage_id:
         match_query["stage_id"] = stage_id
+    
+    # Add date filter
+    if start_dt and end_dt:
+        match_query["completed_at"] = {
+            "$gte": start_dt.isoformat(),
+            "$lte": end_dt.isoformat()
+        }
     
     # Aggregate time logs by user and stage
     pipeline = [
