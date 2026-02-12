@@ -400,9 +400,15 @@ export default function Tasks({ user }) {
   };
 
   useEffect(() => {
-    fetchTeamMembers();
+    // Always fetch managers/admins (for workers to assign tasks)
+    fetchManagersAdmins();
     fetchStats();
-  }, []);
+    
+    // Fetch all team members only for managers/admins
+    if (user?.role === "admin" || user?.role === "manager") {
+      fetchTeamMembers();
+    }
+  }, [user?.role]);
 
   useEffect(() => {
     const debounce = setTimeout(() => {
