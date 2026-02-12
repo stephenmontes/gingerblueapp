@@ -169,6 +169,70 @@ export default function OrderFulfillment({ user }) {
     }
   }
 
+  // Handle order selection from search box
+  async function handleSearchSelectOrder(order) {
+    if (!order.batch_id) {
+      toast.error("Order is not assigned to a fulfillment batch");
+      return;
+    }
+
+    // Find the batch in our loaded batches
+    let batch = fulfillmentBatches.find(b => b.fulfillment_batch_id === order.batch_id);
+    
+    // If not in active batches, check history
+    if (!batch) {
+      batch = historyBatches.find(b => b.fulfillment_batch_id === order.batch_id);
+      if (batch) {
+        // Switch to history tab
+        setBatchTab("history");
+      }
+    }
+
+    if (batch) {
+      // Select the batch and switch to its stage
+      await handleSelectBatch(batch);
+      
+      // Set the active tab to the order's current stage
+      if (order.current_stage_id) {
+        setActiveTab(order.current_stage_id);
+      }
+      
+      toast.success(`Found order in batch "${batch.name}" at ${order.current_stage_name || "Unknown Stage"}`);
+    } else {
+      // Batch not loaded - try to fetch it directly
+      try {
+        const res = await fetch(
+          `${API}/fulfillment-batches/${order.batch_id}`,
+          { credentials: "include" }
+        );
+        
+        if (res.ok) {
+          const batchData = await res.json();
+          // Add to appropriate list and select
+          if (batchData.status === "active") {
+            setFulfillmentBatches(prev => [...prev, batchData]);
+          } else {
+            setHistoryBatches(prev => [...prev, batchData]);
+            setBatchTab("history");
+          }
+          
+          setSelectedBatch(batchData);
+          setBatchDetail(batchData);
+          
+          if (order.current_stage_id) {
+            setActiveTab(order.current_stage_id);
+          }
+          
+          toast.success(`Found order in batch "${batchData.name}" at ${order.current_stage_name || "Unknown Stage"}`);
+        } else {
+          toast.error("Could not load batch information");
+        }
+      } catch (err) {
+        toast.error("Failed to load batch");
+      }
+    }
+  }
+
   if (loading) {
     return (
       <div className="space-y-6" data-testid="fulfillment-loading">
