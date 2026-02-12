@@ -578,11 +578,20 @@ export default function Tasks({ user }) {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Assignees</SelectItem>
-              {teamMembers.map(member => (
+              {/* Show managers/admins for everyone */}
+              {managersAdmins.map(member => (
                 <SelectItem key={member.user_id} value={member.user_id}>
-                  {member.name}
+                  {member.name} ({member.role})
                 </SelectItem>
               ))}
+              {/* Show all team members only for managers/admins */}
+              {(user?.role === "admin" || user?.role === "manager") && teamMembers
+                .filter(m => !managersAdmins.some(ma => ma.user_id === m.user_id))
+                .map(member => (
+                  <SelectItem key={member.user_id} value={member.user_id}>
+                    {member.name}
+                  </SelectItem>
+                ))}
             </SelectContent>
           </Select>
         )}
