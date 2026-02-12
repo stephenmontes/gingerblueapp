@@ -322,7 +322,7 @@ export default function Reports() {
         </TabsContent>
 
         <TabsContent value="stage-kpis" className="space-y-6">
-          <StageUserKpis />
+          <StageUserKpis startDate={getDateParams().startDate} endDate={getDateParams().endDate} />
         </TabsContent>
 
         <TabsContent value="quality" className="space-y-6">
