@@ -1059,6 +1059,16 @@ export function FulfillmentBatchDetail({ batch, stages, onRefresh, onClose, canD
         </div>
       )}
 
+      {/* Retail batch helper - show hint for selecting and marking all done */}
+      {isRetailBatch && selectedOrders.size === 0 && (
+        <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-2 mx-3 sm:mx-4 mb-2">
+          <div className="flex items-center gap-2 text-sm text-purple-400">
+            <CheckCircle2 className="w-4 h-4" />
+            <span>Select orders using checkboxes, then click "All Items Done" to complete all items at once</span>
+          </div>
+        </div>
+      )}
+
       {/* Orders Worksheet - Mobile optimized with proper overflow handling */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden">
         <div className="space-y-3 sm:space-y-4 p-3 sm:p-4">
