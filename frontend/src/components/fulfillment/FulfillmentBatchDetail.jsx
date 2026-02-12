@@ -644,6 +644,49 @@ export function FulfillmentBatchDetail({ batch, stages, onRefresh, onClose, canD
     setDeleteOrderNumber(orderNumber);
   };
 
+  // Mark all selected orders as done (set all items to their required qty)
+  const markAllSelectedDone = async () => {
+    if (selectedOrders.size === 0) {
+      toast.error("No orders selected");
+      return;
+    }
+
+    if (!isUserActive || isUserPaused) {
+      toast.error("Timer must be running to mark items as done");
+      return;
+    }
+
+    setMarkingAllDone(true);
+
+    try {
+      const res = await fetch(
+        `${API}/fulfillment-batches/${batch.fulfillment_batch_id}/orders/mark-all-done`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            order_ids: Array.from(selectedOrders)
+          })
+        }
+      );
+
+      if (res.ok) {
+        const result = await res.json();
+        toast.success(result.message || `Marked ${result.orders_completed} orders as done`);
+        setSelectedOrders(new Set());
+        onRefresh?.();
+      } else {
+        const err = await res.json();
+        toast.error(err.detail || "Failed to mark orders as done");
+      }
+    } catch (err) {
+      toast.error("Failed to mark orders as done");
+    } finally {
+      setMarkingAllDone(false);
+    }
+  };
+
   // Move selected orders to Pack and Ship (for Finish stage)
   const moveOrdersToPackShip = async () => {
     if (selectedOrders.size === 0) {
