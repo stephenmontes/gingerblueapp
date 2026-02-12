@@ -825,7 +825,7 @@ async def get_order_kpis_report(user: User = Depends(get_current_user)):
         labor_cost = 0
         for user_id, user_data in data["users"].items():
             hourly_rate = user_rates.get(user_id, 15)
-            user_hours = user_data["total_minutes"] / 60
+            user_hours = user_data["minutes"] / 60
             labor_cost += user_hours * hourly_rate
         
         total_hours = data["total_minutes"] / 60
