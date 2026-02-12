@@ -165,14 +165,6 @@ export function ActiveTimerBanner({ activeTimer: propTimer, onTimerChange }) {
         </div>
         <UserStageStats stageId={activeTimer.stage_id} stageName={activeTimer.stage_name} />
       </div>
-
-      {/* Stop Timer Dialog */}
-      <StopTimerDialog
-        isOpen={showStopDialog}
-        onClose={() => setShowStopDialog(false)}
-        activeTimer={activeTimer}
-        onTimerStopped={handleTimerStopped}
-      />
     </div>
   );
 }
