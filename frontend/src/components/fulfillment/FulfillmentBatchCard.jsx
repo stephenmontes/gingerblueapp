@@ -346,6 +346,51 @@ export function FulfillmentBatchCard({ batch, isSelected, onSelect, onRefresh, c
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Archive Dialog */}
+        <Dialog open={archiveDialogOpen} onOpenChange={setArchiveDialogOpen}>
+          <DialogContent onClick={(e) => e.stopPropagation()}>
+            <DialogHeader>
+              <DialogTitle>Archive Batch: {batch.name}</DialogTitle>
+              <DialogDescription>
+                This will move the batch to the History tab. The batch data and time tracking will be preserved for reporting purposes.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="py-4">
+              <div className="bg-muted/50 rounded-lg p-3 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Orders:</span>
+                  <span className="font-medium">{orderCount}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Current Stage:</span>
+                  <span className="font-medium">{batch.current_stage_name || 'N/A'}</span>
+                </div>
+                {batch.shipped_count >= 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Shipped:</span>
+                    <span className="font-medium">{batch.shipped_count}/{batch.total_orders || orderCount}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="ghost" onClick={() => setArchiveDialogOpen(false)} disabled={archiving}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleArchive} 
+                disabled={archiving}
+                className="bg-orange-600 hover:bg-orange-700"
+              >
+                <Archive className="w-4 h-4 mr-2" />
+                {archiving ? "Archiving..." : "Archive Batch"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );
