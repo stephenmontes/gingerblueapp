@@ -79,13 +79,30 @@ export function BatchHeader({ batch, batchDetails, activeStageId, stageName, sta
   }
 
   async function handleStopTimer() {
-    // Open dialog to prompt for items processed
-    setShowStopDialog(true);
-  }
-
-  function handleTimerStopped() {
-    setShowStopDialog(false);
-    if (onTimerChange) onTimerChange();
+    if (!activeStageId) return;
+    
+    try {
+      const res = await fetch(API + "/stages/" + activeStageId + "/stop-timer", {
+        method: "POST",
+        credentials: "include",
+      });
+      if (res.ok) {
+        const result = await res.json();
+        const items = result.items_processed || 0;
+        const mins = Math.round(result.duration_minutes);
+        toast.success(
+          items > 0 
+            ? `Timer stopped: ${mins}m • ${items} frames recorded`
+            : `Timer stopped: ${mins} minutes logged`
+        );
+        if (onTimerChange) onTimerChange();
+      } else {
+        const err = await res.json();
+        toast.error(err.detail || "Failed to stop timer");
+      }
+    } catch (err) {
+      toast.error("Failed to stop timer");
+    }
   }
 
   return (
