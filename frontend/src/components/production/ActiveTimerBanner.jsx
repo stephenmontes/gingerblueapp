@@ -73,14 +73,26 @@ export function ActiveTimerBanner({ activeTimer: propTimer, onTimerChange }) {
 
   async function handleStopTimer() {
     if (!activeTimer) return;
-    // Open dialog to prompt for items processed
-    setShowStopDialog(true);
-  }
-
-  function handleTimerStopped() {
-    setShowStopDialog(false);
-    setLocalTimer(null);
-    if (onTimerChange) onTimerChange();
+    try {
+      const res = await fetch(
+        API + "/stages/" + activeTimer.stage_id + "/stop-timer",
+        { method: "POST", credentials: "include" }
+      );
+      if (res.ok) {
+        const result = await res.json();
+        const items = result.items_processed || 0;
+        const mins = Math.round(result.duration_minutes);
+        toast.success(
+          items > 0 
+            ? `Timer stopped: ${mins}m • ${items} frames recorded`
+            : `Timer stopped: ${mins} minutes logged`
+        );
+        setLocalTimer(null);
+        if (onTimerChange) onTimerChange();
+      }
+    } catch (err) {
+      toast.error("Failed to stop timer");
+    }
   }
 
   if (loading || !activeTimer) return null;
