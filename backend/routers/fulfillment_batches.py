@@ -3,11 +3,12 @@ Fulfillment Batches Router
 Handles ShipStation/Etsy batch fulfillment where orders move through stages as a group
 Supports multiple workers, item-level progress tracking, and comprehensive reporting
 """
-from fastapi import APIRouter, HTTPException, Depends
-from typing import Optional
+from fastapi import APIRouter, HTTPException, Depends, Query
+from typing import Optional, List
 from datetime import datetime, timezone
 from pydantic import BaseModel
 import uuid
+import re
 
 from database import db
 from models.user import User
@@ -18,6 +19,85 @@ router = APIRouter(prefix="/fulfillment-batches", tags=["fulfillment-batches"])
 
 class ItemProgressUpdate(BaseModel):
     qty_completed: int
+
+
+@router.get("/search-orders")
+async def search_fulfillment_orders(
+    q: str = Query(..., min_length=1, description="Search query"),
+    limit: int = Query(10, le=50),
+    user: User = Depends(get_current_user)
+):
+    """
+    Search for orders across all fulfillment batches.
+    Searches by order number, order name, and customer name.
+    Returns matching orders with their batch and stage information.
+    """
+    if not q or len(q.strip()) < 1:
+        return {"orders": []}
+    
+    search_term = q.strip()
+    
+    # Build regex pattern for case-insensitive partial matching
+    regex_pattern = re.compile(re.escape(search_term), re.IGNORECASE)
+    
+    # Search in fulfillment_orders collection
+    query = {
+        "$or": [
+            {"order_number": {"$regex": regex_pattern}},
+            {"name": {"$regex": regex_pattern}},
+            {"customer_name": {"$regex": regex_pattern}},
+            {"order_id": {"$regex": regex_pattern}}
+        ]
+    }
+    
+    orders = await db.fulfillment_orders.find(
+        query,
+        {"_id": 0}
+    ).limit(limit).to_list(limit)
+    
+    # Enrich with batch information
+    results = []
+    batch_cache = {}
+    
+    for order in orders:
+        batch_id = order.get("fulfillment_batch_id")
+        
+        # Get batch info (with caching)
+        if batch_id and batch_id not in batch_cache:
+            batch = await db.fulfillment_batches.find_one(
+                {"fulfillment_batch_id": batch_id},
+                {"_id": 0, "fulfillment_batch_id": 1, "name": 1, "current_stage_id": 1, 
+                 "current_stage_name": 1, "status": 1, "store_type": 1, "is_gb_home_batch": 1}
+            )
+            batch_cache[batch_id] = batch
+        
+        batch_info = batch_cache.get(batch_id, {})
+        
+        # Determine current stage - check if order has individual override
+        if order.get("individual_stage_override"):
+            current_stage_id = order.get("fulfillment_stage_id")
+            current_stage_name = order.get("fulfillment_stage_name")
+        else:
+            current_stage_id = batch_info.get("current_stage_id") if batch_info else None
+            current_stage_name = batch_info.get("current_stage_name") if batch_info else None
+        
+        results.append({
+            "order_id": order.get("order_id"),
+            "order_number": order.get("order_number"),
+            "name": order.get("name"),
+            "customer_name": order.get("customer_name"),
+            "status": order.get("status"),
+            "batch_id": batch_id,
+            "batch_name": batch_info.get("name") if batch_info else None,
+            "batch_status": batch_info.get("status") if batch_info else None,
+            "current_stage_id": current_stage_id,
+            "current_stage_name": current_stage_name,
+            "is_shipped": order.get("status") == "shipped",
+            "store_type": batch_info.get("store_type") if batch_info else None,
+            "is_gb_home_batch": batch_info.get("is_gb_home_batch", False) if batch_info else False
+        })
+    
+    return {"orders": results, "count": len(results)}
 
 
 @router.get("")
