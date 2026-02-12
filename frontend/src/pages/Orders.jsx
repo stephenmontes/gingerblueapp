@@ -1464,6 +1464,12 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
                   <p className="label-caps mb-1">Platform</p>
                   <PlatformBadge platform={selectedOrder.platform} />
                 </div>
+                {selectedOrder.faire_order_number && (
+                  <div>
+                    <p className="label-caps mb-1">Faire Order #</p>
+                    <p className="font-mono text-orange-400">{selectedOrder.faire_order_number}</p>
+                  </div>
+                )}
                 <div>
                   <p className="label-caps mb-1">Status</p>
                   <StatusBadge status={selectedOrder.status} />
