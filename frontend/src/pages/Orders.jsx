@@ -1261,6 +1261,15 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
                       </button>
                     </TableCell>
                     <TableCell>
+                      {order.faire_order_number ? (
+                        <span className="font-mono text-sm text-orange-400" data-testid={`faire-order-${order.order_id}`}>
+                          {order.faire_order_number}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
                       <div className="flex items-center gap-2">
                         <PlatformBadge platform={order.source === "pos" ? "pos" : order.platform} />
                         <span className="text-sm">{order.store_name}</span>
