@@ -641,3 +641,28 @@ Build a manufacturing and fulfillment app for Shopify websites with detailed tim
   - `POST /api/fulfillment-batches/{batch_id}/archive`
   - Admin/Manager permission required
 
+
+### 21. Task Assignment to Management - COMPLETE (Feb 2026)
+- **Feature:** Allow workers to assign tasks to admin/managers
+- **Backend Changes:**
+  - New endpoint: `GET /api/users/managers-admins` - Returns users with admin/manager roles
+  - Accessible by all authenticated users (including workers)
+  - Returns: user_id, name, email, role, picture
+- **Frontend Changes:**
+  - Updated "Assign To" dropdown in Tasks page to show "Management" section
+  - Workers see only management staff in dropdown
+  - Admins/Managers see both Management and All Team Members sections
+  - Helper text for workers: "Assign tasks to management for review or action"
+  - TaskCreateButton component also updated with same functionality
+- **Notifications:**
+  - In-app notification sent to assigned user when task is created
+- **Task Status Tracking:**
+  - Status flow: Pending → In Progress → Completed
+  - Status can be changed via Kanban drag-drop or detail dialog
+
+### Bug Fixes (Feb 2026)
+- **Order Time & Cost Report Fix:**
+  - Fixed KeyError 'total_minutes' in `/api/fulfillment/reports/order-kpis` endpoint
+  - Issue: Code was accessing `user_data["total_minutes"]` but data was stored as `user_data["minutes"]`
+  - Report now correctly displays order-level time tracking, labor costs, and cost per frame
+
