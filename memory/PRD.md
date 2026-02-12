@@ -14,6 +14,12 @@ Build a manufacturing and fulfillment app for Shopify websites with detailed tim
 - Search across all orders including archived/fulfilled
 - Editable ship dates
 - Archive/unarchive functionality
+- **Faire Order # Column** (NEW - Feb 2026)
+  - Displays Faire order number for orders synced from Faire marketplace
+  - Extracts from Shopify's note_attributes ("Faire order number" field)
+  - Shows in orange color in both table and order detail dialog
+  - Blank for non-Faire orders
+- **Store Name Column** - Shows store name with platform badge
 
 ### 3. Production Workflow
 - Frame-centric batch processing
