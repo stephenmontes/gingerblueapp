@@ -276,6 +276,7 @@ export function FulfillmentBatchDetail({ batch, stages, onRefresh, onClose, canD
   const [selectedOrders, setSelectedOrders] = useState(new Set());
   const [markingComplete, setMarkingComplete] = useState(false);
   const [movingToPackShip, setMovingToPackShip] = useState(false);
+  const [markingAllDone, setMarkingAllDone] = useState(false);
 
   // Check if batch is at Finish stage (allows moving orders to Pack & Ship independently)
   const isAtFinishStage = batch.current_stage_id === "fulfill_finish";
@@ -285,6 +286,10 @@ export function FulfillmentBatchDetail({ batch, stages, onRefresh, onClose, canD
   const isGBHomeBatch = batch.store_type === "gb_home" || batch.is_gb_home_batch;
   // Allow moving to pack/ship for GB Home at any stage, or for other stores only at Finish stage
   const canMoveToPackShip = isGBHomeBatch || isAtFinishStage;
+  
+  // Retail batches (Ginger Blue Decor, Etsy, Antique Farmhouse) - allow selecting and marking all done
+  const retailStoreTypes = ["gb_decor", "etsy", "antique_farmhouse", "shipstation"];
+  const isRetailBatch = retailStoreTypes.includes(batch.store_type) || batch.is_enhanced_batch;
 
   // Check if current user is in active workers (timer must be running to work)
   const activeWorkers = batch.active_workers || [];
