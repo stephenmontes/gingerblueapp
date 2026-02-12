@@ -52,7 +52,7 @@
 
   "test_credentials": {
     "login": "/api/auth/dev-login (TRAINING_MODE enabled)",
-    "test_url": "https://sales-chatter.preview.emergentagent.com"
+    "test_url": "https://retail-bulk-mark.preview.emergentagent.com"
   },
 
   "seed_data_creation": "Added test items to fulfillment_orders collection for order test_order_001: 3 items with qty 2,3,1 respectively",
