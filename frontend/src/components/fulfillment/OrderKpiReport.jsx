@@ -151,8 +151,9 @@ function ReportContent({ orders, onSelectOrder }) {
           <TableHead>Customer</TableHead>
           <TableHead className="text-right">Time</TableHead>
           <TableHead className="text-right">Items</TableHead>
-          <TableHead className="text-right">Cost/Frame</TableHead>
-          <TableHead className="text-right">Total Cost</TableHead>
+          <TableHead className="text-right">Order Total</TableHead>
+          <TableHead className="text-right">Labor Cost</TableHead>
+          <TableHead className="text-right">Cost %</TableHead>
           <TableHead className="text-center">Contributors</TableHead>
         </TableRow>
       </TableHeader>
