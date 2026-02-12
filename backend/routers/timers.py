@@ -104,17 +104,16 @@ async def stop_stage_timer(stage_id: str, items_processed: int = None, user: Use
     qty_snapshot = active_timer.get("qty_snapshot", {})
     
     if batch_id and qty_snapshot:
-        batch = await db.production_batches.find_one({"batch_id": batch_id}, {"_id": 0, "frames": 1})
-        if batch and batch.get("frames"):
-            for frame in batch["frames"]:
-                frame_id = frame.get("frame_id")
-                if frame_id in qty_snapshot:
-                    # Get the current qty_completed for this stage
-                    current_qty = frame.get(f"qty_completed_{stage_id}", 0) or frame.get("qty_completed", 0)
-                    previous_qty = qty_snapshot.get(frame_id, 0)
-                    diff = current_qty - previous_qty
-                    if diff > 0:
-                        calculated_items += diff
+        # Get current frame quantities from batch_frames collection
+        frames = await db.batch_frames.find({"batch_id": batch_id}).to_list(1000)
+        for frame in frames:
+            frame_id = frame.get("frame_id")
+            if frame_id in qty_snapshot:
+                current_qty = frame.get("qty_completed", 0)
+                previous_qty = qty_snapshot.get(frame_id, 0)
+                diff = current_qty - previous_qty
+                if diff > 0:
+                    calculated_items += diff
     
     # Use provided items_processed if explicitly given, otherwise use calculated
     final_items = items_processed if items_processed is not None else calculated_items
