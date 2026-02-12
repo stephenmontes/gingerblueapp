@@ -23,6 +23,19 @@ async def get_users(user: User = Depends(get_current_user)):
     return users
 
 
+@router.get("/managers-admins")
+async def get_managers_and_admins(user: User = Depends(get_current_user)):
+    """Get users who are managers or admins - accessible by all authenticated users
+    
+    This allows workers to assign tasks to management.
+    """
+    users = await db.users.find(
+        {"role": {"$in": ["admin", "manager"]}},
+        {"_id": 0, "user_id": 1, "name": 1, "email": 1, "role": 1, "picture": 1}
+    ).to_list(100)
+    return users
+
+
 @router.put("/{user_id}/role")
 async def update_user_role(user_id: str, role: str, user: User = Depends(get_current_user)):
     """Update user role (admin only)"""
