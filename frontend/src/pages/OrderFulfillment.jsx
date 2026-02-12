@@ -401,7 +401,7 @@ export default function OrderFulfillment({ user }) {
             </div>
             
             {/* Active / History Tabs */}
-            <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
+            <div className="flex gap-2 mb-3 overflow-x-auto pb-1">
               <Button
                 variant={batchTab === "active" ? "default" : "outline"}
                 size="sm"
@@ -420,6 +420,14 @@ export default function OrderFulfillment({ user }) {
                 History
                 <Badge variant="secondary" className="ml-1 text-xs">{historyBatches.length}</Badge>
               </Button>
+            </div>
+            
+            {/* Order Search Box in Batch View */}
+            <div className="mb-4">
+              <OrderSearchBox 
+                onSelectOrder={handleSearchSelectOrder}
+                stages={stages}
+              />
             </div>
             
             {batchTab === "active" ? (
