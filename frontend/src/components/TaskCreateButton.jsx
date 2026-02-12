@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -24,10 +25,12 @@ export function TaskCreateButton({
   className = "",
   children = null,
   onTaskCreated = null,
+  user = null, // Add user prop to determine role
   ...restProps
 }) {
   const [showDialog, setShowDialog] = useState(false);
   const [teamMembers, setTeamMembers] = useState([]);
+  const [managersAdmins, setManagersAdmins] = useState([]);
   const [loading, setLoading] = useState(false);
   
   const [task, setTask] = useState({
@@ -42,9 +45,13 @@ export function TaskCreateButton({
 
   useEffect(() => {
     if (showDialog) {
-      fetchTeamMembers();
+      fetchManagersAdmins();
+      // Only fetch all team members for managers/admins
+      if (user?.role === "admin" || user?.role === "manager") {
+        fetchTeamMembers();
+      }
     }
-  }, [showDialog]);
+  }, [showDialog, user?.role]);
 
   const fetchTeamMembers = async () => {
     try {
@@ -54,6 +61,17 @@ export function TaskCreateButton({
       }
     } catch (error) {
       console.error("Failed to fetch team:", error);
+    }
+  };
+
+  const fetchManagersAdmins = async () => {
+    try {
+      const response = await fetch(`${API}/users/managers-admins`, { credentials: "include" });
+      if (response.ok) {
+        setManagersAdmins(await response.json());
+      }
+    } catch (error) {
+      console.error("Failed to fetch managers/admins:", error);
     }
   };
 
