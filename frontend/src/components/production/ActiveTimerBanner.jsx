@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Clock, StopCircle, Play, Pause } from "lucide-react";
 import { toast } from "sonner";
 import { UserStageStats } from "./UserStageStats";
+import { StopTimerDialog } from "./StopTimerDialog";
 import { API } from "@/utils/api";
 
 
@@ -11,6 +12,7 @@ export function ActiveTimerBanner({ activeTimer: propTimer, onTimerChange }) {
   // Use prop timer if provided, otherwise fetch locally
   const [localTimer, setLocalTimer] = useState(null);
   const [loading, setLoading] = useState(!propTimer);
+  const [showStopDialog, setShowStopDialog] = useState(false);
   
   const activeTimer = propTimer || localTimer;
 
