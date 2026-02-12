@@ -690,3 +690,157 @@ async def auto_stop_inactive_production_timers(user: User = Depends(get_current_
         stopped_count += 1
     
     return {"message": f"Auto-stopped {stopped_count} inactive timers", "stopped_count": stopped_count}
+
+
+
+@router.get("/reports/user-stage-summary")
+async def get_user_stage_summary(
+    period: str = "week",
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    user: User = Depends(get_current_user)
+):
+    """
+    Get comprehensive production report per user per stage.
+    Shows time tracked, items processed, and items per hour for each user at each production stage.
+    Supports filtering by day, week, month, or custom date range.
+    """
+    from zoneinfo import ZoneInfo
+    est_tz = ZoneInfo("America/New_York")
+    now = datetime.now(est_tz)
+    
+    # Calculate date range based on period
+    if period == "custom" and start_date and end_date:
+        try:
+            start_dt = datetime.strptime(start_date, "%Y-%m-%d").replace(tzinfo=est_tz)
+            end_dt = datetime.strptime(end_date, "%Y-%m-%d").replace(hour=23, minute=59, second=59, tzinfo=est_tz)
+            period_label = f"{start_date} to {end_date}"
+        except ValueError:
+            start_dt = now.replace(hour=0, minute=0, second=0, microsecond=0)
+            end_dt = now
+            period_label = "Today"
+    elif period == "day":
+        start_dt = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_dt = now
+        period_label = now.strftime("%b %d, %Y")
+    elif period == "week":
+        days_since_monday = now.weekday()
+        start_dt = (now - timedelta(days=days_since_monday)).replace(hour=0, minute=0, second=0, microsecond=0)
+        end_dt = now
+        period_label = f"Week of {start_dt.strftime('%b %d')}"
+    elif period == "month":
+        start_dt = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        end_dt = now
+        period_label = now.strftime("%B %Y")
+    else:
+        days_since_monday = now.weekday()
+        start_dt = (now - timedelta(days=days_since_monday)).replace(hour=0, minute=0, second=0, microsecond=0)
+        end_dt = now
+        period_label = f"Week of {start_dt.strftime('%b %d')}"
+    
+    # Convert to UTC for database query
+    start_dt_utc = start_dt.astimezone(timezone.utc)
+    end_dt_utc = end_dt.astimezone(timezone.utc)
+    
+    # Aggregate time logs by user and stage
+    pipeline = [
+        {"$match": {
+            "duration_minutes": {"$gt": 0},
+            "completed_at": {"$ne": None},
+            "workflow_type": "production"
+        }},
+        {"$addFields": {
+            "completed_date": {
+                "$cond": {
+                    "if": {"$eq": [{"$type": "$completed_at"}, "string"]},
+                    "then": {"$dateFromString": {"dateString": "$completed_at"}},
+                    "else": "$completed_at"
+                }
+            }
+        }},
+        {"$match": {
+            "completed_date": {"$gte": start_dt_utc, "$lte": end_dt_utc}
+        }},
+        {"$group": {
+            "_id": {
+                "user_id": "$user_id",
+                "user_name": "$user_name",
+                "stage_id": "$stage_id",
+                "stage_name": "$stage_name"
+            },
+            "total_minutes": {"$sum": "$duration_minutes"},
+            "total_items": {"$sum": "$items_processed"},
+            "session_count": {"$sum": 1}
+        }},
+        {"$project": {
+            "_id": 0,
+            "user_id": "$_id.user_id",
+            "user_name": "$_id.user_name",
+            "stage_id": "$_id.stage_id",
+            "stage_name": "$_id.stage_name",
+            "total_minutes": {"$round": ["$total_minutes", 1]},
+            "total_hours": {"$round": [{"$divide": ["$total_minutes", 60]}, 2]},
+            "total_items": 1,
+            "session_count": 1,
+            "items_per_hour": {"$cond": {
+                "if": {"$gt": ["$total_minutes", 0]},
+                "then": {"$round": [{"$multiply": [{"$divide": ["$total_items", "$total_minutes"]}, 60]}, 1]},
+                "else": 0
+            }}
+        }},
+        {"$sort": {"user_name": 1, "stage_name": 1}}
+    ]
+    
+    results = await db.time_logs.aggregate(pipeline).to_list(1000)
+    
+    # Group by user
+    users_map = {}
+    for stat in results:
+        uid = stat["user_id"]
+        if uid not in users_map:
+            users_map[uid] = {
+                "user_id": uid,
+                "user_name": stat["user_name"],
+                "total_hours": 0,
+                "total_items": 0,
+                "stages": []
+            }
+        
+        users_map[uid]["total_hours"] += stat["total_hours"]
+        users_map[uid]["total_items"] += stat["total_items"]
+        users_map[uid]["stages"].append({
+            "stage_id": stat["stage_id"],
+            "stage_name": stat["stage_name"],
+            "total_hours": stat["total_hours"],
+            "total_items": stat["total_items"],
+            "items_per_hour": stat["items_per_hour"],
+            "session_count": stat["session_count"]
+        })
+    
+    # Calculate overall items_per_hour per user
+    users = []
+    for uid, data in users_map.items():
+        data["total_hours"] = round(data["total_hours"], 2)
+        data["items_per_hour"] = round(data["total_items"] / data["total_hours"], 1) if data["total_hours"] > 0 else 0
+        users.append(data)
+    
+    # Sort users by total items (descending)
+    users.sort(key=lambda x: x["total_items"], reverse=True)
+    
+    # Calculate summary
+    total_hours = sum(u["total_hours"] for u in users)
+    total_items = sum(u["total_items"] for u in users)
+    
+    return {
+        "period": period,
+        "period_label": period_label,
+        "start_date": start_dt.strftime("%Y-%m-%d"),
+        "end_date": end_dt.strftime("%Y-%m-%d"),
+        "users": users,
+        "summary": {
+            "total_users": len(users),
+            "total_hours": round(total_hours, 2),
+            "total_items": total_items,
+            "overall_items_per_hour": round(total_items / total_hours, 1) if total_hours > 0 else 0
+        }
+    }
