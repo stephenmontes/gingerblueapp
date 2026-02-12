@@ -48,8 +48,9 @@ export function OrderKpiReport() {
     totalMinutes: acc.totalMinutes + order.total_minutes,
     totalCost: acc.totalCost + order.labor_cost,
     totalItems: acc.totalItems + order.total_items,
+    totalOrderValue: acc.totalOrderValue + (order.order_total || 0),
     orderCount: acc.orderCount + 1
-  }), { totalMinutes: 0, totalCost: 0, totalItems: 0, orderCount: 0 });
+  }), { totalMinutes: 0, totalCost: 0, totalItems: 0, totalOrderValue: 0, orderCount: 0 });
 
   if (loading) {
     return <LoadingState />;
