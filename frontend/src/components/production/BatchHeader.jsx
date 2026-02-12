@@ -22,7 +22,12 @@ export function BatchHeader({ batch, batchDetails, activeStageId, stageName, sta
     if (!activeStageId) return;
     
     try {
-      const res = await fetch(API + "/stages/" + activeStageId + "/start-timer", {
+      // Include batch_id so timer can track qty changes
+      const url = batch?.batch_id 
+        ? `${API}/stages/${activeStageId}/start-timer?batch_id=${batch.batch_id}`
+        : `${API}/stages/${activeStageId}/start-timer`;
+        
+      const res = await fetch(url, {
         method: "POST",
         credentials: "include",
       });
