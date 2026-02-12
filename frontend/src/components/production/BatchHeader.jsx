@@ -222,6 +222,14 @@ export function BatchHeader({ batch, batchDetails, activeStageId, stageName, sta
         isOpen={showReport}
         onClose={() => setShowReport(false)}
       />
+
+      {/* Stop Timer Dialog */}
+      <StopTimerDialog
+        isOpen={showStopDialog}
+        onClose={() => setShowStopDialog(false)}
+        activeTimer={activeTimer}
+        onTimerStopped={handleTimerStopped}
+      />
     </Card>
   );
 }
