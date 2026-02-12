@@ -1294,6 +1294,27 @@ PO-12346,Jane Doe,456 Oak Ave,Los Angeles,CA,90001,FRAME-5X7-BLK,19.99,3,,2025-0
                       </div>
                     </TableCell>
                     <TableCell>
+                      {order.fulfillment_batch_id ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 text-xs gap-1 hover:bg-primary/10"
+                          onClick={() => navigate(`/fulfillment?batch=${order.fulfillment_batch_id}&stage=${order.fulfillment_stage_id || ''}`)}
+                          data-testid={`goto-batch-${order.order_id}`}
+                        >
+                          <Layers className="w-3 h-3" />
+                          <span className="max-w-[100px] truncate">{order.fulfillment_batch_name || 'Batch'}</span>
+                          {order.fulfillment_stage_name && (
+                            <Badge variant="secondary" className="text-[10px] px-1 py-0">
+                              {order.fulfillment_stage_name}
+                            </Badge>
+                          )}
+                        </Button>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
                       {editingShipDate === order.order_id ? (
                         <div className="flex items-center gap-1">
                           <Input
