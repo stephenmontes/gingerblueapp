@@ -123,15 +123,15 @@ function ReportSummary({ totals }) {
   );
 }
 
-function SummaryItem({ icon: Icon, label, value }) {
+function SummaryItem({ icon: Icon, label, value, highlight = false }) {
   return (
     <div className="flex items-center gap-3">
-      <div className="p-2 rounded-lg bg-primary/10">
-        <Icon className="w-4 h-4 text-primary" />
+      <div className={`p-2 rounded-lg ${highlight ? 'bg-red-500/20' : 'bg-primary/10'}`}>
+        <Icon className={`w-4 h-4 ${highlight ? 'text-red-400' : 'text-primary'}`} />
       </div>
       <div>
         <p className="text-xs text-muted-foreground">{label}</p>
-        <p className="text-lg font-bold">{value}</p>
+        <p className={`text-lg font-bold ${highlight ? 'text-red-400' : ''}`}>{value}</p>
       </div>
     </div>
   );
