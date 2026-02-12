@@ -13,6 +13,14 @@ export function OrderReportRow({ order, onViewDetails }) {
     </Badge>
   ));
 
+  // Determine cost percentage color based on threshold
+  const getCostPercentColor = (percent) => {
+    if (percent <= 5) return "text-green-400";
+    if (percent <= 10) return "text-yellow-400";
+    if (percent <= 15) return "text-orange-400";
+    return "text-red-400";
+  };
+
   return (
     <>
       <TableRow className="border-border hover:bg-muted/30">
@@ -26,11 +34,16 @@ export function OrderReportRow({ order, onViewDetails }) {
             #{order.order_number}
           </button>
         </TableCell>
-        <TableCell>{order.customer_name}</TableCell>
+        <TableCell>{order.customer_name || "—"}</TableCell>
         <TableCell className="text-right font-mono">{fmtTime(order.total_minutes)}</TableCell>
         <TableCell className="text-right">{order.total_items}</TableCell>
-        <TableCell className="text-right font-mono text-green-400">${order.cost_per_item.toFixed(2)}</TableCell>
+        <TableCell className="text-right font-mono">
+          {order.order_total > 0 ? `$${order.order_total.toFixed(2)}` : "—"}
+        </TableCell>
         <TableCell className="text-right font-mono font-medium text-primary">${order.labor_cost.toFixed(2)}</TableCell>
+        <TableCell className={`text-right font-mono font-medium ${getCostPercentColor(order.cost_percent)}`}>
+          {order.order_total > 0 ? `${order.cost_percent.toFixed(1)}%` : "—"}
+        </TableCell>
         <TableCell className="text-center">
           <div className="flex justify-center gap-1">
             {userBadges}
