@@ -577,7 +577,8 @@ async def get_production_hours_by_user_date(
     
     return {
         "period": period,
-        "start_date": start_date.strftime("%Y-%m-%d"),
+        "start_date": start_date_obj.strftime("%Y-%m-%d"),
+        "end_date": end_date_obj.strftime("%Y-%m-%d"),
         "data": result,
         "daily_limit_hours": DAILY_HOURS_LIMIT
     }
