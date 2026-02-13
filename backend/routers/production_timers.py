@@ -460,6 +460,8 @@ async def delete_production_time_entry(
 @router.get("/reports/hours-by-user-date")
 async def get_production_hours_by_user_date(
     period: str = "day",
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
     user: User = Depends(get_current_user)
 ):
     """Get production hours grouped by user and date."""
@@ -468,21 +470,41 @@ async def get_production_hours_by_user_date(
     est_tz = ZoneInfo("America/New_York")
     now = datetime.now(est_tz)
     
-    if period == "day":
-        start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    if period == "custom" and start_date and end_date:
+        # Parse custom date range
+        try:
+            start_date_parsed = datetime.strptime(start_date, "%Y-%m-%d")
+            end_date_parsed = datetime.strptime(end_date, "%Y-%m-%d")
+            # Set to start of day in EST
+            start_date_obj = est_tz.localize(start_date_parsed.replace(hour=0, minute=0, second=0, microsecond=0))
+            # Set to end of day in EST
+            end_date_obj = est_tz.localize(end_date_parsed.replace(hour=23, minute=59, second=59, microsecond=999999))
+        except ValueError:
+            start_date_obj = now.replace(hour=0, minute=0, second=0, microsecond=0)
+            end_date_obj = now
+    elif period == "day":
+        start_date_obj = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_date_obj = now
     elif period == "week":
         days_since_monday = now.weekday()
-        start_date = (now - timedelta(days=days_since_monday)).replace(hour=0, minute=0, second=0, microsecond=0)
+        start_date_obj = (now - timedelta(days=days_since_monday)).replace(hour=0, minute=0, second=0, microsecond=0)
+        end_date_obj = now
     elif period == "month":
-        start_date = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        start_date_obj = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        end_date_obj = now
     else:
-        start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        start_date_obj = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_date_obj = now
     
     # Convert to UTC for database query
-    start_date_utc = start_date.astimezone(timezone.utc)
+    start_date_utc = start_date_obj.astimezone(timezone.utc)
+    end_date_utc = end_date_obj.astimezone(timezone.utc)
     
     time_logs = await db.time_logs.find({
-        "completed_at": {"$gte": start_date_utc.isoformat()},
+        "completed_at": {
+            "$gte": start_date_utc.isoformat(),
+            "$lte": end_date_utc.isoformat()
+        },
         "duration_minutes": {"$gt": 0},
         "workflow_type": "production"
     }, {"_id": 0}).to_list(5000)
