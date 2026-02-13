@@ -135,8 +135,8 @@ export function ProductionUserDateReport() {
                 </p>
               </div>
             </div>
-            <div onClick={(e) => e.stopPropagation()}>
-              <Select value={period} onValueChange={setPeriod}>
+            <div onClick={(e) => e.stopPropagation()} className="flex items-center gap-2">
+              <Select value={period} onValueChange={handlePeriodChange}>
                 <SelectTrigger className="w-36" data-testid="production-period-selector">
                   <SelectValue />
                 </SelectTrigger>
@@ -144,8 +144,31 @@ export function ProductionUserDateReport() {
                   <SelectItem value="day">Today</SelectItem>
                   <SelectItem value="week">This Week</SelectItem>
                   <SelectItem value="month">This Month</SelectItem>
+                  <SelectItem value="custom">Custom Range</SelectItem>
                 </SelectContent>
               </Select>
+              
+              {period === "custom" && (
+                <Popover open={showDatePicker} onOpenChange={setShowDatePicker}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-2">
+                      <CalendarIcon className="w-4 h-4" />
+                      {customStartDate && customEndDate 
+                        ? `${format(customStartDate, "MM/dd")} - ${format(customEndDate, "MM/dd")}`
+                        : "Select dates"
+                      }
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="end">
+                    <Calendar
+                      mode="range"
+                      selected={{ from: customStartDate, to: customEndDate }}
+                      onSelect={handleDateSelect}
+                      numberOfMonths={2}
+                    />
+                  </PopoverContent>
+                </Popover>
+              )}
             </div>
           </div>
         </CollapsibleTrigger>
