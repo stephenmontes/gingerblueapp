@@ -476,9 +476,9 @@ async def get_production_hours_by_user_date(
             start_date_parsed = datetime.strptime(start_date, "%Y-%m-%d")
             end_date_parsed = datetime.strptime(end_date, "%Y-%m-%d")
             # Set to start of day in EST
-            start_date_obj = est_tz.localize(start_date_parsed.replace(hour=0, minute=0, second=0, microsecond=0))
+            start_date_obj = start_date_parsed.replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=est_tz)
             # Set to end of day in EST
-            end_date_obj = est_tz.localize(end_date_parsed.replace(hour=23, minute=59, second=59, microsecond=999999))
+            end_date_obj = end_date_parsed.replace(hour=23, minute=59, second=59, microsecond=999999, tzinfo=est_tz)
         except ValueError:
             start_date_obj = now.replace(hour=0, minute=0, second=0, microsecond=0)
             end_date_obj = now
