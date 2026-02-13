@@ -11,7 +11,13 @@ import { ProductionUserList } from "./UserList";
 
 export function ProductionDateGroup({ dateData, dailyLimit }) {
   const [isOpen, setIsOpen] = useState(true);
-  const formattedDate = new Date(dateData.date).toLocaleDateString('en-US', { 
+  
+  // Parse date as local date to avoid timezone offset issues
+  // dateData.date is in format "YYYY-MM-DD"
+  const [year, month, day] = dateData.date.split('-').map(Number);
+  const localDate = new Date(year, month - 1, day); // month is 0-indexed
+  
+  const formattedDate = localDate.toLocaleDateString('en-US', { 
     weekday: 'long', 
     year: 'numeric', 
     month: 'short', 
