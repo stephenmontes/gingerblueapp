@@ -13,9 +13,16 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { Clock, Users, ChevronDown, ChevronRight } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { Clock, Users, ChevronDown, ChevronRight, CalendarIcon } from "lucide-react";
 import { ProductionDateGroup } from "./DateGroup";
 import { API } from "@/utils/api";
+import { format } from "date-fns";
 
 
 export function ProductionUserDateReport() {
@@ -24,11 +31,18 @@ export function ProductionUserDateReport() {
   const [period, setPeriod] = useState("day");
   const [dailyLimit, setDailyLimit] = useState(9);
   const [isOpen, setIsOpen] = useState(false);
+  const [customStartDate, setCustomStartDate] = useState(null);
+  const [customEndDate, setCustomEndDate] = useState(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
-  const fetchReport = useCallback(async (selectedPeriod) => {
+  const fetchReport = useCallback(async (selectedPeriod, startDate, endDate) => {
     setLoading(true);
     try {
-      const res = await fetch(`${API}/production/reports/hours-by-user-date?period=${selectedPeriod}`, {
+      let url = `${API}/production/reports/hours-by-user-date?period=${selectedPeriod}`;
+      if (selectedPeriod === "custom" && startDate && endDate) {
+        url += `&start_date=${format(startDate, "yyyy-MM-dd")}&end_date=${format(endDate, "yyyy-MM-dd")}`;
+      }
+      const res = await fetch(url, {
         credentials: "include"
       });
       if (res.ok) {
@@ -44,8 +58,29 @@ export function ProductionUserDateReport() {
   }, []);
 
   useEffect(() => {
-    fetchReport(period);
-  }, [period, fetchReport]);
+    if (period === "custom") {
+      if (customStartDate && customEndDate) {
+        fetchReport(period, customStartDate, customEndDate);
+      }
+    } else {
+      fetchReport(period, null, null);
+    }
+  }, [period, customStartDate, customEndDate, fetchReport]);
+
+  const handlePeriodChange = (value) => {
+    setPeriod(value);
+    if (value === "custom") {
+      setShowDatePicker(true);
+    }
+  };
+
+  const handleDateSelect = (range) => {
+    if (range?.from) setCustomStartDate(range.from);
+    if (range?.to) {
+      setCustomEndDate(range.to);
+      setShowDatePicker(false);
+    }
+  };
 
   // Group data by date for subtotals
   const groupedByDate = data.reduce((acc, item) => {
