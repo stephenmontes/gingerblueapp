@@ -665,4 +665,23 @@ Build a manufacturing and fulfillment app for Shopify websites with detailed tim
   - Fixed KeyError 'total_minutes' in `/api/fulfillment/reports/order-kpis` endpoint
   - Issue: Code was accessing `user_data["total_minutes"]` but data was stored as `user_data["minutes"]`
   - Report now correctly displays order-level time tracking, labor costs, and cost per frame
+  - Added `order_total` and `cost_percent` fields to show labor cost as percentage of order value
+- **Batch Cost Breakdown Fix:**
+  - Corrected aggregation logic to map fulfillment time logs to production batches via shared `order_id`
+  - Now properly calculates combined production + fulfillment costs per batch
+- **Stage Analysis Report Fix:**
+  - Fixed divide-by-zero error when `items_processed` is zero
+  - Added conditional check before calculating `avg_minutes_per_item`
+- **Stage KPIs Date Filtering Fix:**
+  - Stage KPIs now correctly filter by selected date range
+  - Added `start_date` and `end_date` parameters to `/api/v1/stats/user-kpis-by-stage`
+- **Hours by User Report Fix:**
+  - Fixed timezone bug that displayed wrong day of week
+  - Added custom date range filter with date picker
+  - Properly converts UTC to EST for date grouping
+
+### Regression Testing (Feb 2026)
+- Comprehensive regression test completed: 100% backend (19/19 tests), 100% frontend
+- All report tabs verified working: Overview, Batch Reports, Stage KPIs, Quality & Costs, User Performance, Stage Analysis, Productivity
+- Test report: `/app/test_reports/iteration_21.json`
 
