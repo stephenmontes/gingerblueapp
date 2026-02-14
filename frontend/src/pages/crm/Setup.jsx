@@ -61,6 +61,10 @@ export default function CRMSetupPage() {
   const [loading, setLoading] = useState(true);
   const [runningStaleCheck, setRunningStaleCheck] = useState(false);
   
+  // Gmail Integration state
+  const [gmailStatus, setGmailStatus] = useState({ connected: false, loading: true });
+  const [gmailConnecting, setGmailConnecting] = useState(false);
+  
   // Dialog states
   const [stageDialog, setStageDialog] = useState({ open: false, data: null });
   const [picklistDialog, setPicklistDialog] = useState({ open: false, data: null });
@@ -69,8 +73,23 @@ export default function CRMSetupPage() {
   const [assignmentDialog, setAssignmentDialog] = useState({ open: false, data: null });
   const [staleDialog, setStaleDialog] = useState({ open: false, data: null });
 
+  // Check URL params for Gmail callback results
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('gmail_connected') === 'true') {
+      toast.success('Gmail connected successfully!');
+      window.history.replaceState({}, '', window.location.pathname);
+      fetchGmailStatus();
+    }
+    if (params.get('gmail_error')) {
+      toast.error(`Gmail connection failed: ${params.get('gmail_error')}`);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
+
   useEffect(() => {
     fetchAllConfig();
+    fetchGmailStatus();
   }, []);
 
   const fetchAllConfig = async () => {
