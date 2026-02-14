@@ -13,7 +13,7 @@ import requests
 import os
 from datetime import datetime, timedelta
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://order-tracking-test.preview.emergentagent.com")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://crm-integration-10.preview.emergentagent.com")
 
 class TestSession:
     """Shared session with authentication"""
