@@ -479,21 +479,94 @@ Build a manufacturing and fulfillment app for Shopify websites with detailed tim
   - `GET/PUT /api/crm/admin/layouts/{object_type}` - Page layouts
   - `GET /api/crm/admin/export` - Export full configuration
 
-### Phase 3 - Advanced (Future)
-- **Gmail Integration:**
-  - Email sync for contacts
-  - Calendar sync for events
-  - Activity logging from Gmail
-- **Approval Workflows:**
-  - Discount approval for quotes over threshold
+### Phase 3 - CRM Advanced Features - COMPLETE (Feb 2026)
+
+#### Gmail Integration - COMPLETE
+- **OAuth Flow:**
+  - Connect Gmail via Google OAuth at `/crm/setup` (Integrations tab)
+  - Stores access/refresh tokens per user
+  - Auto-refresh expired tokens
+  - CSRF protection with state parameter
+- **Email Operations:**
+  - List Gmail messages (`GET /api/gmail/messages`)
+  - Get message details with full body (`GET /api/gmail/messages/{id}`)
+  - Send emails via Gmail (`POST /api/gmail/send`)
+  - Search emails by contact address (`GET /api/gmail/search-by-email`)
+- **CRM Integration:**
+  - Link emails to Leads, Opportunities, Accounts, Contacts
+  - View linked emails for any CRM record (`GET /api/gmail/linked-emails`)
+  - Email history for contacts (`GET /api/gmail/contact-emails/{id}`)
+  - Logs outbound emails to `crm_email_logs` collection
+- **Frontend (`/crm/setup` → Integrations tab):**
+  - Gmail connection status indicator
+  - Connect/Disconnect buttons
+  - Shows connected email address and date
+  - Feature description when connected
+
+#### Approval Workflows (Discount Approvals) - COMPLETE
+- **Approval Rules:**
+  - Configure discount approval thresholds (`/crm/setup` → Automation tab)
+  - Trigger types: discount_percent, discount_amount, quote_total
+  - Set threshold value and comparison operator (≥ or >)
+  - Assign multiple approvers (managers/admins)
+  - Auto-approve option for below-threshold values
+  - Active/Inactive status toggle
+- **Approval Requests:**
+  - Automatic approval request creation when threshold exceeded
+  - In-app notifications for approvers
+  - Approve/Reject with notes and reason
+  - Timeline logging for all approval events
+  - "My Pending Approvals" quick view
+- **API Endpoints:**
+  - `GET/POST/PUT/DELETE /api/automation/approval-rules` - Rule CRUD
+  - `GET /api/automation/approval-requests` - List requests with filters
+  - `GET /api/automation/my-pending-approvals` - Pending for current user
+  - `POST /api/automation/approval-requests/{id}/approve` - Approve request
+  - `POST /api/automation/approval-requests/{id}/reject` - Reject request
+- **Testing:** 100% pass rate (14 backend tests + all frontend flows)
+
+#### Campaign Management - COMPLETE
+- **Campaign CRUD:**
+  - Create marketing campaigns with name, type, status, budget
+  - Campaign types: email, social_media, trade_show, webinar, advertising, content_marketing, referral, direct_mail, telemarketing, other
+  - Statuses: planned, in_progress, completed, paused, cancelled
+  - Track dates, budget, expected revenue, target audience
+- **Campaign Attribution:**
+  - Link leads and opportunities to campaigns
+  - Automatic metric calculation (leads_generated, opportunities_created, revenue_won)
+  - Cost per lead calculation
+  - ROI calculation: ((revenue - budget) / budget * 100)
+- **Campaign Reports:**
+  - Summary report: total campaigns, budget, leads, revenue, overall ROI
+  - Performance report: per-campaign metrics including conversion rates and win rates
+- **API Endpoints:**
+  - `GET/POST/PUT/DELETE /api/campaigns` - Campaign CRUD
+  - `GET /api/campaigns/{id}` - Details with metrics, leads, opportunities
+  - `POST /api/campaigns/{id}/attribute-lead/{lead_id}` - Attribution
+  - `POST /api/campaigns/{id}/attribute-opportunity/{opp_id}` - Attribution
+  - `GET /api/campaigns/reports/summary` - Overall summary
+  - `GET /api/campaigns/reports/performance` - Per-campaign analytics
+  - `GET /api/campaigns/config/types` - Available types and statuses
+- **Frontend (`/crm/campaigns`):**
+  - Campaign list with filters (status, type, search)
+  - Summary cards: Total Campaigns, Leads Generated, Revenue Won, Overall ROI
+  - New Campaign dialog with all fields
+  - Campaign detail dialog with Overview/Leads/Opportunities tabs
+  - Metrics visualization (cost per lead, ROI)
+- **Testing:** 100% pass rate (16 backend tests + all frontend flows)
+
+### Phase 4 - Future Enhancements (Backlog)
 - **Custom Object Builder:**
   - Admin can create custom objects with fields
-- **Campaign Management:**
-  - Track marketing campaigns
-  - Campaign attribution on leads
 - **Case Management:**
   - Support tickets linked to accounts
   - Customer 360 view with cases
+- **Additional Reports:**
+  - Win/Loss analysis
+  - Forecast by month
+  - Leads by source report
+  - Activity reports by rep
+  - Top accounts report
 
 ### 15. Activity Timeline (Salesforce-style Chatter) - COMPLETE (Feb 2026)
 - **Core Features:**
