@@ -493,6 +493,10 @@ export default function CRMSetupPage() {
             <Zap className="h-4 w-4" />
             Automation
           </TabsTrigger>
+          <TabsTrigger value="integrations" className="flex items-center gap-1" data-testid="tab-integrations">
+            <Mail className="h-4 w-4" />
+            Integrations
+          </TabsTrigger>
         </TabsList>
 
         {/* STAGES TAB */}
