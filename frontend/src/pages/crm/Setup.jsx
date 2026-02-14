@@ -57,6 +57,7 @@ export default function CRMSetupPage() {
   const [customFields, setCustomFields] = useState([]);
   const [assignmentRules, setAssignmentRules] = useState([]);
   const [staleRules, setStaleRules] = useState([]);
+  const [approvalRules, setApprovalRules] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [runningStaleCheck, setRunningStaleCheck] = useState(false);
@@ -72,6 +73,7 @@ export default function CRMSetupPage() {
   const [optionDialog, setOptionDialog] = useState({ open: false, picklistId: null, data: null });
   const [assignmentDialog, setAssignmentDialog] = useState({ open: false, data: null });
   const [staleDialog, setStaleDialog] = useState({ open: false, data: null });
+  const [approvalDialog, setApprovalDialog] = useState({ open: false, data: null });
 
   // Check URL params for Gmail callback results
   useEffect(() => {
