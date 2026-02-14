@@ -293,12 +293,12 @@ export default function CampaignsPage({ user }) {
             </div>
             <div className="w-40">
               <Label className="text-xs">Status</Label>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <Select value={statusFilter || "all"} onValueChange={(val) => setStatusFilter(val === "all" ? "" : val)}>
                 <SelectTrigger>
                   <SelectValue placeholder="All statuses" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All statuses</SelectItem>
+                  <SelectItem value="all">All statuses</SelectItem>
                   {campaignStatuses.map(s => (
                     <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
                   ))}
@@ -307,12 +307,12 @@ export default function CampaignsPage({ user }) {
             </div>
             <div className="w-48">
               <Label className="text-xs">Type</Label>
-              <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <Select value={typeFilter || "all"} onValueChange={(val) => setTypeFilter(val === "all" ? "" : val)}>
                 <SelectTrigger>
                   <SelectValue placeholder="All types" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All types</SelectItem>
+                  <SelectItem value="all">All types</SelectItem>
                   {campaignTypes.map(t => (
                     <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
                   ))}
