@@ -1,5 +1,5 @@
 """
-Automation Router - Lead Assignment & Stale Opportunity Rules
+Automation Router - Lead Assignment, Stale Opportunity Rules & Approval Workflows
 """
 from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
 from datetime import datetime, timezone, timedelta
@@ -11,7 +11,8 @@ from models.user import User
 from models.automation import (
     LeadAssignmentRuleCreate, LeadAssignmentRuleUpdate,
     StaleOpportunityRuleCreate, StaleOpportunityRuleUpdate,
-    AssignmentMethod, RuleStatus, HIGH_SIGNAL_FIELDS, SystemEventType
+    AssignmentMethod, RuleStatus, HIGH_SIGNAL_FIELDS, SystemEventType,
+    ApprovalRuleCreate, ApprovalRuleUpdate, ApprovalRequestCreate, ApprovalStatus
 )
 from dependencies import get_current_user
 from routers.timeline import log_system_event
