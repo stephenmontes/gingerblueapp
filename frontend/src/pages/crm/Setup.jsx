@@ -17,7 +17,8 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { 
   Settings, GitBranch, List, Plus, Trash2, Edit, GripVertical,
-  Save, ChevronUp, ChevronDown, Palette, FileText, Zap, Users
+  Save, ChevronUp, ChevronDown, Palette, FileText, Zap, Users,
+  Mail, CheckCircle, XCircle, ExternalLink, Loader2
 } from 'lucide-react';
 
 const fieldTypes = [
