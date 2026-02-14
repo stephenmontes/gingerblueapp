@@ -555,12 +555,53 @@ Build a manufacturing and fulfillment app for Shopify websites with detailed tim
   - Metrics visualization (cost per lead, ROI)
 - **Testing:** 100% pass rate (16 backend tests + all frontend flows)
 
+#### Case Management (Support Tickets) - COMPLETE (Feb 2026)
+- **Case CRUD:**
+  - Create/edit/delete support cases linked to accounts and contacts
+  - Auto-generated case numbers (CS-00001 format)
+  - Case statuses: new, in_progress, waiting_customer, escalated, resolved, closed
+  - Case priorities: low, medium, high, critical
+  - Categories: Product Issue, Shipping/Delivery, Billing/Payment, Returns/Refunds, Order Inquiry, Technical Support, Account Issue, General Question, Complaint, Other
+  - Origins: Email, Phone, Web Form, Chat, Social Media, Walk-in, Internal
+  - Contact information (name, email, phone) stored on case
+  - Due date tracking with overdue highlighting
+- **Case Activities:**
+  - Internal and public comments on cases
+  - Activity feed with timestamps and user attribution
+  - Status change history tracking
+  - First response time tracking
+- **Case Dashboard:**
+  - Stats cards: Open Cases, My Cases, Critical/High, Overdue, Resolved Today
+  - Filter by status, priority, assigned user
+  - Search by case number, subject, description, contact info
+- **Quick Actions:**
+  - Start Working, Waiting on Customer, Resolve, Escalate, Close
+  - Automatic timestamp updates for resolved_at, closed_at
+- **Bulk Operations:**
+  - Bulk assign cases to user
+  - Bulk update status
+  - Admin/Manager role required
+- **API Endpoints:**
+  - `GET/POST/PUT/DELETE /api/cases` - Case CRUD
+  - `GET /api/cases/{id}` - Details with activities, related cases
+  - `POST /api/cases/{id}/comments` - Add comment
+  - `GET /api/cases/stats` - Dashboard statistics
+  - `GET /api/cases/config` - Statuses, priorities, categories, origins
+  - `GET /api/cases/by-account/{id}` - Cases by account
+  - `GET /api/cases/by-contact/{id}` - Cases by contact
+  - `POST /api/cases/bulk-assign` - Bulk assign
+  - `POST /api/cases/bulk-status` - Bulk status update
+- **Frontend (`/crm/cases`):**
+  - Cases list with filters and stats
+  - New Case dialog with all fields
+  - Case detail dialog with Details/Activity/Related tabs
+  - Quick action buttons for status changes
+  - Comment form with public/internal toggle
+- **Testing:** 100% pass rate (21 backend tests + all frontend flows)
+
 ### Phase 4 - Future Enhancements (Backlog)
 - **Custom Object Builder:**
   - Admin can create custom objects with fields
-- **Case Management:**
-  - Support tickets linked to accounts
-  - Customer 360 view with cases
 - **Additional Reports:**
   - Win/Loss analysis
   - Forecast by month
