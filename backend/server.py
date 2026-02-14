@@ -129,6 +129,12 @@ async def api_health_check():
 # Include the main router
 app.include_router(api_router)
 
+# Gmail OAuth callback needs to be accessible at /api/oauth/gmail/callback
+from routers.gmail import router as gmail_oauth_router
+oauth_router = APIRouter(prefix="/api/oauth")
+oauth_router.include_router(gmail_oauth_router, prefix="")
+app.include_router(oauth_router)
+
 # CORS middleware - Allow all origins for preview and custom domains
 # Note: Using allow_origin_regex to support both preview and custom domains
 app.add_middleware(
