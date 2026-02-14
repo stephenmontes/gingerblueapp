@@ -351,7 +351,7 @@ async def campaign_summary_report(
         {"$group": {"_id": "$campaign_id", "count": {"$sum": 1}}}
     ]
     lead_counts = await db.crm_leads.aggregate(lead_pipeline).to_list(1000)
-    lead_map = {l["_id"]: l["count"] for l in lead_counts}
+    lead_map = {lead["_id"]: lead["count"] for lead in lead_counts}
     
     # Get opportunity counts and revenue by campaign
     opp_pipeline = [
