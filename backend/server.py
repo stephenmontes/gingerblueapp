@@ -113,6 +113,7 @@ api_router.include_router(timeline_router)
 api_router.include_router(automation_router)
 api_router.include_router(gmail_router)
 api_router.include_router(campaigns_router)
+api_router.include_router(cases_router)
 
 # Root endpoint
 @api_router.get("/")
