@@ -48,6 +48,7 @@ from routers.timeline import router as timeline_router
 from routers.automation import router as automation_router
 from routers.gmail import router as gmail_router
 from routers.campaigns import router as campaigns_router
+from routers.cases import router as cases_router
 from database import create_indexes
 from services.scheduler import start_scheduler, stop_scheduler
 
