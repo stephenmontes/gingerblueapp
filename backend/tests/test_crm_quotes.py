@@ -15,8 +15,8 @@ def api_client():
     session = requests.Session()
     session.headers.update({"Content-Type": "application/json"})
     
-    # Authenticate using dev login
-    login_res = session.post(f"{BASE_URL}/api/v1/dev/login", json={})
+    # Authenticate using dev login (GET endpoint that sets cookie)
+    login_res = session.get(f"{BASE_URL}/api/auth/dev-login")
     print(f"Login response: {login_res.status_code}")
     if login_res.status_code == 200:
         print("Dev login successful")
