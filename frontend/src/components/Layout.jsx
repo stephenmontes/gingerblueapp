@@ -61,6 +61,7 @@ const navItems = [
   { path: "/crm/leads", label: "Leads", icon: UserPlus },
   { path: "/crm/accounts", label: "Accounts", icon: Building2 },
   { path: "/crm/opportunities", label: "Opportunities", icon: TrendingUp },
+  { path: "/crm/quotes", label: "Quotes", icon: FileText },
   { path: "/crm/setup", label: "CRM Setup", icon: Settings, roles: ["admin", "manager"] },
 ];
 
