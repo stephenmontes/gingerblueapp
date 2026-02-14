@@ -886,6 +886,107 @@ export default function CRMSetupPage() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* INTEGRATIONS TAB */}
+        <TabsContent value="integrations" className="space-y-4" data-testid="integrations-tab">
+          {/* Gmail Integration */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Mail className="h-5 w-5 text-red-500" />
+                Gmail Integration
+              </CardTitle>
+              <CardDescription>
+                Connect your Gmail account to send and receive emails directly from the CRM
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {gmailStatus.loading ? (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Checking Gmail connection...
+                </div>
+              ) : gmailStatus.connected ? (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
+                    <CheckCircle className="h-5 w-5 text-green-500" />
+                    <div className="flex-1">
+                      <p className="font-medium text-green-600">Gmail Connected</p>
+                      <p className="text-sm text-muted-foreground">{gmailStatus.gmail_address}</p>
+                      {gmailStatus.connected_at && (
+                        <p className="text-xs text-muted-foreground">
+                          Connected on {new Date(gmailStatus.connected_at).toLocaleDateString()}
+                        </p>
+                      )}
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={disconnectGmail}
+                      className="text-red-600 border-red-200 hover:bg-red-50"
+                      data-testid="disconnect-gmail-btn"
+                    >
+                      Disconnect
+                    </Button>
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    <p className="font-medium mb-2">What you can do:</p>
+                    <ul className="list-disc list-inside space-y-1">
+                      <li>Send emails directly from Lead, Opportunity, and Account records</li>
+                      <li>View email history for contacts and accounts</li>
+                      <li>Link emails to CRM records for tracking</li>
+                      <li>Search emails by contact email address</li>
+                    </ul>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 p-4 bg-muted/50 border rounded-lg">
+                    <XCircle className="h-5 w-5 text-muted-foreground" />
+                    <div className="flex-1">
+                      <p className="font-medium">Gmail Not Connected</p>
+                      <p className="text-sm text-muted-foreground">
+                        Connect your Gmail account to enable email features in the CRM
+                      </p>
+                    </div>
+                  </div>
+                  <Button 
+                    onClick={connectGmail}
+                    disabled={gmailConnecting}
+                    className="bg-red-600 hover:bg-red-700"
+                    data-testid="connect-gmail-btn"
+                  >
+                    {gmailConnecting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Connecting...
+                      </>
+                    ) : (
+                      <>
+                        <Mail className="h-4 w-4 mr-2" />
+                        Connect Gmail Account
+                      </>
+                    )}
+                  </Button>
+                  <p className="text-xs text-muted-foreground">
+                    You'll be redirected to Google to authorize CRM access to your Gmail account.
+                    We request read, send, and label permissions.
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Future Integrations Placeholder */}
+          <Card className="border-dashed">
+            <CardHeader>
+              <CardTitle className="text-base text-muted-foreground">More Integrations Coming Soon</CardTitle>
+              <CardDescription>
+                Additional integrations like Google Calendar sync, Slack notifications, and more are planned for future updates.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        </TabsContent>
       </Tabs>
 
       {/* STAGE DIALOG */}
