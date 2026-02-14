@@ -482,10 +482,11 @@ class TestBulkOperations:
         if len(case_ids) < 2:
             pytest.skip("Could not create test cases for bulk operation")
         
-        # Bulk update status
+        # Bulk update status - case_ids as body, status as query param
         response = requests.post(
             f"{BASE_URL}/api/cases/bulk-status",
-            json={"case_ids": case_ids, "status": "in_progress"},
+            params={"status": "in_progress"},
+            json=case_ids,
             cookies={"session_token": SESSION_TOKEN}
         )
         assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
@@ -507,7 +508,8 @@ class TestBulkOperations:
         """POST /api/cases/bulk-status - invalid status returns 400"""
         response = requests.post(
             f"{BASE_URL}/api/cases/bulk-status",
-            json={"case_ids": ["test_case_1"], "status": "invalid_status"},
+            params={"status": "invalid_status"},
+            json=["test_case_1"],
             cookies={"session_token": SESSION_TOKEN}
         )
         assert response.status_code == 400, f"Expected 400, got {response.status_code}"
