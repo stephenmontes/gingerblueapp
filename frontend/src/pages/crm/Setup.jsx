@@ -460,6 +460,62 @@ export default function CRMSetupPage() {
     }
   };
 
+  // ==================== APPROVAL WORKFLOW RULES ====================
+
+  const saveApprovalRule = async () => {
+    const data = approvalDialog.data;
+    try {
+      const isNew = !data.rule_id;
+      const url = isNew 
+        ? `${API}/automation/approval-rules`
+        : `${API}/automation/approval-rules/${data.rule_id}`;
+      
+      const payload = {
+        name: data.name,
+        description: data.description,
+        trigger_type: data.trigger_type,
+        threshold: parseFloat(data.threshold) || 0,
+        operator: data.operator || 'gte',
+        approver_user_ids: data.approver_user_ids || [],
+        auto_approve_below_threshold: data.auto_approve_below_threshold ?? true,
+        status: data.status || 'active'
+      };
+      
+      const res = await fetch(url, {
+        method: isNew ? 'POST' : 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload)
+      });
+      
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.detail || 'Failed to save rule');
+      }
+      
+      toast.success(isNew ? "Approval rule created" : "Approval rule updated");
+      setApprovalDialog({ open: false, data: null });
+      fetchAllConfig();
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
+
+  const deleteApprovalRule = async (ruleId) => {
+    if (!confirm('Are you sure you want to delete this approval rule?')) return;
+    try {
+      const res = await fetch(`${API}/automation/approval-rules/${ruleId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      if (!res.ok) throw new Error('Failed to delete rule');
+      toast.success("Approval rule deleted");
+      fetchAllConfig();
+    } catch (error) {
+      toast.error("Failed to delete approval rule");
+    }
+  };
+
   if (loading) {
     return (
       <div className="p-6 flex items-center justify-center min-h-[400px]">
