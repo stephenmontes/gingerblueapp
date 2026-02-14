@@ -387,25 +387,60 @@ Build a manufacturing and fulfillment app for Shopify websites with detailed tim
 
 ## CRM Module Roadmap
 
-### Phase 2 - Sales Operations (Planned)
-- **Quote Object:**
-  - Create quotes from opportunities
-  - Product line items with pricing
-  - Quote versioning
-  - Convert quote to ERP Sales Order
-- **Additional Reports/Dashboards:**
-  - Win/Loss analysis
-  - Forecast by month
-  - Leads by source report
-  - Activity reports by rep
-  - Top accounts report
-- **Automation Rules:**
-  - Lead assignment rules (round-robin, by territory)
-  - Stale opportunity reminders
-  - Stage-based task creation
-- **Communication Log:**
-  - Manual email/call logging
-  - Associate communications to records
+### Phase 2 - Sales Operations 
+#### Quote Object - COMPLETE (Feb 2026)
+- **Quote Creation:**
+  - Create quotes from opportunities with Shopify product integration
+  - Product line items with SKU, quantity, unit price, discount
+  - Subtotal, order-level discount %, tax %, shipping calculation
+  - Auto-generate quote numbers (Q-00001 format)
+  - Associate with account, opportunity, and optional contact
+- **Quote Versioning:**
+  - Automatic version increment per opportunity
+  - Clone existing quotes to create new versions
+  - View all versions linked to the same opportunity
+- **Quote Status Workflow:**
+  - Draft → Sent → Accepted/Rejected → Converted
+  - Only draft quotes can be edited or deleted
+  - Accepting quote updates opportunity amount
+- **Convert to Order:**
+  - Convert accepted quote to sales order
+  - Automatically marks opportunity as Closed Won
+  - Sets forecast to "closed"
+- **Shopify Product Search:**
+  - Search products from synced Shopify catalog
+  - Returns variant details: SKU, barcode, price, inventory
+  - Add products directly to quote line items
+- **API Endpoints:**
+  - `GET /api/crm/quotes` - List with filtering/pagination
+  - `POST /api/crm/quotes` - Create quote
+  - `GET /api/crm/quotes/{id}` - Get with related data
+  - `PUT /api/crm/quotes/{id}` - Update draft only
+  - `DELETE /api/crm/quotes/{id}` - Delete draft only
+  - `POST /api/crm/quotes/{id}/send` - Mark as sent
+  - `POST /api/crm/quotes/{id}/accept` - Accept and update opportunity
+  - `POST /api/crm/quotes/{id}/reject` - Reject with reason
+  - `POST /api/crm/quotes/{id}/clone` - Create new version
+  - `POST /api/crm/quotes/{id}/convert-to-order` - Convert accepted quote
+  - `GET /api/crm/quotes/products/search?q={term}` - Shopify product search
+- **Frontend (/crm/quotes):**
+  - Quotes list with status badges and version indicators
+  - Create Quote dialog with product search
+  - Quote detail view with line items and totals
+  - Status-specific workflow buttons
+  - Other Versions section
+- **Testing:** 100% pass rate (17 backend tests, all UI flows verified)
+
+#### Additional Reports/Dashboards (Planned)
+- Win/Loss analysis
+- Forecast by month
+- Leads by source report
+- Activity reports by rep
+- Top accounts report
+
+#### Communication Log (Planned)
+- Manual email/call logging
+- Associate communications to records
 
 ### 14. Configurable CRM Framework - COMPLETE (Feb 2026)
 - **Admin Setup Page** (`/crm/setup`):
