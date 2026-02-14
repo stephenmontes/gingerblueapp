@@ -1358,6 +1358,60 @@ async def delete_event(event_id: str, user: User = Depends(get_current_user)):
 
 # ==================== QUOTES ====================
 
+@router.get("/quotes")
+async def list_quotes(
+    opportunity_id: Optional[str] = None,
+    account_id: Optional[str] = None,
+    status: Optional[str] = None,
+    search: Optional[str] = None,
+    sort_by: str = Query("created_at"),
+    sort_order: str = Query("desc"),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=200),
+    user: User = Depends(get_current_user)
+):
+    """List quotes with filtering"""
+    query = {}
+    
+    if opportunity_id:
+        query["opportunity_id"] = opportunity_id
+    if account_id:
+        query["account_id"] = account_id
+    if status:
+        query["status"] = status
+    if search:
+        query["$or"] = [
+            {"quote_name": {"$regex": search, "$options": "i"}},
+            {"quote_number": {"$regex": search, "$options": "i"}}
+        ]
+    
+    total = await db.crm_quotes.count_documents(query)
+    sort_dir = 1 if sort_order == "asc" else -1
+    skip = (page - 1) * page_size
+    
+    quotes = await db.crm_quotes.find(query, {"_id": 0}).sort(
+        sort_by, sort_dir
+    ).skip(skip).limit(page_size).to_list(page_size)
+    
+    # Enrich with account and opportunity names
+    for quote in quotes:
+        if quote.get("account_id"):
+            account = await db.crm_accounts.find_one(
+                {"account_id": quote["account_id"]}, {"_id": 0, "name": 1}
+            )
+            quote["account_name"] = account.get("name") if account else None
+        if quote.get("opportunity_id"):
+            opp = await db.crm_opportunities.find_one(
+                {"opportunity_id": quote["opportunity_id"]}, {"_id": 0, "name": 1}
+            )
+            quote["opportunity_name"] = opp.get("name") if opp else None
+    
+    return {
+        "quotes": quotes,
+        "pagination": {"page": page, "page_size": page_size, "total": total, "total_pages": (total + page_size - 1) // page_size}
+    }
+
+
 @router.post("/quotes")
 async def create_quote(quote: QuoteCreate, user: User = Depends(get_current_user)):
     """Create a new quote"""
@@ -1368,9 +1422,20 @@ async def create_quote(quote: QuoteCreate, user: User = Depends(get_current_user
     existing_quotes = await db.crm_quotes.count_documents({"opportunity_id": quote.opportunity_id})
     version = existing_quotes + 1
     
+    # Generate quote number
+    total_quotes = await db.crm_quotes.count_documents({})
+    quote_number = f"Q-{(total_quotes + 1):05d}"
+    
+    # Get account and opportunity info
+    account = await db.crm_accounts.find_one({"account_id": quote.account_id}, {"_id": 0, "name": 1})
+    opp = await db.crm_opportunities.find_one({"opportunity_id": quote.opportunity_id}, {"_id": 0, "name": 1})
+    
     quote_doc = {
         "quote_id": quote_id,
+        "quote_number": quote_number,
         **quote.model_dump(),
+        "account_name": account.get("name") if account else None,
+        "opportunity_name": opp.get("name") if opp else None,
         "version": version,
         "status": "draft",
         "created_by": user.user_id,
@@ -1380,7 +1445,7 @@ async def create_quote(quote: QuoteCreate, user: User = Depends(get_current_user
     }
     
     await db.crm_quotes.insert_one(quote_doc)
-    await log_activity("quote", quote_id, "created", {"quote_name": quote.quote_name, "total": quote.total}, user, {"opportunity_id": quote.opportunity_id})
+    await log_activity("quote", quote_id, "created", {"quote_name": quote.quote_name, "quote_number": quote_number, "total": quote.total}, user, {"opportunity_id": quote.opportunity_id})
     
     quote_doc.pop("_id", None)
     return quote_doc
@@ -1388,10 +1453,39 @@ async def create_quote(quote: QuoteCreate, user: User = Depends(get_current_user
 
 @router.get("/quotes/{quote_id}")
 async def get_quote(quote_id: str, user: User = Depends(get_current_user)):
-    """Get quote details"""
+    """Get quote details with related data"""
     quote = await db.crm_quotes.find_one({"quote_id": quote_id}, {"_id": 0})
     if not quote:
         raise HTTPException(status_code=404, detail="Quote not found")
+    
+    # Get account
+    if quote.get("account_id"):
+        account = await db.crm_accounts.find_one(
+            {"account_id": quote["account_id"]}, {"_id": 0, "account_id": 1, "name": 1, "phone": 1}
+        )
+        quote["account"] = account
+    
+    # Get opportunity
+    if quote.get("opportunity_id"):
+        opp = await db.crm_opportunities.find_one(
+            {"opportunity_id": quote["opportunity_id"]}, {"_id": 0, "opportunity_id": 1, "name": 1, "amount": 1, "stage": 1}
+        )
+        quote["opportunity"] = opp
+    
+    # Get contact
+    if quote.get("contact_id"):
+        contact = await db.crm_contacts.find_one(
+            {"contact_id": quote["contact_id"]}, {"_id": 0, "contact_id": 1, "full_name": 1, "email": 1, "phone": 1}
+        )
+        quote["contact"] = contact
+    
+    # Get other versions of this quote
+    other_versions = await db.crm_quotes.find(
+        {"opportunity_id": quote.get("opportunity_id"), "quote_id": {"$ne": quote_id}},
+        {"_id": 0, "quote_id": 1, "quote_number": 1, "version": 1, "status": 1, "total": 1, "created_at": 1}
+    ).sort("version", -1).to_list(10)
+    quote["other_versions"] = other_versions
+    
     return quote
 
 
@@ -1402,8 +1496,13 @@ async def update_quote(quote_id: str, updates: QuoteUpdate, user: User = Depends
     if not existing:
         raise HTTPException(status_code=404, detail="Quote not found")
     
+    # Only allow updates to draft quotes
+    if existing.get("status") not in ["draft", None]:
+        raise HTTPException(status_code=400, detail="Only draft quotes can be edited. Create a new version instead.")
+    
     update_data = {k: v for k, v in updates.model_dump().items() if v is not None}
     update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    update_data["updated_by"] = user.user_id
     
     await db.crm_quotes.update_one({"quote_id": quote_id}, {"$set": update_data})
     await log_activity("quote", quote_id, "updated", update_data, user)
@@ -1418,7 +1517,7 @@ async def send_quote(quote_id: str, user: User = Depends(get_current_user)):
     
     result = await db.crm_quotes.update_one(
         {"quote_id": quote_id},
-        {"$set": {"status": "sent", "sent_at": now, "sent_by": user.user_id}}
+        {"$set": {"status": "sent", "sent_at": now, "sent_by": user.user_id, "sent_by_name": user.name}}
     )
     
     if result.matched_count == 0:
@@ -1426,6 +1525,189 @@ async def send_quote(quote_id: str, user: User = Depends(get_current_user)):
     
     await log_activity("quote", quote_id, "sent", {}, user)
     return {"success": True, "message": "Quote marked as sent"}
+
+
+@router.post("/quotes/{quote_id}/accept")
+async def accept_quote(quote_id: str, user: User = Depends(get_current_user)):
+    """Mark quote as accepted"""
+    now = datetime.now(timezone.utc).isoformat()
+    
+    quote = await db.crm_quotes.find_one({"quote_id": quote_id})
+    if not quote:
+        raise HTTPException(status_code=404, detail="Quote not found")
+    
+    await db.crm_quotes.update_one(
+        {"quote_id": quote_id},
+        {"$set": {"status": "accepted", "accepted_at": now, "accepted_by": user.user_id}}
+    )
+    
+    # Update opportunity amount to match quote total
+    if quote.get("opportunity_id"):
+        await db.crm_opportunities.update_one(
+            {"opportunity_id": quote["opportunity_id"]},
+            {"$set": {"amount": quote.get("total", 0), "updated_at": now}}
+        )
+    
+    await log_activity("quote", quote_id, "accepted", {"total": quote.get("total")}, user)
+    return {"success": True, "message": "Quote accepted"}
+
+
+@router.post("/quotes/{quote_id}/reject")
+async def reject_quote(quote_id: str, reason: Optional[str] = None, user: User = Depends(get_current_user)):
+    """Mark quote as rejected"""
+    now = datetime.now(timezone.utc).isoformat()
+    
+    result = await db.crm_quotes.update_one(
+        {"quote_id": quote_id},
+        {"$set": {"status": "rejected", "rejected_at": now, "rejected_by": user.user_id, "rejection_reason": reason}}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Quote not found")
+    
+    await log_activity("quote", quote_id, "rejected", {"reason": reason}, user)
+    return {"success": True, "message": "Quote rejected"}
+
+
+@router.post("/quotes/{quote_id}/clone")
+async def clone_quote(quote_id: str, user: User = Depends(get_current_user)):
+    """Create a new version of the quote"""
+    original = await db.crm_quotes.find_one({"quote_id": quote_id}, {"_id": 0})
+    if not original:
+        raise HTTPException(status_code=404, detail="Quote not found")
+    
+    new_quote_id = generate_id("quote")
+    now = datetime.now(timezone.utc).isoformat()
+    
+    # Get new version number
+    existing_quotes = await db.crm_quotes.count_documents({"opportunity_id": original["opportunity_id"]})
+    new_version = existing_quotes + 1
+    
+    # Generate new quote number
+    total_quotes = await db.crm_quotes.count_documents({})
+    quote_number = f"Q-{(total_quotes + 1):05d}"
+    
+    new_quote = {
+        **original,
+        "quote_id": new_quote_id,
+        "quote_number": quote_number,
+        "version": new_version,
+        "status": "draft",
+        "cloned_from": quote_id,
+        "created_by": user.user_id,
+        "created_by_name": user.name,
+        "created_at": now,
+        "updated_at": now,
+        "sent_at": None,
+        "sent_by": None,
+        "accepted_at": None,
+        "rejected_at": None
+    }
+    
+    await db.crm_quotes.insert_one(new_quote)
+    await log_activity("quote", new_quote_id, "created", {"cloned_from": quote_id, "version": new_version}, user)
+    
+    new_quote.pop("_id", None)
+    return new_quote
+
+
+@router.delete("/quotes/{quote_id}")
+async def delete_quote(quote_id: str, user: User = Depends(get_current_user)):
+    """Delete a quote (only drafts)"""
+    quote = await db.crm_quotes.find_one({"quote_id": quote_id})
+    if not quote:
+        raise HTTPException(status_code=404, detail="Quote not found")
+    
+    if quote.get("status") not in ["draft", None]:
+        raise HTTPException(status_code=400, detail="Only draft quotes can be deleted")
+    
+    await db.crm_quotes.delete_one({"quote_id": quote_id})
+    await log_activity("quote", quote_id, "deleted", {}, user)
+    
+    return {"success": True, "message": "Quote deleted"}
+
+
+@router.get("/quotes/products/search")
+async def search_products_for_quote(
+    q: str = Query(..., min_length=1),
+    store_id: Optional[str] = None,
+    limit: int = Query(20, le=50),
+    user: User = Depends(get_current_user)
+):
+    """Search Shopify products for adding to quotes"""
+    query = {
+        "$or": [
+            {"title": {"$regex": q, "$options": "i"}},
+            {"variants.sku": {"$regex": q, "$options": "i"}},
+            {"variants.barcode": {"$regex": q, "$options": "i"}}
+        ]
+    }
+    
+    if store_id:
+        query["store_id"] = store_id
+    
+    products = await db.products.find(query, {"_id": 0}).limit(limit).to_list(limit)
+    
+    # Flatten variants for easier selection
+    results = []
+    for product in products:
+        for variant in product.get("variants", []):
+            results.append({
+                "product_id": product.get("product_id"),
+                "variant_id": variant.get("variant_id"),
+                "title": product.get("title"),
+                "variant_title": variant.get("title"),
+                "sku": variant.get("sku"),
+                "barcode": variant.get("barcode"),
+                "price": float(variant.get("price", 0)),
+                "image_url": product.get("image", {}).get("src") if product.get("image") else None,
+                "inventory_quantity": variant.get("inventory_quantity", 0),
+                "store_id": product.get("store_id")
+            })
+    
+    return {"products": results[:limit]}
+
+
+@router.post("/quotes/{quote_id}/convert-to-order")
+async def convert_quote_to_order(quote_id: str, user: User = Depends(get_current_user)):
+    """Convert an accepted quote to a sales order (placeholder for ERP integration)"""
+    quote = await db.crm_quotes.find_one({"quote_id": quote_id}, {"_id": 0})
+    if not quote:
+        raise HTTPException(status_code=404, detail="Quote not found")
+    
+    if quote.get("status") != "accepted":
+        raise HTTPException(status_code=400, detail="Only accepted quotes can be converted to orders")
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    # Mark quote as converted
+    await db.crm_quotes.update_one(
+        {"quote_id": quote_id},
+        {"$set": {"status": "converted", "converted_at": now, "converted_by": user.user_id}}
+    )
+    
+    # Move opportunity to closed_won
+    if quote.get("opportunity_id"):
+        await db.crm_opportunities.update_one(
+            {"opportunity_id": quote["opportunity_id"]},
+            {"$set": {
+                "stage": "closed_won",
+                "probability": 100,
+                "forecast_category": "closed",
+                "closed_at": now,
+                "is_won": True,
+                "updated_at": now
+            }}
+        )
+    
+    await log_activity("quote", quote_id, "converted_to_order", {}, user)
+    
+    return {
+        "success": True,
+        "message": "Quote converted to order. Opportunity marked as Closed Won.",
+        "quote_id": quote_id,
+        "quote_number": quote.get("quote_number")
+    }
 
 
 # ==================== CRM SETTINGS ====================
