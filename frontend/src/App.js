@@ -27,6 +27,7 @@ import CRMDashboard from "@/pages/crm/Dashboard";
 import CRMAccounts from "@/pages/crm/Accounts";
 import CRMLeads from "@/pages/crm/Leads";
 import CRMOpportunities from "@/pages/crm/Opportunities";
+import CRMQuotes from "@/pages/crm/Quotes";
 import UnifiedAccounts from "@/pages/crm/UnifiedAccounts";
 import CRMSetup from "@/pages/crm/Setup";
 
