@@ -124,6 +124,61 @@ export default function CRMSetupPage() {
     }
   };
 
+  // ==================== GMAIL INTEGRATION ====================
+
+  const fetchGmailStatus = async () => {
+    try {
+      const res = await fetch(`${API}/gmail/status`, { credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        setGmailStatus({ ...data, loading: false });
+      } else {
+        setGmailStatus({ connected: false, loading: false });
+      }
+    } catch (error) {
+      setGmailStatus({ connected: false, loading: false });
+    }
+  };
+
+  const connectGmail = async () => {
+    try {
+      setGmailConnecting(true);
+      const res = await fetch(`${API}/gmail/auth/start`, { credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        // Redirect to Google OAuth
+        window.location.href = data.authorization_url;
+      } else {
+        const err = await res.json();
+        toast.error(err.detail || 'Failed to start Gmail connection');
+        setGmailConnecting(false);
+      }
+    } catch (error) {
+      toast.error('Failed to connect Gmail');
+      setGmailConnecting(false);
+    }
+  };
+
+  const disconnectGmail = async () => {
+    if (!confirm('Are you sure you want to disconnect Gmail? You will no longer be able to send or view emails from the CRM.')) {
+      return;
+    }
+    try {
+      const res = await fetch(`${API}/gmail/disconnect`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+      if (res.ok) {
+        toast.success('Gmail disconnected');
+        setGmailStatus({ connected: false, loading: false });
+      } else {
+        toast.error('Failed to disconnect Gmail');
+      }
+    } catch (error) {
+      toast.error('Failed to disconnect Gmail');
+    }
+  };
+
   // ==================== STAGES ====================
   
   const saveStage = async () => {
