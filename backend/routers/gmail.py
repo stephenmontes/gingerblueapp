@@ -95,7 +95,7 @@ async def get_gmail_credentials(user_id: str) -> Optional[Credentials]:
                         "expires_at": new_expires.isoformat()
                     }}
                 )
-            except Exception as e:
+            except Exception:
                 # Token refresh failed, user needs to re-authenticate
                 await db.gmail_tokens.delete_one({"user_id": user_id})
                 return None
@@ -194,7 +194,7 @@ async def gmail_auth_callback(code: str, state: str, error: Optional[str] = None
         
     except Exception as e:
         print(f"Gmail OAuth error: {e}")
-        return RedirectResponse(f"/crm/settings?gmail_error=auth_failed")
+        return RedirectResponse("/crm/settings?gmail_error=auth_failed")
 
 
 @router.get("/status")
