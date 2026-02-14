@@ -471,12 +471,12 @@ export default function CRMSetupPage() {
           CRM Setup
         </h1>
         <p className="text-sm text-muted-foreground">
-          Configure pipeline stages, picklists, custom fields, and automation
+          Configure pipeline stages, picklists, custom fields, automation, and integrations
         </p>
       </div>
 
       <Tabs defaultValue="stages">
-        <TabsList className="grid grid-cols-4 w-full max-w-2xl">
+        <TabsList className="grid grid-cols-5 w-full max-w-3xl">
           <TabsTrigger value="stages" className="flex items-center gap-1">
             <GitBranch className="h-4 w-4" />
             Stages
