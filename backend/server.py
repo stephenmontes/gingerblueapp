@@ -46,6 +46,7 @@ from routers.customer_crm import router as customer_crm_router
 from routers.crm_admin import router as crm_admin_router
 from routers.timeline import router as timeline_router
 from routers.automation import router as automation_router
+from routers.gmail import router as gmail_router
 from database import create_indexes
 from services.scheduler import start_scheduler, stop_scheduler
 
