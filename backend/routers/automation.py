@@ -736,3 +736,403 @@ async def log_shopify_sync(
         user_id="system",
         user_name="Shopify Sync"
     )
+
+
+# ==================== APPROVAL WORKFLOW RULES ====================
+
+@router.get("/approval-rules")
+async def get_approval_rules(
+    status: Optional[str] = None,
+    user: User = Depends(get_current_user)
+):
+    """Get all approval rules"""
+    if user.role not in ["admin", "manager"]:
+        raise HTTPException(status_code=403, detail="Admin/Manager access required")
+    
+    query = {}
+    if status:
+        query["status"] = status
+    
+    rules = await db.automation_approval_rules.find(query, {"_id": 0}).sort("threshold", 1).to_list(100)
+    
+    # Enrich with approver names
+    for rule in rules:
+        approver_ids = rule.get("approver_user_ids", [])
+        if approver_ids:
+            users = await db.users.find(
+                {"user_id": {"$in": approver_ids}},
+                {"_id": 0, "user_id": 1, "name": 1, "email": 1}
+            ).to_list(100)
+            rule["approvers"] = users
+    
+    return {"rules": rules}
+
+
+@router.post("/approval-rules")
+async def create_approval_rule(
+    rule: ApprovalRuleCreate,
+    user: User = Depends(get_current_user)
+):
+    """Create a new approval rule"""
+    if user.role not in ["admin", "manager"]:
+        raise HTTPException(status_code=403, detail="Admin/Manager access required")
+    
+    rule_id = generate_id("appr")
+    now = datetime.now(timezone.utc).isoformat()
+    
+    rule_doc = {
+        "rule_id": rule_id,
+        **rule.model_dump(),
+        "created_by": user.user_id,
+        "created_by_name": user.name,
+        "created_at": now,
+        "updated_at": now
+    }
+    
+    await db.automation_approval_rules.insert_one(rule_doc)
+    rule_doc.pop("_id", None)
+    return rule_doc
+
+
+@router.put("/approval-rules/{rule_id}")
+async def update_approval_rule(
+    rule_id: str,
+    updates: ApprovalRuleUpdate,
+    user: User = Depends(get_current_user)
+):
+    """Update an approval rule"""
+    if user.role not in ["admin", "manager"]:
+        raise HTTPException(status_code=403, detail="Admin/Manager access required")
+    
+    existing = await db.automation_approval_rules.find_one({"rule_id": rule_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Rule not found")
+    
+    update_data = {k: v for k, v in updates.model_dump().items() if v is not None}
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    update_data["updated_by"] = user.user_id
+    
+    await db.automation_approval_rules.update_one({"rule_id": rule_id}, {"$set": update_data})
+    return {"success": True, "message": "Rule updated"}
+
+
+@router.delete("/approval-rules/{rule_id}")
+async def delete_approval_rule(
+    rule_id: str,
+    user: User = Depends(get_current_user)
+):
+    """Delete an approval rule"""
+    if user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    result = await db.automation_approval_rules.delete_one({"rule_id": rule_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Rule not found")
+    
+    return {"success": True, "message": "Rule deleted"}
+
+
+# ==================== APPROVAL REQUESTS ====================
+
+async def check_and_create_approval(
+    entity_type: str,
+    entity_id: str,
+    discount_percent: float,
+    discount_amount: float,
+    total_value: float,
+    requester_user_id: str,
+    requester_name: str,
+    entity_name: str = ""
+) -> dict:
+    """Check if approval is needed and create approval request if so"""
+    # Get active approval rules sorted by threshold
+    rules = await db.automation_approval_rules.find(
+        {"status": "active"}
+    ).sort("threshold", 1).to_list(100)
+    
+    for rule in rules:
+        trigger_type = rule.get("trigger_type")
+        threshold = rule.get("threshold", 0)
+        operator = rule.get("operator", "gte")
+        
+        # Determine the value to check based on trigger type
+        check_value = 0
+        if trigger_type == "discount_percent":
+            check_value = discount_percent
+        elif trigger_type == "discount_amount":
+            check_value = discount_amount
+        elif trigger_type == "quote_total":
+            check_value = total_value
+        
+        # Check if threshold is exceeded
+        needs_approval = False
+        if operator == "gte" and check_value >= threshold:
+            needs_approval = True
+        elif operator == "gt" and check_value > threshold:
+            needs_approval = True
+        
+        if needs_approval:
+            # Create approval request
+            request_id = generate_id("aprq")
+            now = datetime.now(timezone.utc).isoformat()
+            
+            request_doc = {
+                "request_id": request_id,
+                "entity_type": entity_type,
+                "entity_id": entity_id,
+                "entity_name": entity_name,
+                "rule_id": rule["rule_id"],
+                "rule_name": rule.get("name"),
+                "trigger_type": trigger_type,
+                "threshold": threshold,
+                "requested_value": check_value,
+                "discount_percent": discount_percent,
+                "discount_amount": discount_amount,
+                "total_value": total_value,
+                "status": "pending",
+                "approver_user_ids": rule.get("approver_user_ids", []),
+                "requested_by": requester_user_id,
+                "requested_by_name": requester_name,
+                "requested_at": now,
+                "created_at": now
+            }
+            
+            await db.approval_requests.insert_one(request_doc)
+            
+            # Create notifications for approvers
+            for approver_id in rule.get("approver_user_ids", []):
+                notification = {
+                    "notification_id": generate_id("notif"),
+                    "user_id": approver_id,
+                    "type": "approval_request",
+                    "title": f"Approval Required: {entity_type.title()}",
+                    "message": f"{requester_name} requested approval for {trigger_type.replace('_', ' ')} of {check_value}% on {entity_name or entity_id}",
+                    "entity_type": entity_type,
+                    "entity_id": entity_id,
+                    "request_id": request_id,
+                    "is_read": False,
+                    "created_at": now
+                }
+                await db.timeline_notifications.insert_one(notification)
+            
+            request_doc.pop("_id", None)
+            return {
+                "needs_approval": True,
+                "request": request_doc
+            }
+    
+    # No rules triggered, auto-approved
+    return {"needs_approval": False, "auto_approved": True}
+
+
+@router.get("/approval-requests")
+async def get_approval_requests(
+    status: Optional[str] = None,
+    entity_type: Optional[str] = None,
+    requested_by: Optional[str] = None,
+    pending_for_me: bool = False,
+    page: int = 1,
+    page_size: int = 50,
+    user: User = Depends(get_current_user)
+):
+    """Get approval requests"""
+    query = {}
+    
+    if status:
+        query["status"] = status
+    if entity_type:
+        query["entity_type"] = entity_type
+    if requested_by:
+        query["requested_by"] = requested_by
+    if pending_for_me:
+        query["status"] = "pending"
+        query["approver_user_ids"] = user.user_id
+    
+    # Workers can only see their own requests
+    if user.role == "worker":
+        query["requested_by"] = user.user_id
+    
+    total = await db.approval_requests.count_documents(query)
+    skip = (page - 1) * page_size
+    
+    requests = await db.approval_requests.find(query, {"_id": 0}).sort(
+        "created_at", -1
+    ).skip(skip).limit(page_size).to_list(page_size)
+    
+    return {
+        "requests": requests,
+        "pagination": {
+            "page": page,
+            "page_size": page_size,
+            "total": total,
+            "total_pages": (total + page_size - 1) // page_size
+        }
+    }
+
+
+@router.get("/approval-requests/{request_id}")
+async def get_approval_request(
+    request_id: str,
+    user: User = Depends(get_current_user)
+):
+    """Get a single approval request"""
+    request = await db.approval_requests.find_one({"request_id": request_id}, {"_id": 0})
+    if not request:
+        raise HTTPException(status_code=404, detail="Request not found")
+    
+    # Check access
+    if user.role == "worker" and request.get("requested_by") != user.user_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Get entity details
+    if request.get("entity_type") == "quote":
+        entity = await db.crm_quotes.find_one(
+            {"quote_id": request["entity_id"]},
+            {"_id": 0, "quote_number": 1, "quote_name": 1, "total": 1}
+        )
+        request["entity"] = entity
+    
+    return request
+
+
+@router.post("/approval-requests/{request_id}/approve")
+async def approve_request(
+    request_id: str,
+    notes: Optional[str] = None,
+    user: User = Depends(get_current_user)
+):
+    """Approve an approval request"""
+    request = await db.approval_requests.find_one({"request_id": request_id})
+    if not request:
+        raise HTTPException(status_code=404, detail="Request not found")
+    
+    # Check if user is an approver
+    if user.user_id not in request.get("approver_user_ids", []) and user.role != "admin":
+        raise HTTPException(status_code=403, detail="You are not authorized to approve this request")
+    
+    if request.get("status") != "pending":
+        raise HTTPException(status_code=400, detail=f"Request is already {request.get('status')}")
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    await db.approval_requests.update_one(
+        {"request_id": request_id},
+        {"$set": {
+            "status": "approved",
+            "approved_by": user.user_id,
+            "approved_by_name": user.name,
+            "approved_at": now,
+            "approval_notes": notes
+        }}
+    )
+    
+    # Notify requester
+    notification = {
+        "notification_id": generate_id("notif"),
+        "user_id": request["requested_by"],
+        "type": "approval_approved",
+        "title": "Approval Granted",
+        "message": f"{user.name} approved your {request['trigger_type'].replace('_', ' ')} request",
+        "entity_type": request["entity_type"],
+        "entity_id": request["entity_id"],
+        "request_id": request_id,
+        "is_read": False,
+        "created_at": now
+    }
+    await db.timeline_notifications.insert_one(notification)
+    
+    # Log to timeline
+    await log_system_event(
+        entity_type=request["entity_type"],
+        entity_id=request["entity_id"],
+        activity_type="approval_approved",
+        body=f"Approval granted by {user.name}" + (f": {notes}" if notes else ""),
+        metadata={
+            "request_id": request_id,
+            "requested_value": request.get("requested_value"),
+            "trigger_type": request.get("trigger_type")
+        },
+        user_id=user.user_id,
+        user_name=user.name
+    )
+    
+    return {"success": True, "message": "Request approved"}
+
+
+@router.post("/approval-requests/{request_id}/reject")
+async def reject_request(
+    request_id: str,
+    reason: str,
+    user: User = Depends(get_current_user)
+):
+    """Reject an approval request"""
+    request = await db.approval_requests.find_one({"request_id": request_id})
+    if not request:
+        raise HTTPException(status_code=404, detail="Request not found")
+    
+    # Check if user is an approver
+    if user.user_id not in request.get("approver_user_ids", []) and user.role != "admin":
+        raise HTTPException(status_code=403, detail="You are not authorized to reject this request")
+    
+    if request.get("status") != "pending":
+        raise HTTPException(status_code=400, detail=f"Request is already {request.get('status')}")
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    await db.approval_requests.update_one(
+        {"request_id": request_id},
+        {"$set": {
+            "status": "rejected",
+            "rejected_by": user.user_id,
+            "rejected_by_name": user.name,
+            "rejected_at": now,
+            "rejection_reason": reason
+        }}
+    )
+    
+    # Notify requester
+    notification = {
+        "notification_id": generate_id("notif"),
+        "user_id": request["requested_by"],
+        "type": "approval_rejected",
+        "title": "Approval Denied",
+        "message": f"{user.name} rejected your {request['trigger_type'].replace('_', ' ')} request: {reason}",
+        "entity_type": request["entity_type"],
+        "entity_id": request["entity_id"],
+        "request_id": request_id,
+        "is_read": False,
+        "created_at": now
+    }
+    await db.timeline_notifications.insert_one(notification)
+    
+    # Log to timeline
+    await log_system_event(
+        entity_type=request["entity_type"],
+        entity_id=request["entity_id"],
+        activity_type="approval_rejected",
+        body=f"Approval denied by {user.name}: {reason}",
+        metadata={
+            "request_id": request_id,
+            "requested_value": request.get("requested_value"),
+            "trigger_type": request.get("trigger_type"),
+            "reason": reason
+        },
+        user_id=user.user_id,
+        user_name=user.name
+    )
+    
+    return {"success": True, "message": "Request rejected"}
+
+
+@router.get("/my-pending-approvals")
+async def get_my_pending_approvals(user: User = Depends(get_current_user)):
+    """Get pending approvals for the current user"""
+    requests = await db.approval_requests.find(
+        {
+            "status": "pending",
+            "approver_user_ids": user.user_id
+        },
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(100)
+    
+    return {"pending_count": len(requests), "requests": requests}
