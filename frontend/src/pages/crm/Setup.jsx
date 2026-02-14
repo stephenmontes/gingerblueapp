@@ -1771,6 +1771,165 @@ export default function CRMSetupPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* APPROVAL RULE DIALOG */}
+      <Dialog open={approvalDialog.open} onOpenChange={(open) => !open && setApprovalDialog({ open: false, data: null })}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5" />
+              {approvalDialog.data?.existing ? 'Edit Approval Rule' : 'New Approval Rule'}
+            </DialogTitle>
+          </DialogHeader>
+          {approvalDialog.data && (
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Rule Name*</Label>
+                <Input 
+                  value={approvalDialog.data.name}
+                  onChange={(e) => setApprovalDialog({
+                    ...approvalDialog,
+                    data: { ...approvalDialog.data, name: e.target.value }
+                  })}
+                  placeholder="e.g., Manager approval for >15% discount"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Description</Label>
+                <Textarea 
+                  value={approvalDialog.data.description || ''}
+                  onChange={(e) => setApprovalDialog({
+                    ...approvalDialog,
+                    data: { ...approvalDialog.data, description: e.target.value }
+                  })}
+                  placeholder="When and why this rule applies..."
+                  rows={2}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Trigger Type</Label>
+                  <Select 
+                    value={approvalDialog.data.trigger_type}
+                    onValueChange={(val) => setApprovalDialog({
+                      ...approvalDialog,
+                      data: { ...approvalDialog.data, trigger_type: val }
+                    })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="discount_percent">Discount Percentage</SelectItem>
+                      <SelectItem value="discount_amount">Discount Amount ($)</SelectItem>
+                      <SelectItem value="quote_total">Quote Total ($)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>
+                    Threshold {approvalDialog.data.trigger_type === 'discount_percent' ? '(%)' : '($)'}
+                  </Label>
+                  <div className="relative">
+                    <Input 
+                      type="number"
+                      value={approvalDialog.data.threshold}
+                      onChange={(e) => setApprovalDialog({
+                        ...approvalDialog,
+                        data: { ...approvalDialog.data, threshold: e.target.value }
+                      })}
+                      className="pr-8"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                      {approvalDialog.data.trigger_type === 'discount_percent' ? '%' : '$'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Approval required when value ≥ this threshold
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Approvers*</Label>
+                <div className="border rounded-lg p-3 max-h-40 overflow-y-auto space-y-2">
+                  {users.filter(u => u.role === 'admin' || u.role === 'manager').map(user => (
+                    <label key={user.user_id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/50 p-1 rounded">
+                      <input 
+                        type="checkbox"
+                        checked={approvalDialog.data.approver_user_ids?.includes(user.user_id)}
+                        onChange={(e) => {
+                          const current = approvalDialog.data.approver_user_ids || [];
+                          setApprovalDialog({
+                            ...approvalDialog,
+                            data: { 
+                              ...approvalDialog.data, 
+                              approver_user_ids: e.target.checked 
+                                ? [...current, user.user_id]
+                                : current.filter(id => id !== user.user_id)
+                            }
+                          });
+                        }}
+                        className="rounded"
+                      />
+                      <span>{user.name}</span>
+                      <Badge variant="outline" className="text-xs">{user.role}</Badge>
+                    </label>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Select managers or admins who can approve these requests
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch 
+                  checked={approvalDialog.data.auto_approve_below_threshold !== false}
+                  onCheckedChange={(checked) => setApprovalDialog({
+                    ...approvalDialog,
+                    data: { ...approvalDialog.data, auto_approve_below_threshold: checked }
+                  })}
+                />
+                <div>
+                  <Label>Auto-approve below threshold</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Quotes with discounts below {approvalDialog.data.threshold}
+                    {approvalDialog.data.trigger_type === 'discount_percent' ? '%' : '$'} won't require approval
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <Select 
+                  value={approvalDialog.data.status}
+                  onValueChange={(val) => setApprovalDialog({
+                    ...approvalDialog,
+                    data: { ...approvalDialog.data, status: val }
+                  })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setApprovalDialog({ open: false, data: null })}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={saveApprovalRule}
+              disabled={!approvalDialog.data?.name || !approvalDialog.data?.approver_user_ids?.length}
+            >
+              <Save className="h-4 w-4 mr-1" />
+              Save Rule
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
