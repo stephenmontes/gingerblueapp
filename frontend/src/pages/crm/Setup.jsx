@@ -946,6 +946,99 @@ export default function CRMSetupPage() {
               </Button>
             </CardContent>
           </Card>
+
+          {/* DISCOUNT APPROVAL RULES */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <ShieldCheck className="h-5 w-5" />
+                  Discount Approval Rules
+                </CardTitle>
+                <CardDescription>
+                  Configure when quotes require approval based on discount percentage
+                </CardDescription>
+              </div>
+              <Button 
+                size="sm" 
+                onClick={() => setApprovalDialog({ 
+                  open: true, 
+                  data: { 
+                    name: '',
+                    description: '',
+                    trigger_type: 'discount_percent',
+                    threshold: 15,
+                    operator: 'gte',
+                    approver_user_ids: [],
+                    auto_approve_below_threshold: true,
+                    status: 'active'
+                  }
+                })}
+                data-testid="add-approval-rule-btn"
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Add Rule
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {approvalRules.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <ShieldCheck className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p>No approval rules configured</p>
+                  <p className="text-sm">Create a rule to require approval for discounts above a threshold</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {approvalRules.map((rule) => (
+                    <div 
+                      key={rule.rule_id}
+                      className="flex items-center justify-between p-3 border rounded-lg"
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{rule.name}</span>
+                          <Badge variant={rule.status === 'active' ? 'default' : 'secondary'}>
+                            {rule.status}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          Require approval when{' '}
+                          <span className="font-medium">
+                            {rule.trigger_type === 'discount_percent' ? 'discount %' : 
+                             rule.trigger_type === 'discount_amount' ? 'discount amount' : 'quote total'}
+                          </span>{' '}
+                          is {rule.operator === 'gte' ? '≥' : '>'}{' '}
+                          <span className="font-medium text-orange-600">
+                            {rule.trigger_type === 'discount_percent' ? `${rule.threshold}%` : `$${rule.threshold}`}
+                          </span>
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Approvers: {rule.approvers?.map(a => a.name).join(', ') || 'None configured'}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setApprovalDialog({ open: true, data: { ...rule, existing: true } })}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => deleteApprovalRule(rule.rule_id)}
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* INTEGRATIONS TAB */}
