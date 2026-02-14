@@ -444,6 +444,18 @@ function AppRouter() {
         }
       />
       <Route
+        path="/crm/quotes"
+        element={
+          <ProtectedRoute>
+            {({ user, setUser }) => (
+              <Layout user={user} setUser={setUser}>
+                <CRMQuotes user={user} />
+              </Layout>
+            )}
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/crm/setup"
         element={
           <ProtectedRoute>
