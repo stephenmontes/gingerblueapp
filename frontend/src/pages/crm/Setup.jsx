@@ -18,7 +18,7 @@ import { toast } from "sonner";
 import { 
   Settings, GitBranch, List, Plus, Trash2, Edit, GripVertical,
   Save, ChevronUp, ChevronDown, Palette, FileText, Zap, Users,
-  Mail, CheckCircle, XCircle, ExternalLink, Loader2
+  Mail, CheckCircle, XCircle, ExternalLink, Loader2, ShieldCheck, Percent
 } from 'lucide-react';
 
 const fieldTypes = [
