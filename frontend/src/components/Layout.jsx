@@ -1,4 +1,4 @@
-import { Factory, Menu, X, ShoppingCart, Clock, AlertTriangle, TrendingUp, Building2, UserPlus, FileText } from "lucide-react";
+import { Factory, Menu, X, ShoppingCart, Clock, AlertTriangle, TrendingUp, Building2, UserPlus, FileText, Megaphone } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
