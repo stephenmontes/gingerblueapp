@@ -113,3 +113,56 @@ class SystemEventType(str, Enum):
     AUTO_ASSIGNED = "auto_assigned"
     STALE_REMINDER = "stale_reminder"
     AUTOMATION_TRIGGERED = "automation_triggered"
+    
+    # Approval events
+    APPROVAL_REQUESTED = "approval_requested"
+    APPROVAL_APPROVED = "approval_approved"
+    APPROVAL_REJECTED = "approval_rejected"
+
+
+class ApprovalStatus(str, Enum):
+    """Status of an approval request"""
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    EXPIRED = "expired"
+
+
+class ApprovalTriggerType(str, Enum):
+    """What triggers an approval workflow"""
+    DISCOUNT_PERCENT = "discount_percent"
+    DISCOUNT_AMOUNT = "discount_amount"
+    QUOTE_TOTAL = "quote_total"
+
+
+class ApprovalRuleCreate(BaseModel):
+    """Create a discount approval rule"""
+    name: str
+    description: Optional[str] = None
+    trigger_type: ApprovalTriggerType
+    threshold: float  # The value that triggers approval
+    operator: str = "gte"  # gte = greater than or equal, gt = greater than
+    approver_user_ids: List[str]  # Users who can approve
+    auto_approve_below_threshold: bool = True
+    status: RuleStatus = RuleStatus.ACTIVE
+
+
+class ApprovalRuleUpdate(BaseModel):
+    """Update a discount approval rule"""
+    name: Optional[str] = None
+    description: Optional[str] = None
+    trigger_type: Optional[ApprovalTriggerType] = None
+    threshold: Optional[float] = None
+    operator: Optional[str] = None
+    approver_user_ids: Optional[List[str]] = None
+    auto_approve_below_threshold: Optional[bool] = None
+    status: Optional[RuleStatus] = None
+
+
+class ApprovalRequestCreate(BaseModel):
+    """Create an approval request"""
+    entity_type: str  # quote, order, etc.
+    entity_id: str
+    rule_id: str
+    requested_value: float  # The discount value being requested
+    notes: Optional[str] = None
