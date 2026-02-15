@@ -26,6 +26,11 @@ Build a manufacturing and fulfillment app for Shopify websites with detailed tim
   - When stopping a timer, prompts user to enter number of items processed
   - Context-aware labels (e.g., "frames cut", "frames sanded", "frames assembled")
   - Records items_processed for productivity calculations
+- **Frame Number Reminder** (NEW - Feb 2026)
+  - Visual reminder near Stop Timer button in Active Timer Banner
+  - Amber warning text: "Enter frame numbers before stopping"
+  - AlertTriangle icon for visibility
+  - Positioned below timer controls for user attention
 - **User Production Report** (NEW - Feb 2026)
   - Per-user, per-stage breakdown of time tracked and items processed
   - Items per hour calculation for each user at each stage
