@@ -168,17 +168,13 @@ export function ActiveTimerBanner({ activeTimer: propTimer, onTimerChange }) {
             <Button
               size="sm"
               variant="destructive"
-              onClick={handleStopTimer}
+              onClick={handleStopClick}
               className="gap-1"
               data-testid="stop-active-timer"
             >
               <StopCircle className="w-4 h-4" />
               Stop
             </Button>
-          </div>
-          <div className="flex items-center gap-1.5 text-xs text-amber-500" data-testid="frame-reminder-message">
-            <AlertTriangle className="w-3.5 h-3.5" />
-            <span>Enter frame numbers before stopping</span>
           </div>
         </div>
       </div>
@@ -190,6 +186,37 @@ export function ActiveTimerBanner({ activeTimer: propTimer, onTimerChange }) {
         </div>
         <UserStageStats stageId={activeTimer.stage_id} stageName={activeTimer.stage_name} />
       </div>
+
+      {/* Stop Timer Confirmation Dialog */}
+      <AlertDialog open={showStopConfirmDialog} onOpenChange={setShowStopConfirmDialog}>
+        <AlertDialogContent data-testid="stop-timer-confirm-dialog">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Stop Timer</AlertDialogTitle>
+            <AlertDialogDescription className="text-base">
+              Were completed items marked as done?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={handleCancelStop}
+              className="gap-2"
+              data-testid="stop-timer-no-btn"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              No, go back
+            </Button>
+            <Button
+              onClick={handleStopTimer}
+              className="gap-2 bg-green-600 hover:bg-green-700"
+              data-testid="stop-timer-yes-btn"
+            >
+              <CheckCircle className="w-4 h-4" />
+              Yes, stop timer
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
