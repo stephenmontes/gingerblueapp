@@ -1,0 +1,171 @@
+<analysis>**original_problem_statement:**
+The user initially requested a system to manage Shopify orders and track frame production. This was later expanded to include a multi-phase CRM module.
+
+- **CRM Phase 2 (Completed previously):** Implemented a Quote Object.
+- **CRM Phase 3 (Completed this session):** User requested and the agent implemented Gmail Integration, Approval Workflows, Campaign Management.
+- **CRM Phase 4 (Started this session):** User requested to start Phase 4, choosing Case Management as the first priority, which the agent implemented.
+- **New Request:** After the completion of Case Management, the user requested to add a reminder message to the Frame Production page, instructing users to enter frame numbers before stopping the timer.
+
+**User's preferred language**: English
+
+**what currently exists?**
+The application is a comprehensive full-stack solution with a React frontend, FastAPI backend, and MongoDB database. It supports Shopify order management, frame production tracking, and a robust CRM module.
+
+The CRM now includes:
+- Lead and Opportunity management.
+- A Quote Object for sales workflows.
+- **Gmail Integration:** Users can connect their Gmail accounts using their own Google Cloud OAuth credentials. The backend handles the OAuth2 flow for authorization.
+- **Approval Workflows:** A system is in place to create approval rules for quotes based on discount percentages.
+- **Campaign Management:** Full CRUD functionality for creating and managing marketing campaigns.
+- **Case Management:** A support ticket system with standard fields like subject, status, and priority.
+
+The application uses Emergent-managed Google Auth for user login.
+
+**Last working item**:
+    - Last item agent was working: Implementing a user request to add a reminder message on the Frame Production page. The agent had located the relevant frontend file () and was about to modify it.
+    - Status: IN PROGRESS
+    - Agent Testing Done: N
+    - Which testing method agent to use? screenshot tool. This is a minor UI change on a single page, and a screenshot will be sufficient to verify that the new message appears correctly.
+    - User Testing Done: N
+
+**All Pending/In progress Issue list**:
+  - **Issue 1 (P0 - HIGHEST):** Add a reminder message for users on the  page to input frame numbers before stopping the timer.
+
+  **Issues Detail:**
+  - **Issue 1:**
+     - **Attempted fixes:** None yet. The agent was just about to start implementation.
+     - **Next debug checklist:**
+         1. Modify .
+         2. Locate the Stop Timer button or the function it calls.
+         3. Add a  notification (using ) or a simple  component to display the reminder message.
+     - **Why fix this issue and what will be achieved with the fix?** To prevent data entry errors and ensure that all production timers have associated frame numbers, improving data integrity for production tracking.
+     - **Status:** IN PROGRESS
+     - **Is recurring issue?** N
+     - **Should Test frontend/backend/both after fix?** Frontend.
+     - **Blocked on other issue:** None.
+
+**In progress Task List**:
+There are no other tasks in progress. The current focus is on the issue listed above.
+
+**Upcoming and Future Tasks**
+*   **Upcoming Tasks (CRM Phase 4):**
+    *   **P1: Knowledge Base:** A system for creating and managing support articles.
+    -   **P2: Advanced Analytics & Custom Dashboards:** Building more sophisticated reporting on CRM data.
+
+*   **Future Tasks (Backlog):**
+    *   **Additional Reports (from CRM Phase 2):** This feature was requested but skipped when the user prioritized Phase 3. The next agent should clarify with the user if this is still required and should be added to the backlog.
+
+**Completed work in this session**
+- **Feature: CRM Phase 3**
+  - **Gmail Integration:**
+    - Clarified credential requirements with the user (user-provided Google Cloud OAuth, not Emergent-managed).
+    - Implemented backend OAuth2 flow in  and .
+    - Added a new Integrations tab to  for connecting Gmail.
+  - **Approval Workflows:**
+    - Implemented backend CRUD for discount-based approval rules in .
+    - Added UI for managing these rules in the Automation tab on .
+  - **Campaign Management:**
+    - Created backend CRUD endpoints in .
+    - Created a new page for managing campaigns at .
+- **Feature: CRM Phase 4 (P1)**
+  - **Case Management:**
+    - Implemented backend CRUD endpoints for support cases in .
+    - Created a new page for managing cases at .
+- **Testing:** All three major features (Gmail Integration, Approval Workflows, Campaign Management, and Case Management) were successfully validated end-to-end using the .
+- **Documentation:** Updated  to reflect the completion of CRM Phase 3 and the start of Phase 4.
+
+**Earlier issues found/mentioned but not fixed**
+None, beyond the backlog item mentioned in Future Tasks.
+
+**Known issue recurrence from previous fork**
+None.
+
+**Code Architecture**
+
+
+**Key Technical Concepts**
+- **Backend**: FastAPI (Python)
+- **Frontend**: React (JavaScript/JSX), Material-UI (MUI), Shadcn UI
+- **Database**: MongoDB
+- **Authentication**: Emergent-managed Google OAuth (for app login), User-provided Google OAuth (for Gmail API)
+- **Integrations**: Google Gmail API
+
+**key DB schema**
+- **automation_approval_rules**: 
+- **crm_campaigns**: 
+- **crm_cases**: 
+
+**changes in tech stack**
+None.
+
+**All files of reference**
+*New Files Created:*
+- : Handles Google Gmail API OAuth2 flow.
+- : Provides the root callback endpoint for Google OAuth.
+- : CRUD endpoints for marketing campaigns.
+- : CRUD endpoints for support cases.
+- : UI for managing campaigns.
+- : UI for managing support cases.
+
+*Key Files Modified:*
+- : Registered all new routers.
+- : Added  model.
+- : Added endpoints for approval rule CRUD.
+- : Added routes for  and .
+- : Added Campaigns and Cases to the navigation sidebar.
+- : Heavily modified to include the Integrations tab for Gmail and the Approval Workflows section.
+- : Updated to reflect project progress.
+
+**Areas that need refactoring**:
+- The  was created at the root level just for the Gmail callback. This logic could be consolidated within  to keep the routing structure cleaner and more modular.
+
+**key api endpoints**
+- **Gmail:** , , 
+- **Approval Rules:** 
+- **Campaigns:** 
+- **Cases:** 
+
+**Critical Info for New Agent**
+- **Priority:** Your immediate task is to implement the reminder message on the Frame Production page as requested by the user.
+- **Dual Google Auth:** Be aware that the app uses two distinct Google OAuth systems: Emergent-managed for user login and user-provided credentials (stored in ) for the Gmail API. Do not confuse them.
+- **Clarify Backlog:** After completing the current task, propose a plan for the next steps of CRM Phase 4 (Knowledge Base, Analytics) and take the opportunity to ask the user if the Additional Reports feature from Phase 2 is still desired.
+
+**documents and test reports created in this job**
+- 
+-  (Case Management test)
+-  (Campaign Management test)
+-  (Gmail & Approval Workflows test)
+
+**Last 10 User Messages and any pending HUMAN messages**
+-  - **In Progress.**
+-  - **Actioned.**
+-  - **Actioned.**
+-  (choosing Case Management for CRM Phase 4) - **Actioned.**
+-  - **Actioned.**
+-  - **Actioned.**
+-  - **Actioned.**
+-  (confirming they added the Gmail redirect URI) - **Actioned.**
+-  (providing Gmail API credentials) - **Actioned.**
+-  - **Actioned.** Agent clarified this is the correct and only approach.
+
+**Project Health Check:**
+- **Broken:** None
+- **Mocked:** None
+
+**3rd Party Integrations**
+- **Shopify**: For syncing customer orders and product catalog.
+- **Emergent-managed Google Auth**: For user authentication.
+- **Google Gmail API**: For CRM email integration (requires User API Key).
+
+**Testing status**
+- **Testing agent used after significant changes**: YES. Used successfully for all major features implemented in this session.
+- **Troubleshoot agent used after agent stuck in loop**: NO
+- **Test files created**: []
+- **Known regressions**: None.
+
+**Credentials to test flow:**
+- User login is handled by Emergent-managed Google Auth (fully managed by the testing agent).
+- Gmail API functionality uses credentials stored in .
+
+**What agent forgot to execute**
+- The agent correctly noted that the Additional Reports feature from CRM Phase 2 was skipped but did not proactively ask the user if it should be added to the backlog for future implementation. This should be addressed after the current task is complete.</analysis>

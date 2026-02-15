@@ -52,7 +52,7 @@ def get_redirect_uri():
         return "https://gingerblueapp.com/api/drive/oauth/callback"
     
     # Preview/development
-    return "https://crm-integration-10.preview.emergentagent.com/api/drive/oauth/callback"
+    return "https://production-alert-1.preview.emergentagent.com/api/drive/oauth/callback"
 
 
 @router.get("/oauth/connect")
@@ -96,7 +96,7 @@ async def drive_oauth_callback(
     # Handle OAuth errors
     if error:
         logger.error(f"OAuth error: {error} - {error_description}")
-        frontend_url = os.environ.get("REACT_APP_BACKEND_URL", "https://crm-integration-10.preview.emergentagent.com")
+        frontend_url = os.environ.get("REACT_APP_BACKEND_URL", "https://production-alert-1.preview.emergentagent.com")
         return RedirectResponse(url=f"{frontend_url}/settings?drive_error={error}")
     
     if not code or not state:
@@ -164,7 +164,7 @@ async def drive_oauth_callback(
         if auth_url:
             frontend_url = "https://gingerblueapp.com"
         else:
-            frontend_url = "https://crm-integration-10.preview.emergentagent.com"
+            frontend_url = "https://production-alert-1.preview.emergentagent.com"
     return RedirectResponse(url=f"{frontend_url}/settings?drive_connected=true")
 
 
