@@ -123,39 +123,45 @@ export function ActiveTimerBanner({ activeTimer: propTimer, onTimerChange }) {
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          {isPaused ? (
+        <div className="flex flex-col items-end gap-2">
+          <div className="flex items-center gap-2">
+            {isPaused ? (
+              <Button
+                size="sm"
+                onClick={handleResumeTimer}
+                className="gap-1 bg-green-600 hover:bg-green-700"
+                data-testid="resume-active-timer"
+              >
+                <Play className="w-4 h-4" />
+                Resume
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={handlePauseTimer}
+                className="gap-1"
+                data-testid="pause-active-timer"
+              >
+                <Pause className="w-4 h-4" />
+                Pause
+              </Button>
+            )}
             <Button
               size="sm"
-              onClick={handleResumeTimer}
-              className="gap-1 bg-green-600 hover:bg-green-700"
-              data-testid="resume-active-timer"
-            >
-              <Play className="w-4 h-4" />
-              Resume
-            </Button>
-          ) : (
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={handlePauseTimer}
+              variant="destructive"
+              onClick={handleStopTimer}
               className="gap-1"
-              data-testid="pause-active-timer"
+              data-testid="stop-active-timer"
             >
-              <Pause className="w-4 h-4" />
-              Pause
+              <StopCircle className="w-4 h-4" />
+              Stop
             </Button>
-          )}
-          <Button
-            size="sm"
-            variant="destructive"
-            onClick={handleStopTimer}
-            className="gap-1"
-            data-testid="stop-active-timer"
-          >
-            <StopCircle className="w-4 h-4" />
-            Stop
-          </Button>
+          </div>
+          <div className="flex items-center gap-1.5 text-xs text-amber-500" data-testid="frame-reminder-message">
+            <AlertTriangle className="w-3.5 h-3.5" />
+            <span>Enter frame numbers before stopping</span>
+          </div>
         </div>
       </div>
       
