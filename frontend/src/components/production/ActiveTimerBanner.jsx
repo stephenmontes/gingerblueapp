@@ -97,11 +97,21 @@ export function ActiveTimerBanner({ activeTimer: propTimer, onTimerChange }) {
             : `Timer stopped: ${mins} minutes logged`
         );
         setLocalTimer(null);
+        setShowStopConfirmDialog(false);
         if (onTimerChange) onTimerChange();
       }
     } catch (err) {
       toast.error("Failed to stop timer");
     }
+  }
+
+  function handleStopClick() {
+    setShowStopConfirmDialog(true);
+  }
+
+  function handleCancelStop() {
+    setShowStopConfirmDialog(false);
+    toast.info("Returning to work - remember to mark items as done");
   }
 
   if (loading || !activeTimer) return null;
