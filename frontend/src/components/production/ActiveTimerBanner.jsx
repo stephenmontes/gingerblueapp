@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Clock, StopCircle, Play, Pause } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Clock, StopCircle, Play, Pause, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { UserStageStats } from "./UserStageStats";
 import { API } from "@/utils/api";
