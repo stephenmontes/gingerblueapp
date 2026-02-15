@@ -19,6 +19,7 @@ export function ActiveTimerBanner({ activeTimer: propTimer, onTimerChange }) {
   // Use prop timer if provided, otherwise fetch locally
   const [localTimer, setLocalTimer] = useState(null);
   const [loading, setLoading] = useState(!propTimer);
+  const [showStopConfirmDialog, setShowStopConfirmDialog] = useState(false);
   
   const activeTimer = propTimer || localTimer;
 
